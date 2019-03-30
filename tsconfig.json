@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"lib": ["esnext"],
+		"outDir": "dist",
+		"preserveWatchOutput": true,
+		"sourceMap": true
+	},
+	"exclude": ["node_modules", "dist"],
+	"include": ["src/**/*.ts", "types/**/*.d.ts"]
+}

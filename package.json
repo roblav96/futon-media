@@ -1,0 +1,69 @@
+{
+	"name": "futon-media-cli",
+	"version": "0.0.0",
+	"description": "Interactive CLI tool used to create .strm files for Emby Media",
+	"main": "dist/index.js",
+	"files": [
+		"dist"
+	],
+	"bin": {
+		"fm": "dist/index.js"
+	},
+	"scripts": {
+		"reset": "del dist node_modules",
+		"prepublishOnly": "del dist; tsc",
+		"start": "del dist; mkdir dist; run-p start:*",
+		"start:node": "nodemon -q dist/index.js",
+		"start:tsc": "tsc -w",
+		"test": "del dist; tsc; node dist/index.js"
+	},
+	"nodemonConfig": {
+		"exec": "test ! -e dist/index.js && exit 0 || node",
+		"ext": "js",
+		"restartable": false,
+		"watch": "dist",
+		"ignore": [
+			".git",
+			"node_modules",
+			"src"
+		]
+	},
+	"dependencies": {
+		"dotenv": "^7.0.0",
+		"fs-extra": "^7.0.1",
+		"got": "^9.6.0",
+		"prompts": "^2.0.4"
+	},
+	"devDependencies": {
+		"@types/dotenv": "^6.1.1",
+		"@types/exit-hook": "^1.1.0",
+		"@types/fs-extra": "^5.0.5",
+		"@types/got": "^9.4.1",
+		"@types/node": "^11.12.2",
+		"@types/pretty-format": "^20.0.1",
+		"@types/prompts": "^1.2.0",
+		"@types/sane": "^2.0.0",
+		"@types/shimmer": "^1.0.1",
+		"@types/signal-exit": "^3.0.0",
+		"del-cli": "^1.1.0",
+		"dts-generate": "^1.0.1",
+		"exit-hook": "^2.0.0",
+		"fkill-cli": "^5.2.0",
+		"forever": "^0.15.3",
+		"node-env-dev": "^1.1.0",
+		"nodemon": "^1.18.10",
+		"npm-run-all": "^4.1.5",
+		"pretty-format": "^24.5.0",
+		"sane": "^4.1.0",
+		"shimmer": "^1.2.1",
+		"signal-exit": "^3.0.2",
+		"source-map-support": "^0.5.11",
+		"ts-node": "^8.0.3",
+		"typescript": "^3.4.1"
+	},
+	"license": "Unlicense",
+	"author": "Robert Laverty <roblav96@gmail.com> (https://github.com/roblav96)",
+	"homepage": "https://github.com/roblav96/futon-media-cli#readme",
+	"repository": "github:roblav96/futon-media-cli",
+	"bugs": "https://github.com/roblav96/futon-media-cli/issues"
+}
