@@ -5,18 +5,26 @@ require('dotenv').config()
 require('node-env-dev')
 console.log(`new Date ->`, new Date().toLocaleTimeString())
 
+import './devtools'
 import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as got from 'got'
 import * as prompts from 'prompts'
+import * as R from 'rambdax'
+import * as S from 'string-fn'
 import * as dts from 'dts-generate'
+import * as tmdb from './tmdb'
 
 async function start() {
-	let mainmenu = await prompts.prompts.select({
-		message: 'Cloud Provider',
-		initial: 0,
-		choices: [{ title: 'Real Debrid', value: '' }, { title: 'Premiumize', value: '' }],
+	let item = await prompts.prompts.autocomplete({
+		message: 'Search Movies and TV Shows',
+		suggest: (async (query: string, choices: string[]) => {
+			if (query.length <= 2) return []
+			let response = await tmdb.http('/3/search/multi', { query: { query } })
+			let results = JSON.parse(response.body).results
+			console.log(`results ->`, results)
+			return []
+		}) as any,
 	} as prompts.PromptObject)
-	console.log(`mainmenu ->`, mainmenu)
 }
 start().catch(error => console.error(`catch Error ->`, error))

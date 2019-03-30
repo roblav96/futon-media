@@ -29,12 +29,16 @@
 		]
 	},
 	"dependencies": {
+		"ansi-colors": "^3.2.4",
 		"dotenv": "^7.0.0",
 		"fs-extra": "^7.0.1",
 		"got": "^9.6.0",
-		"prompts": "^2.0.4"
+		"prompts": "^2.0.4",
+		"rambdax": "^2.0.0",
+		"string-fn": "^2.2.0"
 	},
 	"devDependencies": {
+		"@types/ansi-colors": "^3.2.0",
 		"@types/dotenv": "^6.1.1",
 		"@types/exit-hook": "^1.1.0",
 		"@types/fs-extra": "^5.0.5",
