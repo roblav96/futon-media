@@ -3,7 +3,8 @@
 		"lib": ["esnext"],
 		"outDir": "dist",
 		"preserveWatchOutput": true,
-		"sourceMap": true
+		"sourceMap": true,
+		"target": "es5"
 	},
 	"exclude": ["node_modules", "dist"],
 	"include": ["src/**/*.ts", "types/**/*.d.ts"]

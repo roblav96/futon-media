@@ -1,0 +1,6 @@
+{
+	"ext": "js",
+	"restartable": false,
+	"signal": "SIGKILL",
+	"watch": "dist"
+}
