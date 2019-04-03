@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"lib": ["esnext"],
+		"lib": ["dom", "esnext"],
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,

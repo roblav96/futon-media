@@ -1,6 +1,5 @@
 import * as shimmer from 'shimmer'
 import * as colors from 'ansi-colors'
-import * as escapes from 'ansi-escapes'
 import * as _ from 'lodash'
 import * as util from 'util'
 
@@ -19,3 +18,6 @@ for (let [method, color] of Object.entries({ log: 'blue', warn: 'yellow', error:
 		}
 	})
 }
+
+// import * as inspector from 'inspector'
+// inspector.open(process.debugPort)

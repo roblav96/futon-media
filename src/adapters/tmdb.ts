@@ -8,15 +8,20 @@ export const http = new Http({
 		afterResponse: [
 			response => {
 				if (_.isPlainObject(response.body)) {
-					_.unset(response.body, 'crew')
-					_.unset(response.body, 'guest_stars')
-					_.unset(response.body, 'production_companies')
+					debloat(response.body)
+					let results = _.get(response.body, 'results') as Full[]
+					if (_.isArray(results)) results.forEach(v => debloat(v))
 				}
 				return response
 			},
 		],
 	},
 })
+
+function debloat(full: any) {
+	let keys = ['crew', 'guest_stars', 'production_companies']
+	keys.forEach(key => _.unset(full, key))
+}
 
 export interface Paginated<T> {
 	page: number
@@ -827,17 +832,4 @@ export interface Person {
 	}
 }
 
-export type FullItem = Movie & Show & Season & Episode & Person
-
-export interface Configuration {
-	change_keys: string[]
-	images: {
-		backdrop_sizes: string[]
-		base_url: string
-		logo_sizes: string[]
-		poster_sizes: string[]
-		profile_sizes: string[]
-		secure_base_url: string
-		still_sizes: string[]
-	}
-}
+export type Full = Movie & Show & Season & Episode & Person

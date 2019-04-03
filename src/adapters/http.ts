@@ -13,6 +13,10 @@ export class Http {
 			response.body = jsonparse(response.body).value || response.body
 			return response
 		})
+		if (!_.isPlainObject(options.headers)) options.headers = {}
+		_.defaults(options.headers, {
+			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
+		})
 		this.request = got.extend(options as any)
 	}
 
@@ -25,4 +29,6 @@ export class Http {
 	}
 }
 
-export default new Http()
+export const http = new Http()
+export const get = http.get
+export const post = http.post
