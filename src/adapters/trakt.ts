@@ -2,18 +2,22 @@ import * as _ from 'lodash'
 import * as media from './media'
 import { Http } from './http'
 
-export const http = new Http({
+export const client = new Http({
 	baseUrl: 'https://api.trakt.tv',
 	headers: {
 		'content-type': 'application/json',
 		'trakt-api-version': '2',
 		'trakt-api-key': process.env.TRAKT_KEY,
 	},
-	query: { extended: 'full' },
+	query: {
+		extended: 'full',
+	},
 	hooks: {
 		afterResponse: [
 			response => {
-				if (_.isPlainObject(response.body)) debloat(response.body)
+				if (_.isPlainObject(response.body)) {
+					debloat(response.body)
+				}
 				if (_.isArray(response.body)) {
 					response.body.forEach(result => {
 						debloat(result)

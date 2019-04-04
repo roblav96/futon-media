@@ -11,13 +11,13 @@ export async function menu() {
 		suggest: pDebounce(async (query: string) => {
 			query = query.trim()
 			if (query.length < 2) return []
-			let response = (await trakt.http.get('/search/movie,show,episode', {
+			let response = (await trakt.client.get('/search/movie,show,episode', {
 				query: { query },
 			})) as trakt.Result[]
 			let items = response
 				.map(v => new media.Item(v))
 				.sort((a, b) => b.full.votes - a.full.votes)
-				.slice(0, 10)
+				.slice(0, 5)
 			return items.map(item => ({
 				title: `${item.full.title}, ${item.full.year}`,
 				value: item,
@@ -27,7 +27,7 @@ export async function menu() {
 	if (!item) throw new Error('Unselected media item')
 
 	if (item.type == 'show') {
-		let seasons = (await trakt.http.get(
+		let seasons = (await trakt.client.get(
 			`/shows/${item.show.ids.slug}/seasons`
 		)) as trakt.Season[]
 		seasons = seasons.filter(v => v.number > 0)
@@ -43,7 +43,7 @@ export async function menu() {
 		if (!season) throw new Error('Unselected show season')
 		item.useTrakt({ season })
 
-		let episodes = (await trakt.http.get(
+		let episodes = (await trakt.client.get(
 			`/shows/${item.show.ids.slug}/seasons/${item.season.number}/episodes`
 		)) as trakt.Episode[]
 		episodes = episodes.filter(v => v.number > 0)

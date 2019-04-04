@@ -1,14 +1,9 @@
-import memoize from 'fast-memoize'
 import * as _ from 'lodash'
+import * as memoize from 'mem'
 import * as trakt from './trakt'
 import * as tmdb from './tmdb'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
-
-console.log(`memoize ->`, memoize)
-let cached = memoize(function(n: number) {
-	return Date.now() * n
-})
 
 export interface Item extends trakt.Extras {}
 export class Item {
@@ -22,14 +17,12 @@ export class Item {
 	get ids() {
 		return this[this.type].ids as trakt.IDs
 	}
-	get full() {
-		return _.merge({}, ...TYPES.filter(v => this[v]).map(v => this[v])) as Full
-	}
 
-	get slugs() {
-		let title = this.full.ids.slug.replace(/[-]/g, ' ')
-		if (this.movie) title += ` ${this.movie.year}`
-		return [title]
+	private _full = memoize(() => {
+		return _.merge({}, ...TYPES.filter(v => this[v]).map(v => this[v])) as Full
+	})
+	get full() {
+		return this._full()
 	}
 
 	constructor(result: Partial<trakt.Result>) {
@@ -44,10 +37,12 @@ export class Item {
 			let ikey = trakt.RESULT_ITEM[rkey]
 			if (ikey) this[ikey] = rvalue
 		}
+		Object.values(this).forEach(memoize.clear)
 		return this
 	}
 
 	useTMDB(value: Partial<tmdb.Full>) {
+		Object.values(this).forEach(memoize.clear)
 		return this
 	}
 }

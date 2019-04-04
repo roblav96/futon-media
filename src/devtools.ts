@@ -5,14 +5,19 @@ import * as util from 'util'
 
 Object.assign(util.inspect.defaultOptions, { depth: 4 })
 
-for (let [method, color] of Object.entries({ log: 'blue', warn: 'yellow', error: 'red' })) {
+for (let [method, color] of Object.entries({
+	log: 'blue',
+	info: 'magenta',
+	warn: 'yellow',
+	error: 'red',
+})) {
 	console[method]['__wrapped'] && shimmer.unwrap(console, method as any)
 	shimmer.wrap(console, method as any, function wrapper(fn) {
 		return function called(...args: string[]) {
 			if (_.isString(args[0])) {
-				let padding = `\n\n\n\n`
-				args.unshift(`${padding}${colors[color]('■')}`)
-				args.push(`${padding}`)
+				let padding = '\n\n\n\n'
+				args.unshift(padding + colors[color]('■'))
+				args.push(padding)
 			}
 			return fn.apply(console, args)
 		}
