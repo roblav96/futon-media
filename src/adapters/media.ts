@@ -1,8 +1,14 @@
+import memoize from 'fast-memoize'
 import * as _ from 'lodash'
 import * as trakt from './trakt'
 import * as tmdb from './tmdb'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
+
+console.log(`memoize ->`, memoize)
+let cached = memoize(function(n: number) {
+	return Date.now() * n
+})
 
 export interface Item extends trakt.Extras {}
 export class Item {
@@ -13,17 +19,17 @@ export class Item {
 	episode: trakt.Episode & tmdb.Episode
 	person: trakt.Person & tmdb.Person
 
-	get types() {
-		return TYPES.filter(v => this[v] != null)
-	}
-	get full() {
-		return _.merge({}, ...this.types.map(v => this[v])) as Full
-	}
 	get ids() {
 		return this[this.type].ids as trakt.IDs
 	}
-	get accuracy() {
-		return this.score * this.full.votes
+	get full() {
+		return _.merge({}, ...TYPES.filter(v => this[v]).map(v => this[v])) as Full
+	}
+
+	get slugs() {
+		let title = this.full.ids.slug.replace(/[-]/g, ' ')
+		if (this.movie) title += ` ${this.movie.year}`
+		return [title]
 	}
 
 	constructor(result: Partial<trakt.Result>) {
@@ -33,7 +39,7 @@ export class Item {
 	useTrakt(result: Partial<trakt.Result>) {
 		let picked = _.pick(result, TYPES)
 		_.merge(this, picked)
-		this.type = result.type || (this.types.slice(-1) as any)
+		this.type = result.type || (Object.keys(picked).pop() as any)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
 			let ikey = trakt.RESULT_ITEM[rkey]
 			if (ikey) this[ikey] = rvalue

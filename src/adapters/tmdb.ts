@@ -10,7 +10,7 @@ export const http = new Http({
 				if (_.isPlainObject(response.body)) {
 					debloat(response.body)
 					let results = _.get(response.body, 'results') as Full[]
-					if (_.isArray(results)) results.forEach(v => debloat(v))
+					if (_.isArray(results)) results.forEach(debloat)
 				}
 				return response
 			},

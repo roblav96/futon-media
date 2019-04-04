@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as prompts from 'prompts'
 import * as trakt from '../adapters/trakt'
 import * as media from '../adapters/media'
+import * as utils from '../utils'
 import pDebounce from 'p-debounce'
 
 export async function menu() {
@@ -26,14 +27,17 @@ export async function menu() {
 	if (!item) throw new Error('Unselected media item')
 
 	if (item.type == 'show') {
-		let seasons = (await trakt.http.get(`/shows/${item.show.ids.slug}/seasons`)) as trakt.Season[]
+		let seasons = (await trakt.http.get(
+			`/shows/${item.show.ids.slug}/seasons`
+		)) as trakt.Season[]
 		seasons = seasons.filter(v => v.number > 0)
 		let season = (await prompts.prompts.autocomplete({
 			message: `Season`,
 			suggest: function(query: string) {
+				query = utils.minify(query)
 				let choices = seasons.map(season => ({ title: season.title, value: season }))
 				if (!query) return choices
-				return choices.filter(v => v.title.endsWith(query))
+				return choices.filter(v => utils.minify(v.title).includes(query))
 			} as any,
 		} as prompts.PromptObject)) as trakt.Season
 		if (!season) throw new Error('Unselected show season')
@@ -46,12 +50,13 @@ export async function menu() {
 		let episode = (await prompts.prompts.autocomplete({
 			message: `Episode`,
 			suggest: function(query: string) {
+				query = utils.minify(query)
 				let choices = episodes.map(episode => ({
 					title: `${episode.number} ${episode.title}`,
 					value: episode,
 				}))
 				if (!query) return choices
-				return choices.filter(v => v.title.startsWith(query))
+				return choices.filter(v => utils.minify(v.title).includes(query))
 			} as any,
 		} as prompts.PromptObject)) as trakt.Episode
 		if (!episode) throw new Error('Unselected show episode')

@@ -1,6 +1,9 @@
 {
 	"compilerOptions": {
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
 		"lib": ["dom", "esnext"],
+		"noErrorTruncation": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,
