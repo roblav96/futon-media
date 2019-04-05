@@ -13,7 +13,7 @@ export async function menu() {
 			if (query.length < 2) return []
 			let response = (await trakt.client.get('/search/movie,show,episode', {
 				query: { query },
-			})) as trakt.Result[]
+			})) as any as trakt.Result[]
 			let items = response
 				.map(v => new media.Item(v))
 				.sort((a, b) => b.full.votes - a.full.votes)
@@ -29,7 +29,7 @@ export async function menu() {
 	if (item.type == 'show') {
 		let seasons = (await trakt.client.get(
 			`/shows/${item.show.ids.slug}/seasons`
-		)) as trakt.Season[]
+		)) as any as trakt.Season[]
 		seasons = seasons.filter(v => v.number > 0)
 		let season = (await prompts.prompts.autocomplete({
 			message: `Season`,
@@ -45,7 +45,7 @@ export async function menu() {
 
 		let episodes = (await trakt.client.get(
 			`/shows/${item.show.ids.slug}/seasons/${item.season.number}/episodes`
-		)) as trakt.Episode[]
+		)) as any as trakt.Episode[]
 		episodes = episodes.filter(v => v.number > 0)
 		let episode = (await prompts.prompts.autocomplete({
 			message: `Episode`,

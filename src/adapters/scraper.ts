@@ -29,7 +29,7 @@ export interface Torrent {
 	bytes: number
 	cached: Debrid[]
 	date: number
-	files: File[]
+	// files: File[]
 	hash: string
 	hd: boolean
 	magnet: string

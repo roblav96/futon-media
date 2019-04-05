@@ -5,16 +5,16 @@ export const http = new Http({
 	baseUrl: 'https://api.themoviedb.org',
 	query: { api_key: process.env.TMDB_KEY },
 	hooks: {
-		afterResponse: [
-			response => {
-				if (_.isPlainObject(response.body)) {
-					debloat(response.body)
-					let results = _.get(response.body, 'results') as Full[]
-					if (_.isArray(results)) results.forEach(debloat)
-				}
-				return response
-			},
-		],
+		// afterResponse: [
+		// 	response => {
+		// 		if (_.isPlainObject(response.body)) {
+		// 			debloat(response.body)
+		// 			let results = _.get(response.body, 'results') as Full[]
+		// 			if (_.isArray(results)) results.forEach(debloat)
+		// 		}
+		// 		return response
+		// 	},
+		// ],
 	},
 })
 

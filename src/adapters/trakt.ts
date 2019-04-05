@@ -13,20 +13,20 @@ export const client = new Http({
 		extended: 'full',
 	},
 	hooks: {
-		afterResponse: [
-			response => {
-				if (_.isPlainObject(response.body)) {
-					debloat(response.body)
-				}
-				if (_.isArray(response.body)) {
-					response.body.forEach(result => {
-						debloat(result)
-						media.TYPES.forEach(type => debloat(result[type]))
-					})
-				}
-				return response
-			},
-		],
+		// afterResponse: [
+		// 	response => {
+		// 		if (_.isPlainObject(response.body)) {
+		// 			debloat(response.body)
+		// 		}
+		// 		if (_.isArray(response.body)) {
+		// 			response.body.forEach(result => {
+		// 				debloat(result)
+		// 				media.TYPES.forEach(type => debloat(result[type]))
+		// 			})
+		// 		}
+		// 		return response
+		// 	},
+		// ],
 	},
 })
 
