@@ -1,161 +1,107 @@
 import pAll from 'p-all'
 import * as _ from 'lodash'
+import * as http from 'http'
 import * as get from 'simple-get'
 import * as concat from 'simple-concat'
 import * as jsonparse from 'fast-json-parse'
 import * as normalize from 'normalize-url'
+import * as dot from 'dot-prop'
 import * as qs from 'query-string'
-import * as parse from 'url-parse'
 
-const defaults = {
-	config: {
-		baseUrl: '',
-		hooksAfterResponsePush: [] as ResponseHook[],
-		hooksAfterResponseUnshift: [] as ResponseHook[],
-		hooksBeforeRequestPush: [] as RequestHook[],
-		hooksBeforeRequestUnshift: [] as RequestHook[],
-		qsArrayFormat: 'bracket' as 'bracket' | 'index' | 'comma' | 'none',
-		query: {} as Record<string, string | number | string[] | number[]>,
-		silent: false,
-		verbose: false,
-	},
-	options: {
-		// json: true,
-		method: 'GET',
-		headers: {
-			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
-		},
-	} as get.Options,
+interface Config extends get.Options {
+	afterResponse?: Hooks<(resolved: Resolved) => void | Promise<void>>
+	baseUrl?: string
+	beforeRequest?: Hooks<(options: Config) => void | Promise<void>>
+	memoize?: boolean
+	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
+	query?: Record<string, string | number | string[] | number[]>
+	verbose?: boolean
 }
-interface Config extends Partial<typeof defaults.config>, get.Options {}
+type Hooks<T> = { append?: T[]; prepend?: T[] }
 
-type RequestHook = (config: Config) => any
-type ResponseHook = (response: Response, retry: (config: Config) => any) => any
-
-interface Response {
-	config: Config
+interface Resolved {
+	body: any
+	options: Config
 	request: get.Request
 	response: get.Response
-	body: any
 }
 
+export interface HTTPError extends Pick<get.Options, 'method' | 'url'> {}
+export interface HTTPError extends Pick<get.Response, 'statusCode' | 'statusMessage'> {}
 export class HTTPError extends Error {
-	constructor(
-		public config: Config,
-		public request: get.Request,
-		public response: get.Response,
-		public body: any
-	) {
-		super(response.statusMessage)
+	name = 'HTTPError'
+	constructor({ options, request, response, body }: Resolved) {
+		super(`${response.statusCode} ${response.statusMessage}`)
 		Error.captureStackTrace(this, this.constructor)
-		this.name = 'HTTP2Error'
+		let { method, url } = options
+		let { statusCode, statusMessage } = response
+		Object.assign(this, { statusCode, statusMessage, method, url } as HTTPError)
 	}
 }
 
 export class Http {
-	private static send(options: get.Options) {
-		return new Promise<Response>((resolve, reject) => {
-			let request = get(options, (error, response) => {
-				if (error) {
-					return reject(error)
-				}
-				concat(response, (error: Error, data: Buffer) => {
-					if (error) {
-						return reject(error)
-					}
-					let body = data.toString() as any
-					if (body) {
-						body = jsonparse(body).value || body
-					}
-					resolve({ config: options, request, response, body })
-				})
-			})
-		})
-	}
-
-	static merge(...configs: Config[]) {
-		return _.mergeWith({}, ...configs, (a, b) => {
-			if (_.isArray(a) && _.isArray(b)) return a.concat(b)
-		}) as Config
-	}
+	static defaults = {
+		method: 'GET',
+		headers: {
+			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
+		},
+	} as Config
 
 	constructor(public config = {} as Config) {
-		_.defaultsDeep(this.config, defaults.options, defaults.config)
+		_.defaultsDeep(this.config, Http.defaults)
 	}
 
 	extend(config: Config) {
 		return new Http(Http.merge(this.config, config))
 	}
 
-	request(config: Config) {
+	async request(config: Config) {
 		let options = Http.merge(this.config, config)
 
-		let url = normalize(options.baseUrl + options.url, {
-			normalizeProtocol: false,
-			removeQueryParameters: null,
-			sortQueryParameters: false,
-		})
-		let parsed = qs.parseUrl(url)
-		let minurl = normalize(parsed.url, { stripProtocol: true, stripWWW: true })
-		_.defaultsDeep(options.query, parsed.query)
-		options.url = parsed.url
-
-		return Promise.resolve()
-			.then(function() {
-				let hooks = options.hooksBeforeRequestUnshift.concat(options.hooksBeforeRequestPush)
-				return pAll(
-					hooks.map(hook => () =>
-						Promise.resolve().then(
-							() => hook(options),
-							error => console.error(`${minurl} hookBeforeRequest Error ->`, error)
-						)
-					),
-					{ concurrency: 1 }
-				)
+		let { url, query } = qs.parseUrl(
+			normalize(options.baseUrl + options.url, {
+				normalizeProtocol: false,
+				removeQueryParameters: null,
+				sortQueryParameters: false,
 			})
-			.then(() => {
-				if (Object.keys(options.query).length) {
-					options.url += `?${qs.stringify(options.query, {
-						arrayFormat: options.qsArrayFormat,
-					})}`
-				}
+		)
+		options.url = url
+		_.defaultsDeep(options.query, query)
 
-				if (!options.silent) {
-					console.log(`${options.method} -> ${minurl}`)
-				}
+		let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
+		if (options.verbose) {
+			console.log(`${options.method} ${minurl}`)
+		}
 
-				if (options.verbose) {
-					console.log(
-						`${minurl} options ->`,
-						_.omit(options, Object.keys(defaults.config))
-					)
-				}
+		if (options.beforeRequest) {
+			let { prepend = [], append = [] } = options.beforeRequest
+			for (let hook of _.concat(prepend, append)) {
+				await hook(options)
+			}
+		}
 
-				return Http.send(options)
+		if (_.size(options.query)) {
+			let stringify = qs.stringify(options.query, {
+				arrayFormat: options.qsArrayFormat || 'bracket',
 			})
-			.then(response => {
-				let hooks = options.hooksAfterResponseUnshift.concat(options.hooksAfterResponsePush)
-				return pAll(
-					hooks.map(hook => () =>
-						Promise.resolve().then(
-							() => hook(response, _.noop),
-							error => console.error(`${minurl} hooksAfterResponse Error ->`, error)
-						)
-					),
-					{ concurrency: 1 }
-				).then(() => {
-					Object.keys(defaults.config).forEach(k => _.unset(options, k))
-					if (response.response.statusCode >= 400) {
-						throw new HTTPError(
-							options,
-							response.request,
-							response.response,
-							response.body
-						)
-					}
-					return response
-				})
-			})
+			options.url += `?${stringify}`
+		}
+
+		let resolved = await Http.send(options)
+		let { request, response, body } = resolved
+
+		if (response.statusCode >= 400) {
+			throw new HTTPError(resolved)
+		}
+
+		if (options.afterResponse) {
+			let { prepend = [], append = [] } = options.afterResponse
+			for (let hook of _.concat(prepend, append)) {
+				await hook(resolved)
+			}
+		}
+
+		return resolved
 	}
 
 	get(url: string, config = {} as Config) {
@@ -169,5 +115,31 @@ export class Http {
 	}
 	delete(url: string, config = {} as Config) {
 		return this.request({ method: 'DELETE', url, ...config }).then(({ body }) => body)
+	}
+
+	static merge(...configs: Config[]) {
+		return _.mergeWith({}, ...configs, (a, b) => {
+			if (_.isArray(a) && _.isArray(b)) return a.concat(b)
+		}) as Config
+	}
+
+	private static send(options: Config) {
+		return new Promise<Resolved>((resolve, reject) => {
+			let request = get(options, (error, response) => {
+				if (error) {
+					return reject(error)
+				}
+				concat(response, (error, data) => {
+					if (error) {
+						return reject(error)
+					}
+					let body = data.toString()
+					if (body) {
+						body = jsonparse(body).value || body
+					}
+					resolve({ options, request, response, body })
+				})
+			})
+		})
 	}
 }

@@ -19,6 +19,7 @@ async function start() {
 	})
 	let response = await http.get(`/status/400`, {
 		query: {},
+		verbose: true,
 	})
 	console.info(`response ->`, response)
 	// let item = await getItem.menu()
