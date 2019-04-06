@@ -20,6 +20,7 @@ for (let [method, color] of Object.entries({
 		return function called(...args: string[]) {
 			if (_.isString(args[0])) {
 				let padding = '\n'
+				// ⦁ ● ⧭ ⬤ ⚫︎ ◉ ◼︎ ➤ ► ∎ ⦁ 𝓓 ♦︎ ☁︎ ✚ ☗ █
 				args.unshift(padding + colors[color]('◉'))
 				args.push(padding)
 			}

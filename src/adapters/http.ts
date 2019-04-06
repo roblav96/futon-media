@@ -1,15 +1,14 @@
-import pAll from 'p-all'
 import * as _ from 'lodash'
-import * as http from 'http'
 import * as get from 'simple-get'
 import * as concat from 'simple-concat'
-import * as jsonparse from 'fast-json-parse'
-import * as normalize from 'normalize-url'
-import * as dot from 'dot-prop'
+import * as memoize from 'mem'
 import * as qs from 'query-string'
+import * as normalize from 'normalize-url'
+import * as fastJsonParse from 'fast-json-parse'
+import fastJsonStringify from 'fast-safe-stringify'
 
 interface Config extends get.Options {
-	afterResponse?: Hooks<(resolved: Resolved) => void | Promise<void>>
+	afterResponse?: Hooks<(options: Config, resolved: Resolved) => void | Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => void | Promise<void>>
 	memoize?: boolean
@@ -21,7 +20,6 @@ type Hooks<T> = { append?: T[]; prepend?: T[] }
 
 interface Resolved {
 	body: any
-	options: Config
 	request: get.Request
 	response: get.Response
 }
@@ -30,12 +28,11 @@ export interface HTTPError extends Pick<get.Options, 'method' | 'url'> {}
 export interface HTTPError extends Pick<get.Response, 'statusCode' | 'statusMessage'> {}
 export class HTTPError extends Error {
 	name = 'HTTPError'
-	constructor({ options, request, response, body }: Resolved) {
+	constructor(public body: any, options: Config, response: get.Response) {
 		super(`${response.statusCode} ${response.statusMessage}`)
 		Error.captureStackTrace(this, this.constructor)
-		let { method, url } = options
-		let { statusCode, statusMessage } = response
-		Object.assign(this, { statusCode, statusMessage, method, url } as HTTPError)
+		_.merge(this, _.pick(options, 'method', 'url'))
+		_.merge(this, _.pick(response, 'statusCode', 'statusMessage'))
 	}
 }
 
@@ -68,8 +65,8 @@ export class Http {
 		options.url = url
 		_.defaultsDeep(options.query, query)
 
-		let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
 		if (options.verbose) {
+			let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
 			console.log(`${options.method} ${minurl}`)
 		}
 
@@ -87,17 +84,17 @@ export class Http {
 			options.url += `?${stringify}`
 		}
 
-		let resolved = await Http.send(options)
+		let resolved = await (options.memoize ? Http.msend(options) : Http.send(options))
 		let { request, response, body } = resolved
 
 		if (response.statusCode >= 400) {
-			throw new HTTPError(resolved)
+			throw new HTTPError(body, options, response)
 		}
 
 		if (options.afterResponse) {
 			let { prepend = [], append = [] } = options.afterResponse
 			for (let hook of _.concat(prepend, append)) {
-				await hook(resolved)
+				await hook(options, resolved)
 			}
 		}
 
@@ -117,13 +114,7 @@ export class Http {
 		return this.request({ method: 'DELETE', url, ...config }).then(({ body }) => body)
 	}
 
-	static merge(...configs: Config[]) {
-		return _.mergeWith({}, ...configs, (a, b) => {
-			if (_.isArray(a) && _.isArray(b)) return a.concat(b)
-		}) as Config
-	}
-
-	private static send(options: Config) {
+	private static send(options: get.Options) {
 		return new Promise<Resolved>((resolve, reject) => {
 			let request = get(options, (error, response) => {
 				if (error) {
@@ -135,11 +126,27 @@ export class Http {
 					}
 					let body = data.toString()
 					if (body) {
-						body = jsonparse(body).value || body
+						body = fastJsonParse(body).value || body
 					}
-					resolve({ options, request, response, body })
+					resolve({ request, response, body })
 				})
 			})
 		})
+	}
+
+	private static msend = memoize(Http.send, {
+		cacheKey(options) {
+			try {
+				return JSON.stringify(options)
+			} catch {
+				return fastJsonStringify(options)
+			}
+		},
+	})
+
+	static merge(...configs: Config[]) {
+		return _.mergeWith({}, ...configs, (a, b) => {
+			if (_.isArray(a) && _.isArray(b)) return a.concat(b)
+		}) as Config
 	}
 }
