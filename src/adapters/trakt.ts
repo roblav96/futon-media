@@ -3,36 +3,32 @@ import * as media from './media'
 import { Http } from './http'
 
 export const client = new Http({
+	json: true,
 	baseUrl: 'https://api.trakt.tv',
+	query: { extended: 'full' },
 	headers: {
-		'content-type': 'application/json',
 		'trakt-api-version': '2',
 		'trakt-api-key': process.env.TRAKT_KEY,
 	},
-	query: {
-		extended: 'full',
-	},
-	hooks: {
-		// afterResponse: [
-		// 	response => {
-		// 		if (_.isPlainObject(response.body)) {
-		// 			debloat(response.body)
-		// 		}
-		// 		if (_.isArray(response.body)) {
-		// 			response.body.forEach(result => {
-		// 				debloat(result)
-		// 				media.TYPES.forEach(type => debloat(result[type]))
-		// 			})
-		// 		}
-		// 		return response
-		// 	},
-		// ],
+	afterResponse: {
+		append: [
+			(options, { body }) => {
+				debloat(body)
+				if (_.isArray(body)) {
+					body.forEach(result => {
+						debloat(result)
+						media.TYPES.forEach(type => debloat(result[type]))
+					})
+				}
+			},
+		],
 	},
 })
 
-function debloat(full: any) {
+function debloat(value: any) {
+	if (!_.isPlainObject(value)) return
 	let keys = ['available_translations', 'images']
-	keys.forEach(key => _.unset(full, key))
+	keys.forEach(key => _.unset(value, key))
 }
 
 export const RESULT_ITEM = {

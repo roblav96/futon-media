@@ -13,9 +13,8 @@ import * as scraper from './adapters/scraper'
 import { Rarbg } from './scrapers/rarbg'
 
 async function start() {
-	console.log(`start`)
-	// let item = await getItem.menu()
-	// console.log(`item ->`, item)
+	let item = await getItem.menu()
+	console.log(`item ->`, item)
 	// let scraper = new Rarbg(item)
 }
-start().catch(error => console.error(`catch Error ->`, error))
+start().catch(error => console.error(`start Error ->`, error))

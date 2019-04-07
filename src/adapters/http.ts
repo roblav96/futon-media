@@ -4,8 +4,8 @@ import * as concat from 'simple-concat'
 import * as memoize from 'mem'
 import * as qs from 'query-string'
 import * as normalize from 'normalize-url'
-import * as fastJsonParse from 'fast-json-parse'
-import fastJsonStringify from 'fast-safe-stringify'
+import * as fastParse from 'fast-json-parse'
+import fastStringify from 'fast-safe-stringify'
 
 interface Config extends get.Options {
 	afterResponse?: Hooks<(options: Config, resolved: Resolved) => void | Promise<void>>
@@ -126,7 +126,7 @@ export class Http {
 					}
 					let body = data.toString()
 					if (body) {
-						body = fastJsonParse(body).value || body
+						body = fastParse(body).value || body
 					}
 					resolve({ request, response, body })
 				})
@@ -139,7 +139,7 @@ export class Http {
 			try {
 				return JSON.stringify(options)
 			} catch {
-				return fastJsonStringify(options)
+				return fastStringify(options)
 			}
 		},
 	})
