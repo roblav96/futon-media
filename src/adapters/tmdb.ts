@@ -1,26 +1,34 @@
 import * as _ from 'lodash'
+import * as media from './media'
 import { Http } from './http'
 
-export const http = new Http({
-	baseUrl: 'https://api.themoviedb.org',
+export const client = new Http({
+	baseUrl: 'https://api.themoviedb.org/3',
 	query: { api_key: process.env.TMDB_KEY },
-	hooks: {
-		// afterResponse: [
-		// 	response => {
-		// 		if (_.isPlainObject(response.body)) {
-		// 			debloat(response.body)
-		// 			let results = _.get(response.body, 'results') as Full[]
-		// 			if (_.isArray(results)) results.forEach(debloat)
-		// 		}
-		// 		return response
-		// 	},
-		// ],
+	afterResponse: {
+		append: [
+			(options, { body }) => {
+				if (_.isPlainObject(body)) {
+					debloat(body)
+					let bloated = ['results', 'seasons', 'episodes']
+					bloated.forEach(key => {
+						let value = body[key]
+						_.isArray(value) && value.forEach(debloat)
+					})
+				}
+			},
+		],
 	},
 })
 
-function debloat(full: any) {
+function debloat(value: any) {
 	let keys = ['crew', 'guest_stars', 'production_companies']
-	keys.forEach(key => _.unset(full, key))
+	keys.forEach(key => _.unset(value, key))
+}
+
+export function toResult(full: Full) {
+	let type = full.media_type == 'tv' ? 'show' : full.media_type
+	return ({ [type]: full } as any) as Result
 }
 
 export interface Paginated<T> {
@@ -833,3 +841,11 @@ export interface Person {
 }
 
 export type Full = Movie & Show & Season & Episode & Person
+
+export interface Result {
+	movie: Movie
+	show: Show
+	season: Season
+	episode: Episode
+	person: Person
+}

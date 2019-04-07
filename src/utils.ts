@@ -8,7 +8,7 @@ export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
 }
 
 export function clean(value: string) {
-	return stripAnsi(_.unescape(value)) as string
+	return stripAnsi(_.unescape(value))
 }
 
 export function minify(value: string) {
@@ -42,11 +42,11 @@ export function filterWords(value: string, words: string[]) {
 		.join(' ')
 }
 
-export function toSlug(value: string, lowercase = true) {
+export function toSlug(value: string) {
 	let slug = slugify(clean(value).replace(/'/g, ''), {
-		separator: ' ',
 		decamelize: false,
-		lowercase: lowercase == false,
+		lowercase: true,
+		separator: ' ',
 	})
 	return filterWords(slug, ['a', 'an', 'and', 'of', 'the'])
 }

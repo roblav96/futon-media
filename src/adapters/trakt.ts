@@ -3,7 +3,6 @@ import * as media from './media'
 import { Http } from './http'
 
 export const client = new Http({
-	json: true,
 	baseUrl: 'https://api.trakt.tv',
 	query: { extended: 'full' },
 	headers: {
@@ -13,7 +12,9 @@ export const client = new Http({
 	afterResponse: {
 		append: [
 			(options, { body }) => {
-				debloat(body)
+				if (_.isPlainObject(body)) {
+					debloat(body)
+				}
 				if (_.isArray(body)) {
 					body.forEach(result => {
 						debloat(result)
@@ -26,7 +27,6 @@ export const client = new Http({
 })
 
 function debloat(value: any) {
-	if (!_.isPlainObject(value)) return
 	let keys = ['available_translations', 'images']
 	keys.forEach(key => _.unset(value, key))
 }
@@ -187,7 +187,6 @@ export interface Person {
 export type Full = Movie & Show & Season & Episode & Person
 
 export interface Result extends Extras {
-	type: media.ContentType
 	movie: Movie
 	show: Show
 	season: Season

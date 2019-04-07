@@ -3,6 +3,7 @@ import * as get from 'simple-get'
 import * as concat from 'simple-concat'
 import * as memoize from 'mem'
 import * as qs from 'query-string'
+import * as errors from 'http-errors'
 import * as normalize from 'normalize-url'
 import * as fastParse from 'fast-json-parse'
 import fastStringify from 'fast-safe-stringify'
@@ -38,6 +39,7 @@ export class HTTPError extends Error {
 
 export class Http {
 	static defaults = {
+		json: true,
 		method: 'GET',
 		headers: {
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
@@ -87,6 +89,9 @@ export class Http {
 		let resolved = await (options.memoize ? Http.msend(options) : Http.send(options))
 		let { request, response, body } = resolved
 
+		if (!response.statusMessage) {
+			response.statusMessage = errors[response.statusCode].name
+		}
 		if (response.statusCode >= 400) {
 			throw new HTTPError(body, options, response)
 		}

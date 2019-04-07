@@ -9,12 +9,16 @@ export abstract class Scraper<Query extends object = any, Result = any> {
 	static scrapers = [Rarbg]
 
 	get slugs() {
-		let title = utils.toSlug(this.item.full.title)
-		if (this.item.movie) title += ` ${this.item.movie.year}`
-		return [title]
+		// let title = this.item.movie ? (this.item.movie.title + ' ' + this.item.movie.year) : ()
+		return []
+		
+		// if (this.item.movie) {
+		// 	title += `${this.item.movie.year}`
+		// }
+		// return [title]
 	}
 
-	constructor(public item: media.Item, public results$: rx.Observable<any>) {
+	constructor(public item: media.Item) {
 		this.scrape()
 	}
 

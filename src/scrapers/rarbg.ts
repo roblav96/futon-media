@@ -6,59 +6,60 @@ import { Http } from '../adapters/http'
 import { Scraper } from '../adapters/scraper'
 
 export const client = new Http({
-	// mutableDefaults: true,
 	baseUrl: 'https://torrentapi.org',
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
 	},
-	hooks: {
-		// beforeRequest: [
-		// 	async options => {
-		// 		if (options.path.includes('get_token')) {
-		// 			return
-		// 		}
-		// 		if (!client.got.defaults.options.query['token']) {
-		// 			let token = await syncToken()
-		// 			// options.path += `&token=${token}`
-		// 		}
-		// 		options.path += `&${qs.stringify({
-		// 			mode: 'search',
-		// 			format: 'json_extended',
-		// 			limit: 100,
-		// 			ranked: 0,
-		// 		})}`
-		// 	},
-		// ],
-		// afterResponse: [
-		// 	async (response, retry) => {
-		// 		if (_.inRange(_.get(response.body, 'error_code'), 1, 5)) {
-		// 			let token = await syncToken()
-		// 			return retry({ query: { token } } as GotJSONOptions)
-		// 		}
-		// 		if (_.has(response, 'body.torrent_results')) {
-		// 			response.body = response.body['torrent_results']
-		// 		}
-		// 		return response
-		// 	},
-		// ],
+	beforeRequest: {
+		append: [
+			async options => {
+				if (options.query['get_token']) {
+					return
+				}
+				if (!client.config.query['token']) {
+					let token = await syncToken()
+					options.query['token'] = token
+				}
+				_.defaults(options.query, {
+					mode: 'search',
+					format: 'json_extended',
+					limit: 100,
+					ranked: 0,
+				})
+			},
+		],
+	},
+	afterResponse: {
+		append: [
+			async (options, resolved) => {
+				if (_.inRange(resolved.body.error_code, 1, 5)) {
+					let token = await syncToken()
+					// return retry({ query: { token } } as GotJSONOptions)
+				}
+				if (resolved.body.torrent_results) {
+					resolved.body = resolved.body.torrent_results
+				}
+			},
+		],
 	},
 })
 
 async function syncToken() {
-	// let { token } = await client.get('/pubapi_v2.php', {
-	// 	query: { get_token: 'get_token' },
-	// })
-	// client.got.defaults.options.query['token'] = token
-	// return token
+	let { token } = await client.get('/pubapi_v2.php', {
+		query: { get_token: 'get_token' },
+	})
+	client.config.query['token'] = token
+	return utils.pTimeout(1000, token)
 }
 
 export class Rarbg extends Scraper {
 	async scrape() {
-		let query = {
-			search_string: utils.toSlug(this.item.full.title),
-		} as Query
-		let response = await client.get('/pubapi_v2.php', { query })
-		console.log(`response ->`, response)
+		console.log(`this.slugs ->`, this.slugs)
+		// let results = (await client.get('/pubapi_v2.php', {
+		// 	query: {
+		// 		search_string: utils.toSlug(this.item.full.title),
+		// 	} as Partial<Query>,
+		// })) as Result[]
 	}
 
 	cancel() {}
