@@ -8,36 +8,28 @@ import * as utils from '../utils'
 import pDebounce from 'p-debounce'
 
 export async function menu() {
-	let full = (await prompts.prompts.autocomplete({
+	let item = (await prompts.prompts.autocomplete({
 		message: 'Search',
 		suggest: pDebounce(async (query: string) => {
 			query = query.trim()
 			if (query.length < 2) {
 				return []
 			}
-			let response = (await tmdb.client.get('/search/multi', {
+			let response = (await trakt.client.get('/search/movie,show,episode', {
 				query: { query },
-			})) as tmdb.Paginated<tmdb.Full>
-			let results = response.results
-				.filter(v => ['movie', 'tv'].includes(v.media_type))
-				.sort((a, b) => b.vote_count * b.popularity - a.vote_count * a.popularity)
-			console.log(`results ->`, results)
-			return results.map(v => ({
-				title: `${v.title || v.name}, ${dayjs(v.release_date || v.first_air_date).year()}`,
-				value: v,
-			}))
+			})) as trakt.Result[]
+			return response
+				.map(v => new media.Item(v))
+				.sort((a, b) => b.score - a.score)
+				.map(v => ({
+					title: `${v.full.title}, ${v.full.year}`,
+					value: v,
+				}))
 		}, 100) as any,
-	} as prompts.PromptObject)) as tmdb.Full
-	if (!full) {
-		throw new Error('Unselected tmdb.Full')
+	} as prompts.PromptObject)) as media.Item
+	if (!item) {
+		throw new Error('Unselected media.Item')
 	}
-
-	let results = (await trakt.client.get(`/search/tmdb/${full.id}`)) as trakt.Result[]
-	let result = results.find(v => {
-		let type = full.media_type == 'tv' ? 'show' : full.media_type
-		return v.type == type
-	})
-	let item = new media.Item(result)
 
 	if (item.type == 'show') {
 		let seasons = (await trakt.client.get(
