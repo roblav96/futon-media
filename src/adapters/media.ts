@@ -5,41 +5,30 @@ import * as tmdb from './tmdb'
 import * as utils from '../utils'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
-export const TYPES_REV = _.clone(TYPES).reverse() as ContentType[]
 
 export interface Item extends trakt.Extras {}
 export class Item {
+	type: ContentType
 	movie: trakt.Movie & tmdb.Movie
 	show: trakt.Show & tmdb.Show
 	season: trakt.Season & tmdb.Season
 	episode: trakt.Episode & tmdb.Episode
 	person: trakt.Person & tmdb.Person
-
-	get type() {
-		return TYPES_REV.find(type => _.isPlainObject(this[type]))
-	}
+	full: Full
 
 	get ids() {
 		return this[this.type].ids as trakt.IDs
 	}
-
-	private _full = memoize(() => {
-		return _.merge({}, ...TYPES.filter(v => this[v]).map(v => this[v])) as Full
-	})
-	get full() {
-		return this._full()
+	
+	get zeros() {
+		
 	}
 
-	get popularity() {
-		return this.full.vote_count & this.full.popularity
-	}
-
-	constructor(result: Result) {
+	constructor(result: Partial<trakt.Result>) {
 		this.use(result)
 	}
 
-	use(result: Result) {
-		Object.values(this).forEach(memoize.clear)
+	use(result: Partial<trakt.Result>) {
 		let picked = _.pick(result, TYPES)
 		_.merge(this, picked)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
@@ -48,19 +37,21 @@ export class Item {
 				this[ikey] = rvalue
 			}
 		}
+		utils.define(this, 'type', _.findLast(TYPES, type => _.isPlainObject(this[type])))
+		utils.define(this, 'full', _.merge({}, ...TYPES.map(v => this[v])))
 		return this
 	}
 }
 
 export type ContentType = 'movie' | 'show' | 'season' | 'episode' | 'person'
 export type ContentTypes = 'movies' | 'shows' | 'seasons' | 'episodes' | 'people'
-export type Result = Record<ContentType, Partial<Full>>
 export type Full = typeof Item.prototype.movie &
 	typeof Item.prototype.show &
 	typeof Item.prototype.season &
 	typeof Item.prototype.episode &
 	typeof Item.prototype.person
 
+// export type Result = Record<ContentType, Partial<Full>>
 // export interface Result {
 // 	movie: trakt.Movie & tmdb.Movie
 // 	show: trakt.Show & tmdb.Show

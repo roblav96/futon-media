@@ -5,13 +5,20 @@ import * as media from './media'
 import * as utils from '../utils'
 import { Rarbg } from '../scrapers/rarbg'
 
-export abstract class Scraper<Query extends object = any, Result = any> {
+export abstract class Scraper<Query = any, Result = any> {
+	// abstract sorts: string[]
+	// abstract query(sort: string): Query
+	// abstract results(response: any): Result[]
+
 	static scrapers = [Rarbg]
 
-	get slugs() {
-		// let title = this.item.movie ? (this.item.movie.title + ' ' + this.item.movie.year) : ()
-		return []
-		
+	get queries() {
+		let title = `${this.item.full.title} ${this.item.full.year}`
+		if (this.item.show) {
+			title = this.item.show.title
+		}
+		return [title]
+
 		// if (this.item.movie) {
 		// 	title += `${this.item.movie.year}`
 		// }
@@ -19,12 +26,10 @@ export abstract class Scraper<Query extends object = any, Result = any> {
 	}
 
 	constructor(public item: media.Item) {
-		this.scrape()
+		// this.scrape()
 	}
 
-	abstract scrape(): void
-	// abstract query(sort: string): Query
-	// abstract results(response: any): Result[]
+	// abstract async scrape(): Promise<Torrent[]>
 }
 
 export type Debrid = 'realdebrid' | 'premiumize'
@@ -33,16 +38,29 @@ export interface Torrent {
 	bytes: number
 	cached: Debrid[]
 	date: number
-	// files: File[]
+	files: File[]
 	hash: string
-	hd: boolean
 	magnet: string
 	name: string
 	providers: string[]
-	sd: boolean
 	seeders: number
 	slugs: string[]
-	uhd: boolean
+}
+
+export interface File {
+	accuracy: string[]
+	bytes: number
+	leven: number
+	name: string
+	path: string
+	slug: string
+	url: string
+}
+
+export interface MagnetQuery {
+	dn: string
+	tr: string[]
+	xt: string
 }
 
 // export async function scrape(query: string) {

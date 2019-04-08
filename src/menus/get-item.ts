@@ -8,7 +8,7 @@ import * as utils from '../utils'
 import pDebounce from 'p-debounce'
 
 export async function menu() {
-	let item = (await prompts.prompts.autocomplete({
+	let full = (await prompts.prompts.autocomplete({
 		message: 'Search',
 		suggest: pDebounce(async (query: string) => {
 			query = query.trim()
@@ -18,65 +18,66 @@ export async function menu() {
 			let response = (await tmdb.client.get('/search/multi', {
 				query: { query },
 			})) as tmdb.Paginated<tmdb.Full>
-			let items = response.results
+			let results = response.results
 				.filter(v => ['movie', 'tv'].includes(v.media_type))
-				.map(v => new media.Item(tmdb.toResult(v) as media.Result))
-				.sort((a, b) => b.popularity - a.popularity)
-			// .slice(0, 5)
-			return items.map(item => ({
-				title: `${item.full.title || item.full.name}, ${dayjs(
-					item.full.release_date || item.full.first_air_date
-				).year()}`,
-				value: item,
+				.sort((a, b) => b.vote_count * b.popularity - a.vote_count * a.popularity)
+			console.log(`results ->`, results)
+			return results.map(v => ({
+				title: `${v.title || v.name}, ${dayjs(v.release_date || v.first_air_date).year()}`,
+				value: v,
 			}))
 		}, 100) as any,
-	} as prompts.PromptObject)) as media.Item
-	if (!item) {
-		throw new Error('Unselected media item')
+	} as prompts.PromptObject)) as tmdb.Full
+	if (!full) {
+		throw new Error('Unselected tmdb.Full')
 	}
 
-	// if (item.type == 'movie') {
-	// 	let result = await trakt.client.get(`/search/tmdb/${item.movie.id}`)
-	// 	console.log(`result ->`, result)
-	// }
+	let results = (await trakt.client.get(`/search/tmdb/${full.id}`)) as trakt.Result[]
+	let result = results.find(v => {
+		let type = full.media_type == 'tv' ? 'show' : full.media_type
+		return v.type == type
+	})
+	let item = new media.Item(result)
 
 	if (item.type == 'show') {
-		let { seasons } = (await tmdb.client.get(`/tv/${item.show.id}`)) as tmdb.Show
-		seasons = seasons.filter(v => v.season_number > 0)
+		let seasons = (await trakt.client.get(
+			`/shows/${item.show.ids.slug}/seasons`
+		)) as trakt.Season[]
+		seasons = seasons.filter(v => v.number > 0)
 		let season = (await prompts.prompts.autocomplete({
-			message: `Season`,
+			message: 'Season',
 			suggest: function(query: string) {
 				query = utils.minify(query)
-				let choices = seasons.map(v => ({ title: v.name, value: v }))
+				let choices = seasons.map(season => ({ title: season.title, value: season }))
 				if (!query) return choices
 				return choices.filter(v => utils.minify(v.title).includes(query))
 			} as any,
-		} as prompts.PromptObject)) as tmdb.Season
+		} as prompts.PromptObject)) as trakt.Season
 		if (!season) {
-			throw new Error('Unselected show season')
+			throw new Error('Unselected trakt.Season')
 		}
-		item.use({ season } as media.Result)
+		item.use({ season })
 
-		let { episodes } = (await tmdb.client.get(
-			`/tv/${item.show.id}/season/${item.season.season_number}`
-		)) as tmdb.Season
-		episodes = episodes.filter(v => v.episode_number > 0)
+		let episodes = (await trakt.client.get(
+			`/shows/${item.show.ids.slug}/seasons/${item.season.number}/episodes`
+		)) as trakt.Episode[]
+		episodes = episodes.filter(v => v.number > 0)
 		let episode = (await prompts.prompts.autocomplete({
-			message: `Episode`,
+			message: 'Episode',
 			suggest: function(query: string) {
 				query = utils.minify(query)
-				let choices = episodes.map(v => ({
-					title: `${v.episode_number} ${v.name}`,
-					value: v,
+				let choices = episodes.map(episode => ({
+					title: `${episode.number} ${episode.title}`,
+					value: episode,
 				}))
 				if (!query) return choices
 				return choices.filter(v => utils.minify(v.title).includes(query))
 			} as any,
-		} as prompts.PromptObject)) as tmdb.Episode
+		} as prompts.PromptObject)) as trakt.Episode
 		if (!episode) {
-			throw new Error('Unselected show episode')
+			throw new Error('Unselected trakt.Episode')
 		}
-		item.use({ episode } as media.Result)
+		item.use({ episode })
 	}
 
 	return item

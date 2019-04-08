@@ -1,9 +1,8 @@
 import * as _ from 'lodash'
-import * as qs from 'query-string'
-import * as media from '../adapters/media'
 import * as utils from '../utils'
+import * as media from '../adapters/media'
+import * as scraper from '../adapters/scraper'
 import { Http } from '../adapters/http'
-import { Scraper } from '../adapters/scraper'
 
 export const client = new Http({
 	baseUrl: 'https://torrentapi.org',
@@ -52,20 +51,23 @@ async function syncToken() {
 	return utils.pTimeout(1000, token)
 }
 
-export class Rarbg extends Scraper {
+export class Rarbg extends scraper.Scraper {
 	async scrape() {
-		console.log(`this.slugs ->`, this.slugs)
-		// let results = (await client.get('/pubapi_v2.php', {
-		// 	query: {
-		// 		search_string: utils.toSlug(this.item.full.title),
-		// 	} as Partial<Query>,
-		// })) as Result[]
+		let torrents = [] as scraper.Torrent[]
+		for (let sort of ['last', 'seeders']) {
+			
+			let query = {sort} as Query
+			
+			let results = (await client.get('/pubapi_v2.php', {
+				query: {
+					search_string: utils.toSlug(this.item.full.title),
+				} as Partial<Query>,
+			})) as Result[]
+		}
 	}
-
-	cancel() {}
 }
 
-interface Query {
+export interface Query {
 	format: string
 	get_token: string
 	limit: number
@@ -79,13 +81,13 @@ interface Query {
 	token: string
 }
 
-interface Response {
+export interface Response {
 	error: string
 	error_code: number
 	torrent_results: Result[]
 }
 
-interface Result {
+export interface Result {
 	category: string
 	download: string
 	info_page: string

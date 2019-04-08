@@ -17,6 +17,7 @@ async function start() {
 	// let item = items.EPISODE
 	let item = await getItem.menu()
 	console.log(`item ->`, item)
-	let scraper = new Rarbg(item)
+	// let scraper = new Rarbg(item)
+	// let torrents = await scraper.scrape()
 }
 start().catch(error => console.error(`start Error ->`, error))

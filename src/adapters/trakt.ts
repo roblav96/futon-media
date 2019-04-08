@@ -187,6 +187,7 @@ export interface Person {
 export type Full = Movie & Show & Season & Episode & Person
 
 export interface Result extends Extras {
+	type: media.ContentType
 	movie: Movie
 	show: Show
 	season: Season

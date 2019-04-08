@@ -58,3 +58,7 @@ export function isVideo(file: string) {
 	}
 	return false
 }
+
+export function define<T>(target: T, key: keyof T, value: any) {
+	Object.defineProperty(target, key, { value, configurable: true, writable: false })
+}
