@@ -1,86 +1,64 @@
 import * as _ from 'lodash'
-import * as rx from 'rxjs'
+import * as pAll from 'p-all'
 import * as http from './http'
 import * as media from './media'
 import * as utils from '../utils'
-import { Rarbg } from '../scrapers/rarbg'
+import { Torrent } from './torrent'
 
-export abstract class Scraper<Query = any, Result = any> {
-	// abstract sorts: string[]
-	// abstract query(sort: string): Query
-	// abstract results(response: any): Result[]
+export async function scrape(...args: ConstructorParameters<typeof Scraper>) {
+	let { Rarbg } = await import('../scrapers/rarbg')
+	let scrapers = [Rarbg]
+	let torrents = await pAll(scrapers.map(scraper => () => new scraper(...args).scrape()))
+	return torrents
+}
 
-	static scrapers = [Rarbg]
+export interface Scraper {
+	sorts: string[]
+	concurrency: number
+	getTorrents(slug: string, sort: string): Promise<Torrent[]>
+}
+export class Scraper<Query = any, Result = any> {
+	sorts = ['']
+	concurrency = this.sorts.length
 
 	get ids() {
 		return this.item.show ? this.item.show.ids : this.item.ids
 	}
 
-	get queries() {
-		let queries = [] as string[]
+	get slugs() {
+		let slugs = [] as string[]
 		if (this.item.movie) {
-			queries.push(`${this.item.movie.title} ${this.item.movie.year}`)
-			if (this.item.movie.belongs_to_collection) {
+			slugs.push(`${this.item.movie.title} ${this.item.movie.year}`)
+			if (this.rigorous && this.item.movie.belongs_to_collection) {
 				let collection = this.item.movie.belongs_to_collection.name.split(' ')
-				queries.push(collection.slice(0, -1).join(' '))
+				slugs.push(collection.slice(0, -1).join(' '))
 			}
 		}
 		if (this.item.show) {
 			let title = this.item.show.title
-			queries.push(title)
-			this.item.s00 && queries.push(`${title} s${this.item.s00.z}`)
-			if (this.item.s00) {
-				queries.push(`${title} s${this.item.s00.z}`)
-				if (this.item.e00) {
-					queries.push(`${title} s${this.item.s00.z}e${this.item.e00.z}`)
+			this.rigorous && slugs.push(title)
+			if (this.item.season) {
+				slugs.push(`${title} s${this.item.s00.z}`)
+				this.rigorous && slugs.push(`${title} season ${this.item.s00.n}`)
+				if (this.rigorous && this.item.episode) {
+					slugs.push(`${title} s${this.item.s00.z}e${this.item.e00.z}`)
 				}
 			}
 		}
-		return queries.map(utils.toSlug)
+		return slugs.map(utils.toSlug)
 	}
 
-	constructor(public item: media.Item) {
-		// this.scrape()
+	constructor(public item: media.Item, public rigorous = false) {}
+
+	async scrape() {
+		let combinations = [] as Parameters<typeof Scraper.prototype.getTorrents>[]
+		this.slugs.forEach(slug => this.sorts.forEach(sort => combinations.push([slug, sort])))
+		let torrents = (await pAll(combinations.map(args => () => this.getTorrents(...args)), {
+			concurrency: this.concurrency,
+		})).flat()
+		torrents.forEach(v => {
+			v.providers.push(this.constructor.name)
+		})
+		return torrents
 	}
-
-	// abstract async scrape(): Promise<Torrent[]>
 }
-
-export type Debrid = 'realdebrid' | 'premiumize'
-
-export interface Torrent {
-	bytes: number
-	cached: Debrid[]
-	date: number
-	files: File[]
-	hash: string
-	magnet: string
-	name: string
-	providers: string[]
-	seeders: number
-}
-
-export interface File {
-	accuracy: string[]
-	bytes: number
-	leven: number
-	name: string
-	path: string
-	slug: string
-	url: string
-}
-
-export interface MagnetQuery {
-	dn: string
-	tr: string[]
-	xt: string
-}
-
-// export async function scrape(query: string) {
-// 	let url = `https://theredbear.cc/searchZ?q=${query}`
-// 	console.time(`content`)
-// 	let content = await http.get(url)
-// 	console.timeEnd(`content`)
-// 	// let content = await puppeteer.getHTML(url)
-// 	// console.log(`content ->`, content)
-// }

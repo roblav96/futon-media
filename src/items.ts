@@ -1,9 +1,8 @@
 import * as _ from 'lodash'
-import * as media from './adapters/media'
 import * as tmdb from './adapters/tmdb'
 import * as trakt from './adapters/trakt'
 
-export const MOVIE = new media.Item({
+export const MOVIE = {
 	movie: {
 		adult: false,
 		backdrop_path: '/1R2ihQztuRTIqN3pFBR1yrBMd7w.jpg',
@@ -80,7 +79,7 @@ export const MOVIE = new media.Item({
 		year: 2009,
 	},
 	score: 495.50922,
-} as trakt.Result & tmdb.Result)
+} as trakt.Result & tmdb.Result
 
 const TV = {
 	episode: {
@@ -159,6 +158,6 @@ const TV = {
 	},
 } as trakt.Result
 
-export const EPISODE = new media.Item(TV)
-export const SEASON = new media.Item(_.omit(TV, 'episode'))
-export const SHOW = new media.Item(_.omit(TV, 'episode', 'season'))
+export const EPISODE = TV
+export const SEASON = _.omit(TV, 'episode')
+export const SHOW = _.omit(TV, 'episode', 'season')

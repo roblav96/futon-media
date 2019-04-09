@@ -1,5 +1,6 @@
 import * as shimmer from 'shimmer'
-import * as colors from 'ansi-colors'
+import * as ansi from 'ansi-colors'
+import * as ms from 'pretty-ms'
 import * as _ from 'lodash'
 import * as util from 'util'
 
@@ -9,6 +10,7 @@ _.merge(util.inspect.defaultOptions, {
 	// showHidden: true,
 } as util.InspectOptions)
 
+let previous = Date.now()
 for (let [method, color] of Object.entries({
 	log: 'blue',
 	info: 'green',
@@ -19,15 +21,27 @@ for (let [method, color] of Object.entries({
 	shimmer.wrap(console, method as any, function wrapper(fn) {
 		return function called(...args: string[]) {
 			if (_.isString(args[0])) {
-				let padding = '\n'
+				let padding = '\n\n'
+				let now = Date.now()
+				let delta = now - previous
+				previous = now
 				// ⦁ ● ⧭ ⬤ ⚫︎ ◉ ◼︎ ➤ ► ∎ ⦁ 𝓓 ♦︎ ☁︎ ✚ ☗ █
-				args.unshift(padding + colors[color]('◉'))
+				args.unshift(ansi[color]('●') + ' ' + ansi.dim(`+${ms(delta)}`))
 				args.push(padding)
 			}
 			return fn.apply(console, args)
 		}
 	})
 }
+
+let stdout = (console as any)._stdout
+if (stdout.isTTY) {
+	stdout.isTTY = false
+	process.nextTick(() => (stdout.isTTY = true))
+}
+console.clear()
+
+console.log('◼︎◼︎◼︎◼︎', new Date().toLocaleTimeString(), '◼︎◼︎◼︎◼︎')
 
 // import * as inspector from 'inspector'
 // inspector.open(process.debugPort)

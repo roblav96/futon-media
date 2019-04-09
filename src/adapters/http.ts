@@ -5,6 +5,8 @@ import * as memoize from 'mem'
 import * as qs from 'query-string'
 import * as errors from 'http-errors'
 import * as normalize from 'normalize-url'
+import * as ConfigStore from 'configstore'
+import * as pkgup from 'read-pkg-up'
 import * as fastParse from 'fast-json-parse'
 import fastStringify from 'fast-safe-stringify'
 
@@ -59,7 +61,7 @@ export class Http {
 		let options = Http.merge(this.config, config)
 
 		let { url, query } = qs.parseUrl(
-			normalize(options.baseUrl + options.url, {
+			normalize((options.baseUrl || '') + options.url, {
 				normalizeProtocol: false,
 				removeQueryParameters: null,
 				sortQueryParameters: false,
@@ -84,7 +86,7 @@ export class Http {
 
 		// if (options.debug) {
 		// 	console.log(`${ansi.green(options.method)} ${options.url}`)
-		// } else 
+		// } else
 		if (options.verbose) {
 			let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
 			console.log(options.method, options.url, options.query)
@@ -143,15 +145,26 @@ export class Http {
 		})
 	}
 
-	private static msend = memoize(Http.send, {
-		cacheKey(options) {
-			try {
-				return JSON.stringify(options)
-			} catch {
-				return fastStringify(options)
-			}
-		},
-	})
+	private static storage = new ConfigStore(pkgup.sync().pkg.name)
+	private static msend(options: get.Options) {
+		let key = fastStringify(options)
+		if (Http.storage.has(key)) {
+			let resolved = fastParse(Http.storage.get(key))
+			console.log(`resolved ->`, resolved)
+			if (resolved.err) Http.storage.delete(key)
+			else return resolved.value
+		}
+		return Http.send(options).then(resolved => {
+			Http.storage.set(key, fastStringify(resolved))
+			return resolved
+		})
+	}
+	// private static msend = memoize(Http.send, {
+	// 	cache: Http.storage,
+	// 	cacheKey(options) {
+	// 		return fastStringify.stable(options)
+	// 	},
+	// })
 
 	static merge(...configs: Config[]) {
 		return _.mergeWith({}, ...configs, (a, b) => {
