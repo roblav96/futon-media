@@ -72,5 +72,10 @@ export async function menu() {
 		item.use({ episode })
 	}
 
+	// if (item.type == 'movie') {
+	// 	let movie = (await tmdb.client.get(`/movie/${item.ids.tmdb}`)) as tmdb.Movie
+	// 	item.use({ movie })
+	// }
+
 	return item
 }

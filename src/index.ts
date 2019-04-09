@@ -14,10 +14,11 @@ import * as scraper from './adapters/scraper'
 import { Rarbg } from './scrapers/rarbg'
 
 async function start() {
-	// let item = items.EPISODE
+	// let item = items.MOVIE
 	let item = await getItem.menu()
 	console.log(`item ->`, item)
-	// let scraper = new Rarbg(item)
-	// let torrents = await scraper.scrape()
+	let scraper = new Rarbg(item)
+	let torrents = await scraper.scrape()
+	console.log(`torrents ->`, torrents)
 }
 start().catch(error => console.error(`start Error ->`, error))

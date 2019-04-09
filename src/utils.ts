@@ -32,7 +32,7 @@ export function parseInt(value: string) {
 }
 
 export function zeroSlug(value: number) {
-	return (value / 100).toFixed(2).slice(-2)
+	return value && (value / 100).toFixed(2).slice(-2)
 }
 
 export function filterWords(value: string, words: string[]) {

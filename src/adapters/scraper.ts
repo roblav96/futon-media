@@ -12,17 +12,31 @@ export abstract class Scraper<Query = any, Result = any> {
 
 	static scrapers = [Rarbg]
 
-	get queries() {
-		let title = `${this.item.full.title} ${this.item.full.year}`
-		if (this.item.show) {
-			title = this.item.show.title
-		}
-		return [title]
+	get ids() {
+		return this.item.show ? this.item.show.ids : this.item.ids
+	}
 
-		// if (this.item.movie) {
-		// 	title += `${this.item.movie.year}`
-		// }
-		// return [title]
+	get queries() {
+		let queries = [] as string[]
+		if (this.item.movie) {
+			queries.push(`${this.item.movie.title} ${this.item.movie.year}`)
+			if (this.item.movie.belongs_to_collection) {
+				let collection = this.item.movie.belongs_to_collection.name.split(' ')
+				queries.push(collection.slice(0, -1).join(' '))
+			}
+		}
+		if (this.item.show) {
+			let title = this.item.show.title
+			queries.push(title)
+			this.item.s00 && queries.push(`${title} s${this.item.s00.z}`)
+			if (this.item.s00) {
+				queries.push(`${title} s${this.item.s00.z}`)
+				if (this.item.e00) {
+					queries.push(`${title} s${this.item.s00.z}e${this.item.e00.z}`)
+				}
+			}
+		}
+		return queries.map(utils.toSlug)
 	}
 
 	constructor(public item: media.Item) {
@@ -44,7 +58,6 @@ export interface Torrent {
 	name: string
 	providers: string[]
 	seeders: number
-	slugs: string[]
 }
 
 export interface File {

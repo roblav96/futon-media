@@ -12,9 +12,9 @@
 	"scripts": {
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist && tsc",
-		"start": "del dist && redrun -p start:*",
+		"start": "del dist && redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -p dist && nodemon --inspect",
+		"start:node": "just-wait -s -p dist && nodemon -q",
 		"test": "del dist && tsc; node dist/index.js"
 	},
 	"nodemonConfig": {
@@ -38,9 +38,9 @@
 		"magnet-uri": "^5.2.4",
 		"mem": "^4.3.0",
 		"normalize-url": "^4.3.0",
-		"p-all": "^2.0.0",
+		"p-all": "^2.1.0",
 		"p-debounce": "^2.1.0",
-		"p-queue": "^4.0.0",
+		"p-queue": "^5.0.0",
 		"pretty-bytes": "^5.1.0",
 		"prompts": "^2.0.4",
 		"puppeteer": "^1.14.0",
@@ -50,6 +50,7 @@
 		"string-fn": "^2.2.0",
 		"string-similarity": "^3.0.0",
 		"strip-ansi": "^5.2.0",
+		"ts-optchain": "^0.1.5",
 		"url-parse": "^1.4.4"
 	},
 	"devDependencies": {
@@ -60,7 +61,7 @@
 		"@types/http-errors": "^1.6.1",
 		"@types/lodash": "^4.14.123",
 		"@types/magnet-uri": "^5.1.2",
-		"@types/node": "^11.13.0",
+		"@types/node": "^11.13.2",
 		"@types/p-all": "^1.0.0",
 		"@types/p-queue": "^3.2.1",
 		"@types/pretty-bytes": "^5.1.0",
@@ -77,10 +78,10 @@
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
 		"node-env-dev": "^1.1.2",
-		"nodemon": "^1.18.10",
+		"nodemon": "^1.18.11",
 		"redrun": "^7.1.5",
 		"shimmer": "^1.2.1",
-		"typescript": "^3.4.1"
+		"typescript": "^3.4.2"
 	},
 	"license": "Unlicense",
 	"author": "Robert Laverty <roblav96@gmail.com> (https://github.com/roblav96)",

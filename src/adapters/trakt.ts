@@ -60,12 +60,7 @@ export interface Movie {
 	country: string
 	genres: string[]
 	homepage: string
-	ids: {
-		imdb: string
-		slug: string
-		tmdb: number
-		trakt: number
-	}
+	ids: IDs
 	language: string
 	overview: string
 	rating: number
@@ -93,14 +88,7 @@ export interface Show {
 	first_aired: string
 	genres: string[]
 	homepage: string
-	ids: {
-		imdb: string
-		slug: string
-		tmdb: number
-		trakt: number
-		tvdb: number
-		tvrage: number
-	}
+	ids: IDs
 	language: string
 	network: string
 	overview: string
@@ -115,16 +103,13 @@ export interface Show {
 }
 
 export interface Season {
+	aired_episodes: number
 	available_translations: string[]
 	comment_count: number
+	episode_count: number
 	first_aired: string
-	ids: {
-		imdb: string
-		tmdb: number
-		trakt: number
-		tvdb: number
-		tvrage: number
-	}
+	ids: IDs
+	network: string
 	number: number
 	number_abs: number
 	overview: string
@@ -145,13 +130,7 @@ export interface Episode {
 	available_translations: string[]
 	comment_count: number
 	first_aired: string
-	ids: {
-		imdb: string
-		tmdb: number
-		trakt: number
-		tvdb: number
-		tvrage: number
-	}
+	ids: IDs
 	number: number
 	number_abs: number
 	overview: string
@@ -174,13 +153,7 @@ export interface Person {
 	birthplace: string
 	death: string
 	homepage: string
-	ids: {
-		imdb: string
-		slug: string
-		tmdb: number
-		trakt: number
-		tvrage: number
-	}
+	ids: IDs
 	name: string
 }
 

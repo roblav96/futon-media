@@ -12,6 +12,7 @@ interface Config extends get.Options {
 	afterResponse?: Hooks<(options: Config, resolved: Resolved) => void | Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => void | Promise<void>>
+	debug?: boolean
 	memoize?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
 	query?: Record<string, string | number | string[] | number[]>
@@ -67,11 +68,6 @@ export class Http {
 		options.url = url
 		_.defaultsDeep(options.query, query)
 
-		if (options.verbose) {
-			let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
-			console.log(`${options.method} ${minurl}`)
-		}
-
 		if (options.beforeRequest) {
 			let { prepend = [], append = [] } = options.beforeRequest
 			for (let hook of _.concat(prepend, append)) {
@@ -84,6 +80,14 @@ export class Http {
 				arrayFormat: options.qsArrayFormat || 'bracket',
 			})
 			options.url += `?${stringify}`
+		}
+
+		// if (options.debug) {
+		// 	console.log(`${ansi.green(options.method)} ${options.url}`)
+		// } else 
+		if (options.verbose) {
+			let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
+			console.log(options.method, options.url, options.query)
 		}
 
 		let resolved = await (options.memoize ? Http.msend(options) : Http.send(options))
