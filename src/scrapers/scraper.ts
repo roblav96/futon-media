@@ -14,7 +14,8 @@ import * as Memoize from '../memoize'
 export async function scrape(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
 		// (await import('./rarbg')).Rarbg,
-		(await import('./solidtorrents')).SolidTorrents,
+		// (await import('./solidtorrents')).SolidTorrents,
+		(await import('./ytsam')).YtsAm,
 	] as typeof Scraper[]
 
 	let results = (await pAll(

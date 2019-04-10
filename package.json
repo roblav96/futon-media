@@ -80,7 +80,7 @@
 		"@types/string-similarity": "^3.0.0",
 		"@types/url-parse": "^1.4.3",
 		"del-cli": "^1.1.0",
-		"dts-generate": "^1.0.6",
+		"dts-generate": "^1.0.8",
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
 		"node-env-dev": "^1.1.2",

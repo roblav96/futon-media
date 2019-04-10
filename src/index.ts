@@ -19,6 +19,6 @@ async function start() {
 	// let item = await getItem.menu()
 	// console.log(`item ->`, item)
 	let results = await scraper.scrape(item)
-	console.log(`results ->`, results)
+	// console.log(`results ->`, results)
 }
 start().catch(error => console.error(`start Error ->`, error))

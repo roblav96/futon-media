@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import * as util from 'util'
 
 _.merge(util.inspect.defaultOptions, {
-	depth: 2,
+	depth: 8,
 	getters: true,
 	// showHidden: true,
 } as util.InspectOptions)

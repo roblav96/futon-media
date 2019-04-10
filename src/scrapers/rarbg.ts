@@ -15,7 +15,7 @@ export const client = new http.Http({
 	baseUrl: 'https://torrentapi.org',
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
-	},
+	} as Partial<Query>,
 	beforeRequest: {
 		append: [
 			async options => {
