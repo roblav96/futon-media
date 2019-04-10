@@ -18,7 +18,7 @@ async function start() {
 	// let item = new media.Item(items.EPISODE)
 	// let item = await getItem.menu()
 	// console.log(`item ->`, item)
-	let torrents = await scraper.scrape(item, true)
+	let torrents = await scraper.scrape(item)
 	console.log(`torrents ->`, torrents)
 }
 start().catch(error => console.error(`start Error ->`, error))

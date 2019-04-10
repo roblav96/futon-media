@@ -6,8 +6,8 @@ import * as http from '../adapters/http'
 import * as scraper from './scraper'
 
 const CONFIG = {
-	limit: 5,
-	throttle: 1000,
+	limit: 100,
+	throttle: 500,
 }
 
 export const client = new http.Http({
@@ -60,21 +60,8 @@ async function syncToken() {
 
 export class Rarbg extends scraper.Scraper<Query, Result> {
 	sorts = ['last', 'seeders']
-
 	async getResults(slug: string, sort: string) {
 		let query = { sort, search_string: slug } as Query
-
-		// if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
-		// else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
-		// else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
-		// else query.search_string = slug
-		// if (this.item.movie && index >= this.sorts.length) {
-		// 	query = { sort, search_string: slug } as Query
-		// }
-		// if (this.item.show) {
-		// 	query.search_string = utils.filterWords(slug, utils.toSlug(this.item.show.title))
-		// }
-
 		let results = (await client.get('/pubapi_v2.php', {
 			query: query as any,
 			verbose: true,

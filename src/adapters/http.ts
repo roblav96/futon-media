@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
-import * as get from 'simple-get'
 import * as concat from 'simple-concat'
+import * as sget from 'simple-get'
 import * as memoize from 'mem'
 import * as qs from 'query-string'
 import * as errors from 'http-errors'
@@ -10,7 +10,7 @@ import * as pkgup from 'read-pkg-up'
 import * as fastParse from 'fast-json-parse'
 import fastStringify from 'fast-safe-stringify'
 
-interface Config extends get.Options {
+interface Config extends sget.Options {
 	afterResponse?: Hooks<(options: Config, resolved: Resolved) => void | Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => void | Promise<void>>
@@ -24,15 +24,15 @@ type Hooks<T> = { append?: T[]; prepend?: T[] }
 
 interface Resolved {
 	body: any
-	request: get.Request
-	response: get.Response
+	request: sget.Request
+	response: sget.Response
 }
 
-export interface HTTPError extends Pick<get.Options, 'method' | 'url'> {}
-export interface HTTPError extends Pick<get.Response, 'statusCode' | 'statusMessage'> {}
+export interface HTTPError extends Pick<sget.Options, 'method' | 'url'> {}
+export interface HTTPError extends Pick<sget.Response, 'statusCode' | 'statusMessage'> {}
 export class HTTPError extends Error {
 	name = 'HTTPError'
-	constructor(public body: any, options: Config, response: get.Response) {
+	constructor(public body: any, options: Config, response: sget.Response) {
 		super(`${response.statusCode} ${response.statusMessage}`)
 		Error.captureStackTrace(this, this.constructor)
 		_.merge(this, _.pick(options, 'method', 'url'))
@@ -70,6 +70,11 @@ export class Http {
 		options.url = url
 		_.defaultsDeep(options.query, query)
 
+		if (options.verbose) {
+			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
+			console.log(options.method, minurl, config.query)
+		}
+
 		if (options.beforeRequest) {
 			let { prepend = [], append = [] } = options.beforeRequest
 			for (let hook of _.concat(prepend, append)) {
@@ -84,11 +89,7 @@ export class Http {
 			options.url += `?${stringify}`
 		}
 
-		// if (options.debug) {
-		// 	console.log(`${ansi.green(options.method)} ${options.url}`)
-		// } else
-		if (options.verbose) {
-			let minurl = normalize(url, { stripProtocol: true, stripWWW: true })
+		if (options.debug) {
 			console.log(options.method, options.url, options.query)
 		}
 
@@ -126,7 +127,7 @@ export class Http {
 	}
 
 	private static storage = new ConfigStore(pkgup.sync().pkg.name)
-	private static msend(options: get.Options) {
+	private static msend(options: sget.Options) {
 		let key = fastStringify(options)
 		if (Http.storage.has(key)) {
 			let resolved = fastParse(Http.storage.get(key))
@@ -139,9 +140,9 @@ export class Http {
 		})
 	}
 
-	private static send(options: get.Options) {
+	private static send(options: sget.Options) {
 		return new Promise<Resolved>((resolve, reject) => {
-			let request = get(options, (error, response) => {
+			let request = sget(options, (error, response) => {
 				if (error) {
 					return reject(error)
 				}
@@ -171,3 +172,5 @@ export class Http {
 		}) as Config
 	}
 }
+
+export const client = new Http()

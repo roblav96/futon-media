@@ -1,38 +1,34 @@
 import * as _ from 'lodash'
 import * as pAll from 'p-all'
+import * as path from 'path'
 import * as qs from 'query-string'
 import * as magneturi from 'magnet-uri'
 import * as http from '../adapters/http'
 import * as media from '../adapters/media'
 import * as torrent from './torrent'
+import * as filters from './filters'
+import * as trackers from './trackers'
 import * as utils from '../utils'
 import * as Memoize from '../memoize'
 
 export async function scrape(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
-	let scrapers = [
+	let providers = [
 		(await import('./rarbg')).Rarbg,
 		// (await import('./solidtorrents')).SolidTorrents,
 	] as typeof Scraper[]
+
 	let results = (await pAll(
-		scrapers.map(scraper => () => new scraper(item, rigorous).scrape())
+		providers.map(scraper => () => new scraper(item, rigorous).scrape())
 	)).flat()
-	results = results.filter(result => {
-		// if (utils.accuracy(item.slugs, result.name).length > 0) {
-		// 	console.warn(
-		// 		`accuracy.length ->`,
-		// 		result.name,
-		// 		utils.accuracy(slugIds.mSlug, result.name)
-		// 	)
-		// 	return false
-		// }
-		result.hash = magneturi.decode(result.magnet).infoHash.toLowerCase()
-		return
-	})
+	results = results.filter(filters.filter)
 	results = _.uniqWith(results, (from, to) => {
-		if (from.hash != to.hash) {
+		if (to.hash != from.hash) {
 			return false
 		}
+		to.providers = _.uniq(to.providers.concat(from.providers))
+		to.slugs = _.uniq(to.slugs.concat(from.slugs))
 	})
+
 	return results
 }
 
@@ -72,12 +68,23 @@ export class Scraper<Query = any, Result = any> {
 	async scrape() {
 		let combs = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs.forEach(slug => this.sorts.forEach(sort => combs.push([slug, sort])))
-		let results = (await pAll(combs.map(args => () => this.getResults(...args)), {
-			concurrency: this.concurrency,
-		})).flat()
+		let results = (await pAll(
+			combs.map(([slug, sort]) => async () =>
+				(await this.getResults(slug, sort)).map(result => ({
+					providers: [this.constructor.name],
+					slugs: [slug],
+					...result,
+				}))
+			),
+			{ concurrency: this.concurrency }
+		)).flat()
+
+		let seeders = results.map(v => v.seeders)
+		let range = { min: _.min(seeders), max: _.max(seeders) }
 		results.forEach(result => {
-			result.providers = [this.constructor.name]
+			result.seeders = _.round(utils.slider(result.seeders, range.min, range.max))
 		})
+
 		return results
 	}
 }
@@ -90,4 +97,5 @@ export interface Result {
 	name: string
 	providers: string[]
 	seeders: number
+	slugs: string[]
 }

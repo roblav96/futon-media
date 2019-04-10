@@ -62,6 +62,11 @@ export function isVideo(file: string) {
 	return false
 }
 
+export function slider(value: number, min: number, max: number) {
+	if ((max - min) == 0) return 0;
+	return ((value - min) / (max - min)) * 100
+}
+
 export function define<T>(target: T, key: keyof T, value: any) {
 	Object.defineProperty(target, key, { value, configurable: true, writable: false })
 }
