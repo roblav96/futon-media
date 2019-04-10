@@ -18,16 +18,14 @@ export async function menu() {
 			let response = (await trakt.client.get('/search/movie,show,episode', {
 				query: { query },
 			})) as trakt.Result[]
-			let results = response
+			return response
 				.map(v => new media.Item(v))
 				.sort((a, b) => b.score - a.score)
 				.map(v => ({
 					title: `${v.full.title}, ${v.full.year}`,
 					value: v,
 				}))
-			console.log(`results ->`, results)
-			return results
-		}, 100) as any,
+		}, 300) as any,
 	} as prompts.PromptObject)) as media.Item
 	if (!item) {
 		throw new Error('Unselected media.Item')

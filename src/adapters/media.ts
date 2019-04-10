@@ -8,7 +8,7 @@ import * as Memoize from '../memoize'
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
 
 export interface Item extends trakt.Extras {}
-@Memoize.Class
+// @Memoize.All
 export class Item {
 	movie: trakt.Movie & tmdb.Movie
 	show: trakt.Show & tmdb.Show
@@ -16,36 +16,36 @@ export class Item {
 	episode: trakt.Episode & tmdb.Episode
 	person: trakt.Person & tmdb.Person
 
-	// @Memoize.Desc
+	@Memoize.Desc
 	get type() {
 		return _.findLast(TYPES, type => !!this[type])
 	}
 	// _full = memoize(() => {
 	// 	return _.merge({}, ...TYPES.map(v => this[v])) as Full
 	// })
-	// @Memoize.Desc
+	@Memoize.Desc
 	get full() {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
 		// return this._full()
 	}
-	// @Memoize.Desc
+	@Memoize.Desc
 	get ids() {
 		return this[this.type].ids
 	}
 
-	// @Memoize.Desc
+	@Memoize.Desc
 	get s00() {
 		let n = this.season.number || this.episode.season
 		return { n, z: utils.zeroSlug(n) }
 	}
-	// @Memoize.Desc
+	@Memoize.Desc
 	get e00() {
 		let n = this.episode.number
 		return { n, z: utils.zeroSlug(n) }
 	}
 
 	_count = 0
-	// @Memoize.Desc
+	@Memoize.Desc
 	get count() {
 		this._count++
 		return this._count
