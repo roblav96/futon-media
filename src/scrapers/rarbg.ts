@@ -4,10 +4,11 @@ import * as media from '../adapters/media'
 import * as torrent from './torrent'
 import * as http from '../adapters/http'
 import * as scraper from './scraper'
+import { oc } from 'ts-optchain'
 
 const CONFIG = {
 	limit: 100,
-	throttle: 500,
+	throttle: 300,
 }
 
 export const client = new http.Http({
@@ -37,13 +38,6 @@ export const client = new http.Http({
 	afterResponse: {
 		append: [
 			async (options, resolved) => {
-				// if (_.inRange(resolved.body.error_code, 1, 5)) {
-				// 	let token = await syncToken()
-				// 	// return retry({ query: { token } } as GotJSONOptions)
-				// }
-				if (resolved.body.torrent_results) {
-					resolved.body = resolved.body.torrent_results
-				}
 				await utils.pTimeout(CONFIG.throttle)
 			},
 		],
@@ -58,15 +52,16 @@ async function syncToken() {
 	return token
 }
 
-export class Rarbg extends scraper.Scraper<Query, Result> {
+export class Rarbg extends scraper.Scraper {
 	sorts = ['last', 'seeders']
 	async getResults(slug: string, sort: string) {
 		let query = { sort, search_string: slug } as Query
-		let results = (await client.get('/pubapi_v2.php', {
+		let response = (await client.get('/pubapi_v2.php', {
 			query: query as any,
 			verbose: true,
-		})) as Result[]
-		return (results || []).map(v => {
+		})) as Response
+		let results = oc(response).torrent_results([])
+		return results.map(v => {
 			return {
 				bytes: v.size,
 				date: new Date(v.pubdate).valueOf(),
@@ -92,12 +87,6 @@ export interface Query {
 	token: string
 }
 
-export interface Response {
-	error: string
-	error_code: number
-	torrent_results: Result[]
-}
-
 export interface Result {
 	category: string
 	download: string
@@ -118,4 +107,10 @@ export interface Result {
 		tvdb: string
 		tvrage: string
 	}
+}
+
+export interface Response {
+	error: string
+	error_code: number
+	torrent_results: Result[]
 }

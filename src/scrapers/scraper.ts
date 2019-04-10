@@ -13,12 +13,12 @@ import * as Memoize from '../memoize'
 
 export async function scrape(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
-		(await import('./rarbg')).Rarbg,
-		// (await import('./solidtorrents')).SolidTorrents,
+		// (await import('./rarbg')).Rarbg,
+		(await import('./solidtorrents')).SolidTorrents,
 	] as typeof Scraper[]
 
 	let results = (await pAll(
-		providers.map(scraper => () => new scraper(item, rigorous).scrape())
+		providers.map(scraper => () => new scraper(item, rigorous).start())
 	)).flat()
 	results = results.filter(filters.filter)
 	results = _.uniqWith(results, (from, to) => {
@@ -27,7 +27,12 @@ export async function scrape(...[item, rigorous]: ConstructorParameters<typeof S
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
+		if (!to.bytes && from.bytes) to.bytes = from.bytes
+		if (!to.date && from.date) to.date = from.date
+		if (!to.seeders && from.seeders) to.seeders = from.seeders
+		return true
 	})
+	results = _.orderBy(results, 'bytes', 'desc')
 
 	return results
 }
@@ -37,7 +42,7 @@ export interface Scraper {
 	getResults(slug: string, sort: string): Promise<Result[]>
 }
 @Memoize.Class
-export class Scraper<Query = any, Result = any> {
+export class Scraper {
 	concurrency = 1
 
 	get slugs() {
@@ -65,7 +70,7 @@ export class Scraper<Query = any, Result = any> {
 
 	constructor(public item: media.Item, public rigorous = false) {}
 
-	async scrape() {
+	async start() {
 		let combs = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs.forEach(slug => this.sorts.forEach(sort => combs.push([slug, sort])))
 		let results = (await pAll(
@@ -82,7 +87,7 @@ export class Scraper<Query = any, Result = any> {
 		let seeders = results.map(v => v.seeders)
 		let range = { min: _.min(seeders), max: _.max(seeders) }
 		results.forEach(result => {
-			result.seeders = _.round(utils.slider(result.seeders, range.min, range.max))
+			result.score = _.round(utils.slider(result.seeders, range.min, range.max))
 		})
 
 		return results
@@ -97,5 +102,6 @@ export interface Result {
 	name: string
 	providers: string[]
 	seeders: number
+	score: number
 	slugs: string[]
 }
