@@ -125,6 +125,20 @@ export class Http {
 		return this.request({ method: 'DELETE', url, ...config }).then(({ body }) => body)
 	}
 
+	private static storage = new ConfigStore(pkgup.sync().pkg.name)
+	private static msend(options: get.Options) {
+		let key = fastStringify(options)
+		if (Http.storage.has(key)) {
+			let resolved = fastParse(Http.storage.get(key))
+			if (resolved.err) Http.storage.delete(key)
+			else return resolved.value
+		}
+		return Http.send(options).then(resolved => {
+			Http.storage.set(key, fastStringify(resolved))
+			return resolved
+		})
+	}
+
 	private static send(options: get.Options) {
 		return new Promise<Resolved>((resolve, reject) => {
 			let request = get(options, (error, response) => {
@@ -142,21 +156,6 @@ export class Http {
 					resolve({ request, response, body })
 				})
 			})
-		})
-	}
-
-	private static storage = new ConfigStore(pkgup.sync().pkg.name)
-	private static msend(options: get.Options) {
-		let key = fastStringify(options)
-		if (Http.storage.has(key)) {
-			let resolved = fastParse(Http.storage.get(key))
-			console.log(`resolved ->`, resolved)
-			if (resolved.err) Http.storage.delete(key)
-			else return resolved.value
-		}
-		return Http.send(options).then(resolved => {
-			Http.storage.set(key, fastStringify(resolved))
-			return resolved
 		})
 	}
 	// private static msend = memoize(Http.send, {

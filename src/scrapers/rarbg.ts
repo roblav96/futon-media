@@ -1,12 +1,16 @@
 import * as _ from 'lodash'
-import * as dts from 'dts-generate'
 import * as utils from '../utils'
 import * as media from '../adapters/media'
-import { Http } from '../adapters/http'
-import { Scraper } from '../adapters/scraper'
-import { Torrent } from '../adapters/torrent'
+import * as torrent from './torrent'
+import * as http from '../adapters/http'
+import * as scraper from './scraper'
 
-export const client = new Http({
+const CONFIG = {
+	limit: 5,
+	throttle: 1000,
+}
+
+export const client = new http.Http({
 	baseUrl: 'https://torrentapi.org',
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
@@ -24,7 +28,7 @@ export const client = new Http({
 				_.defaults(options.query, {
 					mode: 'search',
 					format: 'json_extended',
-					limit: 5,
+					limit: CONFIG.limit,
 					ranked: 0,
 				})
 			},
@@ -40,7 +44,7 @@ export const client = new Http({
 				if (resolved.body.torrent_results) {
 					resolved.body = resolved.body.torrent_results
 				}
-				await utils.pTimeout(500)
+				await utils.pTimeout(CONFIG.throttle)
 			},
 		],
 	},
@@ -54,29 +58,35 @@ async function syncToken() {
 	return token
 }
 
-export class Rarbg extends Scraper<Query, Result> {
+export class Rarbg extends scraper.Scraper<Query, Result> {
 	sorts = ['last', 'seeders']
-	concurrency = 1
 
-	async getTorrents(slug: string, sort: string) {
+	async getResults(slug: string, sort: string) {
 		let query = { sort, search_string: slug } as Query
-		// if (this.ids.imdb) query.search_imdb = this.ids.imdb
-		// else if (this.ids.tmdb) query.search_themoviedb = this.ids.tmdb
-		// else if (this.ids.tvdb) query.search_tvdb = this.ids.tvdb
+
+		// if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
+		// else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
+		// else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
+		// else query.search_string = slug
+		// if (this.item.movie && index >= this.sorts.length) {
+		// 	query = { sort, search_string: slug } as Query
+		// }
+		// if (this.item.show) {
+		// 	query.search_string = utils.filterWords(slug, utils.toSlug(this.item.show.title))
+		// }
+
 		let results = (await client.get('/pubapi_v2.php', {
 			query: query as any,
-			memoize: true,
 			verbose: true,
 		})) as Result[]
-		results = results || []
-		return results.map(v => {
-			return new Torrent({
+		return (results || []).map(v => {
+			return {
 				bytes: v.size,
 				date: new Date(v.pubdate).valueOf(),
 				magnet: v.download,
 				name: v.title,
 				seeders: v.seeders,
-			})
+			} as scraper.Result
 		})
 	}
 }

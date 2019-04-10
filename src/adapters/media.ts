@@ -8,7 +8,7 @@ import * as Memoize from '../memoize'
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
 
 export interface Item extends trakt.Extras {}
-// @Memoize.All
+@Memoize.Class
 export class Item {
 	movie: trakt.Movie & tmdb.Movie
 	show: trakt.Show & tmdb.Show
@@ -16,39 +16,25 @@ export class Item {
 	episode: trakt.Episode & tmdb.Episode
 	person: trakt.Person & tmdb.Person
 
-	@Memoize.Desc
 	get type() {
 		return _.findLast(TYPES, type => !!this[type])
 	}
-	// _full = memoize(() => {
-	// 	return _.merge({}, ...TYPES.map(v => this[v])) as Full
-	// })
-	@Memoize.Desc
-	get full() {
-		return _.merge({}, ...TYPES.map(v => this[v])) as Full
-		// return this._full()
-	}
-	@Memoize.Desc
 	get ids() {
+		if (this.movie) return this.movie.ids
+		if (this.show) return this.show.ids
 		return this[this.type].ids
 	}
+	get full() {
+		return _.merge({}, ...TYPES.map(v => this[v])) as Full
+	}
 
-	@Memoize.Desc
 	get s00() {
 		let n = this.season.number || this.episode.season
 		return { n, z: utils.zeroSlug(n) }
 	}
-	@Memoize.Desc
 	get e00() {
 		let n = this.episode.number
 		return { n, z: utils.zeroSlug(n) }
-	}
-
-	_count = 0
-	@Memoize.Desc
-	get count() {
-		this._count++
-		return this._count
 	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {
@@ -68,8 +54,6 @@ export class Item {
 		return this
 	}
 }
-console.log(`Item ->`)
-console.dir(Item)
 
 export type ContentType = 'movie' | 'show' | 'season' | 'episode' | 'person'
 export type ContentTypes = 'movies' | 'shows' | 'seasons' | 'episodes' | 'people'

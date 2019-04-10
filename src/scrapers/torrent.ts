@@ -1,23 +1,13 @@
 import * as _ from 'lodash'
 import * as magneturi from 'magnet-uri'
+import * as scraper from './scraper'
 
-export interface Torrent extends UnArray<ConstructorParameters<typeof Torrent>> {}
+export interface Torrent extends scraper.Result {}
 export class Torrent {
 	cached = [] as Debrid[]
-	providers = [] as string[]
 	files = [] as File[]
 
-	get hash() {
-		return ''
-	}
-
-	constructor(result: {
-		bytes: number
-		date: number
-		magnet: string
-		name: string
-		seeders: number
-	}) {
+	constructor(result: scraper.Result) {
 		_.merge(this, result)
 	}
 }

@@ -1,11 +1,11 @@
-import * as memoize from 'mem'
+import * as mem from 'mem'
 
 function getter(desc: PropertyDescriptor, prop: string) {
 	let get = desc.get
 	let dot = `__memoize__${prop}`
 	Object.assign(desc, {
 		get() {
-			!this[dot] && Object.defineProperty(this, dot, { value: memoize(get) })
+			!this[dot] && Object.defineProperty(this, dot, { value: mem(get) })
 			return this[dot]()
 		},
 	})
@@ -25,5 +25,5 @@ export function Desc(ctor: any, prop: string, desc: PropertyDescriptor) {
 
 export function clear(ctor: any) {
 	let descs = Object.getOwnPropertyDescriptors(ctor)
-	Object.values(descs).forEach(desc => memoize.clear(desc.value))
+	Object.values(descs).forEach(desc => mem.clear(desc.value))
 }

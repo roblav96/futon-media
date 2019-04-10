@@ -8,7 +8,11 @@ export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
 }
 
 export function clean(value: string) {
-	return stripAnsi(_.unescape(value))
+	return _.deburr(stripAnsi(_.unescape(value)))
+}
+
+export function isForeign(value: string) {
+	return value != _.deburr(value)
 }
 
 export function minify(value: string) {
@@ -35,20 +39,19 @@ export function zeroSlug(value: number) {
 	return value && (value / 100).toFixed(2).slice(-2)
 }
 
-export function filterWords(value: string, words: string[]) {
-	return value
-		.split(' ')
-		.filter(v => !words.includes(v))
-		.join(' ')
+export function filterWords(value: string, sentence: string) {
+	let words = sentence.toLowerCase().split(' ')
+	let split = value.split(' ').filter(v => !words.includes(v.toLowerCase()))
+	return split.join(' ')
 }
 
-export function toSlug(value: string) {
+export function toSlug(value: string, keepcase = false) {
 	let slug = slugify(clean(value).replace(/'/g, ''), {
 		decamelize: false,
-		lowercase: true,
+		lowercase: keepcase == false,
 		separator: ' ',
 	})
-	return filterWords(slug, ['a', 'an', 'and', 'of', 'the'])
+	return filterWords(slug, 'a an and of the')
 }
 
 export const VIDEO_EXTS = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv', 'mpd', 'avi']
