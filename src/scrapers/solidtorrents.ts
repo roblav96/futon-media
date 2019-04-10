@@ -28,9 +28,8 @@ export const client = new http.Http({
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size']
 	async getResults(slug: string, sort: string) {
-		let query = { sort, q: slug } as Query
 		let response = (await client.get('/search', {
-			query: query as any,
+			query: { sort, q: slug } as Partial<Query>,
 			verbose: true,
 		})) as Response
 		let results = oc(response).results([])
@@ -50,6 +49,12 @@ export interface Query {
 	sort: string
 	category: string
 	q: string
+}
+
+export interface Response {
+	hits: number
+	results: Result[]
+	took: number
 }
 
 export interface Result {
@@ -75,10 +80,4 @@ export interface Result {
 	}
 	tags: string[]
 	title: string
-}
-
-export interface Response {
-	hits: number
-	results: Result[]
-	took: number
 }

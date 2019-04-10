@@ -15,7 +15,8 @@ export async function scrape(...[item, rigorous]: ConstructorParameters<typeof S
 	let providers = [
 		// (await import('./rarbg')).Rarbg,
 		// (await import('./solidtorrents')).SolidTorrents,
-		(await import('./ytsam')).YtsAm,
+		// (await import('./ytsam')).YtsAm,
+		(await import('./eztv')).Eztv,
 	] as typeof Scraper[]
 
 	let results = (await pAll(
@@ -39,11 +40,11 @@ export async function scrape(...[item, rigorous]: ConstructorParameters<typeof S
 }
 
 export interface Scraper {
-	sorts: string[]
 	getResults(slug: string, sort: string): Promise<Result[]>
 }
 @Memoize.Class
 export class Scraper {
+	sorts = ['']
 	concurrency = 1
 
 	get slugs() {

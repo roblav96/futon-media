@@ -26,9 +26,8 @@ export const client = new http.Http({
 export class YtsAm extends scraper.Scraper {
 	sorts = ['date_added']
 	async getResults(slug: string, sort: string) {
-		let query = { sort_by: sort, query_term: slug } as Query
 		let response = (await client.get('/list_movies.json', {
-			query: query as any,
+			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 			verbose: true,
 		})) as Response
 		let movies = oc(response).data.movies([])
@@ -56,6 +55,23 @@ export interface Query {
 	quality: string
 	query_term: string
 	sort_by: string
+}
+
+export interface Response {
+	'@meta': {
+		api_version: number
+		execution_time: string
+		server_time: number
+		server_timezone: string
+	}
+	data: {
+		limit: number
+		movie_count: number
+		movies: Movie[]
+		page_number: number
+	}
+	status: string
+	status_message: string
 }
 
 export interface Movie {
@@ -98,21 +114,4 @@ export interface Torrent {
 	size_bytes: number
 	type: string
 	url: string
-}
-
-export interface Response {
-	'@meta': {
-		api_version: number
-		execution_time: string
-		server_time: number
-		server_timezone: string
-	}
-	data: {
-		limit: number
-		movie_count: number
-		movies: Movie[]
-		page_number: number
-	}
-	status: string
-	status_message: string
 }

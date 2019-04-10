@@ -87,6 +87,12 @@ export interface Query {
 	token: string
 }
 
+export interface Response {
+	error: string
+	error_code: number
+	torrent_results: Result[]
+}
+
 export interface Result {
 	category: string
 	download: string
@@ -107,10 +113,4 @@ export interface Result {
 		tvdb: string
 		tvrage: string
 	}
-}
-
-export interface Response {
-	error: string
-	error_code: number
-	torrent_results: Result[]
 }
