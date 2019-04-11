@@ -6,11 +6,6 @@ import * as http from '../adapters/http'
 import * as scraper from './scraper'
 import { oc } from 'ts-optchain'
 
-const CONFIG = {
-	limit: 100,
-	throttle: 300,
-}
-
 export const client = new http.Http({
 	baseUrl: 'https://torrentapi.org',
 	query: {
@@ -29,7 +24,7 @@ export const client = new http.Http({
 				_.defaults(options.query, {
 					mode: 'search',
 					format: 'json_extended',
-					limit: CONFIG.limit,
+					limit: 100,
 					ranked: 0,
 				})
 			},
@@ -38,7 +33,7 @@ export const client = new http.Http({
 	afterResponse: {
 		append: [
 			async (options, resolved) => {
-				await utils.pTimeout(CONFIG.throttle)
+				await utils.pTimeout(300)
 			},
 		],
 	},
@@ -54,10 +49,43 @@ async function syncToken() {
 
 export class Rarbg extends scraper.Scraper {
 	sorts = ['last', 'seeders']
-	async getResults(slug: string, sort: string) {
-		let query = { sort, search_string: slug } as Query
+
+	get slugs() {
+		let queries = [] as Partial<Query>[]
+		let query = {} as Query
+		if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
+		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
+		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
+
+		if (this.item.movie) {
+			queries.push(query)
+			if (this.rigorous && this.item.movie.belongs_to_collection) {
+				let collection = this.item.movie.belongs_to_collection.name.split(' ')
+				queries.push({ search_string: utils.toSlug(collection.slice(0, -1).join(' ')) })
+			}
+		}
+
+		if (this.item.show) {
+			if ((!this.item.S.n && !this.item.E.n) || this.rigorous) {
+				queries.push(query)
+			}
+			if (this.item.S.n) {
+				queries.push({ search_string: `s${this.item.S.z}`, ...query })
+				if (this.rigorous) {
+					queries.push({ search_string: `season ${this.item.S.n}`, ...query })
+				}
+			}
+			if (this.item.E.n) {
+				queries.push({ search_string: `s${this.item.S.z}e${this.item.E.z}`, ...query })
+			}
+		}
+
+		return queries.map(v => JSON.stringify(v))
+	}
+
+	async getResults(query: string, sort: string) {
 		let response = (await client.get('/pubapi_v2.php', {
-			query: query as any,
+			query: Object.assign({ sort } as Query, JSON.parse(query)),
 			verbose: true,
 		})) as Response
 		let results = oc(response).torrent_results([])

@@ -13,10 +13,10 @@ import * as Memoize from '../memoize'
 
 export async function scrape(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
-		// (await import('./rarbg')).Rarbg,
+		(await import('./rarbg')).Rarbg,
 		// (await import('./solidtorrents')).SolidTorrents,
 		// (await import('./ytsam')).YtsAm,
-		(await import('./eztv')).Eztv,
+		// (await import('./eztv')).Eztv,
 	] as typeof Scraper[]
 
 	let results = (await pAll(
@@ -58,14 +58,14 @@ export class Scraper {
 		}
 		if (this.item.show) {
 			let title = this.item.show.title
-			this.rigorous && slugs.push(title)
-			if (this.item.season) {
-				slugs.push(`${title} s${this.item.s00.z}`)
-				this.rigorous && slugs.push(`${title} season ${this.item.s00.n}`)
-				if (this.rigorous && this.item.episode) {
-					slugs.push(`${title} s${this.item.s00.z}e${this.item.e00.z}`)
-				}
+			if ((!this.item.S.n && !this.item.E.n) || this.rigorous) {
+				slugs.push(title)
 			}
+			if (this.item.S.n) {
+				slugs.push(`${title} s${this.item.S.z}`)
+				this.rigorous && slugs.push(`${title} season ${this.item.S.n}`)
+			}
+			this.item.E.n && slugs.push(`${title} s${this.item.S.z}e${this.item.E.z}`)
 		}
 		return slugs.map(v => utils.toSlug(v))
 	}

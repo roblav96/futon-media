@@ -14,11 +14,10 @@ import * as scraper from './scrapers/scraper'
 import * as Memoize from './memoize'
 
 async function start() {
-	// let item = new media.Item(items.MOVIE)
-	let item = new media.Item(items.EPISODE)
+	let item = new media.Item(items.SHOW)
 	// let item = await getItem.menu()
-	console.log(`item ->`, item)
-	let results = await scraper.scrape(item)
-	console.log(`results ->`, results)
+	// console.log(`item ->`, item)
+	let results = await scraper.scrape(item, true)
+	console.log(`results.length ->`, results.length)
 }
 start().catch(error => console.error(`start Error ->`, error))

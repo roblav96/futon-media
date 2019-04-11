@@ -4,6 +4,7 @@ import * as trakt from './trakt'
 import * as tmdb from './tmdb'
 import * as utils from '../utils'
 import * as Memoize from '../memoize'
+import { oc } from 'ts-optchain'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
 
@@ -28,12 +29,12 @@ export class Item {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
 	}
 
-	get s00() {
-		let n = this.season.number || this.episode.season
+	get S() {
+		let n = oc(this.season).number(NaN) || oc(this.episode).season(NaN)
 		return { n, z: utils.zeroSlug(n) }
 	}
-	get e00() {
-		let n = this.episode.number
+	get E() {
+		let n = oc(this.episode).number(NaN)
 		return { n, z: utils.zeroSlug(n) }
 	}
 
