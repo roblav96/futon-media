@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
-import * as utils from '../utils'
-import * as http from '../adapters/http'
-import * as scraper from './scraper'
+import * as utils from '@/utils/utils'
+import * as http from '@/adapters/http'
+import * as scraper from '@/scrapers/scraper'
 import { oc } from 'ts-optchain'
 
 const CONFIG = {

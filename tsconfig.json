@@ -1,14 +1,24 @@
 {
 	"compilerOptions": {
+		"baseUrl": "src",
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
+		"importHelpers": true,
 		"lib": ["dom", "esnext"],
+		"noEmitHelpers": true,
 		"noErrorTruncation": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,
-		"target": "es5"
+		"target": "es5",
+		"paths": {
+			"@/*": ["*"]
+		},
+		"plugins": [
+			{ "transform": "typescript-transform-paths" },
+			{ "transform": "ts-optchain/transform" }
+		]
 	},
 	"exclude": ["node_modules", "dist"],
-	"include": ["src/**/*.ts", "types/**/*.d.ts"]
+	"include": ["types/**/*.d.ts", "src/**/*.ts"]
 }

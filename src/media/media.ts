@@ -1,9 +1,9 @@
 import * as _ from 'lodash'
 import * as memoize from 'mem'
-import * as trakt from './trakt'
-import * as tmdb from './tmdb'
-import * as utils from '../utils'
-import * as Memoize from '../memoize'
+import * as trakt from '@/adapters/trakt'
+import * as tmdb from '@/adapters/tmdb'
+import * as utils from '@/utils/utils'
+import * as Memoize from '@/utils/memoize'
 import { oc } from 'ts-optchain'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]

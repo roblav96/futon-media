@@ -1,13 +1,15 @@
 import * as _ from 'lodash'
-import * as media from './media'
-import { Http } from './http'
+import * as media from '@/media/media'
+import { Http } from '@/adapters/http'
 
 export const client = new Http({
 	baseUrl: 'https://api.trakt.tv',
-	query: { extended: 'full' },
 	headers: {
 		'trakt-api-version': '2',
 		'trakt-api-key': process.env.TRAKT_KEY,
+	},
+	query: {
+		extended: 'full',
 	},
 	afterResponse: {
 		append: [

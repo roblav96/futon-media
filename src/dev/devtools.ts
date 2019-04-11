@@ -1,33 +1,29 @@
 import * as shimmer from 'shimmer'
+import * as path from 'path'
+import * as StackTracey from 'stacktracey'
 import * as ansi from 'ansi-colors'
 import * as ms from 'pretty-ms'
 import * as _ from 'lodash'
 import * as util from 'util'
 
 _.merge(util.inspect.defaultOptions, {
-	depth: 8,
-	getters: true,
-	// showHidden: true,
+	depth: 4,
 } as util.InspectOptions)
 
 let previous = Date.now()
-for (let [method, color] of Object.entries({
-	log: 'blue',
-	info: 'green',
-	warn: 'yellow',
-	error: 'red',
-})) {
+let colors = { log: 'blue', info: 'green', warn: 'yellow', error: 'red' }
+for (let [method, color] of Object.entries(colors)) {
 	console[method]['__wrapped'] && shimmer.unwrap(console, method as any)
-	shimmer.wrap(console, method as any, function wrapper(fn) {
+	shimmer.wrap(console, method as any, function wrapper(fn: Function) {
 		return function called(...args: string[]) {
 			if (_.isString(args[0])) {
-				let padding = '\n\n'
 				let now = Date.now()
 				let delta = now - previous
 				previous = now
-				// ⦁ ● ⧭ ⬤ ⚫︎ ◉ ◼︎ ➤ ► ∎ ⦁ 𝓓 ♦︎ ☁︎ ✚ ☗ █
-				args.unshift(ansi[color]('●') + ' ' + ansi.dim(`+${ms(delta)}`))
-				args.push(padding)
+				let site = new StackTracey()[1]
+				let trace = site.beforeParse.replace(site.file, site.fileShort)
+				args.unshift(`\n${ansi.dim(`+${ms(delta)} ${trace}`)}\n${ansi[color]('●')}`)
+				args.push(`\n`)
 			}
 			return fn.apply(console, args)
 		}

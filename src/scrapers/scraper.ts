@@ -3,20 +3,17 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as magneturi from 'magnet-uri'
-import * as http from '../adapters/http'
-import * as media from '../adapters/media'
-import * as torrent from './torrent'
-import * as filters from './filters'
-import * as trackers from './trackers'
-import * as utils from '../utils'
-import * as Memoize from '../memoize'
+import * as http from '@/adapters/http'
+import * as media from '@/media/media'
+import * as filters from '@/scrapers/filters'
+import * as utils from '@/utils/utils'
 
-export async function scrape(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
+export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
-		(await import('./rarbg')).Rarbg,
-		// (await import('./solidtorrents')).SolidTorrents,
-		// (await import('./ytsam')).YtsAm,
-		// (await import('./eztv')).Eztv,
+		(await import('./providers/rarbg')).Rarbg,
+		// (await import('./providers/solidtorrents')).SolidTorrents,
+		// (await import('./providers/ytsam')).YtsAm,
+		// (await import('./providers/eztv')).Eztv,
 	] as typeof Scraper[]
 
 	let results = (await pAll(
@@ -34,7 +31,7 @@ export async function scrape(...[item, rigorous]: ConstructorParameters<typeof S
 		if (!to.seeders && from.seeders) to.seeders = from.seeders
 		return true
 	})
-	results = _.orderBy(results, 'bytes', 'desc')
+	// results = _.orderBy(results, 'bytes', 'desc')
 
 	return results
 }
@@ -42,7 +39,6 @@ export async function scrape(...[item, rigorous]: ConstructorParameters<typeof S
 export interface Scraper {
 	getResults(slug: string, sort: string): Promise<Result[]>
 }
-@Memoize.Class
 export class Scraper {
 	sorts = ['']
 	concurrency = 1
@@ -73,10 +69,10 @@ export class Scraper {
 	constructor(public item: media.Item, public rigorous = false) {}
 
 	async start() {
-		let combs = [] as Parameters<typeof Scraper.prototype.getResults>[]
-		this.slugs.forEach(slug => this.sorts.forEach(sort => combs.push([slug, sort])))
+		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
+		this.slugs.forEach(slug => this.sorts.forEach(sort => combinations.push([slug, sort])))
 		let results = (await pAll(
-			combs.map(([slug, sort]) => async () =>
+			combinations.map(([slug, sort]) => async () =>
 				(await this.getResults(slug, sort)).map(result => ({
 					providers: [this.constructor.name],
 					slugs: [slug],
@@ -106,4 +102,10 @@ export interface Result {
 	seeders: number
 	score: number
 	slugs: string[]
+}
+
+export interface MagnetQuery {
+	dn: string
+	tr: string[]
+	xt: string
 }

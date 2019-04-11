@@ -1,9 +1,7 @@
 import * as _ from 'lodash'
-import * as utils from '../utils'
-import * as media from '../adapters/media'
-import * as torrent from './torrent'
-import * as http from '../adapters/http'
-import * as scraper from './scraper'
+import * as utils from '@/utils/utils'
+import * as http from '@/adapters/http'
+import * as scraper from '@/scrapers/scraper'
 import { oc } from 'ts-optchain'
 
 export const client = new http.Http({

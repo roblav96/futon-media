@@ -1,13 +1,13 @@
+import pDebounce from 'p-debounce'
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as prompts from 'prompts'
-import * as tmdb from '../adapters/tmdb'
-import * as trakt from '../adapters/trakt'
-import * as media from '../adapters/media'
-import * as utils from '../utils'
-import pDebounce from 'p-debounce'
+import * as tmdb from '@/adapters/tmdb'
+import * as trakt from '@/adapters/trakt'
+import * as media from '@/media/media'
+import * as utils from '@/utils/utils'
 
-export async function menu() {
+export async function searchItem() {
 	let item = (await prompts.prompts.autocomplete({
 		message: 'Search',
 		suggest: pDebounce(async (query: string) => {
@@ -29,6 +29,11 @@ export async function menu() {
 	} as prompts.PromptObject)) as media.Item
 	if (!item) {
 		throw new Error('Unselected media.Item')
+	}
+
+	if (item.type == 'movie') {
+		let movie = (await tmdb.client.get(`/movie/${item.ids.tmdb}`)) as tmdb.Movie
+		item.use({ movie })
 	}
 
 	if (item.type == 'show') {
@@ -71,11 +76,6 @@ export async function menu() {
 		}
 		item.use({ episode })
 	}
-
-	// if (item.type == 'movie') {
-	// 	let movie = (await tmdb.client.get(`/movie/${item.ids.tmdb}`)) as tmdb.Movie
-	// 	item.use({ movie })
-	// }
 
 	return item
 }

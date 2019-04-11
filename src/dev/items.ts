@@ -1,20 +1,20 @@
 import * as _ from 'lodash'
-import * as tmdb from './adapters/tmdb'
-import * as trakt from './adapters/trakt'
+import * as tmdb from '@/adapters/tmdb'
+import * as trakt from '@/adapters/trakt'
 
 export const MOVIE = {
 	movie: {
 		adult: false,
-		backdrop_path: '/1R2ihQztuRTIqN3pFBR1yrBMd7w.jpg',
+		backdrop_path: '/6P3c80EOm7BodndGBUAJHHsHKrp.jpg',
 		belongs_to_collection: {
-			backdrop_path: '/z5A5W3WYJc3UVEWljSGwdjDgQ0j.jpg',
-			id: 9485,
-			name: 'The Fast and the Furious Collection',
-			poster_path: '/uv63yAGg1zETAs1XQsOQpava87l.jpg',
+			backdrop_path: '/2KjtWUBiksmN8LsUouaZnxocu5N.jpg',
+			id: 422834,
+			name: 'Ant-Man Collection',
+			poster_path: '/tdKbDECJQ3JmYaMubNaKFM1mgcY.jpg',
 		},
-		budget: 85000000,
+		budget: 140000000,
 		certification: 'PG-13',
-		comment_count: 5,
+		comment_count: 73,
 		country: 'us',
 		genres: [
 			{
@@ -22,45 +22,50 @@ export const MOVIE = {
 				name: 'Action',
 			},
 			{
-				id: 80,
-				name: 'Crime',
+				id: 12,
+				name: 'Adventure',
 			},
 			{
-				id: 18,
-				name: 'Drama',
+				id: 878,
+				name: 'Science Fiction',
 			},
 			{
-				id: 53,
-				name: 'Thriller',
+				id: 35,
+				name: 'Comedy',
 			},
+			{
+				id: 10751,
+				name: 'Family',
+			},
+			'family',
 		],
-		homepage: 'http://www.fastandfuriousmovie.net',
-		id: 13804,
+		homepage: 'https://www.marvel.com/movies/ant-man-and-the-wasp',
+		id: 363088,
 		ids: {
-			imdb: 'tt1013752',
-			slug: 'fast-furious-2009',
-			tmdb: 13804,
-			trakt: 8202,
+			imdb: 'tt5095030',
+			slug: 'ant-man-and-the-wasp-2018',
+			tmdb: 363088,
+			trakt: 223262,
 		},
-		imdb_id: 'tt1013752',
+		imdb_id: 'tt5095030',
 		language: 'en',
 		original_language: 'en',
-		original_title: 'Fast & Furious',
+		original_title: 'Ant-Man and the Wasp',
 		overview:
-			"When a crime brings them back to L.A., fugitive ex-con Dom Toretto reignites his feud with agent Brian O'Conner. But as they are forced to confront a shared enemy, Dom and Brian must give in to an uncertain new trust if they hope to outmaneuver him. And the two men will find the best way to get revenge: push the limits of what's possible behind the wheel.",
-		popularity: 2.155,
-		poster_path: '/ft8IqAGFs3V7i87z0t0EVRUjK1p.jpg',
+			'Just when his time under house arrest is about to end, Scott Lang once again puts his freedom at risk to help Hope van Dyne and Dr. Hank Pym dive into the quantum realm and try to accomplish, against time and any chance of success, a very dangerous rescue mission.',
+		popularity: 53.049,
+		poster_path: '/rv1AWImgx386ULjcf62VYaW8zSt.jpg',
 		production_countries: [
 			{
 				iso_3166_1: 'US',
 				name: 'United States of America',
 			},
 		],
-		rating: 7.11981,
-		release_date: '2009-04-02',
-		released: '2009-04-03',
-		revenue: 363164265,
-		runtime: 107,
+		rating: 7.52238,
+		release_date: '2018-07-04',
+		released: '2018-07-06',
+		revenue: 622379576,
+		runtime: 119,
 		spoken_languages: [
 			{
 				iso_639_1: 'en',
@@ -68,17 +73,17 @@ export const MOVIE = {
 			},
 		],
 		status: 'Released',
-		tagline: 'New Model. Original Parts.',
-		title: 'Fast & Furious',
-		trailer: 'http://youtube.com/watch?v=9c3-mpDxX-A',
-		updated_at: '2019-03-16T09:18:18.000Z',
+		tagline: 'Real heroes. Not actual size.',
+		title: 'Ant-Man and the Wasp',
+		trailer: 'http://youtube.com/watch?v=8_rTIAOohas',
+		updated_at: '2019-04-06T09:27:17.000Z',
 		video: false,
-		vote_average: 6.5,
-		vote_count: 3748,
-		votes: 8472,
-		year: 2009,
+		vote_average: 7,
+		vote_count: 5444,
+		votes: 16111,
+		year: 2018,
 	},
-	score: 495.50922,
+	score: 829.3768,
 } as trakt.Result & tmdb.Result
 
 const TV = {

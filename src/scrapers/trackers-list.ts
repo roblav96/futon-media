@@ -6,6 +6,7 @@ import * as ConfigStore from 'configstore'
 import * as http from '../adapters/http'
 
 const storage = new ConfigStore(pkgup.sync().pkg.name + '-' + path.basename(__filename))
+// storage.clear()
 
 export let good = (storage.get('good') || []) as string[]
 export let bad = (storage.get('bad') || []) as string[]
@@ -22,7 +23,7 @@ setTimeout(async function sync() {
 			http.client.get(
 				'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt'
 			),
-			http.client.get('https://newtrackon.com/api/stable'),
+			// http.client.get('https://newtrackon.com/api/stable'),
 		])) as string[]
 		let lists = resolved.map(list => list.split('\n').filter(Boolean))
 
@@ -35,6 +36,6 @@ setTimeout(async function sync() {
 		let future = dayjs(Date.now()).add(15, 'minute')
 		storage.set('stamp', future.valueOf())
 	} catch (error) {
-		console.error(`sync Error ->`, error)
+		console.error(`trackers sync Error ->`, error)
 	}
 }, 1000)

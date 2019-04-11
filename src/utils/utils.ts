@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
 import * as levenshtein from 'js-levenshtein'
-import slugify from '@sindresorhus/slugify'
+import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
 import stripAnsi from 'strip-ansi'
 
 export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
@@ -45,12 +45,9 @@ export function filterWords(value: string, sentence: string) {
 	return split.join(' ')
 }
 
-export function toSlug(value: string, keepcase = false) {
-	let slug = slugify(clean(value).replace(/'/g, ''), {
-		decamelize: false,
-		lowercase: keepcase == false,
-		separator: ' ',
-	})
+export function toSlug(value: string, options = {} as SlugifyOptions) {
+	_.defaults(options, { decamelize: false, lowercase: true, separator: ' ' } as SlugifyOptions)
+	let slug = slugify(clean(value).replace(/'/g, ''), options)
 	return filterWords(slug, 'a an and of the')
 }
 
@@ -63,7 +60,7 @@ export function isVideo(file: string) {
 }
 
 export function slider(value: number, min: number, max: number) {
-	if ((max - min) == 0) return 0;
+	if (max - min == 0) return 0
 	return ((value - min) / (max - min)) * 100
 }
 

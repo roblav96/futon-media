@@ -1,10 +1,10 @@
 import * as _ from 'lodash'
 import * as qs from 'query-string'
 import * as magneturi from 'magnet-uri'
-import * as scraper from './scraper'
-import * as trackers from './trackers'
-import * as torrent from './torrent'
-import * as utils from '../utils'
+import * as scraper from '@/scrapers/scraper'
+import * as trackerslist from '@/scrapers/trackers-list'
+import * as torrent from '@/scrapers/torrent'
+import * as utils from '@/utils/utils'
 
 export function filter(result: scraper.Result) {
 	try {
@@ -12,21 +12,21 @@ export function filter(result: scraper.Result) {
 			console.warn(`filter !result.magnet ->`, result)
 			return false
 		}
-		let magnet = (qs.parseUrl(utils.clean(result.magnet)).query as any) as torrent.MagnetQuery
+		let magnet = (qs.parseUrl(utils.clean(result.magnet)).query as any) as scraper.MagnetQuery
 
 		result.name = result.name || magnet.dn
 		if (!result.name) {
 			console.warn(`filter !result.name ->`, result)
 			return false
 		}
-		result.name = utils.toSlug(result.name, true)
+		result.name = utils.toSlug(result.name, { lowercase: false, separator: '.' })
 
 		magnet.xt = magnet.xt.toLowerCase()
-		magnet.dn = result.name.replace(/[\s]/g, '.')
+		magnet.dn = result.name
 		magnet.tr = (magnet.tr || []).filter(
-			tr => trackers.bad.filter(v => v.startsWith(tr)).length == 0
+			tr => trackerslist.bad.filter(v => v.startsWith(tr)).length == 0
 		)
-		magnet.tr = _.uniq(magnet.tr.concat(trackers.good))
+		magnet.tr = _.uniq(magnet.tr.concat(trackerslist.good))
 		_.unset(result, 'magnet')
 		Object.defineProperty(result, 'magnet', {
 			value: magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr }),
