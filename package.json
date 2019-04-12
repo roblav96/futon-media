@@ -13,7 +13,6 @@
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist && tsc",
 		"start": "del dist && redrun -q -p start:*",
-		"babel": "babel src --out-dir dist --extensions '.ts' --source-maps inline || true",
 		"start:tsc": "tsc --watch",
 		"start:node": "just-wait -s -p dist && nodemon -q",
 		"test": "del dist && tsc || true && node dist/index.js"
@@ -58,17 +57,6 @@
 		"url-parse": "^1.4.4"
 	},
 	"devDependencies": {
-		"@babel/cli": "^7.4.3",
-		"@babel/core": "^7.4.3",
-		"@babel/node": "^7.2.2",
-		"@babel/plugin-proposal-class-properties": "^7.4.0",
-		"@babel/plugin-proposal-decorators": "^7.4.0",
-		"@babel/plugin-syntax-dynamic-import": "^7.2.0",
-		"@babel/plugin-transform-runtime": "^7.4.3",
-		"@babel/preset-env": "^7.4.3",
-		"@babel/preset-typescript": "^7.3.3",
-		"@babel/register": "^7.4.0",
-		"@babel/runtime": "^7.4.3",
 		"@types/ansi-colors": "^3.2.0",
 		"@types/ansi-escapes": "^3.0.1",
 		"@types/cheerio": "^0.22.11",
@@ -83,7 +71,6 @@
 		"@types/pretty-format": "^20.0.1",
 		"@types/pretty-ms": "^4.0.0",
 		"@types/prompts": "^1.2.0",
-		"@types/puppeteer": "^1.12.3",
 		"@types/qs": "^6.5.3",
 		"@types/read-pkg-up": "^3.0.1",
 		"@types/shimmer": "^1.0.1",

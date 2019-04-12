@@ -3,12 +3,14 @@
 		"baseUrl": ".",
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
+		"importHelpers": true,
 		"lib": ["esnext"],
+		"noEmitHelpers": true,
 		"noErrorTruncation": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
-		"target": "esnext",
 		"sourceMap": true,
+		"target": "es5",
 		"paths": {
 			"@/*": ["src/*"]
 		}
