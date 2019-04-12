@@ -1,140 +1,109 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
+import * as path from 'path'
+import * as pkgup from 'read-pkg-up'
+import * as ConfigStore from 'configstore'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	baseUrl: 'https://torrentapi.org',
-	query: {
-		app_id: `${process.platform}_${process.arch}_${process.version}`,
-	} as Partial<Query>,
-	beforeRequest: {
-		append: [
-			async options => {
-				if (options.query['get_token']) {
-					return
-				}
-				if (!options.query['token']) {
-					let token = await syncToken()
-					options.query['token'] = token
-				}
-				_.defaults(options.query, {
-					mode: 'search',
-					format: 'json_extended',
-					limit: 100,
-					ranked: 0,
-				})
-			},
-		],
-	},
-	afterResponse: {
-		append: [
-			async (options, resolved) => {
-				await utils.pTimeout(300)
-			},
-		],
-	},
+	baseUrl: 'https://snowfl.com',
 })
 
+const nonce = (value = Math.random().toString(36)) => value.slice(-8)
+const storage = new ConfigStore(pkgup.sync().pkg.name + '-' + path.basename(__filename))
+let TOKEN = (storage.get('TOKEN') || '') as string
+let STAMP = (storage.get('STAMP') || 0) as number
+
 async function syncToken() {
-	let { token } = await client.get('/pubapi_v2.php', {
-		query: { get_token: 'get_token' },
-	})
-	client.config.query['token'] = token
-	return token
+	let html = (await client.get('/b.min.js', {
+		query: { v: nonce() } as Partial<Query>,
+		verbose: true,
+	})) as string
+	let index = html.search(/\"\w{35}\"/i)
+	let token = html.slice(index + 1, index + 36)
+	if (!token) {
+		throw new Error('snowfl token not found')
+	}
+	TOKEN = token
+	storage.set('TOKEN', TOKEN)
+	let future = dayjs().add(1, 'hour')
+	STAMP = future.valueOf()
+	storage.set('STAMP', STAMP)
 }
 
-export class Rarbg extends scraper.Scraper {
-	sorts = ['last', 'seeders']
-
-	get slugs() {
-		let queries = [] as Partial<Query>[]
-		let query = {} as Query
-		if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
-		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
-		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
-
-		if (this.item.movie) {
-			queries.push(query)
-			if (this.rigorous && this.item.movie.belongs_to_collection) {
-				let collection = this.item.movie.belongs_to_collection.name.split(' ')
-				queries.push({ search_string: utils.toSlug(collection.slice(0, -1).join(' ')) })
-			}
-		}
-
-		if (this.item.show) {
-			if ((!this.item.S.n && !this.item.E.n) || this.rigorous) {
-				queries.push(query)
-			}
-			if (this.item.S.n) {
-				queries.push({ search_string: `s${this.item.S.z}`, ...query })
-				if (this.rigorous) {
-					queries.push({ search_string: `season ${this.item.S.n}`, ...query })
-				}
-			}
-			if (this.item.E.n) {
-				queries.push({ search_string: `s${this.item.S.z}e${this.item.E.z}`, ...query })
-			}
-		}
-
-		return queries.map(v => JSON.stringify(v))
-	}
+export class Snowfl extends scraper.Scraper {
+	sorts = ['SIZE', 'DATE', 'SEED']
 
 	async getResults(query: string, sort: string) {
-		let response = (await client.get('/pubapi_v2.php', {
-			query: Object.assign({ sort } as Query, JSON.parse(query)),
+		;(!TOKEN || Date.now() > STAMP) && (await syncToken())
+		let url = `/${TOKEN}/${query}/${nonce()}/0/${sort}/NONE/0`
+		let response = ((await client.get(url, {
+			query: { _: Date.now() } as Partial<Query>,
 			verbose: true,
-		})) as Response
-		return (response.torrent_results || []).map(v => {
+		})) || []) as Result[]
+		let results = response.filter(v => !!v.magnet)
+		return results.map(v => {
 			return {
-				bytes: v.size,
-				magnet: v.download,
-				name: v.title,
-				seeders: v.seeders,
-				stamp: new Date(v.pubdate).valueOf(),
+				bytes: utils.toBytes(v.size),
+				magnet: v.magnet,
+				name: v.name,
+				seeders: v.seeder,
+				stamp: utils.toStamp(v.age),
 			} as scraper.Result
 		})
 	}
 }
 
 interface Query {
-	format: string
-	get_token: string
-	limit: number
-	mode: string
-	ranked: number
-	search_imdb: string
-	search_string: string
-	search_themoviedb: number
-	search_tvdb: number
-	sort: string
-	token: string
+	_: number
+	v: string
 }
 
-interface Response {
-	error: string
-	error_code: number
-	torrent_results: Result[]
+interface MagnetResponse {
+	url: string
 }
 
 interface Result {
-	category: string
-	download: string
-	info_page: string
-	leechers: number
-	pubdate: string
-	ranked: number
-	seeders: number
-	size: number
-	title: string
-	episode_info: {
-		airdate: string
-		epnum: string
-		imdb: string
-		seasonnum: string
-		themoviedb: string
-		title: string
-		tvdb: string
-		tvrage: string
-	}
+	age: string
+	leecher: number
+	magnet: string
+	name: string
+	nsfw: boolean
+	seeder: number
+	site: string
+	size: string
+	trusted: boolean
+	type: string
+	url: string
 }
+
+// import * as pAll from 'p-all'
+// import * as cheerio from 'cheerio'
+
+// async function fixMagnet(result: Result) {
+// 	await utils.pTimeout(_.random(3000))
+// 	let $ = cheerio.load(await http.client.get(result.url, { verbose: true }))
+// 	let hash = $('.infohash-box span').text()
+// 	result.magnet = `magnet:?xt=urn:btih:${hash}&dn=${result.name}`
+// 	// let first = $('ul.download-links-dontblock a').first()
+// 	// result.magnet = first.attr('href').trim()
+// }
+
+// await pAll(
+// 	response.map(v => () => {
+// 		return !v.magnet && v.site == '1337x' && fixMagnet(v)
+// 	}),
+// 	{ concurrency: 5 }
+// )
+
+// async function fixMagnet(result: Result) {
+// 	let site = encodeURIComponent(result.site)
+// 	let base64 = Buffer.from(encodeURIComponent(result.url)).toString('base64')
+// 	let response = (await client.get(`/${TOKEN}/${site}/${base64}`, {
+// 		query: { _: Date.now() } as Partial<Query>,
+// 		verbose: true,
+// 	})) as MagnetResponse
+// 	result.magnet = response && response.url
+// }

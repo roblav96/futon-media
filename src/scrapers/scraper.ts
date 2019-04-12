@@ -10,16 +10,17 @@ import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
+		// (await import('./providers/eztv')).Eztv,
 		// (await import('./providers/rarbg')).Rarbg,
+		(await import('./providers/snowfl')).Snowfl,
 		// (await import('./providers/solidtorrents')).SolidTorrents,
 		// (await import('./providers/yts')).Yts,
-		(await import('./providers/eztv')).Eztv,
 	] as typeof Scraper[]
 
 	let results = (await pAll(
 		providers.map(scraper => () => new scraper(item, rigorous).start())
 	)).flat()
-	results = results.filter(filters.filter)
+
 	results = _.uniqWith(results, (from, to) => {
 		if (to.hash != from.hash) {
 			return false
@@ -29,9 +30,10 @@ export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeo
 		!to.bytes && from.bytes && (to.bytes = from.bytes)
 		!to.stamp && from.stamp && (to.stamp = from.stamp)
 		!to.seeders && from.seeders && (to.seeders = from.seeders)
+		!to.score && from.score && (to.score = from.score)
 		return true
 	})
-	// results = _.orderBy(results, 'bytes', 'desc')
+	results.sort((a, b) => b.bytes - a.bytes)
 
 	return results
 }

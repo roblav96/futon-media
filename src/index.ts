@@ -15,11 +15,12 @@ import * as debrid from '@/debrids/debrid'
 import * as prompts from '@/prompts/prompts'
 
 async function start() {
-	let item = new media.Item(mocks.SHOWS['the-big-bang-theory'])
+	let item = new media.Item(mocks.MOVIES['how-to-train-your-dragon-the-hidden-world-2019'])
 	// let item = await prompts.searchItem()
 	// return console.log(`item ->`, item)
 
 	let results = await scraper.scrapeAll(item)
+	console.log(`results ->`, results)
 	console.log(`results.length ->`, results.length)
 	// let torrents = results.map(v => new torrent.Torrent(v))
 

@@ -153,9 +153,163 @@ export const MOVIES = {
 		score: 7.8510184,
 	} as trakt.Result & tmdb.Result,
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	'how-to-train-your-dragon-the-hidden-world-2019': {
+		movie: {
+			adult: false,
+			backdrop_path: '/h3KN24PrOheHVYs9ypuOIdFBEpX.jpg',
+			belongs_to_collection: {
+				backdrop_path: '/vBSuGU5OyJ5lGamkqXo2kVAe01F.jpg',
+				id: 89137,
+				name: 'How to Train Your Dragon Collection',
+				poster_path: '/4tBKIkPLFMkiZETjAMOHNoty8B1.jpg',
+			},
+			budget: 129000000,
+			certification: 'PG',
+			comment_count: 22,
+			country: 'us',
+			genres: [
+				{
+					id: 16,
+					name: 'Animation',
+				},
+				{
+					id: 10751,
+					name: 'Family',
+				},
+				{
+					id: 12,
+					name: 'Adventure',
+				},
+			],
+			homepage: 'https://www.howtotrainyourdragon.com/',
+			id: 166428,
+			ids: {
+				imdb: 'tt2386490',
+				slug: 'how-to-train-your-dragon-the-hidden-world-2019',
+				tmdb: 166428,
+				trakt: 106668,
+			},
+			imdb_id: 'tt2386490',
+			language: 'en',
+			original_language: 'en',
+			original_title: 'How to Train Your Dragon: The Hidden World',
+			overview:
+				'As Hiccup fulfills his dream of creating a peaceful dragon utopia, Toothless’ discovery of an untamed, elusive mate draws the Night Fury away. When danger mounts at home and Hiccup’s reign as village chief is tested, both dragon and rider must make impossible decisions to save their kind.',
+			popularity: 285.17,
+			poster_path: '/xvx4Yhf0DVH8G4LzNISpMfFBDy2.jpg',
+			production_countries: [
+				{
+					iso_3166_1: 'US',
+					name: 'United States of America',
+				},
+			],
+			rating: 8.1472,
+			release_date: '2019-01-03',
+			released: '2019-02-22',
+			revenue: 508700470,
+			runtime: 104,
+			spoken_languages: [
+				{
+					iso_639_1: 'en',
+					name: 'English',
+				},
+			],
+			status: 'Released',
+			tagline: 'The friendship of a lifetime',
+			title: 'How to Train Your Dragon: The Hidden World',
+			trailer: 'http://youtube.com/watch?v=qLTDtbYmdWM',
+			updated_at: '2019-04-12T08:43:19.000Z',
+			video: false,
+			vote_average: 7.6,
+			vote_count: 1396,
+			votes: 2697,
+			year: 2019,
+		},
+		score: 792.8125,
+	} as trakt.Result & tmdb.Result,
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	'the-lego-movie-2014': {
+		movie: {
+			adult: false,
+			backdrop_path: '/wPRiV4TVpRCV2es81q0S1eRaUbm.jpg',
+			belongs_to_collection: {
+				backdrop_path: '/sQNiamRBTh2aTjQ8aYCJ69MngTM.jpg',
+				id: 325470,
+				name: 'The Lego Movie Collection',
+				poster_path: '/qwuwukEjuh6Zs51NnhtPVriARey.jpg',
+			},
+			budget: 60000000,
+			certification: 'PG',
+			comment_count: 63,
+			country: 'us',
+			genres: [
+				{
+					id: 12,
+					name: 'Adventure',
+				},
+				{
+					id: 16,
+					name: 'Animation',
+				},
+				{
+					id: 35,
+					name: 'Comedy',
+				},
+				{
+					id: 10751,
+					name: 'Family',
+				},
+				{
+					id: 14,
+					name: 'Fantasy',
+				},
+			],
+			homepage: 'http://www.thelegomovie.com',
+			id: 137106,
+			ids: {
+				imdb: 'tt1490017',
+				slug: 'the-lego-movie-2014',
+				tmdb: 137106,
+				trakt: 92226,
+			},
+			imdb_id: 'tt1490017',
+			language: 'en',
+			original_language: 'en',
+			original_title: 'The Lego Movie',
+			overview:
+				'An ordinary Lego mini-figure, mistakenly thought to be the extraordinary MasterBuilder, is recruited to join a quest to stop an evil Lego tyrant from gluing the universe together.',
+			popularity: 14.539,
+			poster_path: '/lMHbadNmznKs5vgBAkHxKGHulOa.jpg',
+			production_countries: [
+				{
+					iso_3166_1: 'US',
+					name: 'United States of America',
+				},
+			],
+			rating: 7.83248,
+			release_date: '2014-02-06',
+			released: '2014-02-07',
+			revenue: 469160692,
+			runtime: 100,
+			spoken_languages: [
+				{
+					iso_639_1: 'en',
+					name: 'English',
+				},
+			],
+			status: 'Released',
+			tagline: 'The story of a nobody who saved everybody.',
+			title: 'The Lego Movie',
+			trailer: 'http://youtube.com/watch?v=lPnY2NjSjrg',
+			updated_at: '2019-03-19T09:07:55.000Z',
+			video: false,
+			vote_average: 7.4,
+			vote_count: 4698,
+			votes: 19431,
+			year: 2014,
+		},
+		score: 479.08286,
+	} as trakt.Result & tmdb.Result,
 
 	// '____': {____} as trakt.Result & tmdb.Result,
 

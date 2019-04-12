@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as dayjs from 'dayjs'
 import * as pkgup from 'read-pkg-up'
 import * as ConfigStore from 'configstore'
-import * as http from '../adapters/http'
+import * as http from '@/adapters/http'
 
 const storage = new ConfigStore(pkgup.sync().pkg.name + '-' + path.basename(__filename))
 // storage.clear()

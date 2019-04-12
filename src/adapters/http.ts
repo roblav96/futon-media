@@ -65,6 +65,7 @@ export class Http {
 			normalize((options.baseUrl || '') + options.url, {
 				normalizeProtocol: false,
 				removeQueryParameters: null,
+				removeTrailingSlash: false, // !config.url.endsWith('/'),
 				sortQueryParameters: false,
 			})
 		)
@@ -73,8 +74,8 @@ export class Http {
 
 		if (options.verbose) {
 			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
-			let minquery = JSON.stringify(config.query || {}).length < 100 ? config.query : ''
-			console.log(options.method, _.truncate(minurl, { length: 100 }), minquery || '')
+			let minquery = JSON.stringify(config.query || {}).length < 128 ? config.query : ''
+			console.log(options.method, _.truncate(minurl, { length: 128 }), minquery || '')
 		}
 
 		if (options.beforeRequest) {
@@ -99,7 +100,8 @@ export class Http {
 		let { request, response, body } = resolved
 
 		if (!response.statusMessage) {
-			response.statusMessage = errors[response.statusCode].name
+			let error = errors[response.statusCode]
+			response.statusMessage = error ? error.name : 'ok'
 		}
 		if (response.statusCode >= 400) {
 			throw new HTTPError(body, options, response)

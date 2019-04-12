@@ -20,9 +20,10 @@ export class Premiumize extends debrid.Debrid {
 			debug: true,
 		})) as CacheResponse
 		console.log(`response ->`, response)
-		return hashes.map(hash => {
+		return null
+		// return hashes.map(hash => {
 			
-		})
+		// })
 	}
 
 	async download(magnet: string) {}

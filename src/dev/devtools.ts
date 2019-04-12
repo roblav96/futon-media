@@ -22,7 +22,9 @@ for (let [method, color] of Object.entries(colors)) {
 				previous = now
 				let site = new StackTracey()[1]
 				let trace = site.beforeParse.replace(site.file, site.fileShort)
-				process.stdout.write(`\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`)
+				process.stdout.write(
+					`\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`
+				)
 				args.push(`\n`)
 			}
 			return fn.apply(console, args)
@@ -37,7 +39,14 @@ if (stdout.isTTY) {
 }
 console.clear()
 
-console.log('■■■■', new Date().toLocaleTimeString(), '■■■■')
+let date = new Date().toLocaleTimeString()
+let bar = `█`.repeat(process.stdout.columns - date.length - 6)
+process.stdout.write(`\n\n${ansi.dim.magenta(`██`)}  ${ansi.bold(date)}  ${ansi.dim.magenta(bar)}\n\n`)
+// process.stdout.write(`
+// ${ansi.magenta(`███████████████████████`)}
+//       ${ansi.bold(new Date().toLocaleTimeString())}
+// ${ansi.magenta(`███████████████████████`)}
+// `)
 
 // import * as inspector from 'inspector'
 // inspector.open(process.debugPort)
