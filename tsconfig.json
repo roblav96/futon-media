@@ -15,8 +15,7 @@
 			"@/*": ["*"]
 		},
 		"plugins": [
-			{ "transform": "typescript-transform-paths" },
-			{ "transform": "ts-optchain/transform" }
+			{ "transform": "typescript-transform-paths" }
 		]
 	},
 	"exclude": ["node_modules", "dist"],

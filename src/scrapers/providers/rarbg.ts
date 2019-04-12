@@ -2,7 +2,6 @@ import * as _ from 'lodash'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
-import { oc } from 'ts-optchain'
 
 export const client = new http.Http({
 	baseUrl: 'https://torrentapi.org',
@@ -86,8 +85,7 @@ export class Rarbg extends scraper.Scraper {
 			query: Object.assign({ sort } as Query, JSON.parse(query)),
 			verbose: true,
 		})) as Response
-		let results = oc(response).torrent_results([])
-		return results.map(v => {
+		return (response.torrent_results || []).map(v => {
 			return {
 				bytes: v.size,
 				date: new Date(v.pubdate).valueOf(),

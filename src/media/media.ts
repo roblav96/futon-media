@@ -4,7 +4,6 @@ import * as trakt from '@/adapters/trakt'
 import * as tmdb from '@/adapters/tmdb'
 import * as utils from '@/utils/utils'
 import * as Memoize from '@/utils/memoize'
-import { oc } from 'ts-optchain'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
 
@@ -30,12 +29,12 @@ export class Item {
 	}
 
 	get S() {
-		let n = oc(this.season).number(NaN) || oc(this.episode).season(NaN)
-		return { n, z: utils.zeroSlug(n) }
+		let n = this.season ? this.season.number : this.episode ? this.episode.season : NaN
+		return _.isFinite(n) ? { n, z: utils.zeroSlug(n) } : {}
 	}
 	get E() {
-		let n = oc(this.episode).number(NaN)
-		return { n, z: utils.zeroSlug(n) }
+		let n = this.episode ? this.episode.number : NaN
+		return _.isFinite(n) ? { n, z: utils.zeroSlug(n) } : {}
 	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {

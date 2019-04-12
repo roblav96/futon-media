@@ -51,9 +51,8 @@ export function toSlug(value: string, options = {} as SlugifyOptions) {
 	return filterWords(slug, 'a an and of the')
 }
 
-export const VIDEO_EXTS = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv', 'mpd', 'avi']
 export function isVideo(file: string) {
-	for (let ext of VIDEO_EXTS) {
+	for (let ext of ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv', 'mpd', 'avi']) {
 		if (file.endsWith(`.${ext}`)) return true
 	}
 	return false

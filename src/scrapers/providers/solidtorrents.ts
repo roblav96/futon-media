@@ -2,7 +2,6 @@ import * as _ from 'lodash'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
-import { oc } from 'ts-optchain'
 
 const CONFIG = {
 	throttle: 100,
@@ -29,8 +28,7 @@ export class SolidTorrents extends scraper.Scraper {
 			query: { sort, q: slug } as Partial<Query>,
 			verbose: true,
 		})) as Response
-		let results = oc(response).results([])
-		return results.map(v => {
+		return (response.results || []).map(v => {
 			return {
 				bytes: v.size,
 				date: new Date(v.imported).valueOf(),

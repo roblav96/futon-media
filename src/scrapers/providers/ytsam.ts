@@ -2,7 +2,6 @@ import * as _ from 'lodash'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
-import { oc } from 'ts-optchain'
 
 const CONFIG = {
 	throttle: 100,
@@ -30,8 +29,7 @@ export class YtsAm extends scraper.Scraper {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 			verbose: true,
 		})) as Response
-		let movies = oc(response).data.movies([])
-		let results = movies.map(m =>
+		let results = ((response.data && response.data.movies) || []).map(m =>
 			m.torrents.map((v, i) => {
 				let rip = m.torrents.length >= 2 && i >= 2 ? 'WEB' : 'BluRay'
 				let name = _.startCase(m.title_long || m.title_english || m.title || slug)

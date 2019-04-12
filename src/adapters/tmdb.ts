@@ -4,7 +4,9 @@ import { Http } from '@/adapters/http'
 
 export const client = new Http({
 	baseUrl: 'https://api.themoviedb.org/3',
-	query: { api_key: process.env.TMDB_KEY },
+	query: {
+		api_key: process.env.TMDB_KEY,
+	},
 	afterResponse: {
 		append: [
 			(options, { body }) => {

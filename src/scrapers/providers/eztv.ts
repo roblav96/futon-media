@@ -3,7 +3,6 @@ import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
-import { oc } from 'ts-optchain'
 
 const CONFIG = {
 	throttle: 100,
@@ -33,8 +32,7 @@ export class Eztv extends scraper.Scraper {
 			query: { imdb_id: slug.replace(/[\D]/g, '') } as Partial<Query>,
 			verbose: true,
 		})) as Response
-		let results = oc(response).torrents([])
-		results = results.filter(v => {
+		let results = (response.torrents || []).filter(v => {
 			let { s, e } = { s: _.parseInt(v.season), e: _.parseInt(v.episode) }
 			let good = this.item.episode ? this.item.episode.number == e : true
 			return good && this.item.season.number == s
