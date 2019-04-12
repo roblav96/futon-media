@@ -11,11 +11,12 @@
 	},
 	"scripts": {
 		"reset": "del dist node_modules",
-		"prepublishOnly": "del dist && ttsc",
+		"prepublishOnly": "del dist && tsc",
 		"start": "del dist && redrun -q -p start:*",
-		"start:tsc": "ttsc --watch",
+		"babel": "babel src --out-dir dist --extensions '.ts' --source-maps inline || true",
+		"start:tsc": "tsc --watch",
 		"start:node": "just-wait -s -p dist && nodemon -q",
-		"test": "del dist && ttsc; node dist/index.js"
+		"test": "del dist && tsc || true && node dist/index.js"
 	},
 	"nodemonConfig": {
 		"ext": "js",
@@ -45,10 +46,8 @@
 		"pretty-bytes": "^5.1.0",
 		"pretty-ms": "^4.0.0",
 		"prompts": "^2.0.4",
-		"puppeteer": "^1.14.0",
 		"query-string": "^6.4.2",
 		"read-pkg-up": "^5.0.0",
-		"rxjs": "^6.4.0",
 		"shimmer": "^1.2.1",
 		"simple-get": "^3.0.3",
 		"stacktracey": "^1.2.110",
@@ -59,6 +58,17 @@
 		"url-parse": "^1.4.4"
 	},
 	"devDependencies": {
+		"@babel/cli": "^7.4.3",
+		"@babel/core": "^7.4.3",
+		"@babel/node": "^7.2.2",
+		"@babel/plugin-proposal-class-properties": "^7.4.0",
+		"@babel/plugin-proposal-decorators": "^7.4.0",
+		"@babel/plugin-syntax-dynamic-import": "^7.2.0",
+		"@babel/plugin-transform-runtime": "^7.4.3",
+		"@babel/preset-env": "^7.4.3",
+		"@babel/preset-typescript": "^7.3.3",
+		"@babel/register": "^7.4.0",
+		"@babel/runtime": "^7.4.3",
 		"@types/ansi-colors": "^3.2.0",
 		"@types/ansi-escapes": "^3.0.1",
 		"@types/cheerio": "^0.22.11",
@@ -86,9 +96,7 @@
 		"node-env-dev": "^1.1.2",
 		"nodemon": "^1.18.11",
 		"redrun": "^7.1.5",
-		"ttypescript": "^1.5.6",
-		"typescript": "^3.4.3",
-		"typescript-transform-paths": "^1.0.0"
+		"typescript": "^3.4.3"
 	},
 	"license": "Unlicense",
 	"author": "Robert Laverty <roblav96@gmail.com> (https://github.com/roblav96)",
