@@ -10,10 +10,10 @@ import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
-		(await import('./providers/rarbg')).Rarbg,
+		// (await import('./providers/rarbg')).Rarbg,
 		// (await import('./providers/solidtorrents')).SolidTorrents,
-		// (await import('./providers/ytsam')).YtsAm,
-		// (await import('./providers/eztv')).Eztv,
+		// (await import('./providers/yts')).Yts,
+		(await import('./providers/eztv')).Eztv,
 	] as typeof Scraper[]
 
 	let results = (await pAll(
@@ -26,9 +26,9 @@ export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeo
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
-		if (!to.bytes && from.bytes) to.bytes = from.bytes
-		if (!to.date && from.date) to.date = from.date
-		if (!to.seeders && from.seeders) to.seeders = from.seeders
+		!to.bytes && from.bytes && (to.bytes = from.bytes)
+		!to.stamp && from.stamp && (to.stamp = from.stamp)
+		!to.seeders && from.seeders && (to.seeders = from.seeders)
 		return true
 	})
 	// results = _.orderBy(results, 'bytes', 'desc')
@@ -70,7 +70,9 @@ export class Scraper {
 
 	async start() {
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
-		this.slugs.forEach(slug => this.sorts.forEach(sort => combinations.push([slug, sort])))
+		let sorts = this.rigorous ? this.sorts : [this.sorts[0]]
+		this.slugs.forEach(slug => sorts.forEach(sort => combinations.push([slug, sort])))
+
 		let results = (await pAll(
 			combinations.map(([slug, sort]) => async () =>
 				(await this.getResults(slug, sort)).map(result => ({
@@ -94,18 +96,12 @@ export class Scraper {
 
 export interface Result {
 	bytes: number
-	date: number
 	hash: string
 	magnet: string
 	name: string
 	providers: string[]
-	seeders: number
 	score: number
+	seeders: number
 	slugs: string[]
-}
-
-export interface MagnetQuery {
-	dn: string
-	tr: string[]
-	xt: string
+	stamp: number
 }

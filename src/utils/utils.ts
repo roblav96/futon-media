@@ -39,16 +39,19 @@ export function zeroSlug(value: number) {
 	return value && (value / 100).toFixed(2).slice(-2)
 }
 
-export function filterWords(value: string, sentence: string) {
-	let words = sentence.toLowerCase().split(' ')
-	let split = value.split(' ').filter(v => !words.includes(v.toLowerCase()))
-	return split.join(' ')
-}
-
-export function toSlug(value: string, options = {} as SlugifyOptions) {
-	_.defaults(options, { decamelize: false, lowercase: true, separator: ' ' } as SlugifyOptions)
-	let slug = slugify(clean(value).replace(/'/g, ''), options)
-	return filterWords(slug, 'a an and of the')
+export function toSlug(value: string, options = {} as SlugifyOptions & { toName?: boolean }) {
+	_.defaults(options, {
+		decamelize: false,
+		lowercase: !options.toName,
+		separator: ' ',
+	} as Parameters<typeof toSlug>[1])
+	let slug = slugify(
+		clean(value).replace(/'/g, ''),
+		Object.assign({}, options, { separator: ' ' })
+	)
+	let filters = !options.toName ? ['a', 'an', 'and', 'of', 'the'] : []
+	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
+	return split.join(options.separator)
 }
 
 export function isVideo(file: string) {

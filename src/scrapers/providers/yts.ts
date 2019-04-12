@@ -3,28 +3,27 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-const CONFIG = {
-	throttle: 100,
-}
-
 export const client = new http.Http({
 	baseUrl: 'https://yts.am/api/v2',
-	query: {
-		limit: 50,
-		quality: '1080p',
-	} as Partial<Query>,
+	query: { limit: 50 } as Partial<Query>,
 	afterResponse: {
 		append: [
 			async (options, resolved) => {
-				await utils.pTimeout(CONFIG.throttle)
+				await utils.pTimeout(100)
 			},
 		],
 	},
 })
 
-export class YtsAm extends scraper.Scraper {
+export class Yts extends scraper.Scraper {
 	sorts = ['date_added']
+	get slugs() {
+		return [this.item.ids.imdb]
+	}
 	async getResults(slug: string, sort: string) {
+		if (!this.item.movie) {
+			return []
+		}
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 			verbose: true,
@@ -33,13 +32,13 @@ export class YtsAm extends scraper.Scraper {
 			m.torrents.map((v, i) => {
 				let rip = m.torrents.length >= 2 && i >= 2 ? 'WEB' : 'BluRay'
 				let name = _.startCase(m.title_long || m.title_english || m.title || slug)
-				let title = `${name} ${v.quality} ${rip}`.replace(/\s+/g, '.')
+				let title = `${name} ${v.quality} ${rip}`
 				return {
 					bytes: v.size_bytes,
-					date: v.date_uploaded_unix * 1000,
 					magnet: `magnet:?xt=urn:btih:${v.hash}&dn=${title}`,
 					name: title,
 					seeders: v.seeds,
+					stamp: v.date_uploaded_unix * 1000,
 				} as scraper.Result
 			})
 		)
@@ -47,7 +46,7 @@ export class YtsAm extends scraper.Scraper {
 	}
 }
 
-export interface Query {
+interface Query {
 	limit: number
 	page: number
 	quality: string
@@ -55,7 +54,7 @@ export interface Query {
 	sort_by: string
 }
 
-export interface Response {
+interface Response {
 	'@meta': {
 		api_version: number
 		execution_time: string
@@ -72,7 +71,7 @@ export interface Response {
 	status_message: string
 }
 
-export interface Movie {
+interface Movie {
 	background_image: string
 	background_image_original: string
 	date_uploaded: string
@@ -101,7 +100,7 @@ export interface Movie {
 	yt_trailer_code: string
 }
 
-export interface Torrent {
+interface Torrent {
 	date_uploaded: string
 	date_uploaded_unix: number
 	hash: string

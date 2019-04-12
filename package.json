@@ -14,7 +14,7 @@
 		"prepublishOnly": "del dist && tsc",
 		"start": "del dist && redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist && nodemon -q",
+		"start:node": "just-wait -s -p dist && nodemon -q --inspect",
 		"test": "del dist && tsc || true && node dist/index.js"
 	},
 	"nodemonConfig": {
@@ -22,12 +22,16 @@
 		"restartable": false,
 		"watch": "dist"
 	},
+	"_moduleAliases": {
+		"@": "dist"
+	},
 	"dependencies": {
 		"@sindresorhus/slugify": "^0.9.1",
 		"all-keys": "^3.1.0",
 		"ansi-colors": "^3.2.4",
 		"ansi-escapes": "^4.1.0",
 		"cheerio": "^0.22.0",
+		"cli-table3": "^0.5.1",
 		"configstore": "^4.0.0",
 		"dayjs": "^1.8.12",
 		"dotenv": "^7.0.0",
@@ -80,6 +84,7 @@
 		"dts-generate": "^1.0.8",
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
+		"module-alias": "^2.2.0",
 		"node-env-dev": "^1.1.2",
 		"nodemon": "^1.18.11",
 		"redrun": "^7.1.5",

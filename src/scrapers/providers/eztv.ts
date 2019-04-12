@@ -1,12 +1,7 @@
 import * as _ from 'lodash'
-import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
-
-const CONFIG = {
-	throttle: 100,
-}
 
 export const client = new http.Http({
 	baseUrl: 'https://eztv.io/api',
@@ -14,7 +9,7 @@ export const client = new http.Http({
 	afterResponse: {
 		append: [
 			async (options, resolved) => {
-				await utils.pTimeout(CONFIG.throttle)
+				await utils.pTimeout(100)
 			},
 		],
 	},
@@ -29,37 +24,36 @@ export class Eztv extends scraper.Scraper {
 			return []
 		}
 		let response = (await client.get('/get-torrents', {
-			query: { imdb_id: slug.replace(/[\D]/g, '') } as Partial<Query>,
+			query: { imdb_id: slug.replace(/\D/g, '') } as Partial<Query>,
 			verbose: true,
 		})) as Response
 		let results = (response.torrents || []).filter(v => {
 			let { s, e } = { s: _.parseInt(v.season), e: _.parseInt(v.episode) }
-			let good = this.item.episode ? this.item.episode.number == e : true
-			return good && this.item.season.number == s
+			if (this.item.episode) {
+				return this.item.S.n == s && this.item.E.n == e
+			} else if (this.item.season) {
+				return this.item.S.n == s
+			} else return true
 		})
 		return results.map(v => {
-			let title = v.title.replace('EZTV', '')
-			let magnet = magneturi.decode(v.magnet_url)
-			magnet.dn = magnet.dn && (magnet.dn as string).replace('[eztv]', '')
-			!magnet.dn && (magnet.dn = title.replace(/[\s]/g, '.'))
 			return {
 				bytes: _.parseInt(v.size_bytes),
-				date: new Date(v.date_released_unix * 1000).valueOf(),
-				magnet: magneturi.encode(magnet),
-				name: title,
+				magnet: v.magnet_url,
+				name: v.title,
 				seeders: v.seeds,
+				stamp: new Date(v.date_released_unix * 1000).valueOf(),
 			} as scraper.Result
 		})
 	}
 }
 
-export interface Query {
+interface Query {
 	imdb_id: string
 	limit: number
 	page: number
 }
 
-export interface Response {
+interface Response {
 	imdb_id: string
 	limit: number
 	page: number
@@ -67,7 +61,7 @@ export interface Response {
 	torrents_count: number
 }
 
-export interface Result {
+interface Result {
 	date_released_unix: number
 	episode: string
 	episode_url: string

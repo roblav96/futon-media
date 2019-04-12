@@ -20,9 +20,10 @@ export class Item {
 		return _.findLast(TYPES, type => !!this[type])
 	}
 	get ids() {
-		if (this.movie) return this.movie.ids
-		if (this.show) return this.show.ids
-		return this[this.type].ids
+		let ids = this[this.type].ids
+		this.movie && (ids = this.movie.ids)
+		this.show && (ids = this.show.ids)
+		return ids
 	}
 	get full() {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full

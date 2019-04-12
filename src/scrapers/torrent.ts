@@ -7,6 +7,18 @@ export class Torrent {
 	cached = [] as Debrid[]
 	files = [] as File[]
 
+	// let magnet = (qs.parseUrl(utils.clean(result.magnet)).query as any) as torrent.MagnetQuery
+	// magnet.xt = magnet.xt.toLowerCase()
+	// magnet.dn = result.name
+	// magnet.tr = (magnet.tr || []).filter(
+	// 	tr => trackerslist.bad.filter(v => v.startsWith(tr)).length == 0
+	// )
+	// magnet.tr = _.uniq(magnet.tr.concat(trackerslist.good))
+	// _.unset(result, 'magnet')
+	// Object.defineProperty(result, 'magnet', {
+	// 	value: magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr }),
+	// })
+
 	constructor(result: scraper.Result) {
 		_.merge(this, result)
 	}
@@ -22,4 +34,10 @@ export interface File {
 	path: string
 	slug: string
 	url: string
+}
+
+export interface MagnetQuery {
+	dn: string
+	tr: string[]
+	xt: string
 }

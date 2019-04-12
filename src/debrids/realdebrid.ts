@@ -12,14 +12,13 @@ export const client = new http.Http({
 })
 
 export class RealDebrid extends debrid.Debrid {
-	async checkCache(hashes: string[]) {
+	async check(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let url = `/torrents/instantAvailability/${hashes.join('/')}`
 		let response = (await client.get(url, {
 			verbose: true,
 		})) as CacheResponse
-		// !_.isPlainObject(response) && (response = {})
-		return hashes.map(hash => _.size(_.get(response, `${hash}.rd`)) > 0)
+		return hashes.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
 	}
 
 	async download(magnet: string) {

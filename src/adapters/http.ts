@@ -60,6 +60,7 @@ export class Http {
 	async request(config: Config) {
 		let options = Http.merge(this.config, config)
 
+		options.url.startsWith('http') && (options.baseUrl = '')
 		let { url, query } = qs.parseUrl(
 			normalize((options.baseUrl || '') + options.url, {
 				normalizeProtocol: false,
@@ -72,7 +73,8 @@ export class Http {
 
 		if (options.verbose) {
 			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
-			console.log(options.method, minurl, config.query)
+			let minquery = JSON.stringify(config.query || {}).length < 100 ? config.query : ''
+			console.log(options.method, _.truncate(minurl, { length: 100 }), minquery || '')
 		}
 
 		if (options.beforeRequest) {
@@ -90,7 +92,7 @@ export class Http {
 		}
 
 		if (options.debug) {
-			console.log(options.method, options.url, options.query)
+			console.warn(`[DEBUG]`, options.method, options.url, options.query)
 		}
 
 		let resolved = await (options.memoize ? Http.msend(options) : Http.send(options))

@@ -9,33 +9,28 @@ import * as utils from '@/utils/utils'
 export function filter(result: scraper.Result) {
 	try {
 		if (!result.magnet || !result.magnet.startsWith('magnet:')) {
-			console.warn(`filter !result.magnet ->`, result)
+			console.warn(`!result.magnet ->`, result)
 			return false
 		}
-		let magnet = (qs.parseUrl(utils.clean(result.magnet)).query as any) as scraper.MagnetQuery
-
-		result.name = result.name || magnet.dn
-		if (!result.name) {
-			console.warn(`filter !result.name ->`, result)
-			return false
-		}
-		result.name = utils.toSlug(result.name, { lowercase: false, separator: '.' })
-
-		magnet.xt = magnet.xt.toLowerCase()
-		magnet.dn = result.name
-		magnet.tr = (magnet.tr || []).filter(
-			tr => trackerslist.bad.filter(v => v.startsWith(tr)).length == 0
-		)
-		magnet.tr = _.uniq(magnet.tr.concat(trackerslist.good))
-		_.unset(result, 'magnet')
-		Object.defineProperty(result, 'magnet', {
-			value: magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr }),
-		})
+		result.magnet = utils.clean(result.magnet)
 		result.hash = magneturi.decode(result.magnet).infoHash.toLowerCase()
+
+		result.name = result.name || (qs.parse(result.magnet).dn as string)
+		if (!result.name) {
+			console.warn(`!result.name ->`, result)
+			return false
+		}
+		// result.name = utils.toSlug(result.name, { toName: true })
+		console.log(
+			`result.name ->`,
+			result.name,
+			`\n     toSlug ->`,
+			utils.toSlug(result.name)
+		)
 
 		return true
 	} catch (error) {
-		console.error(`filter Error ->`, error, result)
+		console.error(`filter Error ->`, error, `\nresult ->`, result)
 		return false
 	}
 }
