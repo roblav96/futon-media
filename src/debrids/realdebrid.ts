@@ -22,7 +22,7 @@ export class RealDebrid implements debrid.Debrid {
 				await utils.pRandom(300)
 				let url = `/torrents/instantAvailability/${hashes.join('/')}`
 				let response = (await client.get(url, {
-					memoize: true,
+					memoize: process.env.NODE_ENV == 'development',
 					verbose: true,
 				})) as CacheResponse
 				return chunk.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
@@ -50,14 +50,14 @@ export class RealDebrid implements debrid.Debrid {
 			})) as Item
 
 			let files = item.files.filter(file => {
-				let name = utils.minify(path.basename(file.path))
-				return utils.isVideo(file.path) && !name.includes('sample')
+				// let name = utils.minify(path.basename(file.path))
+				return utils.isVideo(file.path) // && !name.includes('sample')
 			})
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, item)
-				await client.delete(`torrents/delete/${download.id}`, {
-					verbose: true,
-				})
+				// await client.delete(`/torrents/delete/${download.id}`, {
+				// 	verbose: true,
+				// })
 				return []
 			}
 			await client.post(`/torrents/selectFiles/${download.id}`, {

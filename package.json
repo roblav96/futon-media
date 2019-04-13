@@ -1,6 +1,6 @@
 {
 	"name": "futon-media-cli",
-	"version": "0.0.1",
+	"version": "0.0.6",
 	"description": "Interactive CLI tool used to create .strm files for Emby Media",
 	"main": "dist/index.js",
 	"files": [
@@ -14,10 +14,11 @@
 		"prepublishOnly": "del dist && tsc",
 		"start": "del dist && redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist && nodemon -q --inspect",
+		"start:node": "just-wait -s -p dist &&  nodemon -q",
 		"test": "del dist && tsc || true && node dist/index.js"
 	},
 	"nodemonConfig": {
+		"exec": "NODE_ENV=development node --inspect dist/index.js",
 		"ext": "js",
 		"restartable": false,
 		"watch": "dist"

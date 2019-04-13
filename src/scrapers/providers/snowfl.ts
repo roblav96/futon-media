@@ -8,12 +8,12 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	memoize: true,
+	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://snowfl.com',
 })
 
 const nonce = (value = Math.random().toString(36)) => value.slice(-8)
-const storage = new ConfigStore(pkgup.sync().pkg.name + '-' + path.basename(__filename))
+const storage = new ConfigStore(pkgup.sync({ cwd: __dirname }).pkg.name + '-' + path.basename(__filename))
 let TOKEN = (storage.get('TOKEN') || '') as string
 let STAMP = (storage.get('STAMP') || 0) as number
 

@@ -5,7 +5,7 @@ import * as pkgup from 'read-pkg-up'
 import * as ConfigStore from 'configstore'
 import * as http from '@/adapters/http'
 
-const storage = new ConfigStore(pkgup.sync().pkg.name + '-' + path.basename(__filename))
+const storage = new ConfigStore(pkgup.sync({ cwd: __dirname }).pkg.name + '-' + path.basename(__filename))
 // storage.clear()
 
 export let good = (storage.get('good') || []) as string[]

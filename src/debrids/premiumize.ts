@@ -21,7 +21,7 @@ export class Premiumize implements debrid.Debrid {
 			chunks.map((chunk, index) => async () => {
 				await utils.pRandom(300)
 				let response = (await client.post(`/cache/check`, {
-					memoize: true,
+					memoize: process.env.NODE_ENV == 'development',
 					query: { items: chunk },
 					verbose: true,
 				})) as CacheResponse

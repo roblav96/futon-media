@@ -4,9 +4,9 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	memoize: true,
+	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://solidtorrents.net/api/v1',
-	query: { /** category: 'Video' */ } as Partial<Query>,
+	query: { category: 'Video' } as Partial<Query>,
 	afterResponse: {
 		append: [
 			async (options, resolved) => {

@@ -13,30 +13,33 @@ export const client = new http.Http({
 
 export async function libraryLinks(item: media.Item, links: string[]) {
 	let base = process.env.EMBY_LIBRARY || process.cwd()
-	console.log(`base ->`, base)
 
 	let dir = item.movie ? 'movies' : 'shows'
 	if (!fs.pathExistsSync(path.join(base, dir))) {
-		// return console.warn(`!fs.pathExistsSync(${path.join(base, dir)})`)
+		return console.warn(`!fs.pathExistsSync(${path.join(base, dir)})`)
 	}
 	dir += `/${item.ids.slug}`
 	item.season && (dir += `/s${item.S.z}`)
-	let cwd = path.resolve(base, dir)
-	// await fs.ensureDir(cwd)
-	console.log(`cwd ->`, cwd)
+	let cwd = path.join(base, dir)
+	await fs.ensureDir(cwd)
 
-	links.forEach((link, i) => {
-		let name = `${item.ids.slug}`
-		item.season && (name += `-s${item.S.z}e${utils.zeroSlug(i + 1)}`)
-		name += `.strm`
-		console.log(`name, link ->`, name, link)
-		// fs.outputFileSync(name, link)
-	})
+	await pAll(
+		links.map((link, index) => () => {
+			let name = `${item.ids.slug}`
+			if (item.season) {
+				name += `-s${item.S.z}`
+				name += `e${utils.zeroSlug(index + 1)}`
+			}
+			name += `.strm`
+			return fs.outputFile(path.join(cwd, name), link)
+		})
+	)
 
 	await libraryRefresh()
 }
 
 export async function libraryRefresh() {
-	let response = await client.post(`/Library/Refresh`)
-	console.log(`response ->`, response)
+	let response = await client.post(`/Library/Refresh`, {
+		verbose: true,
+	})
 }

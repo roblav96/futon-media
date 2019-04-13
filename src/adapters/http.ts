@@ -133,7 +133,7 @@ export class Http {
 		return this.request({ method: 'DELETE', url, ...config }).then(({ body }) => body)
 	}
 
-	private static storage = new ConfigStore(pkgup.sync().pkg.name)
+	private static storage = new ConfigStore(pkgup.sync({ cwd: __dirname }).pkg.name)
 	private static msend(options: sget.Options) {
 		let key = fastStringify(options)
 		if (Http.storage.has(key)) {

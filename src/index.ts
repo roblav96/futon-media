@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-setInterval(Function, 1 << 30)
 import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
@@ -17,26 +16,24 @@ import { searchItem } from '@/prompts/search-item'
 import { selectTorrent } from '@/prompts/select-torrent'
 
 async function start() {
-	let item = new media.Item(mocks.SEASONS['westworld'])
-	// let item = await searchItem()
+	// let item = new media.Item(mocks.SEASONS['westworld'])
+	let item = await searchItem()
 	// return console.log(`item ->`, item)
 
-	await emby.libraryLinks(item, mocks.LINKS)
-	return
-
 	let torrents = await scraper.scrapeAll(item)
-	console.log(`torrents.lengthss ->`, torrents.length)
+	// console.log(`torrents.length ->`, torrents.length)
 
 	let torrent = await selectTorrent(torrents)
-	console.log(`torrent ->`, torrent)
+	// console.log(`torrent ->`, torrent)
 
 	let service = torrent.cached[0] || (debrid.entries[0][0] as debrid.Debrids)
 	let links = await debrid.debrids[service].links(torrent.magnet)
-	console.log(`links ->`, links)
+	// console.log(`links ->`, links)
 	if (links.length == 0) {
-		console.warn(`links.length == 0`)
-		return
+		return console.warn(`links.length == 0`)
 	}
+	await emby.libraryLinks(item, mocks.LINKS)
+
 	// if (!process.env.EMBY_LIBRARY) {
 	// 	console.warn(`!process.env.EMBY_LIBRARY`)
 	// 	return
@@ -45,7 +42,6 @@ async function start() {
 	// let cwd = path.resolve(library, )
 	// let dir = path.dirname(process.cwd())
 	// console.log(`dir ->`, dir)
-	
 
 	// let data = results.map(v => [v.name, v.bytes])
 	// console.log(`data ->`, data[0])
