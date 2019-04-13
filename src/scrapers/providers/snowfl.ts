@@ -8,6 +8,7 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
+	memoize: true,
 	baseUrl: 'https://snowfl.com',
 })
 

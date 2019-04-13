@@ -4,6 +4,7 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
+	memoize: true,
 	baseUrl: 'https://torrentapi.org',
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,

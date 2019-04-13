@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as pAll from 'p-all'
 import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
@@ -12,18 +13,21 @@ export const client = new http.Http({
 	},
 })
 
-export class Premiumize extends debrid.Debrid {
-	async check(hashes: string[]) {
+export class Premiumize implements debrid.Debrid {
+	async getCached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let response = (await client.post('https://www.premiumize.me/api/cache/check', {
-			query: { items: hashes },
-			debug: true,
-		})) as CacheResponse
-		console.log(`response ->`, response)
-		return null
-		// return hashes.map(hash => {
-			
-		// })
+		let chunks = _.chunk(hashes, 40)
+		return (await pAll(
+			chunks.map((chunk, index) => async () => {
+				await utils.pTimeout(300)
+				let response = (await client.post(`/cache/check`, {
+					query: { items: chunk },
+					verbose: true,
+				})) as CacheResponse
+				return chunk.map((v, i) => response.response[i])
+			}),
+			{ concurrency: 1 }
+		)).flat()
 	}
 
 	async download(magnet: string) {}

@@ -1,11 +1,13 @@
 import * as _ from 'lodash'
-import * as dayjs from 'dayjs'
 import * as levenshtein from 'js-levenshtein'
 import * as stripBom from 'strip-bom'
 import * as parseBytes from 'bytes'
-import * as prettyBytes from 'pretty-bytes'
+import * as dayjs from 'dayjs'
+import * as relativeTime from 'dayjs/plugin/relativeTime'
 import stripAnsi from 'strip-ansi'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
+
+dayjs.extend(relativeTime)
 
 export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
 	return new Promise(r => setTimeout(r, duration)).then(() => resolved)
@@ -56,7 +58,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 		clean(value).replace(/'/g, ''),
 		Object.assign({}, options, { separator: ' ' })
 	)
-	let filters = !options.toName ? ['a', 'an', 'and', 'of', 'the'] : []
+	let filters = !options.toName ? ['a', 'an', 'and', 'of', 'the', 'to'] : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
 }
@@ -73,8 +75,8 @@ export function slider(value: number, min: number, max: number) {
 	return ((value - min) / (max - min)) * 100
 }
 
-export function define<T>(target: T, key: keyof T, value: any) {
-	Object.defineProperty(target, key, { value, configurable: true, writable: false })
+export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]) {
+	Object.defineProperty(target, key, { value })
 }
 
 export function toStamp(value: string) {
@@ -86,31 +88,33 @@ export function toStamp(value: string) {
 }
 
 const BYTE_UNITS = {
-	b: 1,
-	kb: Math.pow(1000, 1),
-	mb: Math.pow(1000, 2),
-	gb: Math.pow(1000, 3),
-	tb: Math.pow(1000, 4),
-	pb: Math.pow(1000, 5),
-	eb: Math.pow(1000, 6),
-	zb: Math.pow(1000, 7),
-	yb: Math.pow(1000, 8),
-	kib: Math.pow(1024, 1),
-	mib: Math.pow(1024, 2),
-	gib: Math.pow(1024, 3),
-	tib: Math.pow(1024, 4),
-	pib: Math.pow(1024, 5),
-	eib: Math.pow(1024, 6),
-	zib: Math.pow(1024, 7),
-	yib: Math.pow(1024, 8),
+	b: { num: 1, str: 'B' },
+	kb: { num: Math.pow(1000, 1), str: 'kB' },
+	mb: { num: Math.pow(1000, 2), str: 'MB' },
+	gb: { num: Math.pow(1000, 3), str: 'GB' },
+	tb: { num: Math.pow(1000, 4), str: 'TB' },
+	pb: { num: Math.pow(1000, 5), str: 'PB' },
+	eb: { num: Math.pow(1000, 6), str: 'EB' },
+	zb: { num: Math.pow(1000, 7), str: 'ZB' },
+	yb: { num: Math.pow(1000, 8), str: 'YB' },
+	kib: { num: Math.pow(1024, 1), str: 'KiB' },
+	mib: { num: Math.pow(1024, 2), str: 'MiB' },
+	gib: { num: Math.pow(1024, 3), str: 'GiB' },
+	tib: { num: Math.pow(1024, 4), str: 'TiB' },
+	pib: { num: Math.pow(1024, 5), str: 'PiB' },
+	eib: { num: Math.pow(1024, 6), str: 'EiB' },
+	zib: { num: Math.pow(1024, 7), str: 'ZiB' },
+	yib: { num: Math.pow(1024, 8), str: 'YiB' },
 }
 export function toBytes(value: string) {
 	let amount = parseFloat(value)
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
-	return Number.parseInt((amount * BYTE_UNITS[unit]) as any)
+	return Number.parseInt((amount * BYTE_UNITS[unit].num) as any)
 }
-export function fromBytes(value: number) {
-	return prettyBytes(value)
+export function fromBytes(value: number, precision = 1) {
+	let units = Object.entries(BYTE_UNITS).map(([k, v]) => v)
+	let unit = units.find(unit => value / unit.num < 1000)
+	return `${(value / unit.num).toFixed(precision)} ${unit.str}`
 }
 
 // export function toBytes(value: string) {

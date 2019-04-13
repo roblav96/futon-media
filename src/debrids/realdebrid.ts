@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as pAll from 'p-all'
 import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
@@ -11,14 +12,21 @@ export const client = new http.Http({
 	},
 })
 
-export class RealDebrid extends debrid.Debrid {
-	async check(hashes: string[]) {
+export class RealDebrid implements debrid.Debrid {
+	async getCached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let url = `/torrents/instantAvailability/${hashes.join('/')}`
-		let response = (await client.get(url, {
-			verbose: true,
-		})) as CacheResponse
-		return hashes.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
+		let chunks = _.chunk(hashes, 40)
+		return (await pAll(
+			chunks.map((chunk, index) => async () => {
+				await utils.pTimeout(300)
+				let url = `/torrents/instantAvailability/${hashes.join('/')}`
+				let response = (await client.get(url, {
+					verbose: true,
+				})) as CacheResponse
+				return chunk.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
+			}),
+			{ concurrency: 1 }
+		)).flat()
 	}
 
 	async download(magnet: string) {

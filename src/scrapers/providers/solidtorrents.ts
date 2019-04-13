@@ -5,7 +5,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
 	baseUrl: 'https://solidtorrents.net/api/v1',
-	query: { category: 'Video' } as Partial<Query>,
+	query: { /** category: 'Video' */ } as Partial<Query>,
 	afterResponse: {
 		append: [
 			async (options, resolved) => {

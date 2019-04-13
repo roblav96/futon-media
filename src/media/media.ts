@@ -29,6 +29,13 @@ export class Item {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
 	}
 
+	get title() {
+		let title = this.full.title
+		this.movie && (title = `${this.movie.title} ${this.movie.year}`)
+		this.show && (title = this.show.title)
+		return title
+	}
+
 	get S() {
 		let n = this.season ? this.season.number : this.episode ? this.episode.season : NaN
 		return _.isFinite(n) ? { n, z: utils.zeroSlug(n) } : {}

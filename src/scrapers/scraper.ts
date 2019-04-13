@@ -3,25 +3,28 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as magneturi from 'magnet-uri'
+import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as media from '@/media/media'
 import * as filters from '@/scrapers/filters'
-import * as utils from '@/utils/utils'
+import * as trackers from '@/scrapers/trackers-list'
+import * as torrent from '@/scrapers/torrent'
+import * as debrid from '@/debrids/debrid'
 
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
 		// (await import('./providers/eztv')).Eztv,
-		// (await import('./providers/rarbg')).Rarbg,
-		(await import('./providers/snowfl')).Snowfl,
+		(await import('./providers/rarbg')).Rarbg,
+		// (await import('./providers/snowfl')).Snowfl,
 		// (await import('./providers/solidtorrents')).SolidTorrents,
 		// (await import('./providers/yts')).Yts,
 	] as typeof Scraper[]
 
-	let results = (await pAll(
-		providers.map(scraper => () => new scraper(item, rigorous).start())
+	let torrents = (await pAll(
+		providers.map(scraper => () => new scraper(item, rigorous).getTorrents())
 	)).flat()
 
-	results = _.uniqWith(results, (from, to) => {
+	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) {
 			return false
 		}
@@ -33,9 +36,13 @@ export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeo
 		!to.score && from.score && (to.score = from.score)
 		return true
 	})
-	results.sort((a, b) => b.bytes - a.bytes)
 
-	return results
+	let cached = await debrid.getCached(torrents.map(v => v.hash))
+	torrents.forEach((v, i) => (v.cached = cached[i]))
+
+	torrents.sort((a, b) => b.bytes - a.bytes)
+
+	return torrents
 }
 
 export interface Scraper {
@@ -70,11 +77,12 @@ export class Scraper {
 
 	constructor(public item: media.Item, public rigorous = false) {}
 
-	async start() {
+	async getTorrents() {
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		let sorts = this.rigorous ? this.sorts : [this.sorts[0]]
 		this.slugs.forEach(slug => sorts.forEach(sort => combinations.push([slug, sort])))
 
+		/** get results with slug and sorts query combinations */
 		let results = (await pAll(
 			combinations.map(([slug, sort]) => async () =>
 				(await this.getResults(slug, sort)).map(result => ({
@@ -84,21 +92,46 @@ export class Scraper {
 				}))
 			),
 			{ concurrency: this.concurrency }
-		)).flat()
+		)).flat() as Result[]
 
+		/** remove junk results */
+		_.remove(results, result => {
+			/** clean and check for magnet URL */
+			result.magnet = utils.clean(result.magnet)
+			let magnet = (qs.parseUrl(result.magnet).query as any) as MagnetQuery
+			if (!magnet.xt) {
+				console.warn(`junk !magnet.xt ->`, result)
+				return true
+			}
+
+			/** check and repair name then slugify */
+			result.name = result.name || magnet.dn
+			if (!result.name) {
+				console.warn(`junk !result.name ->`, result)
+				return true
+			}
+			result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
+
+			if (utils.accuracy(this.item.title, result.name).length > 0) {
+				// console.warn(`junk accuracy > 0 ->`, result)
+				return true
+			}
+		})
+
+		/** accumulate seeders and determine min and max range */
 		let seeders = results.map(v => v.seeders)
 		let range = { min: _.min(seeders), max: _.max(seeders) }
 		results.forEach(result => {
+			/** set score to a number between 1-100 based on seeders min and max */
 			result.score = _.round(utils.slider(result.seeders, range.min, range.max))
 		})
 
-		return results
+		return results.map(v => new torrent.Torrent(v))
 	}
 }
 
 export interface Result {
 	bytes: number
-	hash: string
 	magnet: string
 	name: string
 	providers: string[]
@@ -106,4 +139,10 @@ export interface Result {
 	seeders: number
 	slugs: string[]
 	stamp: number
+}
+
+export interface MagnetQuery {
+	dn: string
+	tr: string[]
+	xt: string
 }

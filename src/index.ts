@@ -11,25 +11,28 @@ import * as mocks from '@/dev/mocks'
 import * as media from '@/media/media'
 import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
-import * as debrid from '@/debrids/debrid'
 import * as prompts from '@/prompts/prompts'
 
 async function start() {
-	let item = new media.Item(mocks.MOVIES['how-to-train-your-dragon-the-hidden-world-2019'])
+	let item = new media.Item(mocks.MOVIES['the-lego-movie-2014'])
 	// let item = await prompts.searchItem()
 	// return console.log(`item ->`, item)
 
-	let results = await scraper.scrapeAll(item)
-	console.log(`results ->`, results)
-	console.log(`results.length ->`, results.length)
-	// let torrents = results.map(v => new torrent.Torrent(v))
+	let torrents = await scraper.scrapeAll(item)
+	// console.log(`torrents ->`, torrents)
+	console.log(`torrents.length ->`, torrents.length)
 
-	// let table = new Table({
-	// 	style: { compact: true },
-	// })
-	// results.forEach(v => table.push([v.date, v.bytes, v.name]))
-	// let split = table.toString().split('\n')
-	// let output = split.slice(1, -1).join('\n')
+	let widths = [8, 10, 15]
+	let swidth = process.stdout.columns - _.sum(widths) - widths.length * 2
+	let table = new Table({
+		colAligns: ['left'].concat(widths.map(v => 'right')) as any[],
+		colWidths: [swidth + 1].concat(widths),
+		style: { compact: true },
+	})
+	torrents.forEach(v => table.push([v.name, v.ttycache, v.size, v.age] as any))
+	let split = table.toString().split('\n')
+	let output = split.slice(1, -1).join('\n')
+	process.stdout.write(`${output}\n\n`)
 
 	// let data = results.map(v => [v.name, v.bytes])
 	// console.log(`data ->`, data[0])
