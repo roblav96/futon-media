@@ -19,21 +19,27 @@ export class Item {
 	get type() {
 		return _.findLast(TYPES, type => !!this[type])
 	}
-	get ids() {
-		let ids = this[this.type].ids
-		this.movie && (ids = this.movie.ids)
-		this.show && (ids = this.show.ids)
-		return ids
-	}
 	get full() {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
 	}
+	get main() {
+		let main = this.full
+		this.movie && (main = this.movie as any)
+		this.show && (main = this.show as any)
+		return main
+	}
+	get ids() {
+		return this.main.ids
+	}
 
 	get title() {
-		let title = this.full.title
-		this.movie && (title = `${this.movie.title} ${this.movie.year}`)
-		this.show && (title = this.show.title)
+		let title = this.main.title
+		this.movie && (title += ` ${this.movie.year}`)
 		return title
+	}
+
+	get popularity() {
+		return this.score + this.main.votes
 	}
 
 	get S() {

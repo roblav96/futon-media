@@ -5,6 +5,8 @@ import { premiumize } from '@/debrids/premiumize'
 
 export interface Debrid {
 	getCached(hashes: string[]): Promise<boolean[]>
+	// download(magnet: string): Promise<void>
+	links(magnet: string): Promise<string[]>
 }
 
 export const debrids = { realdebrid, premiumize }

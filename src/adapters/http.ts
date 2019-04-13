@@ -74,8 +74,8 @@ export class Http {
 
 		if (options.verbose) {
 			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
-			let minquery = JSON.stringify(config.query || {}).length < 128 ? config.query : ''
-			console.log(options.method, _.truncate(minurl, { length: 128 }), minquery || '')
+			let minquery = JSON.stringify(config.query || {}).length < 256 ? config.query : ''
+			console.log(options.method, _.truncate(minurl, { length: 256 }), minquery || '')
 		}
 
 		if (options.beforeRequest) {
@@ -93,7 +93,7 @@ export class Http {
 		}
 
 		if (options.debug) {
-			console.warn(`[DEBUG]`, options.method, options.url, options.query)
+			console.log(`-> DEBUG REQUEST ->`, options.method, options.url, options)
 		}
 
 		let resolved = await (options.memoize ? Http.msend(options) : Http.send(options))
@@ -102,6 +102,9 @@ export class Http {
 		if (!response.statusMessage) {
 			let error = errors[response.statusCode]
 			response.statusMessage = error ? error.name : 'ok'
+		}
+		if (options.debug) {
+			console.log(`<- DEBUG RESPONSE <-`, options.method, options.url, options, resolved)
 		}
 		if (response.statusCode >= 400) {
 			throw new HTTPError(body, options, response)

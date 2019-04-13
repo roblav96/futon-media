@@ -21,6 +21,7 @@ export class Premiumize implements debrid.Debrid {
 			chunks.map((chunk, index) => async () => {
 				await utils.pTimeout(300)
 				let response = (await client.post(`/cache/check`, {
+					memoize: true,
 					query: { items: chunk },
 					verbose: true,
 				})) as CacheResponse
@@ -30,7 +31,9 @@ export class Premiumize implements debrid.Debrid {
 		)).flat()
 	}
 
-	async download(magnet: string) {}
+	async links(magnet: string) {
+		return []
+	}
 
 	async getItems() {}
 }

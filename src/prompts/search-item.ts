@@ -20,12 +20,12 @@ export async function searchItem() {
 			})) as trakt.Result[]
 			return response
 				.map(v => new media.Item(v))
-				.sort((a, b) => b.score - a.score)
+				.sort((a, b) => b.popularity - a.popularity)
 				.map(v => ({
 					title: `${v.full.title}, ${v.full.year}`,
 					value: v,
 				}))
-		}, 300) as any,
+		}, 100) as any,
 	} as prompts.PromptObject)) as media.Item
 	if (!item) {
 		throw new Error('Unselected media.Item')

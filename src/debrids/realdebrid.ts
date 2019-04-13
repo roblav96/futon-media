@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 import * as pAll from 'p-all'
+import * as path from 'path'
 import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
@@ -18,9 +19,10 @@ export class RealDebrid implements debrid.Debrid {
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pTimeout(300)
+				await utils.pRandom(300)
 				let url = `/torrents/instantAvailability/${hashes.join('/')}`
 				let response = (await client.get(url, {
+					memoize: true,
 					verbose: true,
 				})) as CacheResponse
 				return chunk.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
@@ -29,31 +31,73 @@ export class RealDebrid implements debrid.Debrid {
 		)).flat()
 	}
 
-	async download(magnet: string) {
-		// let decoded = magneturi.decode(magnet)
-		// decoded.infoHash.toLowerCase()
-		let download = (await client.post('/torrents/addMagnet', {
-			form: { magnet },
-			verbose: true,
-		})) as Download
-		console.log(`download ->`, download)
-		let item = (await client.get(`/torrents/info/${download.id}`, {
-			verbose: true,
-		})) as Item
-		console.log(`item ->`, item)
-		let files = item.files.filter(file => utils.isVideo(file.path)).map(v => v.id)
-		await client.post(`/torrents/selectFiles/${download.id}`, {
-			form: { files },
-			verbose: true,
-		})
-		return download.id
-	}
+	async links(magnet: string) {
+		console.warn(`links magnet ->`, magnet)
+		let decoded = magneturi.decode(magnet)
 
-	async getItems() {
 		let items = (await client.get('/torrents', {
 			verbose: true,
 		})) as Item[]
-		return items
+		let item = items.find(v => v.hash == decoded.infoHash)
+
+		if (!item) {
+			let download = (await client.post('/torrents/addMagnet', {
+				form: { magnet },
+				verbose: true,
+			})) as Download
+
+			item = (await client.get(`/torrents/info/${download.id}`, {
+				verbose: true,
+			})) as Item
+
+			let files = item.files.filter(file => {
+				let name = utils.minify(path.basename(file.path))
+				return utils.isVideo(file.path) && !name.includes('sample')
+			})
+			await client.post(`/torrents/selectFiles/${download.id}`, {
+				form: { files: files.map(v => v.id).join() },
+				verbose: true,
+			})
+
+			item = (await client.get(`/torrents/info/${download.id}`, {
+				verbose: true,
+			})) as Item
+		}
+
+		let downloads = await pAll(
+			item.links.map(link => async () => {
+				await utils.pRandom(300)
+				return (await client.post(`/unrestrict/link`, {
+					form: { link },
+					verbose: true,
+				})) as Unrestrict
+			}),
+			{ concurrency: 1 }
+		)
+		return downloads.map(v => v.download)
+
+		// if (items.map(v => v.hash).includes(decoded.infoHash)) {
+		// 	console.warn(`Download already exists ->`, decoded.name)
+		// 	return
+		// }
+
+		// let downloads = (await client.post(`/unrestrict/link`, {
+		// 	form: { link: item.links.join() },
+		// 	verbose: true,
+		// })) as Unrestrict[]
+
+		// let downloads = [] as Unrestrict[]
+		// if (item.links.length == 1) {
+		// 	downloads = await client.post(`/unrestrict/link`, {
+		// 		form: { link: item.links[0] },
+		// 		verbose: true,
+		// 	})
+		// } else if (item.links.length > 1) {
+		// 	downloads = await client.post(`/unrestrict/folder`, {
+		// 		form: { link: item.links[0] },
+		// 		verbose: true,
+		// 	})
+		// }
 	}
 }
 export const realdebrid = new RealDebrid()

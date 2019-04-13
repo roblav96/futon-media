@@ -12,6 +12,9 @@ dayjs.extend(relativeTime)
 export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
 	return new Promise(r => setTimeout(r, duration)).then(() => resolved)
 }
+export function pRandom(duration: number) {
+	return new Promise(r => setTimeout(r, _.random(duration)))
+}
 
 export function clean(value: string) {
 	return stripBom(stripAnsi(_.unescape(_.deburr(value))))

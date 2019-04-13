@@ -15,8 +15,8 @@ export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeo
 	let providers = [
 		// (await import('./providers/eztv')).Eztv,
 		(await import('./providers/rarbg')).Rarbg,
-		// (await import('./providers/snowfl')).Snowfl,
-		// (await import('./providers/solidtorrents')).SolidTorrents,
+		(await import('./providers/snowfl')).Snowfl,
+		(await import('./providers/solidtorrents')).SolidTorrents,
 		// (await import('./providers/yts')).Yts,
 	] as typeof Scraper[]
 
