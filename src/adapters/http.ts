@@ -75,7 +75,7 @@ export class Http {
 		if (options.verbose) {
 			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
 			let minquery = JSON.stringify(config.query || {}).length < 256 ? config.query : ''
-			console.log(options.method, _.truncate(minurl, { length: 256 }), minquery || '')
+			console.log(options.method, _.truncate(minurl, { length: 128 }), minquery || '')
 		}
 
 		if (options.beforeRequest) {

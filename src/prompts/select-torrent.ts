@@ -18,7 +18,7 @@ export async function selectTorrent(torrents: torrent.Torrent[]) {
 	// process.stdout.write(`${split.join('\n')}\n\n`)
 
 	let selected = (await prompts.prompts.autocomplete({
-		message: 'Select torrent to download',
+		message: 'Select torrent',
 		suggest: function(query: string) {
 			let choices = torrents.map((v, i) => ({ title: split[i], value: torrents[i] }))
 			return choices.filter(v => {

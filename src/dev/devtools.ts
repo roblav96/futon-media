@@ -41,7 +41,9 @@ console.clear()
 
 let date = new Date().toLocaleTimeString()
 let bar = `█`.repeat(process.stdout.columns - date.length - 6)
-process.stdout.write(`\n\n${ansi.dim.magenta(`██`)}  ${ansi.bold(date)}  ${ansi.dim.magenta(bar)}\n\n`)
+process.stdout.write(
+	`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
+)
 // process.stdout.write(`
 // ${ansi.magenta(`███████████████████████`)}
 //       ${ansi.bold(new Date().toLocaleTimeString())}

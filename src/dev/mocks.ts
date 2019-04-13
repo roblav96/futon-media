@@ -635,3 +635,16 @@ export const EPISODES = {
 
 export const SEASONS = _.mapValues(EPISODES, v => _.omit(v, 'episode')) as typeof EPISODES
 export const SHOWS = _.mapValues(EPISODES, v => _.omit(v, 'episode', 'season')) as typeof EPISODES
+
+export const LINKS = [
+	'https://35.rdeb.io/d/7CEX2QMZJETDY/Westworld.S02E01.Journey.Into.Night.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/G6QKFUFVC2RTC/Westworld.S02E02.Reunion.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/IYCLBRUIT3BOS/Westworld.S02E03.Virtu.e.Fortuna.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/IIWISXJHTO3H2/Westworld.S02E04.The.Riddle.of.the.Sphinx.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/N7OWZPUJSN57M/Westworld.S02E05.Akane.No.Mai.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/FEAUSPSOQKE6E/Westworld.S02E06.Phase.Space.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/ARBPICFIB7IAY/Westworld.S02E07.Les.Ecorches.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/RZV5JUFY5EKTE/Westworld.S02E08.Kiksuya.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/WR6TEY7MGHYO4/Westworld.S02E09.Vanishing.Point.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+	'https://35.rdeb.io/d/TBPKZAUDWETLY/Westworld.S02E10.The.Passenger.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
+]
