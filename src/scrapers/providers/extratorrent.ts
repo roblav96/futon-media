@@ -24,15 +24,16 @@ export class ExtraTorrent extends scraper.Scraper {
 			})
 		)
 		let results = [] as scraper.Result[]
-		$('.tl tr').each((i, tr) => {
+		$(`.tl tr`).each((i, el) => {
 			try {
-				let $tr = $(tr)
-				if (!$tr.attr('class')) return
-				let added = $tr.find('.tli + td').text()
+				let $el = $(el)
+				if (!$el.attr('class')) return
+				let added = $el.find(`.tli + td`).text()
 				let result = {
-					bytes: utils.toBytes($tr.find('.tli + td + td').text()),
-					name: $tr.find('.tli > a').text(),
-					seeders: utils.parseInt($tr.find('.sn').text()),
+					bytes: utils.toBytes($el.find(`.tli + td + td`).text()),
+					name: $el.find(`.tli > a`).text(),
+					magnet: _.trim($el.find(`a[href^="magnet:"]`).attr('href')),
+					seeders: utils.parseInt($el.find(`.sn`).text()),
 					stamp: new Date(added).valueOf(),
 				} as scraper.Result
 				if (added.startsWith('Today')) {
@@ -42,15 +43,12 @@ export class ExtraTorrent extends scraper.Scraper {
 						.subtract(1, 'day')
 						.valueOf()
 				}
-				$tr.find('a').each((ii, a) => {
-					let href = _.get(a, 'attribs.href', '') as string
-					if (href.startsWith('magnet:')) result.magnet = href
-				})
 				results.push(result)
 			} catch (error) {
 				console.error(`${this.constructor.name} Error ->`, error)
 			}
 		})
+		// console.log(`results ->`, results.splice(0).map(scraper.debug))
 		return results
 	}
 }

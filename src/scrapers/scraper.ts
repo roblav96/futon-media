@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
@@ -13,7 +14,9 @@ import * as debrid from '@/debrids/debrid'
 
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
-		(await import('./providers/btbit')).BtBit,
+		(await import('./providers/magnetdl')).MagnetDl,
+		// (await import('./providers/btdb')).Btdb,
+		// (await import('./providers/btbit')).BtBit,
 		// (await import('./providers/extratorrent')).ExtraTorrent,
 		// (await import('./providers/eztv')).Eztv,
 		// (await import('./providers/rarbg')).Rarbg,
@@ -87,7 +90,10 @@ export class Scraper {
 		/** get results with slug and sorts query combinations */
 		let results = (await pAll(
 			combinations.map(([slug, sort]) => async () =>
-				(await this.getResults(slug, sort)).map(result => ({
+				(await this.getResults(slug, sort).catch(function(error) {
+					console.error(`getResults Error ->`, error)
+					return [] as Result[]
+				})).map(result => ({
 					providers: [this.constructor.name],
 					slugs: [slug],
 					...result,
@@ -129,6 +135,14 @@ export class Scraper {
 		})
 
 		return results.map(v => new torrent.Torrent(v))
+	}
+}
+
+export function debug(result: Result) {
+	return {
+		...result,
+		bytes: utils.fromBytes(result.bytes),
+		stamp: dayjs(result.stamp).fromNow() + ', ' + dayjs(result.stamp).format('MMM DD YYYY'),
 	}
 }
 

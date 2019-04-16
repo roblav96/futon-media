@@ -93,10 +93,11 @@ export function compactNumber(value: number) {
 
 export function toStamp(value: string) {
 	let amount = parseInt(value)
-	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
+	let unit = _.trim(value.replace(/[^a-z ]/gi, '').toLowerCase())
+	unit = unit.split(' ').shift()
 	unit.endsWith('s') && (unit = unit.slice(0, -1))
 	let day = dayjs().subtract(amount, unit as any)
-	return day.valueOf()
+	return day.add(1, 'minute').valueOf()
 }
 
 const BYTE_UNITS = {
@@ -120,7 +121,7 @@ const BYTE_UNITS = {
 }
 export function toBytes(value: string) {
 	let amount = parseFloat(value)
-	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
+	let unit = _.trim(value.replace(/[^a-z]/gi, '').toLowerCase())
 	return Number.parseInt((amount * BYTE_UNITS[unit].num) as any)
 }
 export function fromBytes(value: number, precision = 1) {
