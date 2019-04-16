@@ -14,7 +14,6 @@ export const client = new http.Http({
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size', 'date', 'seeders']
 	async getResults(slug: string, sort: string) {
-		await utils.pRandom(500)
 		let response = (await client.get('/search', {
 			query: { sort, q: slug } as Partial<Query>,
 			verbose: true,

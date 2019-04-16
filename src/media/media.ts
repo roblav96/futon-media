@@ -31,6 +31,12 @@ export class Item {
 	get ids() {
 		return this.main.ids
 	}
+	get category() {
+		let category = this.type
+		this.movie && (category = 'movie')
+		this.show && (category = 'show')
+		return category
+	}
 
 	get title() {
 		let title = this.main.title

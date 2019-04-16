@@ -13,7 +13,6 @@ export class MagnetDl extends scraper.Scraper {
 	sorts = ['size', 'age', 'se']
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'Movie' : 'TV'
-		await utils.pRandom(500)
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`
 		let $ = cheerio.load(
 			await client.get(url.toLowerCase(), {

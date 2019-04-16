@@ -12,7 +12,6 @@ export const client = new http.Http({
 export class Magnet4You extends scraper.Scraper {
 	sorts = ['size', 'uploaded', 'seed']
 	async getResults(slug: string, sort: string) {
-		await utils.pRandom(500)
 		let $ = cheerio.load(
 			await client.get(`/search.php`, {
 				query: { s: `*${slug}*`, sort } as Partial<Query>,

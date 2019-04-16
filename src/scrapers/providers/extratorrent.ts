@@ -15,7 +15,6 @@ export const client = new http.Http({
 export class ExtraTorrent extends scraper.Scraper {
 	sorts = ['size', 'seeds', 'added']
 	async getResults(slug: string, sort: string) {
-		await utils.pRandom(500)
 		let $ = cheerio.load(
 			await client.get('/', {
 				query: { search: slug, srt: sort } as Partial<Query>,

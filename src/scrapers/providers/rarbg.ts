@@ -69,12 +69,13 @@ export class Rarbg extends scraper.Scraper {
 				queries.push({ search_string: `s${this.item.S.z}e${this.item.E.z}`, ...query })
 			}
 		}
+		
+		console.log(`queries ->`, queries)
 
 		return queries.map(v => JSON.stringify(v))
 	}
 
 	async getResults(query: string, sort: string) {
-		await utils.pRandom(500)
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(query)),
 			verbose: true,

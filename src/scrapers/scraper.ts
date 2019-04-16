@@ -15,14 +15,15 @@ import * as debrid from '@/debrids/debrid'
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	// console.log(`results ->`, results.splice(0).map(scraper.json))
 	let providers = [
-		(await import('./providers/magnet4you')).Magnet4You,
-		// (await import('./providers/pirateiro')).Pirateiro,
-		// (await import('./providers/magnetdl')).MagnetDl,
-		// (await import('./providers/btdb')).Btdb,
 		// (await import('./providers/btbit')).BtBit,
+		// (await import('./providers/btdb')).Btdb,
 		// (await import('./providers/extratorrent')).ExtraTorrent,
 		// (await import('./providers/eztv')).Eztv,
-		// (await import('./providers/rarbg')).Rarbg,
+		// (await import('./providers/magnet4you')).Magnet4You,
+		// (await import('./providers/magnetdl')).MagnetDl,
+		// (await import('./providers/orion')).Orion,
+		// (await import('./providers/pirateiro')).Pirateiro,
+		(await import('./providers/rarbg')).Rarbg,
 		// (await import('./providers/snowfl')).Snowfl,
 		// (await import('./providers/solidtorrents')).SolidTorrents,
 		// (await import('./providers/yts')).Yts,
@@ -41,14 +42,11 @@ export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeo
 		!to.bytes && from.bytes && (to.bytes = from.bytes)
 		!to.stamp && from.stamp && (to.stamp = from.stamp)
 		!to.seeders && from.seeders && (to.seeders = from.seeders)
-		!to.score && from.score && (to.score = from.score)
 		return true
 	})
 
 	let cached = await debrid.getCached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cached[i]))
-
-	torrents.sort((a, b) => b.bytes - a.bytes)
 
 	return torrents
 }
@@ -92,16 +90,17 @@ export class Scraper {
 
 		/** get results with slug and sorts query combinations */
 		let results = (await pAll(
-			combinations.map(([slug, sort]) => async () =>
-				(await this.getResults(slug, sort).catch(function(error) {
-					console.error(`getResults Error ->`, error)
+			combinations.map(([slug, sort], index) => async () => {
+				index > 0 && (await utils.pRandom(300))
+				return (await this.getResults(slug, sort).catch(error => {
+					console.error(`${this.constructor.name} Error ->`, error)
 					return [] as Result[]
 				})).map(result => ({
 					providers: [this.constructor.name],
 					slugs: [slug],
 					...result,
 				}))
-			),
+			}),
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
@@ -129,21 +128,13 @@ export class Scraper {
 			}
 		})
 
-		/** accumulate seeders and determine min and max range */
-		let seeders = results.map(v => v.seeders)
-		let range = { min: _.min(seeders), max: _.max(seeders) }
-		results.forEach(result => {
-			/** set score to a number between 1-100 based on seeders min and max */
-			result.score = _.round(utils.slider(result.seeders, range.min, range.max))
-		})
-
 		return results.map(v => new torrent.Torrent(v))
 	}
 }
 
 export function json(result: Result) {
 	return {
-		...result,
+		..._.omit(result, 'magnet'),
 		bytes: utils.fromBytes(result.bytes),
 		stamp: dayjs(result.stamp).fromNow() + ', ' + dayjs(result.stamp).format('MMM DD YYYY'),
 	}
@@ -154,7 +145,6 @@ export interface Result {
 	magnet: string
 	name: string
 	providers: string[]
-	score: number
 	seeders: number
 	slugs: string[]
 	stamp: number

@@ -13,7 +13,6 @@ export class BtBit extends scraper.Scraper {
 	/** size, popularity, created */
 	sorts = ['2', '3', '1']
 	async getResults(slug: string, sort: string) {
-		await utils.pRandom(500)
 		let $ = cheerio.load(
 			await client.get(`/list/${slug}/1-${sort}-2.html`, {
 				verbose: true,

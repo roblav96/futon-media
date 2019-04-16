@@ -16,10 +16,9 @@ export class Eztv extends scraper.Scraper {
 		return [this.item.ids.imdb]
 	}
 	async getResults(slug: string, sort: string) {
-		if (!this.item.show) {
+		if (this.item.category != 'show') {
 			return []
 		}
-		await utils.pRandom(500)
 		let response = (await client.get('/get-torrents', {
 			query: { imdb_id: slug.replace(/\D/g, '') } as Partial<Query>,
 			verbose: true,

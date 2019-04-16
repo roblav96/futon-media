@@ -17,10 +17,9 @@ export class Yts extends scraper.Scraper {
 		return [this.item.ids.imdb]
 	}
 	async getResults(slug: string, sort: string) {
-		if (!this.item.movie) {
+		if (this.item.category != 'movie') {
 			return []
 		}
-		await utils.pRandom(500)
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 			verbose: true,

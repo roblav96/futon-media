@@ -40,7 +40,6 @@ export class Snowfl extends scraper.Scraper {
 
 	async getResults(query: string, sort: string) {
 		;(!TOKEN || Date.now() > STAMP) && (await syncToken())
-		await utils.pRandom(500)
 		let url = `/${TOKEN}/${query}/${nonce()}/0/${sort}/NONE/0`
 		let response = ((await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
