@@ -19,7 +19,7 @@ import { searchItem } from '@/prompts/search-item'
 import { selectTorrent } from '@/prompts/select-torrent'
 
 async function start() {
-	let item = new media.Item(mocks.MOVIES['how-to-train-your-dragon-the-hidden-world-2019'])
+	let item = new media.Item(mocks.EPISODES['game-of-thrones'])
 	// let item = await searchItem()
 	// return console.log(`item ->`, item)
 

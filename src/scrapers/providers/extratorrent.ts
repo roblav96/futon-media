@@ -48,7 +48,6 @@ export class ExtraTorrent extends scraper.Scraper {
 				console.error(`${this.constructor.name} Error ->`, error)
 			}
 		})
-		// console.log(`results ->`, results.splice(0).map(scraper.debug))
 		return results
 	}
 }
