@@ -122,7 +122,7 @@ const BYTE_UNITS = {
 export function toBytes(value: string) {
 	let amount = parseFloat(value)
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
-	return Number.parseInt((amount * BYTE_UNITS[unit].num) as any)
+	return _.parseInt((amount * BYTE_UNITS[unit].num) as any)
 }
 export function fromBytes(value: number, precision = 1) {
 	let units = Object.entries(BYTE_UNITS).map(([k, v]) => v)

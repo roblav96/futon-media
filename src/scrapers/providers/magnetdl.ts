@@ -42,8 +42,3 @@ export class MagnetDl extends scraper.Scraper {
 		return results
 	}
 }
-
-interface Query {
-	search: string
-	sort: string
-}

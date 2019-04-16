@@ -50,10 +50,10 @@ export class Torrent {
 	json() {
 		return {
 			age: this.age,
-			cached: this.cached.join(),
+			cached: this.cached.join(', '),
 			hash: this.hash,
 			name: this.name,
-			providers: this.providers.join(),
+			providers: this.providers.join(', '),
 			seeders: this.seeders,
 			size: this.size,
 		}

@@ -311,7 +311,62 @@ export const MOVIES = {
 		score: 479.08286,
 	} as trakt.Result & tmdb.Result,
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	'ready-player-one-2018': {
+		movie: {
+			adult: false,
+			backdrop_path: '/q7fXcrDPJcf6t3rzutaNwTzuKP1.jpg',
+			belongs_to_collection: null,
+			budget: 175000000,
+			certification: 'PG-13',
+			comment_count: 115,
+			country: 'us',
+			genres: ['science-fiction', 'adventure'],
+			homepage: 'http://readyplayeronemovie.com',
+			id: 333339,
+			ids: {
+				imdb: 'tt1677720',
+				slug: 'ready-player-one-2018',
+				tmdb: 333339,
+				trakt: 214279,
+			},
+			imdb_id: 'tt1677720',
+			language: 'en',
+			original_language: 'en',
+			original_title: 'Ready Player One',
+			overview:
+				'When the creator of a popular video game system dies, a virtual contest is created to compete for his fortune.',
+			popularity: 29.965,
+			poster_path: '/pU1ULUq8D3iRxl1fdX2lZIzdHuI.jpg',
+			production_countries: [
+				{
+					iso_3166_1: 'US',
+					name: 'United States of America',
+				},
+			],
+			rating: 7.78239,
+			release_date: '2018-03-28',
+			released: '2018-03-29',
+			revenue: 582890172,
+			runtime: 140,
+			spoken_languages: [
+				{
+					iso_639_1: 'en',
+					name: 'English',
+				},
+			],
+			status: 'Released',
+			tagline: 'A better reality awaits.',
+			title: 'Ready Player One',
+			trailer: 'http://youtube.com/watch?v=cSp1dM2Vj48',
+			updated_at: '2019-04-14T08:49:54.000Z',
+			video: false,
+			vote_average: 7.6,
+			vote_count: 6631,
+			votes: 20854,
+			year: 2018,
+		},
+		score: 446.413,
+	} as trakt.Result & tmdb.Result,
 
 	// '____': {____} as trakt.Result & tmdb.Result,
 

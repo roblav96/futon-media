@@ -24,10 +24,10 @@ export class Pirateiro extends scraper.Scraper {
 		)
 		let results = [] as scraper.Result[]
 		$(`table.torrenttable tr`).each((i, el) => {
+			if (i == 0) {
+				return
+			}
 			try {
-				if (i == 0) {
-					return
-				}
 				let $el = $(el)
 				results.push({
 					bytes: utils.toBytes($el.find(`td:nth-of-type(4)`).text()),

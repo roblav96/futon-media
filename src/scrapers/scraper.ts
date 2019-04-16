@@ -13,10 +13,10 @@ import * as torrent from '@/scrapers/torrent'
 import * as debrid from '@/debrids/debrid'
 
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
-	// console.log(`results ->`, results.splice(0).map(scraper.debug))
+	// console.log(`results ->`, results.splice(0).map(scraper.json))
 	let providers = [
-		// (await import('./providers/magnet4you')).Magnet4You,
-		(await import('./providers/pirateiro')).Pirateiro,
+		(await import('./providers/magnet4you')).Magnet4You,
+		// (await import('./providers/pirateiro')).Pirateiro,
 		// (await import('./providers/magnetdl')).MagnetDl,
 		// (await import('./providers/btdb')).Btdb,
 		// (await import('./providers/btbit')).BtBit,
@@ -141,7 +141,7 @@ export class Scraper {
 	}
 }
 
-export function debug(result: Result) {
+export function json(result: Result) {
 	return {
 		...result,
 		bytes: utils.fromBytes(result.bytes),
