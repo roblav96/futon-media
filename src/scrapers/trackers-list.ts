@@ -31,7 +31,8 @@ setTimeout(async function sync() {
 		BAD = lists.shift().map(v => v.split('#')[0].trim())
 		storage.set('BAD', BAD)
 
-		GOOD = _.uniq(lists.flat()).filter(v => !BAD.includes(v))
+		GOOD = _.uniq(lists.flat()).map(v => v.trim())
+		_.remove(GOOD, v => BAD.includes(v))
 		storage.set('GOOD', GOOD)
 
 		let future = dayjs(Date.now()).add(15, 'minute')

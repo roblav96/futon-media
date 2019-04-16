@@ -13,7 +13,7 @@ export const client = new http.Http({
 })
 
 export class ExtraTorrent extends scraper.Scraper {
-	sorts = ['size', 'seeds', 'added']
+	sorts = ['size', 'added', 'seeds']
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(

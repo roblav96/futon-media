@@ -19,13 +19,13 @@ import { searchItem } from '@/prompts/search-item'
 import { selectTorrent } from '@/prompts/select-torrent'
 
 async function start() {
-	// let item = new media.Item(mocks.MOVIES['the-lego-movie-2014'])
-	let item = new media.Item(mocks.EPISODES['the-big-bang-theory'])
+	let item = new media.Item(mocks.MOVIES['the-lego-movie-2014'])
+	// let item = new media.Item(mocks.SHOWS['the-big-bang-theory'])
 	// let item = await searchItem()
 	// return console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
-	console.log(`torrents ->`, torrents.map(v => v.toJSON()))
+	console.log(`torrents ->`, torrents/** .map(v => v.toJSON()) */)
 	console.log(`torrents.length ->`, torrents.length)
 	return
 	// torrents = torrents.filter(v => v.cached.length > 0)

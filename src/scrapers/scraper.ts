@@ -23,8 +23,8 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		// (await import('./providers/magnetdl')).MagnetDl,
 		// (await import('./providers/orion')).Orion,
 		// (await import('./providers/pirateiro')).Pirateiro,
-		(await import('./providers/rarbg')).Rarbg,
-		// (await import('./providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('./providers/yts')).Yts,
 	] as typeof Scraper[]
 
@@ -61,21 +61,10 @@ export class Scraper {
 
 	slugs() {
 		let slugs = [] as string[]
-		if (this.item.movie) {
-			slugs.push(this.item.title)
-		}
-		if (this.item.show) {
-			if (this.item.S.n) {
-				slugs.push(`${this.item.title} s${this.item.S.z}`)
-				slugs.push(`${this.item.title} season ${this.item.S.n}`)
-			}
-			if (this.item.E.n) {
-				slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
-			}
-			if (slugs.length == 0) {
-				slugs.push(this.item.title)
-			}
-		}
+		this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
+		this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
+		this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
+		slugs.length == 0 && slugs.unshift(this.item.title)
 		return slugs.map(v => utils.toSlug(v))
 	}
 
@@ -83,7 +72,10 @@ export class Scraper {
 
 	async getTorrents() {
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
-		this.slugs().forEach(slug => this.sorts.forEach(sort => combinations.push([slug, sort])))
+		this.slugs().forEach((slug, i) => {
+			i == 0 && this.sorts.forEach(sort => combinations.push([slug, sort]))
+			i > 0 && combinations.push([slug, this.sorts[0]])
+		})
 
 		/** get results with slug and sorts query combinations */
 		let results = (await pAll(
@@ -101,38 +93,14 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
-		/** remove junk results */
-		_.remove(results, result => {
-			/** clean and check for magnet URL */
-			result.magnet = utils.clean(result.magnet)
-			let magnet = (qs.parseUrl(result.magnet).query as any) as MagnetQuery
-			if (!magnet.xt) {
-				console.warn(`${this.constructor.name} junk !magnet.xt ->`, result)
-				return true
-			}
-
-			/** check and repair name then slugify */
-			result.name = result.name || magnet.dn
-			if (!result.name) {
-				console.warn(`${this.constructor.name} junk !result.name ->`, result)
-				return true
-			}
-			result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
-
-			if (utils.accuracy(this.item.title, result.name).length > 0) {
-				console.warn(`${this.constructor.name} junk accuracy > 0`, result)
-				return true
-			}
-		})
-
 		// console.warn(`${this.constructor.name} -> DONE`)
-		return results.map(v => new torrent.Torrent(v))
+		return results.filter(v => filters.results(v, this.item)).map(v => new torrent.Torrent(v))
 	}
 }
 
 export function toJSON(result: Result) {
 	return {
-		..._.omit(result, 'magnet'),
+		..._.omit(result, 'magnet', 'hash'),
 		bytes: utils.fromBytes(result.bytes),
 		stamp: dayjs(result.stamp).fromNow() + ', ' + dayjs(result.stamp).format('MMM DD YYYY'),
 	}
@@ -140,6 +108,7 @@ export function toJSON(result: Result) {
 
 export interface Result {
 	bytes: number
+	hash: string
 	magnet: string
 	name: string
 	providers: string[]

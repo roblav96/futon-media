@@ -21,39 +21,23 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
-	get ttycache() {
-		let short = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrid.Debrids, string>
-		return this.cached.map(v => short[v]).join(' ')
-	}
-	get hash() {
-		return magneturi.decode(this.magnet).infoHash.toLowerCase()
+
+	get min() {
+		let min = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrid.Debrids, string>
+		return { cached: this.cached.map(v => min[v]).join(' ') }
 	}
 
 	constructor(result: scraper.Result) {
-		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-		magnet.xt = magnet.xt.toLowerCase()
-		magnet.dn = result.name
-
-		/** filter bad trackers and merge good trackers */
-		magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).filter(
-			tr => trackers.BAD.filter(v => v.startsWith(tr.trim())).length == 0
-		)
-		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD))
-
-		/** re-encode magnet URL */
-		let encoded = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
-		utils.defineValue(this, 'magnet', encoded)
-
 		_.defaults(this, result)
 	}
 
 	toJSON() {
 		return {
 			age: this.age,
-			cached: this.cached.join(', '),
+			cached: this.cached, //.join(', '),
 			name: this.name,
-			providers: this.providers.join(', '),
-			slugs: this.slugs.join(', '),
+			providers: this.providers, //.join(', '),
+			slugs: this.slugs, //.join(', '),
 			seeders: this.seeders,
 			size: this.size,
 		}

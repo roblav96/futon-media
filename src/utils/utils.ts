@@ -1,5 +1,5 @@
 import * as _ from 'lodash'
-import * as levenshtein from 'js-levenshtein'
+import * as jslevenshtein from 'js-levenshtein'
 import * as stripBom from 'strip-bom'
 import * as dayjs from 'dayjs'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
@@ -31,17 +31,23 @@ export function minify(value: string) {
 	return value.replace(/\W/g, '').toLowerCase()
 }
 
-export function accuracy(value: string, query: string) {
+/** `accuracy.length == 0` when all of `target` is included in `value` */
+export function accuracy(value: string, target: string) {
 	let values = _.uniq(toSlug(value).split(' '))
-	let querys = _.uniq(toSlug(query).split(' '))
-	return values.filter(v => !querys.includes(v))
+	let targets = _.uniq(toSlug(target).split(' '))
+	return targets.filter(v => !values.includes(v))
 }
 
-export function leven(value: string, query: string) {
+/** `leven == 0` when all of `target` is included in `value` */
+export function leven(value: string, target: string) {
 	value = minify(value)
-	query = minify(query)
-	return query.length - value.length - levenshtein(value, query)
+	target = minify(target)
+	return Math.abs(value.length - target.length - jslevenshtein(value, target))
 }
+// export function levenshtein(value: string, target: string) {
+// 	return jslevenshtein(minify(value), minify(target))
+// }
+// export { jslevenshtein }
 
 export function parseInt(value: string) {
 	return Number.parseInt(value.replace(/[^\d.]/g, ''))
@@ -128,11 +134,6 @@ export function fromBytes(value: number, precision = 1) {
 	return `${(value / unit.num).toFixed(precision)} ${unit.str}`
 }
 
-// export function toBytes(value: string) {
-// 	let amount = parseFloat(value)
-// 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
-// 	return numbro.unformat(amount + unit)
-// }
-// export function fromBytes(value: number, mantissa = 1) {
-// 	return numbro(value).format({ output: 'byte', base: 'binary', mantissa } as Numbro.Format)
-// }
+if (process.env.NODE_ENV == 'development') {
+	process.nextTick(async () => _.defaults(global, await import('@/utils/utils')))
+}

@@ -12,7 +12,7 @@ export async function selectTorrent(torrents: torrent.Torrent[]) {
 		colWidths: [swidth + 2].concat(widths),
 		style: { compact: true },
 	})
-	torrents.forEach(v => table.push([v.name, v.ttycache, v.size, `${v.seeders} ↓`, v.age] as any))
+	torrents.forEach(v => table.push([v.name, v.min.cached, v.size, `${v.seeders} ↓`, v.age] as any))
 	let split = table.toString().split('\n')
 	split = split.slice(1, -1)
 	// process.stdout.write(`${split.join('\n')}\n\n`)
