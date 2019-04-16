@@ -13,7 +13,7 @@ import * as torrent from '@/scrapers/torrent'
 import * as debrid from '@/debrids/debrid'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
-	// console.log(`results ->`, results.splice(0).map(scraper.json))
+	// console.log(`results ->`, results.splice(0).map(scraper.toJSON))
 	// (await import('./providers/btbit')).BtBit, // (await import('./providers/snowfl')).Snowfl,
 	let providers = [
 		// (await import('./providers/btdb')).Btdb,
@@ -63,10 +63,6 @@ export class Scraper {
 		let slugs = [] as string[]
 		if (this.item.movie) {
 			slugs.push(this.item.title)
-			if (this.item.movie.belongs_to_collection) {
-				let collection = this.item.movie.belongs_to_collection.name.split(' ')
-				slugs.push(collection.slice(0, -1).join(' '))
-			}
 		}
 		if (this.item.show) {
 			if (this.item.S.n) {
@@ -97,9 +93,9 @@ export class Scraper {
 					console.error(`${this.constructor.name} Error ->`, error)
 					return [] as Result[]
 				})).map(result => ({
-					...result,
 					providers: [this.constructor.name],
 					slugs: [slug],
+					...result,
 				}))
 			}),
 			{ concurrency: this.concurrency }
@@ -134,7 +130,7 @@ export class Scraper {
 	}
 }
 
-export function json(result: Result) {
+export function toJSON(result: Result) {
 	return {
 		..._.omit(result, 'magnet'),
 		bytes: utils.fromBytes(result.bytes),

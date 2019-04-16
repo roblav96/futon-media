@@ -114,6 +114,7 @@ export class Http {
 			else resolved = parsed.value
 		}
 		if (!resolved) {
+			options.memoize && console.warn(`!memoized ->`, min.url)
 			resolved = await Http.send(options)
 			options.memoize && this.storage.set(mkey, fastStringify(resolved))
 		}

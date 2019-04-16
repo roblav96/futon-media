@@ -47,11 +47,10 @@ export class Torrent {
 		_.defaults(this, result)
 	}
 
-	json() {
+	toJSON() {
 		return {
 			age: this.age,
 			cached: this.cached.join(', '),
-			hash: this.hash,
 			name: this.name,
 			providers: this.providers.join(', '),
 			slugs: this.slugs.join(', '),

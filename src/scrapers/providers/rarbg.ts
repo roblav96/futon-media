@@ -56,9 +56,6 @@ export class Rarbg extends scraper.Scraper {
 		let title = utils.toSlug(this.item.title)
 		let queries = slugs.map((slug, i) => {
 			slug.startsWith(title) && (slug = slug.replace(title, '').trim())
-			if (this.item.movie && slug) {
-				return { search_string: slug } as Query
-			}
 			return slug ? ({ ...query, search_string: slug } as Query) : query
 		})
 		return queries.map(v => JSON.stringify(v))
@@ -77,6 +74,7 @@ export class Rarbg extends scraper.Scraper {
 				name: v.title,
 				seeders: v.seeders,
 				stamp: new Date(v.pubdate).valueOf(),
+				slugs: _.compact(_.values(JSON.parse(slug))),
 			} as scraper.Result
 		})
 	}

@@ -57,6 +57,7 @@ export class Orion extends scraper.Scraper {
 				name: stream.file.name,
 				seeders: stream.stream.seeds,
 				stamp: new Date((stream.time.added || stream.time.updated) * 1000).valueOf(),
+				slugs: _.compact(_.values(JSON.parse(slug))),
 			} as scraper.Result
 		})
 	}

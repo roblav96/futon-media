@@ -70,10 +70,8 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 }
 
 export function isVideo(file: string) {
-	for (let ext of ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv', 'mpd', 'avi']) {
-		if (file.endsWith(`.${ext}`)) return true
-	}
-	return false
+	let exts = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv']
+	return !!exts.find(ext => file.endsWith(`.${ext}`))
 }
 
 export function slider(value: number, min: number, max: number) {
