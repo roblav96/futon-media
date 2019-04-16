@@ -24,7 +24,8 @@ async function start() {
 	// return console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
-	// console.log(`torrents ->`, torrents)
+	console.log(`torrents ->`, torrents /** .map(v => v.json()) */)
+	return
 	// torrents = torrents.filter(v => v.cached.length > 0)
 
 	let torrent = await selectTorrent(torrents)

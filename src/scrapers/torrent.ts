@@ -48,17 +48,15 @@ export class Torrent {
 	}
 
 	json() {
-		return _.pick(
-			this,
-			'age',
-			'cached',
-			'hash',
-			'name',
-			'providers',
-			'score',
-			'seeders',
-			'size',
-		) as Torrent
+		return {
+			age: this.age,
+			cached: this.cached.join(),
+			hash: this.hash,
+			name: this.name,
+			providers: this.providers.join(),
+			seeders: this.seeders,
+			size: this.size,
+		}
 	}
 }
 

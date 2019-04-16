@@ -72,12 +72,6 @@ export class Http {
 		options.url = url
 		_.defaultsDeep(options.query, query)
 
-		if (options.verbose) {
-			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
-			let minquery = JSON.stringify(config.query || {}).length < 256 ? config.query : ''
-			console.log(options.method, _.truncate(minurl, { length: 128 }), minquery || '')
-		}
-
 		if (options.beforeRequest) {
 			let { prepend = [], append = [] } = options.beforeRequest
 			for (let hook of _.concat(prepend, append)) {
@@ -90,6 +84,13 @@ export class Http {
 				arrayFormat: options.qsArrayFormat || 'bracket',
 			})
 			options.url += `?${stringify}`
+		}
+
+		if (options.verbose) {
+			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
+			let minquery = JSON.stringify(config.query || {}).length < 256 ? config.query : ''
+			console.log(options.method, options.url, minquery || '')
+			// console.log(options.method, _.truncate(minurl, { length: 128 }), minquery || '')
 		}
 
 		if (options.debug) {
@@ -149,6 +150,7 @@ export class Http {
 
 	private static send(options: sget.Options) {
 		return new Promise<Resolved>((resolve, reject) => {
+			// console.warn(`!memoized ->`, options.url)
 			let request = sget(options, (error, response) => {
 				if (error) {
 					return reject(error)
