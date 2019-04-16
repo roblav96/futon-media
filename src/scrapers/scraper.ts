@@ -15,7 +15,9 @@ import * as debrid from '@/debrids/debrid'
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	// console.log(`results ->`, results.splice(0).map(scraper.debug))
 	let providers = [
-		(await import('./providers/magnetdl')).MagnetDl,
+		// (await import('./providers/magnet4you')).Magnet4You,
+		(await import('./providers/pirateiro')).Pirateiro,
+		// (await import('./providers/magnetdl')).MagnetDl,
 		// (await import('./providers/btdb')).Btdb,
 		// (await import('./providers/btbit')).BtBit,
 		// (await import('./providers/extratorrent')).ExtraTorrent,

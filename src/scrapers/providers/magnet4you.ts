@@ -6,34 +6,32 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	baseUrl: 'https://www.magnetdl.com',
+	baseUrl: 'https://btdb.eu',
 })
 
-export class MagnetDl extends scraper.Scraper {
-	sorts = ['size', 'age', 'se']
+export class Magnet4You extends scraper.Scraper {
+	sorts = ['length', 'time', 'popular']
 	async getResults(slug: string, sort: string) {
-		let category = this.item.movie ? 'Movie' : 'TV'
 		await utils.pRandom(500)
-		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`
 		let $ = cheerio.load(
-			await client.get(url.toLowerCase(), {
+			await client.get(`/`, {
+				query: { search: slug, sort } as Partial<Query>,
 				verbose: true,
 				memoize: process.env.NODE_ENV == 'development',
 			})
 		)
 		let results = [] as scraper.Result[]
-		$(`tr:has(td[class="m"])`).each((i, el) => {
+		$(`li[class$="item"]`).each((i, el) => {
 			try {
 				let $el = $(el)
-				if ($el.find(`td[class^="t"]`).text() != category) {
-					return
-				}
 				results.push({
-					bytes: utils.toBytes($el.find(`td:nth-child(6)`).text()),
-					name: $el.find(`td[class="n"] a`).attr('title'),
-					magnet: $el.find(`td[class="m"] a`).attr('href'),
-					seeders: utils.parseInt($el.find(`td[class="s"]`).text()),
-					stamp: utils.toStamp($el.find(`td:nth-child(3)`).text()),
+					bytes: utils.toBytes($el.find(`div[class$="info"] span:nth-of-type(1)`).text()),
+					name: $el.find(`h2[class$="title"] a[href*="/torrent/"]`).attr('title'),
+					magnet: $el.find(`div[class$="info"] a[href^="magnet:"]`).attr('href'),
+					seeders: utils.parseInt(
+						$el.find(`div[class$="info"] span:nth-of-type(4)`).text()
+					),
+					stamp: utils.toStamp($el.find(`div[class$="info"] span:nth-of-type(3)`).text()),
 				} as scraper.Result)
 			} catch (error) {
 				console.error(`${this.constructor.name} Error ->`, error)

@@ -10,7 +10,7 @@ export const client = new http.Http({
 })
 
 export class BtBit extends scraper.Scraper {
-	/** ['size', 'popularity', 'created'] */
+	/** size, popularity, created */
 	sorts = ['2', '3', '1']
 	async getResults(slug: string, sort: string) {
 		await utils.pRandom(500)
