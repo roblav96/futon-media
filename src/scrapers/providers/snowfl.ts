@@ -8,12 +8,13 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://snowfl.com',
 })
 
 const nonce = (value = Math.random().toString(36)) => value.slice(-8)
-const storage = new ConfigStore(pkgup.sync({ cwd: __dirname }).pkg.name + '-' + path.basename(__filename))
+const storage = new ConfigStore(
+	pkgup.sync({ cwd: __dirname }).pkg.name + '-' + path.basename(__filename)
+)
 let TOKEN = (storage.get('TOKEN') || '') as string
 let STAMP = (storage.get('STAMP') || 0) as number
 
@@ -39,10 +40,12 @@ export class Snowfl extends scraper.Scraper {
 
 	async getResults(query: string, sort: string) {
 		;(!TOKEN || Date.now() > STAMP) && (await syncToken())
+		await utils.pRandom(500)
 		let url = `/${TOKEN}/${query}/${nonce()}/0/${sort}/NONE/0`
 		let response = ((await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
 			verbose: true,
+			memoize: process.env.NODE_ENV == 'development',
 		})) || []) as Result[]
 		let results = response.filter(v => !!v.magnet)
 		return results.map(v => {

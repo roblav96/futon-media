@@ -46,6 +46,20 @@ export class Torrent {
 
 		_.defaults(this, result)
 	}
+
+	json() {
+		return _.pick(
+			this,
+			'age',
+			'cached',
+			'hash',
+			'name',
+			'providers',
+			'score',
+			'seeders',
+			'size',
+		) as Torrent
+	}
 }
 
 export interface File {

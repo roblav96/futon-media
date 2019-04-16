@@ -4,7 +4,6 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://torrentapi.org',
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
@@ -25,13 +24,6 @@ export const client = new http.Http({
 					limit: 100,
 					ranked: 0,
 				})
-			},
-		],
-	},
-	afterResponse: {
-		append: [
-			async (options, resolved) => {
-				await utils.pTimeout(300)
 			},
 		],
 	},
@@ -82,9 +74,11 @@ export class Rarbg extends scraper.Scraper {
 	}
 
 	async getResults(query: string, sort: string) {
+		await utils.pRandom(500)
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(query)),
 			verbose: true,
+			memoize: process.env.NODE_ENV == 'development',
 		})) as Response
 		return (response.torrent_results || []).map(v => {
 			return {

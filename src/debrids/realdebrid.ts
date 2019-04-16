@@ -19,7 +19,7 @@ export class RealDebrid implements debrid.Debrid {
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pRandom(300)
+				await utils.pRandom(500)
 				let url = `/torrents/instantAvailability/${hashes.join('/')}`
 				let response = (await client.get(url, {
 					memoize: process.env.NODE_ENV == 'development',
@@ -27,7 +27,7 @@ export class RealDebrid implements debrid.Debrid {
 				})) as CacheResponse
 				return chunk.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
 			}),
-			{ concurrency: 1 }
+			{ concurrency: 3 }
 		)).flat()
 	}
 
@@ -50,14 +50,14 @@ export class RealDebrid implements debrid.Debrid {
 			})) as Item
 
 			let files = item.files.filter(file => {
-				// let name = utils.minify(path.basename(file.path))
-				return utils.isVideo(file.path) // && !name.includes('sample')
+				let slug = utils.toSlug(path.basename(file.path)).split(' ')
+				return utils.isVideo(file.path) && !slug.includes('sample')
 			})
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, item)
-				// await client.delete(`/torrents/delete/${download.id}`, {
-				// 	verbose: true,
-				// })
+				await client.delete(`/torrents/delete/${download.id}`, {
+					verbose: true,
+				})
 				return []
 			}
 			await client.post(`/torrents/selectFiles/${download.id}`, {
@@ -76,13 +76,13 @@ export class RealDebrid implements debrid.Debrid {
 
 		return (await pAll(
 			item.links.map(link => async () => {
-				await utils.pRandom(300)
+				await utils.pRandom(500)
 				return (await client.post(`/unrestrict/link`, {
 					form: { link },
 					verbose: true,
 				})) as Unrestrict
 			}),
-			{ concurrency: 1 }
+			{ concurrency: 3 }
 		)).map(v => v.download)
 	}
 }

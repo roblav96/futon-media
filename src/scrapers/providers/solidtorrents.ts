@@ -6,22 +6,19 @@ import * as scraper from '@/scrapers/scraper'
 export const client = new http.Http({
 	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://solidtorrents.net/api/v1',
-	query: { category: 'Video' } as Partial<Query>,
-	afterResponse: {
-		append: [
-			async (options, resolved) => {
-				await utils.pTimeout(100)
-			},
-		],
-	},
+	query: {
+		category: 'Video',
+	} as Partial<Query>,
 })
 
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size', 'date', 'seeders']
 	async getResults(slug: string, sort: string) {
+		await utils.pRandom(500)
 		let response = (await client.get('/search', {
 			query: { sort, q: slug } as Partial<Query>,
 			verbose: true,
+			memoize: process.env.NODE_ENV == 'development',
 		})) as Response
 		return (response.results || []).map(v => {
 			return {

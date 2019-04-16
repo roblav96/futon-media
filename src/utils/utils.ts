@@ -1,13 +1,16 @@
 import * as _ from 'lodash'
 import * as levenshtein from 'js-levenshtein'
 import * as stripBom from 'strip-bom'
-import * as parseBytes from 'bytes'
 import * as dayjs from 'dayjs'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
+import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import stripAnsi from 'strip-ansi'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
+import _numbro, { default as Numbro } from 'numbro'
+const numbro = require('numbro') as typeof _numbro
 
 dayjs.extend(relativeTime)
+dayjs.extend(customParseFormat)
 
 export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
 	return new Promise(r => setTimeout(r, duration)).then(() => resolved)
@@ -82,6 +85,12 @@ export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]
 	Object.defineProperty(target, key, { value })
 }
 
+export function compactNumber(value: number) {
+	return numbro(value)
+		.format({ average: true, mantissa: 1, optionalMantissa: true } as Numbro.Format)
+		.toUpperCase()
+}
+
 export function toStamp(value: string) {
 	let amount = parseInt(value)
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
@@ -92,7 +101,7 @@ export function toStamp(value: string) {
 
 const BYTE_UNITS = {
 	b: { num: 1, str: 'B' },
-	kb: { num: Math.pow(1000, 1), str: 'kB' },
+	kb: { num: Math.pow(1000, 1), str: 'KB' },
 	mb: { num: Math.pow(1000, 2), str: 'MB' },
 	gb: { num: Math.pow(1000, 3), str: 'GB' },
 	tb: { num: Math.pow(1000, 4), str: 'TB' },
@@ -121,21 +130,10 @@ export function fromBytes(value: number, precision = 1) {
 }
 
 // export function toBytes(value: string) {
-// 	value = value.trim().toLowerCase()
-// 	let bytes = parseInt(value)
-// 	let units = ['kb', 'mb', 'gb', 'tb', 'pb']
-// 	let i = units.findIndex(v => value.endsWith(v))
-// 	if (i == -1) {
-// 		let ibs = ['kib', 'mib', 'gib', 'tib', 'pib']
-// 		i = ibs.findIndex(v => value.endsWith(v))
-// 		console.log(`i ->`, i)
-// 		i == 0 && (bytes /= 0.976562)
-// 		i == 1 && (bytes /= 0.953674)
-// 		i == 2 && (bytes /= 0.931323)
-// 		i == 3 && (bytes /= 0.909495)
-// 		i == 4 && (bytes /= 0.888178)
-// 	}
-// 	console.log(`to bytes ->`, bytes)
-// 	let unit = i >= 0 ? ` ${units[i]}` : ''
-// 	return parseBytes.parse(bytes + unit)
+// 	let amount = parseFloat(value)
+// 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
+// 	return numbro.unformat(amount + unit)
+// }
+// export function fromBytes(value: number, mantissa = 1) {
+// 	return numbro(value).format({ output: 'byte', base: 'binary', mantissa } as Numbro.Format)
 // }

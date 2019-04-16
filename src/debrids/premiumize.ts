@@ -19,7 +19,7 @@ export class Premiumize implements debrid.Debrid {
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pRandom(300)
+				await utils.pRandom(500)
 				let response = (await client.post(`/cache/check`, {
 					memoize: process.env.NODE_ENV == 'development',
 					query: { items: chunk },
@@ -27,7 +27,7 @@ export class Premiumize implements debrid.Debrid {
 				})) as CacheResponse
 				return chunk.map((v, i) => response.response[i])
 			}),
-			{ concurrency: 1 }
+			{ concurrency: 3 }
 		)).flat()
 	}
 

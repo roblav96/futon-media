@@ -13,10 +13,11 @@ import * as debrid from '@/debrids/debrid'
 
 export async function scrapeAll(...[item, rigorous]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
+		(await import('./providers/extratorrent')).ExtraTorrent,
 		// (await import('./providers/eztv')).Eztv,
-		(await import('./providers/rarbg')).Rarbg,
-		(await import('./providers/snowfl')).Snowfl,
-		(await import('./providers/solidtorrents')).SolidTorrents,
+		// (await import('./providers/rarbg')).Rarbg,
+		// (await import('./providers/snowfl')).Snowfl,
+		// (await import('./providers/solidtorrents')).SolidTorrents,
 		// (await import('./providers/yts')).Yts,
 	] as typeof Scraper[]
 

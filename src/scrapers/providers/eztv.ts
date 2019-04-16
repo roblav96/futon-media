@@ -5,14 +5,10 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
 	baseUrl: 'https://eztv.io/api',
-	query: { page: 0, limit: 100 } as Partial<Query>,
-	afterResponse: {
-		append: [
-			async (options, resolved) => {
-				await utils.pTimeout(100)
-			},
-		],
-	},
+	query: {
+		limit: 100,
+		page: 0,
+	} as Partial<Query>,
 })
 
 export class Eztv extends scraper.Scraper {
@@ -23,9 +19,11 @@ export class Eztv extends scraper.Scraper {
 		if (!this.item.show) {
 			return []
 		}
+		await utils.pRandom(500)
 		let response = (await client.get('/get-torrents', {
 			query: { imdb_id: slug.replace(/\D/g, '') } as Partial<Query>,
 			verbose: true,
+			memoize: process.env.NODE_ENV == 'development',
 		})) as Response
 		let results = (response.torrents || []).filter(v => {
 			let { s, e } = { s: _.parseInt(v.season), e: _.parseInt(v.episode) }

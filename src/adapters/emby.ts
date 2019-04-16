@@ -7,16 +7,19 @@ import * as http from '@/adapters/http'
 import * as media from '@/media/media'
 
 export const client = new http.Http({
-	baseUrl: 'https://futon.media:8096/emby',
-	query: { api_key: process.env.EMBY_API_KEY },
+	baseUrl: 'https://futon.media:18096/emby',
+	query: {
+		api_key: process.env.EMBY_API_KEY,
+	},
 })
 
-export async function libraryLinks(item: media.Item, links: string[]) {
-	let base = process.env.EMBY_LIBRARY || process.cwd()
+export async function addLinks(item: media.Item, links: string[]) {
+	// let base = path.join(process.cwd(), 'dist')
+	let base = process.cwd()
 
 	let dir = item.movie ? 'movies' : 'shows'
-	if (!fs.pathExistsSync(path.join(base, dir))) {
-		return console.warn(`!fs.pathExistsSync(${path.join(base, dir)})`)
+	if (!(await fs.pathExists(path.join(base, dir)))) {
+		throw new Error(`!fs.pathExists(${path.join(base, dir)})`)
 	}
 	dir += `/${item.ids.slug}`
 	item.season && (dir += `/s${item.S.z}`)
@@ -34,12 +37,11 @@ export async function libraryLinks(item: media.Item, links: string[]) {
 			return fs.outputFile(path.join(cwd, name), link)
 		})
 	)
-
-	await libraryRefresh()
 }
 
-export async function libraryRefresh() {
+export async function refreshLibrary() {
 	let response = await client.post(`/Library/Refresh`, {
 		verbose: true,
 	})
+	console.log(`Emby library refreshed`)
 }

@@ -25,7 +25,7 @@ export async function searchItem() {
 					title: `${v.full.title}, ${v.full.year}`,
 					value: v,
 				}))
-		}, 100) as any,
+		}, 300) as any,
 	} as prompts.PromptObject)) as media.Item
 	if (!item) {
 		throw new Error('Unselected media.Item')

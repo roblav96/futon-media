@@ -4,15 +4,11 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
+	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://yts.am/api/v2',
-	query: { limit: 50 } as Partial<Query>,
-	afterResponse: {
-		append: [
-			async (options, resolved) => {
-				await utils.pTimeout(100)
-			},
-		],
-	},
+	query: {
+		limit: 50,
+	} as Partial<Query>,
 })
 
 export class Yts extends scraper.Scraper {
@@ -24,9 +20,11 @@ export class Yts extends scraper.Scraper {
 		if (!this.item.movie) {
 			return []
 		}
+		await utils.pRandom(500)
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 			verbose: true,
+			memoize: process.env.NODE_ENV == 'development',
 		})) as Response
 		let results = ((response.data && response.data.movies) || []).map(m =>
 			m.torrents.map((v, i) => {
