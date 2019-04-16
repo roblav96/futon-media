@@ -13,7 +13,7 @@ export const client = new http.Http({
 
 const nonce = (value = Math.random().toString(36)) => value.slice(-8)
 const storage = new ConfigStore(
-	pkgup.sync({ cwd: __dirname }).pkg.name + '-' + path.basename(__filename)
+	`${pkgup.sync({ cwd: __dirname }).pkg.name}/${path.basename(__filename)}`
 )
 let TOKEN = (storage.get('TOKEN') || '') as string
 let STAMP = (storage.get('STAMP') || 0) as number
@@ -38,9 +38,9 @@ async function syncToken() {
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'DATE', 'SEED']
 
-	async getResults(query: string, sort: string) {
+	async getResults(slug: string, sort: string) {
 		;(!TOKEN || Date.now() > STAMP) && (await syncToken())
-		let url = `/${TOKEN}/${query}/${nonce()}/0/${sort}/NONE/0`
+		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
 		let response = ((await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
 			verbose: true,

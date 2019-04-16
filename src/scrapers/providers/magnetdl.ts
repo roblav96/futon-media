@@ -11,6 +11,7 @@ export const client = new http.Http({
 
 export class MagnetDl extends scraper.Scraper {
 	sorts = ['size', 'age', 'se']
+
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'Movie' : 'TV'
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`

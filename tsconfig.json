@@ -5,13 +5,13 @@
 		"experimentalDecorators": true,
 		"importHelpers": true,
 		"lib": ["esnext"],
+		"module": "commonjs",
 		"noEmitHelpers": true,
 		"noErrorTruncation": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,
 		"target": "es5",
-		"plugins": [{ "transform": "ts-transform-paths" }],
 		"paths": {
 			"@/*": ["src/*"]
 		}

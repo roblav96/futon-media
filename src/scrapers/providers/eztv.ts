@@ -12,9 +12,10 @@ export const client = new http.Http({
 })
 
 export class Eztv extends scraper.Scraper {
-	get slugs() {
+	slugs() {
 		return [this.item.ids.imdb]
 	}
+
 	async getResults(slug: string, sort: string) {
 		if (this.item.category != 'show') {
 			return []

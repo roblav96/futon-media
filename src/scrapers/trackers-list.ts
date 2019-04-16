@@ -5,16 +5,17 @@ import * as pkgup from 'read-pkg-up'
 import * as ConfigStore from 'configstore'
 import * as http from '@/adapters/http'
 
-const storage = new ConfigStore(pkgup.sync({ cwd: __dirname }).pkg.name + '-' + path.basename(__filename))
-// storage.clear()
+const storage = new ConfigStore(
+	`${pkgup.sync({ cwd: __dirname }).pkg.name}/${path.basename(__filename)}`
+)
 
-export let good = (storage.get('good') || []) as string[]
-export let bad = (storage.get('bad') || []) as string[]
+export let GOOD = (storage.get('GOOD') || []) as string[]
+export let BAD = (storage.get('BAD') || []) as string[]
 
 setTimeout(async function sync() {
 	try {
-		let stamp = storage.get('stamp') || 0
-		if (stamp > Date.now()) return
+		let STAMP = storage.get('STAMP') || 0
+		if (STAMP > Date.now()) return
 
 		let resolved = (await Promise.all([
 			http.client.get(
@@ -27,14 +28,14 @@ setTimeout(async function sync() {
 		])) as string[]
 		let lists = resolved.map(list => list.split('\n').filter(Boolean))
 
-		bad = lists.shift().map(v => v.split('#')[0].trim())
-		storage.set('bad', bad)
+		BAD = lists.shift().map(v => v.split('#')[0].trim())
+		storage.set('BAD', BAD)
 
-		good = _.uniq(lists.flat()).filter(v => !bad.includes(v))
-		storage.set('good', good)
+		GOOD = _.uniq(lists.flat()).filter(v => !BAD.includes(v))
+		storage.set('GOOD', GOOD)
 
 		let future = dayjs(Date.now()).add(15, 'minute')
-		storage.set('stamp', future.valueOf())
+		storage.set('STAMP', future.valueOf())
 	} catch (error) {
 		console.error(`trackers sync Error ->`, error)
 	}

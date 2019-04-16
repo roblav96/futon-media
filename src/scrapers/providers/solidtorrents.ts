@@ -4,7 +4,6 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://solidtorrents.net/api/v1',
 	query: {
 		category: 'Video',
@@ -13,6 +12,7 @@ export const client = new http.Http({
 
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size', 'date', 'seeders']
+
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/search', {
 			query: { sort, q: slug } as Partial<Query>,

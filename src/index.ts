@@ -19,14 +19,14 @@ import { searchItem } from '@/prompts/search-item'
 import { selectTorrent } from '@/prompts/select-torrent'
 
 async function start() {
-	// let item = new media.Item(mocks.MOVIES['ready-player-one-2018'])
-	let item = new media.Item(mocks.EPISODES['game-of-thrones'])
+	let item = new media.Item(mocks.MOVIES['the-lego-movie-2014'])
+	// let item = new media.Item(mocks.EPISODES['westworld'])
 	// let item = await searchItem()
 	// return console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
-	torrents.sort((a, b) => b.bytes - a.bytes)
-	console.log(`torrents ->`, torrents.map(v => v.json()))
+	// console.log(`torrents ->`, torrents.map(v => v.json()))
+	console.log(`torrents.length ->`, torrents.length)
 	return
 	// torrents = torrents.filter(v => v.cached.length > 0)
 
@@ -55,4 +55,8 @@ async function start() {
 	// console.log(`torrents ->`, torrents)
 	// console.log(`torrents.length ->`, torrents.length)
 }
-start().catch(error => console.error(`start Error ->`, error))
+process.nextTick(() =>
+	start().catch(error => {
+		console.error(`start Error ->`, error)
+	})
+)

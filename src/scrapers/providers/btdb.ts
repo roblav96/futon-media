@@ -11,6 +11,7 @@ export const client = new http.Http({
 
 export class Btdb extends scraper.Scraper {
 	sorts = ['length', 'time', 'popular']
+
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
 			await client.get(`/`, {

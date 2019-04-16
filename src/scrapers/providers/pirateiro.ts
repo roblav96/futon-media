@@ -12,6 +12,7 @@ export const client = new http.Http({
 export class Pirateiro extends scraper.Scraper {
 	/** size, date, seeds */
 	sorts = ['tamanho', 'enviado', 'seeders']
+
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'c300' : 'c700'
 		let $ = cheerio.load(

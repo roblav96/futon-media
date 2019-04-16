@@ -4,7 +4,6 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = new http.Http({
-	memoize: process.env.NODE_ENV == 'development',
 	baseUrl: 'https://yts.am/api/v2',
 	query: {
 		limit: 50,
@@ -13,9 +12,11 @@ export const client = new http.Http({
 
 export class Yts extends scraper.Scraper {
 	sorts = ['date_added']
-	get slugs() {
+
+	slugs() {
 		return [this.item.ids.imdb]
 	}
+
 	async getResults(slug: string, sort: string) {
 		if (this.item.category != 'movie') {
 			return []

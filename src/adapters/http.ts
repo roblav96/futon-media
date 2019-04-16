@@ -5,6 +5,7 @@ import * as memoize from 'mem'
 import * as qs from 'query-string'
 import * as errors from 'http-errors'
 import * as normalize from 'normalize-url'
+import * as Url from 'url-parse'
 import * as ConfigStore from 'configstore'
 import * as pkgup from 'read-pkg-up'
 import * as fastParse from 'fast-json-parse'
@@ -49,6 +50,10 @@ export class Http {
 		},
 	} as Config
 
+	private storage = new ConfigStore(
+		`${pkgup.sync({ cwd: __dirname }).pkg.name}/${new Url(this.config.baseUrl).hostname}`
+	)
+
 	constructor(public config = {} as Config) {
 		_.defaultsDeep(this.config, Http.defaults)
 	}
@@ -58,6 +63,7 @@ export class Http {
 	}
 
 	async request(config: Config) {
+		let t = Date.now()
 		let options = Http.merge(this.config, config)
 
 		options.url.startsWith('http') && (options.baseUrl = '')
@@ -71,6 +77,14 @@ export class Http {
 		)
 		options.url = url
 		_.defaultsDeep(options.query, query)
+
+		let min = {
+			url: _.truncate(
+				normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
+				{ length: 128 }
+			),
+			query: JSON.stringify(config.query || {}).length < 256 ? config.query : '',
+		}
 
 		if (options.beforeRequest) {
 			let { prepend = [], append = [] } = options.beforeRequest
@@ -87,26 +101,35 @@ export class Http {
 		}
 
 		if (options.verbose) {
-			let minurl = normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true })
-			let minquery = JSON.stringify(config.query || {}).length < 256 ? config.query : ''
-			console.log(options.method, options.url, minquery || '')
-			// console.log(options.method, _.truncate(minurl, { length: 128 }), minquery || '')
-		}
-
-		if (options.debug) {
+			console.log(`->`, options.method, min.url /** , min.query */)
+		} else if (options.debug) {
 			console.log(`-> DEBUG REQUEST ->`, options.method, options.url, options)
 		}
 
-		let resolved = await (options.memoize ? Http.msend(options) : Http.send(options))
+		let mkey = options.memoize && fastStringify(config)
+		let resolved: Resolved
+		if (options.memoize && this.storage.has(mkey)) {
+			let parsed = fastParse(this.storage.get(mkey))
+			if (parsed.err) this.storage.delete(mkey)
+			else resolved = parsed.value
+		}
+		if (!resolved) {
+			resolved = await Http.send(options)
+			options.memoize && this.storage.set(mkey, fastStringify(resolved))
+		}
 		let { request, response, body } = resolved
 
 		if (!response.statusMessage) {
 			let error = errors[response.statusCode]
 			response.statusMessage = error ? error.name : 'ok'
 		}
-		if (options.debug) {
+
+		if (options.verbose) {
+			console.log(`<-`, `${Date.now() - t}ms`, min.url)
+		} else if (options.debug) {
 			console.log(`<- DEBUG RESPONSE <-`, options.method, options.url, options, resolved)
 		}
+
 		if (response.statusCode >= 400) {
 			throw new HTTPError(body, options, response)
 		}
@@ -122,35 +145,20 @@ export class Http {
 	}
 
 	get(url: string, config = {} as Config) {
-		return this.request({ method: 'GET', url, ...config }).then(({ body }) => body)
+		return this.request({ method: 'GET', ...config, url }).then(({ body }) => body)
 	}
 	post(url: string, config = {} as Config) {
-		return this.request({ method: 'POST', url, ...config }).then(({ body }) => body)
+		return this.request({ method: 'POST', ...config, url }).then(({ body }) => body)
 	}
 	put(url: string, config = {} as Config) {
-		return this.request({ method: 'PUT', url, ...config }).then(({ body }) => body)
+		return this.request({ method: 'PUT', ...config, url }).then(({ body }) => body)
 	}
 	delete(url: string, config = {} as Config) {
-		return this.request({ method: 'DELETE', url, ...config }).then(({ body }) => body)
-	}
-
-	private static storage = new ConfigStore(pkgup.sync({ cwd: __dirname }).pkg.name)
-	private static msend(options: sget.Options) {
-		let key = fastStringify(options)
-		if (Http.storage.has(key)) {
-			let resolved = fastParse(Http.storage.get(key))
-			if (resolved.err) Http.storage.delete(key)
-			else return resolved.value
-		}
-		return Http.send(options).then(resolved => {
-			Http.storage.set(key, fastStringify(resolved))
-			return resolved
-		})
+		return this.request({ method: 'DELETE', ...config, url }).then(({ body }) => body)
 	}
 
 	private static send(options: sget.Options) {
 		return new Promise<Resolved>((resolve, reject) => {
-			// console.warn(`!memoized ->`, options.url)
 			let request = sget(options, (error, response) => {
 				if (error) {
 					return reject(error)
@@ -168,14 +176,8 @@ export class Http {
 			})
 		})
 	}
-	// private static msend = memoize(Http.send, {
-	// 	cache: Http.storage,
-	// 	cacheKey(options) {
-	// 		return fastStringify.stable(options)
-	// 	},
-	// })
 
-	static merge(...configs: Config[]) {
+	private static merge(...configs: Config[]) {
 		return _.mergeWith({}, ...configs, (a, b) => {
 			if (_.isArray(a) && _.isArray(b)) return a.concat(b)
 		}) as Config

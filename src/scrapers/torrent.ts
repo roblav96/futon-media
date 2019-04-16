@@ -35,10 +35,10 @@ export class Torrent {
 		magnet.dn = result.name
 
 		/** filter bad trackers and merge good trackers */
-		magnet.tr = (magnet.tr || []).filter(
-			tr => trackers.bad.filter(v => v.startsWith(tr)).length == 0
+		magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).filter(
+			tr => trackers.BAD.filter(v => v.startsWith(tr.trim())).length == 0
 		)
-		magnet.tr = _.uniq(magnet.tr.concat(trackers.good))
+		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD))
 
 		/** re-encode magnet URL */
 		let encoded = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
@@ -54,6 +54,7 @@ export class Torrent {
 			hash: this.hash,
 			name: this.name,
 			providers: this.providers.join(', '),
+			slugs: this.slugs.join(', '),
 			seeders: this.seeders,
 			size: this.size,
 		}

@@ -19,13 +19,13 @@ export class RealDebrid implements debrid.Debrid {
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pRandom(500)
-				let url = `/torrents/instantAvailability/${hashes.join('/')}`
+				await utils.pRandom(300)
+				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client.get(url, {
-					memoize: process.env.NODE_ENV == 'development',
 					verbose: true,
+					memoize: process.env.NODE_ENV == 'development',
 				})) as CacheResponse
-				return chunk.map(hash => _.size(_.get(response, `${hash}.rd`, [])) > 0)
+				return chunk.map(v => _.size(_.get(response, `${v}.rd`, [])) > 0)
 			}),
 			{ concurrency: 3 }
 		)).flat()

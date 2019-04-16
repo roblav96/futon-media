@@ -34,50 +34,39 @@ async function syncToken() {
 		query: { get_token: 'get_token' },
 	})
 	client.config.query['token'] = token
+	await utils.pTimeout(500)
 	return token
 }
 
 export class Rarbg extends scraper.Scraper {
 	sorts = ['last', 'seeders']
+	concurrency = 1
 
-	get slugs() {
-		let queries = [] as Partial<Query>[]
+	slugs() {
 		let query = {} as Query
 		if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
 
-		if (this.item.movie) {
-			queries.push(query)
-			if (this.rigorous && this.item.movie.belongs_to_collection) {
-				let collection = this.item.movie.belongs_to_collection.name.split(' ')
-				queries.push({ search_string: utils.toSlug(collection.slice(0, -1).join(' ')) })
-			}
+		let slugs = super.slugs()
+		if (_.size(query) == 0) {
+			return slugs.map(slug => JSON.stringify({ search_string: slug } as Query))
 		}
 
-		if (this.item.show) {
-			if ((!this.item.S.n && !this.item.E.n) || this.rigorous) {
-				queries.push(query)
+		let title = utils.toSlug(this.item.title)
+		let queries = slugs.map((slug, i) => {
+			slug.startsWith(title) && (slug = slug.replace(title, '').trim())
+			if (this.item.movie && slug) {
+				return { search_string: slug } as Query
 			}
-			if (this.item.S.n) {
-				queries.push({ search_string: `s${this.item.S.z}`, ...query })
-				if (this.rigorous) {
-					queries.push({ search_string: `season ${this.item.S.n}`, ...query })
-				}
-			}
-			if (this.item.E.n) {
-				queries.push({ search_string: `s${this.item.S.z}e${this.item.E.z}`, ...query })
-			}
-		}
-		
-		console.log(`queries ->`, queries)
-
+			return slug ? ({ ...query, search_string: slug } as Query) : query
+		})
 		return queries.map(v => JSON.stringify(v))
 	}
 
-	async getResults(query: string, sort: string) {
+	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/pubapi_v2.php', {
-			query: Object.assign({ sort } as Query, JSON.parse(query)),
+			query: Object.assign({ sort } as Query, JSON.parse(slug)),
 			verbose: true,
 			memoize: process.env.NODE_ENV == 'development',
 		})) as Response

@@ -31,6 +31,7 @@ export class Item {
 	get ids() {
 		return this.main.ids
 	}
+
 	get category() {
 		let category = this.type
 		this.movie && (category = 'movie')
@@ -43,18 +44,20 @@ export class Item {
 		this.movie && (title += ` ${this.movie.year}`)
 		return title
 	}
+	get S() {
+		let n = NaN
+		this.season && (n = this.season.number)
+		this.episode && (n = this.episode.season)
+		return { n, z: _.isFinite(n) ? utils.zeroSlug(n) : '' }
+	}
+	get E() {
+		let n = NaN
+		this.episode && (n = this.episode.number)
+		return { n, z: _.isFinite(n) ? utils.zeroSlug(n) : '' }
+	}
 
 	get popularity() {
 		return this.score + this.main.votes
-	}
-
-	get S() {
-		let n = this.season ? this.season.number : this.episode ? this.episode.season : NaN
-		return _.isFinite(n) ? { n, z: utils.zeroSlug(n) } : {}
-	}
-	get E() {
-		let n = this.episode ? this.episode.number : NaN
-		return _.isFinite(n) ? { n, z: utils.zeroSlug(n) } : {}
 	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {

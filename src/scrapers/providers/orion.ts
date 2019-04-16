@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as qs from 'query-string'
 import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
@@ -21,13 +22,34 @@ export const client = new http.Http({
 export class Orion extends scraper.Scraper {
 	sorts = ['filesize', 'streamage', 'streamseeds']
 
-	async getResults(query: string, sort: string) {
+	slugs() {
+		let query = {} as Query
+		if (this.item.ids.imdb) query.idimdb = this.item.ids.imdb
+		else if (this.item.ids.tmdb) query.idtmdb = this.item.ids.tmdb
+		else if (this.item.ids.tvdb) query.idtvdb = this.item.ids.tvdb
+		else query.query = super.slugs()[0]
+		return [JSON.stringify(query)]
+	}
+
+	async getResults(slug: string, sort: string) {
+		let query = { sortvalue: sort, type: this.item.category } as Query
+		if (this.item.category == 'show') {
+			query.numberseason = this.item.S.n || 1
+			query.numberepisode = this.item.E.n || 1
+		}
 		let response = (await client.get(`/`, {
-			query: { query, sortvalue: sort, type: this.item.category } as Partial<Query>,
+			query: Object.assign(query, JSON.parse(slug)),
 			verbose: true,
 			memoize: process.env.NODE_ENV == 'development',
 		})) as Response
-		let streams = _.has(response, 'data.streams') ? response.data.streams : ([] as Stream[])
+		let streams = (_.has(response, 'data.streams') && response.data.streams) || []
+		_.remove(streams, stream => {
+			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
+			if (magnet.xt == 'urn:btih:' || !stream.file.hash) {
+				// console.warn(`!magnet.xt || !file.hash ->`, stream)
+				return true
+			}
+		})
 		return streams.map(stream => {
 			return {
 				bytes: stream.file.size,
