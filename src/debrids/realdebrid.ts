@@ -19,7 +19,7 @@ export class RealDebrid implements debrid.Debrid {
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pRandom(300)
+				await utils.pRandom(500)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client.get(url, {
 					verbose: true,

@@ -19,7 +19,7 @@ export class Premiumize implements debrid.Debrid {
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pRandom(300)
+				await utils.pRandom(500)
 				let response = (await client.post(`/cache/check`, {
 					query: { items: chunk },
 					verbose: true,

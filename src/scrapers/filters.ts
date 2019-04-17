@@ -50,12 +50,12 @@ export function results(result: scraper.Result, item: media.Item) {
 			if (regex.season1(item, slug)) return true
 			if (regex.s01(item, slug)) return true
 		} catch (error) {
-			console.log(`✖︎ ${error.message} ->`, result)
+			console.log(`✖︎ ${error.message} ->`, result.name)
 			return false
 		}
 	}
 
-	console.log(`✖︎ return false ->`, result)
+	console.log(`✖︎ return false ->`, result.name)
 	return false
 }
 

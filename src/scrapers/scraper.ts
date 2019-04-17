@@ -24,8 +24,8 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		// (await import('./providers/orion')).Orion,
 		// (await import('./providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('./providers/yts')).Yts,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('./providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
@@ -71,6 +71,8 @@ export class Scraper {
 	constructor(public item: media.Item) {}
 
 	async getTorrents() {
+		let t = Date.now()
+
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
@@ -80,7 +82,7 @@ export class Scraper {
 		/** get results with slug and sorts query combinations */
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {
-				index > 0 && (await utils.pRandom(500))
+				index > 0 && (await utils.pRandom(1000))
 				return (await this.getResults(slug, sort).catch(error => {
 					console.error(`${this.constructor.name} Error ->`, error)
 					return [] as Result[]
@@ -93,8 +95,14 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
-		// console.warn(`${this.constructor.name} -> DONE`)
-		return results.filter(v => filters.results(v, this.item)).map(v => new torrent.Torrent(v))
+		results = results.filter(v => filters.results(v, this.item))
+
+		console.warn(
+			`${this.constructor.name} -> DONE`,
+			results.length,
+			`results in ${Date.now() - t}ms`
+		)
+		return results.map(v => new torrent.Torrent(v))
 	}
 }
 

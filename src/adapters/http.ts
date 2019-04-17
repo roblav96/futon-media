@@ -83,7 +83,9 @@ export class Http {
 				normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
 				{ length: 128 }
 			),
-			query: JSON.stringify(config.query || {}).length < 256 ? config.query : '',
+			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
+				length: 256,
+			}),
 		}
 
 		if (options.beforeRequest) {
@@ -114,7 +116,7 @@ export class Http {
 			else resolved = parsed.value
 		}
 		if (!resolved) {
-			options.memoize && console.warn(`!memoized ->`, min.url)
+			// options.memoize && console.warn(`!memoized ->`, min.url)
 			resolved = await Http.send(options)
 			options.memoize && this.storage.set(mkey, fastStringify(resolved))
 		}
