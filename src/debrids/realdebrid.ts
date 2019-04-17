@@ -49,9 +49,10 @@ export class RealDebrid implements debrid.Debrid {
 				verbose: true,
 			})) as Item
 
+			let skips = utils.accuracy(decoded.dn as string, ['sample', 'trailer'].join(' '))
 			let files = item.files.filter(file => {
-				let slug = utils.toSlug(path.basename(file.path)).split(' ')
-				return utils.isVideo(file.path) && !slug.includes('sample')
+				let accuracy = utils.accuracy(path.basename(file.path), skips.join(' '))
+				return utils.isVideo(file.path) && accuracy.length == 0
 			})
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, item)

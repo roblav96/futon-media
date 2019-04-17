@@ -32,23 +32,19 @@ export class Orion extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
-		let query = { sortvalue: sort, type: this.item.category } as Query
-		if (this.item.category == 'show') {
-			query.numberseason = this.item.S.n || 1
-			query.numberepisode = this.item.E.n || 1
-		}
+		let query = { sortvalue: sort } as Query
 		let response = (await client.get(`/`, {
 			query: Object.assign(query, JSON.parse(slug)),
 			verbose: true,
 			memoize: process.env.NODE_ENV == 'development',
 		})) as Response
 		let streams = (_.has(response, 'data.streams') && response.data.streams) || []
-		_.remove(streams, stream => {
+		streams = streams.filter(stream => {
 			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
-			if (magnet.xt == 'urn:btih:' || !stream.file.hash) {
-				// console.warn(`!magnet.xt || !file.hash ->`, stream)
-				return true
+			if (magnet.xt == 'urn:btih:') {
+				return console.warn(`!magnet.xt ->`, stream)
 			}
+			return true
 		})
 		return streams.map(stream => {
 			return {
@@ -62,6 +58,14 @@ export class Orion extends scraper.Scraper {
 		})
 	}
 }
+
+// if (this.item.movie) {
+// 	return [JSON.stringify({ ...query, type: this.item.category } as Query)]
+// }
+// if (this.item.category == 'show') {
+// 	query.numberseason = this.item.S.n || 1
+// 	query.numberepisode = this.item.E.n || 1
+// }
 
 interface Query {
 	action: string

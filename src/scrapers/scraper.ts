@@ -25,7 +25,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		// (await import('./providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('./providers/yts')).Yts,
+		(await import('./providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
@@ -44,8 +44,8 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		return true
 	})
 
-	// let cached = await debrid.getCached(torrents.map(v => v.hash))
-	// torrents.forEach((v, i) => (v.cached = cached[i]))
+	let cached = await debrid.getCached(torrents.map(v => v.hash))
+	torrents.forEach((v, i) => (v.cached = cached[i]))
 
 	torrents.sort((a, b) => b.bytes - a.bytes)
 
@@ -73,8 +73,8 @@ export class Scraper {
 	async getTorrents() {
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
-			i == 0 && this.sorts.forEach(sort => combinations.push([slug, sort]))
-			i > 0 && combinations.push([slug, this.sorts[0]])
+			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
+			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
 
 		/** get results with slug and sorts query combinations */
@@ -108,7 +108,6 @@ export function toJSON(result: Result) {
 
 export interface Result {
 	bytes: number
-	hash: string
 	magnet: string
 	name: string
 	providers: string[]

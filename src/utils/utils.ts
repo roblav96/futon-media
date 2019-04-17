@@ -1,7 +1,8 @@
 import * as _ from 'lodash'
-import * as jslevenshtein from 'js-levenshtein'
-import * as stripBom from 'strip-bom'
+import * as path from 'path'
 import * as dayjs from 'dayjs'
+import * as stripBom from 'strip-bom'
+import * as jslevenshtein from 'js-levenshtein'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import stripAnsi from 'strip-ansi'
@@ -24,8 +25,12 @@ export function clean(value: string) {
 }
 
 export function isForeign(value: string) {
-	return value != _.deburr(value)
+	let arr = Array.from({ length: value.length }).map((v, i) => value.charCodeAt(i))
+	return arr.filter(v => v >= 128).length > 0
 }
+// export function isForeign(value: string) {
+// 	return value != _.deburr(value)
+// }
 
 export function minify(value: string) {
 	return value.replace(/\W/g, '').toLowerCase()
@@ -33,8 +38,8 @@ export function minify(value: string) {
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
-	let values = _.uniq(toSlug(value).split(' '))
-	let targets = _.uniq(toSlug(target).split(' '))
+	let values = _.uniq(_.split(toSlug(value, { toName: true }).toLowerCase(), ' '))
+	let targets = _.uniq(_.split(toSlug(target, { toName: true }).toLowerCase(), ' '))
 	return targets.filter(v => !values.includes(v))
 }
 
@@ -77,7 +82,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 
 export function isVideo(file: string) {
 	let exts = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv']
-	return !!exts.find(ext => file.endsWith(`.${ext}`))
+	return exts.includes(path.extname(file).slice(1))
 }
 
 export function slider(value: number, min: number, max: number) {

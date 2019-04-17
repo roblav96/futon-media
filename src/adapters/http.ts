@@ -101,7 +101,7 @@ export class Http {
 		}
 
 		if (options.verbose) {
-			console.log(`->`, options.method, min.url /** , min.query */)
+			console.log(`->`, options.method, min.url, min.query)
 		} else if (options.debug) {
 			console.log(`-> DEBUG REQUEST ->`, options.method, options.url, options)
 		}

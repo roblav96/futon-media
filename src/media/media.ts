@@ -44,6 +44,12 @@ export class Item {
 		this.movie && (title += ` ${this.movie.year}`)
 		return title
 	}
+	get titleExt() {
+		let title = this.title
+		this.episode && (title += ` ${this.episode.title}`)
+		return title
+	}
+
 	get S() {
 		let n = NaN
 		this.season && (n = this.season.number)

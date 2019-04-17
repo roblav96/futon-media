@@ -21,23 +21,35 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
-
 	get min() {
 		let min = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrid.Debrids, string>
 		return { cached: this.cached.map(v => min[v]).join(' ') }
 	}
+	get hash() {
+		return magneturi.decode(this.magnet).infoHash.toLowerCase()
+	}
 
 	constructor(result: scraper.Result) {
+		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
+		magnet.xt = magnet.xt.toLowerCase()
+		magnet.dn = result.name
+		/** filter bad trackers and merge good trackers */
+		magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
+		magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
+		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD))
+		/** re-encode magnet URL */
+		this.magnet = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
+
 		_.defaults(this, result)
 	}
 
 	toJSON() {
 		return {
 			age: this.age,
-			cached: this.cached, //.join(', '),
+			cached: this.cached.join(', '),
 			name: this.name,
-			providers: this.providers, //.join(', '),
-			slugs: this.slugs, //.join(', '),
+			providers: this.providers.join(', '),
+			slugs: this.slugs.join(', '),
 			seeders: this.seeders,
 			size: this.size,
 		}
