@@ -171,5 +171,50 @@ export interface Result extends Extras {
 }
 
 export interface Extras {
+	// id: number
+	// listed_at: string
+	// rank: number
 	score: number
+}
+
+export interface ResponseList {
+	comment_count: number
+	like_count: number
+	list: List
+}
+
+export interface List {
+	allow_comments: boolean
+	comment_count: number
+	created_at: string
+	description: string
+	display_numbers: boolean
+	ids: IDs
+	item_count: number
+	likes: number
+	name: string
+	privacy: string
+	sort_by: string
+	sort_how: string
+	updated_at: string
+	user: User
+}
+
+export interface User {
+	about: string
+	age: number
+	gender: string
+	ids: IDs
+	images: {
+		avatar: {
+			full: string
+		}
+	}
+	joined_at: string
+	location: string
+	name: string
+	private: boolean
+	username: string
+	vip: boolean
+	vip_ep: boolean
 }

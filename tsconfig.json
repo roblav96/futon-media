@@ -10,6 +10,7 @@
 		"noErrorTruncation": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
+		"skipLibCheck": true,
 		"sourceMap": true,
 		"target": "es5",
 		"paths": {

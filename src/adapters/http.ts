@@ -128,7 +128,7 @@ export class Http {
 		}
 
 		if (options.verbose) {
-			console.log(`<-`, `${Date.now() - t}ms`, min.url)
+			// console.log(`<-`, `${Date.now() - t}ms`, min.url)
 		} else if (options.debug) {
 			console.log(`<- DEBUG RESPONSE <-`, options.method, options.url, options, resolved)
 		}

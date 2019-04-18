@@ -62,10 +62,6 @@ export class Item {
 		return { n, z: _.isFinite(n) ? utils.zeroSlug(n) : '' }
 	}
 
-	get popularity() {
-		return this.score + this.main.votes
-	}
-
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {
 		this.use(result)
 	}

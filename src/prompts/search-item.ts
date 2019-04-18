@@ -20,7 +20,7 @@ export async function searchItem() {
 			})) as trakt.Result[]
 			return response
 				.map(v => new media.Item(v))
-				.sort((a, b) => b.popularity - a.popularity)
+				.sort((a, b) => b.score + b.main.votes - (a.score + a.main.votes))
 				.map(v => ({
 					title: `${v.full.title}, ${v.full.year}`,
 					value: v,
