@@ -80,9 +80,9 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 	return split.join(options.separator)
 }
 
+export const VIDEO_EXTS = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv', 'm4a']
 export function isVideo(file: string) {
-	let exts = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv']
-	return exts.includes(path.extname(file).slice(1))
+	return VIDEO_EXTS.includes(path.extname(file).slice(1))
 }
 
 export function slider(value: number, min: number, max: number) {

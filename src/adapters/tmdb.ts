@@ -9,12 +9,12 @@ export const client = new Http({
 	},
 	afterResponse: {
 		append: [
-			(options, { body }) => {
-				if (_.isPlainObject(body)) {
-					debloat(body)
+			async (options, response) => {
+				if (_.isPlainObject(response.data)) {
+					debloat(response.data)
 					let bloated = ['results', 'seasons', 'episodes']
 					bloated.forEach(key => {
-						let value = body[key]
+						let value = response.data[key]
 						_.isArray(value) && value.forEach(debloat)
 					})
 				}

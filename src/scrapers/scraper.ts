@@ -47,8 +47,6 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	let cached = await debrid.getCached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cached[i]))
 
-	torrents.sort((a, b) => b.bytes - a.bytes)
-
 	return torrents
 }
 
@@ -97,11 +95,7 @@ export class Scraper {
 
 		results = results.filter(v => filters.results(v, this.item))
 
-		console.warn(
-			`${this.constructor.name} -> DONE`,
-			results.length,
-			`results in ${Date.now() - t}ms`
-		)
+		console.warn(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
 		return results.map(v => new torrent.Torrent(v))
 	}
 }

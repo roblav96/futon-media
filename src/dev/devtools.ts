@@ -1,5 +1,6 @@
-import * as shimmer from 'shimmer'
+import * as dts from 'dts-generate'
 import * as path from 'path'
+import * as shimmer from 'shimmer'
 import * as StackTracey from 'stacktracey'
 import * as ansi from 'ansi-colors'
 import * as ms from 'pretty-ms'
@@ -47,6 +48,16 @@ if (process.env.NODE_ENV == 'development') {
 	process.stdout.write(
 		`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
 	)
+
+	Object.assign(global, { dts })
+}
+
+declare global {
+	namespace NodeJS {
+		interface Global {
+			dts: typeof dts
+		}
+	}
 }
 
 // process.stdout.write(`

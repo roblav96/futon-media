@@ -13,12 +13,12 @@ export const client = new Http({
 	},
 	afterResponse: {
 		append: [
-			(options, { body }) => {
-				if (_.isPlainObject(body)) {
-					debloat(body)
+			async (options, response) => {
+				if (_.isPlainObject(response.data)) {
+					debloat(response.data)
 				}
-				if (_.isArray(body)) {
-					body.forEach(result => {
+				if (_.isArray(response.data)) {
+					response.data.forEach(result => {
 						debloat(result)
 						media.TYPES.forEach(type => debloat(result[type]))
 					})

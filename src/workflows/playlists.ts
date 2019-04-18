@@ -13,7 +13,7 @@ export async function playlists() {
 		verbose: true,
 		memoize: process.env.NODE_ENV == 'development',
 	})) as trakt.ResponseList[]
-	let list = lists[7].list
+	let list = lists[4].list
 	let url = `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`
 	let results = (await trakt.client.get(url, {
 		verbose: true,
@@ -28,5 +28,4 @@ export async function playlists() {
 		{ concurrency: 1 }
 	)
 	await emby.refreshLibrary()
-	// let strms = items.map(v => emby.toStrmPath(v, '4K'))
 }

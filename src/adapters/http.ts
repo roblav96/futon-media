@@ -15,7 +15,9 @@ interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: httpie.HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
+	body?: any
 	debug?: boolean
+	form?: any
 	memoize?: boolean
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'HEAD' | 'DELETE'
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
@@ -64,7 +66,7 @@ export class Http {
 		let min = {
 			url: _.truncate(
 				normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
-				{ length: 128 }
+				{ length: 100 }
 			),
 			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
 				length: 256,
@@ -85,9 +87,17 @@ export class Http {
 			options.url += `?${stringify}`
 		}
 
+		if (_.size(options.form)) {
+			options.body = qs.stringify(options.form)
+			options.headers['content-type'] = 'application/x-www-form-urlencoded'
+			options.headers['content-length'] = Buffer.byteLength(options.body)
+			_.unset(options, 'form')
+		}
+
 		if (options.verbose) {
 			console.log(`->`, options.method, min.url, min.query)
-		} else if (options.debug) {
+		}
+		if (options.debug) {
 			console.log(`-> DEBUG REQUEST ->`, options.method, options.url, options)
 		}
 
@@ -99,9 +109,12 @@ export class Http {
 			else response = parsed.value
 		}
 		if (!response) {
-			// options.memoize && console.warn(`!memoized ->`, min.url)
-			response = await httpie.send(options.method, options.url, _.cloneDeep(options) as any)
-			options.memoize && this.storage.set(mkey, fastStringify(response))
+			options.memoize && console.warn(`!memoized ->`, min.url)
+			response = await httpie.send(options.method, options.url, options as any)
+			if (options.memoize) {
+				this.storage.set(mkey, fastStringify(response))
+				options.verbose && console.log(`<-`, `${Date.now() - t}ms`, min.url)
+			}
 		}
 
 		if (!response.statusMessage) {
@@ -109,9 +122,7 @@ export class Http {
 			response.statusMessage = error ? error.name : 'ok'
 		}
 
-		if (options.verbose) {
-			console.log(`<-`, `${Date.now() - t}ms`, min.url)
-		} else if (options.debug) {
+		if (options.debug) {
 			console.log(`<- DEBUG RESPONSE <-`, options.method, options.url, options, response)
 		}
 
@@ -137,24 +148,6 @@ export class Http {
 	delete(url: string, config = {} as Config) {
 		return this.request({ method: 'DELETE', ...config, url }).then(({ data }) => data)
 	}
-
-	// private static send(options: Config) {
-	// 	return new Promise<Resolved>((resolve, reject) => {
-	// 		let request = sget(options, (error, response) => {
-	// 			if (error) return reject(error)
-	// 			try {
-	// 				concat(response, (error, data) => {
-	// 					if (error) return reject(error)
-	// 					let body = data.toString()
-	// 					body && (body = fastParse(body).value || body)
-	// 					resolve({ request, response, body })
-	// 				})
-	// 			} catch (error) {
-	// 				reject(error)
-	// 			}
-	// 		})
-	// 	})
-	// }
 
 	private static merge(...configs: Config[]) {
 		return _.mergeWith({}, ...configs, (a, b) => {

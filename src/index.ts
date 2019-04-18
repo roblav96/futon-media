@@ -33,7 +33,7 @@ async function start() {
 	await workflow()
 }
 setTimeout(() => {
-	tail().catch(error => console.error(`tail Error ->`, error))
+	// tail().catch(error => console.error(`tail Error ->`, error))
 	// watch().catch(error => console.error(`tail Error ->`, error))
 	start().catch(error => console.error(`start Error ->`, error))
 }, 1000)

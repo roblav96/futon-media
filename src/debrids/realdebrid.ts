@@ -32,12 +32,17 @@ export class RealDebrid implements debrid.Debrid {
 	}
 
 	async links(magnet: string) {
-		let decoded = magneturi.decode(magnet)
+		let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
+
+		// let downloads = (await client.get('/downloads', {
+		// 	verbose: true,
+		// })) as Unrestrict[]
+		// downloads = downloads.filter(v => v.streamable == 1)
 
 		let items = (await client.get('/torrents', {
 			verbose: true,
 		})) as Item[]
-		let item = items.find(v => v.hash == decoded.infoHash)
+		let item = items.find(v => v.hash == infoHash)
 
 		if (!item) {
 			let download = (await client.post('/torrents/addMagnet', {
@@ -49,10 +54,11 @@ export class RealDebrid implements debrid.Debrid {
 				verbose: true,
 			})) as Item
 
-			let skips = utils.accuracy(decoded.dn as string, ['sample', 'trailer'].join(' '))
+			let skips = ['sample', 'trailer']
+			skips = utils.accuracy(dn, skips.join(' '))
 			let files = item.files.filter(file => {
 				let accuracy = utils.accuracy(path.basename(file.path), skips.join(' '))
-				return utils.isVideo(file.path) && accuracy.length == 0
+				return utils.isVideo(file.path) && accuracy.length == skips.length
 			})
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, item)
