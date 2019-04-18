@@ -12,7 +12,8 @@ const sockette = require('sockette') as typeof Sockette
 
 export function listen() {
 	let url = process.env.EMBY_API_URL.replace('http', 'ws')
-	let ws = new sockette(`${url}/embywebsocket?api_key=${process.env.EMBY_API_KEY}`, {
+	url += `/embywebsocket?api_key=${process.env.EMBY_API_KEY}` // &deviceId=fdda82b88945e506
+	let ws = new sockette(url, {
 		timeout: 1000,
 		maxAttempts: Infinity,
 		onerror(error) {
@@ -26,10 +27,12 @@ export function listen() {
 		},
 		onmessage(message) {
 			let { MessageType, Data } = fastParse(message.data).value || message.data
-			console.log(`onmessage ->`, MessageType, Data)
 			if (MessageType == 'Sessions' && _.isArray(Data)) {
-				let session = Data.find(v => v.UserName == 'Developer')
-				console.log(`session ->`, session)
+				// let session = Data.find(v => v.UserName == 'Developer')
+				let dates = Data.map(v => new Date(v.LastActivityDate).toLocaleTimeString())
+				console.log(`dates ->`, dates)
+			} else {
+				console.log(`onmessage ->`, MessageType, Data)
 			}
 		},
 	})

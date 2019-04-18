@@ -10,7 +10,7 @@ import * as utils from '@/utils/utils'
 import { scrape } from '@/workflows/scrape'
 import { playlists } from '@/workflows/playlists'
 import { listen } from '@/workflows/websocket'
-import { watch } from '@/workflows/tail-logs'
+import { tail } from '@/workflows/tail-logs'
 
 async function start() {
 	if (process.env.NODE_ENV == 'development') {
@@ -33,7 +33,7 @@ async function start() {
 	await workflow()
 }
 setTimeout(() => {
-	// listen()
-	watch().catch(error => console.error(`tail Error ->`, error))
+	tail().catch(error => console.error(`tail Error ->`, error))
+	// watch().catch(error => console.error(`tail Error ->`, error))
 	start().catch(error => console.error(`start Error ->`, error))
 }, 1000)

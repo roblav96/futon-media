@@ -19,15 +19,11 @@ export async function playlists() {
 		verbose: true,
 		memoize: process.env.NODE_ENV == 'development',
 	})) as trakt.Result[]
-	results.splice(5)
+	results.splice(10)
 	let items = results.map(v => new media.Item(v))
 	await pAll(
 		items.map(item => async () => {
-			let strm = emby.toStrmPath(item)
-			console.log(`strm ->`, strm)
-			// let query = { item: JSON.stringify(item.main) }
-			await fs.outputFile(strm, `/dev/null`)
-			// await fs.outputFile(strm, `http://localhost:8080/strm?${qs.stringify(item.full.ids)}`)
+			await fs.outputFile(emby.toStrmPath(item), `/dev/null`)
 		}),
 		{ concurrency: 1 }
 	)

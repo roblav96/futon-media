@@ -701,3 +701,5 @@ export const LINKS = [
 	'https://35.rdeb.io/d/WR6TEY7MGHYO4/Westworld.S02E09.Vanishing.Point.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
 	'https://35.rdeb.io/d/TBPKZAUDWETLY/Westworld.S02E10.The.Passenger.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',
 ]
+
+export const LINE = `12:18:07.713 Info HttpServer: HTTP POST http://192.168.50.96:8096/emby/Items/538/PlaybackInfo?UserId=733f7b63db664bf3a93c64ae0f696348&StartTimeTicks=0&IsPlayback=true&AutoOpenLiveStream=true&SubtitleStreamIndex=-1&MediaSourceId=985a0b8ab4bd176663ec2e9aad250212&MaxStreamingBitrate=140000000. UserAgent: Mozilla/5.0 (Linux; Android 9; Pixel C Build/PQ2A.190305.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/66.0.3359.158 Safari/537.36`

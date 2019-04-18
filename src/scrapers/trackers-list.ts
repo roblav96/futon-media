@@ -17,6 +17,9 @@ setTimeout(async function sync() {
 		let STAMP = storage.get('STAMP') || 0
 		if (STAMP > Date.now()) return
 
+		let future = dayjs().add(15, 'minute')
+		storage.set('STAMP', future.valueOf())
+
 		let resolved = (await Promise.all([
 			http.client.get(
 				'https://raw.githubusercontent.com/ngosang/trackerslist/master/blacklist.txt'
@@ -34,9 +37,6 @@ setTimeout(async function sync() {
 		GOOD = _.uniq(lists.flat()).map(v => v.trim())
 		_.remove(GOOD, v => BAD.includes(v))
 		storage.set('GOOD', GOOD)
-
-		let future = dayjs(Date.now()).add(15, 'minute')
-		storage.set('STAMP', future.valueOf())
 	} catch (error) {
 		console.error(`trackers sync Error ->`, error)
 	}
