@@ -8,6 +8,7 @@ import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/utils/rxjs'
 import * as scraper from '@/scrapers/scraper'
+import * as socket from '@/emby/socket'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import { rxHttpUrl } from '@/emby/tail-logs'
@@ -51,11 +52,12 @@ rxPlayback.subscribe(async ({ url, query }) => {
 			emby.client.get(`/Users/${Session.UserId}/Items/${ItemId}`) as Promise<emby.Item>,
 		])
 
-		let Container = Session.NowPlayingItem && Session.NowPlayingItem.Container
+		let { PlayState, NowPlayingItem } = Session
+		if (PlayState && PlayState.MediaSourceId) return
+		if (NowPlayingItem && NowPlayingItem.Container) return
+
 		let strm = _.trim(await fs.readFile(Eitem.Path, 'utf-8'))
-		if (Container || strm != `/dev/null`) {
-			return
-		}
+		if (strm != `/dev/null`) return
 
 		let [provider, id] = Object.entries(Eitem.ProviderIds)[0]
 		let result = ((await trakt.client.get(
@@ -75,19 +77,25 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		await fs.outputFile(Eitem.Path, link)
 		await emby.sendMessage(Session.Id, `👍 Starting playback`)
 
-		// await emby.refreshLibrary()
 		await emby.client.post(`/Sessions/${Session.Id}/Playing`, {
 			query: {
 				ItemIds: ItemId,
 				MediaSourceId: query.MediaSourceId,
 				PlayCommand: 'PlayNow',
 				StartPositionTicks: query.StartTimeTicks,
+				SubtitleStreamIndex: query.SubtitleStreamIndex,
 			},
 		})
-		await utils.pTimeout(30000)
-		await fs.outputFile(Eitem.Path, `/dev/null`)
 
-		//
+		let rxContainer = socket.rxSession.pipe(
+			Rx.Op.filter(({ Id, NowPlayingItem }) => {
+				if (Id != Session.Id) return
+				return _.isString(NowPlayingItem && NowPlayingItem.Container)
+			}),
+			Rx.Op.take(5)
+		)
+		await Promise.race([utils.pTimeout(30000), rxContainer.toPromise()])
+		await fs.outputFile(Eitem.Path, `/dev/null`)
 	} catch (error) {
 		console.error(`rxPlayback subscribe -> %O`, error)
 		if (Session) emby.sendMessage(Session.Id, error)

@@ -95,7 +95,7 @@ export class Scraper {
 
 		results = results.filter(v => filters.results(v, this.item))
 
-		console.warn(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
+		// console.warn(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
 		return results.map(v => new torrent.Torrent(v))
 	}
 }
