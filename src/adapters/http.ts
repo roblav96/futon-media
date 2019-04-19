@@ -27,12 +27,17 @@ interface Config extends http.RequestOptions {
 }
 type Hooks<T> = { append?: T[]; prepend?: T[] }
 
-interface HTTPError extends Error {
-	data: any
-	headers: Record<string, string>
-	statusCode: number
-	statusMessage: string
-	url: string
+export interface HTTPError
+	extends Pick<Config, 'method' | 'url'>,
+		Pick<httpie.HttpieResponse, 'data' | 'headers' | 'statusCode' | 'statusMessage'> {}
+export class HTTPError extends Error {
+	name = 'HTTPError'
+	constructor(options: Config, response: httpie.HttpieResponse) {
+		super(`${response.statusCode} ${response.statusMessage}`)
+		Error.captureStackTrace(this, this.constructor)
+		_.merge(this, _.pick(options, 'method', 'url'))
+		_.merge(this, _.pick(response, 'data', 'headers', 'statusCode', 'statusMessage'))
+	}
 }
 
 export class Http {
@@ -107,39 +112,38 @@ export class Http {
 			console.log(`->`, options.method, min.url, min.query)
 		}
 		if (options.debug) {
-			console.log(`-> DEBUG ->`, options.method, options.url, options)
+			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 
 		let mkey = options.memoize && fastStringify(config)
-		let response: httpie.HttpieResponse | HTTPError
+		let response: httpie.HttpieResponse
 		if (options.memoize && this.storage.has(mkey)) {
 			let parsed = fastParse(this.storage.get(mkey))
 			if (parsed.err) this.storage.delete(mkey)
 			else response = parsed.value
 		}
 		if (!response) {
-			options.memoize && console.warn(`!memoized ->`, min.url)
+			// options.memoize && console.warn(`!memoized ->`, min.url)
 			response = await httpie
 				.send(options.method, options.url, options as any)
 				.catch(error => error)
-			if (options.memoize && !_.isError(response)) {
+			if (!_.isError(response) && options.memoize) {
 				this.storage.set(mkey, fastStringify(response))
-				options.verbose && console.log(`<-`, `${Date.now() - t}ms`, min.url)
+				options.verbose && console.log(`<-`, `${Date.now() - t}ms`, min.url, min.query)
 			}
 		}
 
 		if (!response.statusMessage) {
 			let message = errors[response.statusCode]
 			response.statusMessage = message ? message.name : 'ok'
-			_.isError(response) && (response.message = response.statusMessage)
 		}
 
 		if (_.isError(response)) {
-			throw response
+			throw new HTTPError(options, response)
 		}
 
 		if (options.debug) {
-			console.log(`<- DEBUG <-`, options.method, options.url, options, response)
+			console.log(`[DEBUG] <-`, options.method, options.url, options, response)
 		}
 
 		if (options.afterResponse) {

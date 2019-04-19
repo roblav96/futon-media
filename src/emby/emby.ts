@@ -72,19 +72,17 @@ export async function addLinks(item: media.Item, links: string[]) {
 }
 
 export async function refreshLibrary() {
-	let response = await client.post(`/Library/Refresh`, {
-		verbose: true,
-	})
-	console.log(`Emby library refreshed`)
+	await client.post(`/Library/Refresh`)
 }
 
 export async function sendMessage(sessionId: string, data: string | Error) {
+	if (!sessionId) return
 	let body = { Text: data, TimeoutMs: 5000 }
 	if (_.isError(data)) {
 		body.Text = `❌ Error: ${data.message}`
 		body.TimeoutMs *= 2
 	}
-	await client.post(`/Sessions/${sessionId}/Message`, { body, debug:true })
+	await client.post(`/Sessions/${sessionId}/Message`, { body }).catch(_.noop)
 }
 
 export type Quality = '480p' | '720p' | '1080p' | '4K'

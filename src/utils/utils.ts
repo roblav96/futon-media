@@ -17,7 +17,7 @@ export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
 	return new Promise(r => setTimeout(r, duration)).then(() => resolved)
 }
 export function pRandom(duration: number) {
-	return new Promise(r => setTimeout(r, _.random(duration)))
+	return new Promise(r => setTimeout(r, _.random(duration / 3, duration)))
 }
 
 export function clean(value: string) {

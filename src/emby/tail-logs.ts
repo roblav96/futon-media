@@ -20,7 +20,7 @@ export const rxHttpUrl = rxLine.pipe(
 )
 
 export const init = _.once(async () => {
-	return rxLine.next(mocks.LINE)
+	// return rxLine.next(mocks.LINE)
 	let { LogPath } = await emby.client.get('/System/Info', { verbose: true })
 	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
 		follow: true,
