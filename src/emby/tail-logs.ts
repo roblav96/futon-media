@@ -7,13 +7,13 @@ import { Tail } from 'tail'
 import * as utils from '@/utils/utils'
 import * as media from '@/media/media'
 import * as trakt from '@/adapters/trakt'
-import * as emby from '@/adapters/emby'
+import * as emby from '@/emby/emby'
 import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as debrid from '@/debrids/debrid'
 import { LINE, LINK } from '@/dev/mocks'
 
-export async function tail() {
+export async function tailLogs() {
 	// return onLine(LINE)
 	let { LogPath } = await emby.client.get('/System/Info', { verbose: true })
 	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {

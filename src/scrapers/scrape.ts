@@ -5,7 +5,7 @@ import * as media from '@/media/media'
 import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as debrid from '@/debrids/debrid'
-import * as emby from '@/adapters/emby'
+import * as emby from '@/emby/emby'
 import { searchItem } from '@/prompts/search-item'
 import { selectTorrent } from '@/prompts/select-torrent'
 

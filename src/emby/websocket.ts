@@ -4,7 +4,7 @@ import * as WebSocket from 'ws'
 import * as fastParse from 'fast-json-parse'
 import * as utils from '@/utils/utils'
 import * as trakt from '@/adapters/trakt'
-import * as emby from '@/adapters/emby'
+import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 
 const sockette = require('sockette') as typeof Sockette

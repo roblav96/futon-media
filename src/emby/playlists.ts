@@ -5,7 +5,7 @@ import * as pAll from 'p-all'
 import * as qs from 'query-string'
 import * as utils from '@/utils/utils'
 import * as trakt from '@/adapters/trakt'
-import * as emby from '@/adapters/emby'
+import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 
 export async function playlists() {
