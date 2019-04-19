@@ -70,10 +70,13 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		torrents = torrents.filter(v => v.cached.includes('realdebrid'))
 		if (torrents.length == 0) throw new Error(`!torrents`)
 		await emby.sendMessage(Session.Id, `Found ${torrents.length} results...`)
-		torrents.sort((a, b) => b.seeders - a.seeders)
-		let [link] = await debrid.debrids.realdebrid.links(torrents[0].magnet)
+		let sortby = User.Name.toLowerCase().includes('robert') ? 'bytes' : 'seeders'
+		torrents.sort((a, b) => b[sortby] - a[sortby])
+
+		console.log(`torrents ->`, torrents.map(v => v.toJSON()))
+
+		let link = await debrid.getLink(torrents, item)
 		if (!link) throw new Error(`!link`)
-		link.startsWith('http:') && (link = link.replace('http', 'https'))
 		await fs.outputFile(Eitem.Path, link)
 		await emby.sendMessage(Session.Id, `👍 Starting playback`)
 

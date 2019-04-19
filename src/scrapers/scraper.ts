@@ -14,18 +14,18 @@ import * as debrid from '@/debrids/debrid'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	// console.log(`results ->`, results.splice(0).map(scraper.toJSON))
-	// (await import('./providers/btbit')).BtBit, // (await import('./providers/snowfl')).Snowfl,
+	// (await import('@/scrapers/providers/btbit')).BtBit, // (await import('@/scrapers/providers/snowfl')).Snowfl,
 	let providers = [
-		// (await import('./providers/btdb')).Btdb,
-		// (await import('./providers/extratorrent')).ExtraTorrent,
-		// (await import('./providers/eztv')).Eztv,
-		// (await import('./providers/magnet4you')).Magnet4You,
-		// (await import('./providers/magnetdl')).MagnetDl,
-		// (await import('./providers/orion')).Orion,
-		// (await import('./providers/pirateiro')).Pirateiro,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
+		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('./providers/yts')).Yts,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
@@ -95,7 +95,7 @@ export class Scraper {
 
 		results = results.filter(v => filters.results(v, this.item))
 
-		// console.warn(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
+		console.warn(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
 		return results.map(v => new torrent.Torrent(v))
 	}
 }

@@ -15,7 +15,7 @@ export const client = new http.Http({
 })
 
 export class Premiumize implements debrid.Debrid {
-	async getCached(hashes: string[]) {
+	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
@@ -31,11 +31,14 @@ export class Premiumize implements debrid.Debrid {
 		)).flat()
 	}
 
-	async links(magnet: string) {
+	async files(magnet: string) {
 		return []
 	}
+	
+	async link(magnet: string, index: number) {
+		return ''
+	}
 
-	async getItems() {}
 }
 export const premiumize = new Premiumize()
 

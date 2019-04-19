@@ -10,7 +10,6 @@ import * as debrid from '@/debrids/debrid'
 export interface Torrent extends scraper.Result {}
 export class Torrent {
 	cached = [] as debrid.Debrids[]
-	files = [] as File[]
 
 	get age() {
 		return dayjs(this.stamp).fromNow()
@@ -54,14 +53,4 @@ export class Torrent {
 			size: this.size,
 		}
 	}
-}
-
-export interface File {
-	accuracy: string[]
-	bytes: number
-	leven: number
-	name: string
-	path: string
-	slug: string
-	url: string
 }

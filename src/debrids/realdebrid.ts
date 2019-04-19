@@ -14,7 +14,7 @@ export const client = new http.Http({
 })
 
 export class RealDebrid implements debrid.Debrid {
-	async getCached(hashes: string[]) {
+	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
@@ -30,67 +30,88 @@ export class RealDebrid implements debrid.Debrid {
 		)).flat()
 	}
 
-	async links(magnet: string) {
+	filterFiles(files: File[], dn: string) {
+		let skips = ['sample', 'trailer']
+		skips = utils.accuracy(dn, skips.join(' '))
+		return files.filter(file => {
+			let accuracy = utils.accuracy(path.basename(file.path), skips.join(' '))
+			return utils.isVideo(file.path) && accuracy.length == skips.length
+		})
+	}
+
+	async item(magnet: string) {
 		let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
 
-		// let downloads = (await client.get('/downloads', {
-		// 	verbose: true,
-		// })) as Unrestrict[]
-		// downloads = downloads.filter(v => v.streamable == 1)
-
-		let items = (await client.get('/torrents', {
-			verbose: true,
-		})) as Item[]
-		let item = items.find(v => v.hash == infoHash)
+		let items = (await client.get('/torrents')) as Item[]
+		let item = items.find(v => v.hash.toLowerCase() == infoHash.toLowerCase())
 
 		if (!item) {
 			let download = (await client.post('/torrents/addMagnet', {
 				form: { magnet },
-				verbose: true,
 			})) as Download
 
-			item = (await client.get(`/torrents/info/${download.id}`, {
-				verbose: true,
-			})) as Item
+			await utils.pTimeout(1000)
+			item = (await client.get(`/torrents/info/${download.id}`)) as Item
 
-			let skips = ['sample', 'trailer']
-			skips = utils.accuracy(dn, skips.join(' '))
-			let files = item.files.filter(file => {
-				let accuracy = utils.accuracy(path.basename(file.path), skips.join(' '))
-				return utils.isVideo(file.path) && accuracy.length == skips.length
-			})
+			let files = this.filterFiles(item.files, dn)
 			if (files.length == 0) {
-				console.warn(`files.length == 0 ->`, item)
-				await client.delete(`/torrents/delete/${download.id}`, {
-					verbose: true,
-				})
-				return []
+				console.warn(`files.length == 0 ->`, item.filename)
+				await client.delete(`/torrents/delete/${download.id}`)
+				return item
 			}
 			await client.post(`/torrents/selectFiles/${download.id}`, {
 				form: { files: files.map(v => v.id).join() },
-				verbose: true,
 			})
 
-			item = (await client.get(`/torrents/info/${download.id}`, {
-				verbose: true,
-			})) as Item
+			item = (await client.get(`/torrents/info/${download.id}`)) as Item
 		}
 
+		return item
+	}
+
+	async files(magnet: string) {
+		let item = await this.item(magnet)
 		if (item.links.length == 0) {
 			return []
 		}
+		_.merge(item, await client.get(`/torrents/info/${item.id}`))
 
-		return (await pAll(
-			item.links.map(link => async () => {
-				await utils.pRandom(500)
-				return (await client.post(`/unrestrict/link`, {
-					form: { link },
-					verbose: true,
-				})) as Unrestrict
-			}),
-			{ concurrency: 3 }
-		)).map(v => v.download)
+		let { dn } = magneturi.decode(magnet) as Record<string, string>
+		let files = this.filterFiles(item.files, dn).map(file => {
+			return {
+				bytes: file.bytes,
+				name: file.path.split('/').pop(),
+				path: file.path,
+			} as debrid.File
+		})
+		if (files.length != item.links.length) {
+			console.warn(`files.length != item.links.length ->`, dn)
+			return []
+		}
+		return files
 	}
+
+	async link(magnet: string, index: number) {
+		let item = await this.item(magnet)
+		if (item.links.length == 0) return
+		let download = (await client.post(`/unrestrict/link`, {
+			form: { link: item.links[index] },
+		})) as Unrestrict
+		return download.download
+	}
+
+	// let downloads = (await client.get('/downloads')) as Unrestrict[]
+	// downloads = downloads.filter(v => v.streamable == 1)
+
+	// return (await pAll(
+	// 	item.links.map(link => async () => {
+	// 		await utils.pRandom(500)
+	// 		return (await client.post(`/unrestrict/link`, {
+	// 			form: { link },
+	// 		})) as Unrestrict
+	// 	}),
+	// 	{ concurrency: 3 }
+	// )).map(v => v.download)
 }
 export const realdebrid = new RealDebrid()
 
