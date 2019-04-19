@@ -1,3 +1,4 @@
+type Dictionary<T = string> = Record<string, T>
 type KeysOf<T> = (keyof T)[]
 type AllPossibleKeys<T> = T extends any ? keyof T : never
 type Obj2Keys<T> = { [K in keyof T]: K } & { [k: string]: never }

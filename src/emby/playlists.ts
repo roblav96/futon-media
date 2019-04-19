@@ -8,7 +8,7 @@ import * as trakt from '@/adapters/trakt'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 
-export async function playlists() {
+export async function syncPlaylists() {
 	let lists = (await trakt.client.get(`/lists/trending`, {
 		verbose: true,
 		memoize: process.env.NODE_ENV == 'development',

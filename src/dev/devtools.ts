@@ -8,6 +8,8 @@ import * as _ from 'lodash'
 import * as util from 'util'
 
 if (process.env.NODE_ENV == 'development') {
+	process.env.DEVELOPMENT = true
+
 	setInterval(Function, 1 << 30)
 
 	_.merge(util.inspect.defaultOptions, {
@@ -54,6 +56,9 @@ if (process.env.NODE_ENV == 'development') {
 
 declare global {
 	namespace NodeJS {
+		interface ProcessEnv {
+			DEVELOPMENT: boolean
+		}
 		interface Global {
 			dts: typeof dts
 		}

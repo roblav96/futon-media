@@ -38,6 +38,13 @@ export function toStrmPath(item: media.Item, quality = '' as Quality) {
 	return file
 }
 
+export async function getAllSessions() {
+	let Sessions = (await client.get(`/Sessions`)) as Session[]
+	return Sessions.sort(
+		(a, b) => new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
+	)
+}
+
 export async function addLinks(item: media.Item, links: string[]) {
 	// let base = path.join(process.cwd(), 'dist')
 	let base = process.env.EMBY_LIBRARY || process.cwd()
@@ -71,18 +78,13 @@ export async function refreshLibrary() {
 	console.log(`Emby library refreshed`)
 }
 
-export function reportMessage(sessionId: string, message: string) {
-	return client.post(`/Sessions/${sessionId}/Message`, {
-		body: { Text: message, TimeoutMs: 5000 },
-		verbose: true,
-	})
-}
-
-export function reportError(sessionId: string, error: Error) {
-	return client.post(`/Sessions/${sessionId}/Message`, {
-		body: { Text: `❌ Error: ${error.message}`, TimeoutMs: 10000 },
-		verbose: true,
-	})
+export async function sendMessage(sessionId: string, data: string | Error) {
+	let body = { Text: data, TimeoutMs: 5000 }
+	if (_.isError(data)) {
+		body.Text = `❌ Error: ${data.message}`
+		body.TimeoutMs *= 2
+	}
+	await client.post(`/Sessions/${sessionId}/Message`, { body, debug:true })
 }
 
 export type Quality = '480p' | '720p' | '1080p' | '4K'
@@ -309,4 +311,68 @@ export interface Item {
 		PlaybackPositionTicks: number
 		Played: boolean
 	}
+}
+
+export interface User {
+	Configuration: {
+		DisplayCollectionsView: boolean
+		DisplayMissingEpisodes: boolean
+		EnableLocalPassword: boolean
+		EnableNextEpisodeAutoPlay: boolean
+		GroupedFolders: any[]
+		HidePlayedInLatest: boolean
+		LatestItemsExcludes: any[]
+		MyMediaExcludes: any[]
+		OrderedViews: string[]
+		PlayDefaultAudioTrack: boolean
+		RememberAudioSelections: boolean
+		RememberSubtitleSelections: boolean
+		SubtitleMode: string
+	}
+	HasConfiguredEasyPassword: boolean
+	HasConfiguredPassword: boolean
+	HasPassword: boolean
+	Id: string
+	LastActivityDate: string
+	LastLoginDate: string
+	Name: string
+	Policy: {
+		AccessSchedules: any[]
+		AuthenticationProviderId: string
+		BlockUnratedItems: any[]
+		BlockedTags: any[]
+		DisablePremiumFeatures: boolean
+		EnableAllChannels: boolean
+		EnableAllDevices: boolean
+		EnableAllFolders: boolean
+		EnableAudioPlaybackTranscoding: boolean
+		EnableContentDeletion: boolean
+		EnableContentDeletionFromFolders: any[]
+		EnableContentDownloading: boolean
+		EnableLiveTvAccess: boolean
+		EnableLiveTvManagement: boolean
+		EnableMediaConversion: boolean
+		EnableMediaPlayback: boolean
+		EnablePlaybackRemuxing: boolean
+		EnablePublicSharing: boolean
+		EnableRemoteAccess: boolean
+		EnableRemoteControlOfOtherUsers: boolean
+		EnableSharedDeviceControl: boolean
+		EnableSubtitleDownloading: boolean
+		EnableSubtitleManagement: boolean
+		EnableSyncTranscoding: boolean
+		EnableUserPreferenceAccess: boolean
+		EnableVideoPlaybackTranscoding: boolean
+		EnabledChannels: any[]
+		EnabledDevices: any[]
+		EnabledFolders: any[]
+		ExcludedSubFolders: any[]
+		InvalidLoginAttemptCount: number
+		IsAdministrator: boolean
+		IsDisabled: boolean
+		IsHidden: boolean
+		IsHiddenRemotely: boolean
+		RemoteClientBitrateLimit: number
+	}
+	ServerId: string
 }

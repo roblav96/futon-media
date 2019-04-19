@@ -27,12 +27,21 @@ interface Config extends http.RequestOptions {
 }
 type Hooks<T> = { append?: T[]; prepend?: T[] }
 
+interface HTTPError extends Error {
+	data: any
+	headers: Record<string, string>
+	statusCode: number
+	statusMessage: string
+	url: string
+}
+
 export class Http {
 	static defaults = {
 		method: 'GET',
 		headers: {
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
 		},
+		verbose: process.env.DEVELOPMENT,
 	} as Config
 
 	private storage = new ConfigStore(
@@ -69,7 +78,7 @@ export class Http {
 				{ length: 100 }
 			),
 			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
-				length: 256,
+				length: 200,
 			}),
 		}
 
@@ -98,11 +107,11 @@ export class Http {
 			console.log(`->`, options.method, min.url, min.query)
 		}
 		if (options.debug) {
-			console.log(`-> DEBUG REQUEST ->`, options.method, options.url, options)
+			console.log(`-> DEBUG ->`, options.method, options.url, options)
 		}
 
 		let mkey = options.memoize && fastStringify(config)
-		let response: httpie.HttpieResponse
+		let response: httpie.HttpieResponse | HTTPError
 		if (options.memoize && this.storage.has(mkey)) {
 			let parsed = fastParse(this.storage.get(mkey))
 			if (parsed.err) this.storage.delete(mkey)
@@ -110,20 +119,27 @@ export class Http {
 		}
 		if (!response) {
 			options.memoize && console.warn(`!memoized ->`, min.url)
-			response = await httpie.send(options.method, options.url, options as any)
-			if (options.memoize) {
+			response = await httpie
+				.send(options.method, options.url, options as any)
+				.catch(error => error)
+			if (options.memoize && !_.isError(response)) {
 				this.storage.set(mkey, fastStringify(response))
 				options.verbose && console.log(`<-`, `${Date.now() - t}ms`, min.url)
 			}
 		}
 
 		if (!response.statusMessage) {
-			let error = errors[response.statusCode]
-			response.statusMessage = error ? error.name : 'ok'
+			let message = errors[response.statusCode]
+			response.statusMessage = message ? message.name : 'ok'
+			_.isError(response) && (response.message = response.statusMessage)
+		}
+
+		if (_.isError(response)) {
+			throw response
 		}
 
 		if (options.debug) {
-			console.log(`<- DEBUG RESPONSE <-`, options.method, options.url, options, response)
+			console.log(`<- DEBUG <-`, options.method, options.url, options, response)
 		}
 
 		if (options.afterResponse) {
