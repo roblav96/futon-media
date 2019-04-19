@@ -13,8 +13,6 @@ export const client = new http.Http({
 	},
 })
 
-export async function ensureStrm() {}
-
 export function toStrmPath(item: media.Item, quality = '' as Quality) {
 	let title = utils.toSlug(item.main.title, { toName: true })
 	let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
@@ -40,9 +38,7 @@ export function toStrmPath(item: media.Item, quality = '' as Quality) {
 
 export async function getAllSessions() {
 	let Sessions = (await client.get(`/Sessions`)) as Session[]
-	return Sessions.sort(
-		(a, b) => new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
-	)
+	return sortSessions(Sessions)
 }
 
 export async function addLinks(item: media.Item, links: string[]) {
@@ -85,6 +81,12 @@ export async function sendMessage(sessionId: string, data: string | Error) {
 	await client.post(`/Sessions/${sessionId}/Message`, { body }).catch(_.noop)
 }
 
+export function sortSessions(Sessions: Session[]) {
+	return Sessions.sort(
+		(a, b) => new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
+	)
+}
+
 export type Quality = '480p' | '720p' | '1080p' | '4K'
 
 export interface Session {
@@ -93,19 +95,9 @@ export interface Session {
 	ApplicationVersion: string
 	Capabilities: {
 		DeviceProfile: {
-			CodecProfiles: {
-				ApplyConditions: any
-				Codec: any
-				Conditions: any
-				Type: any
-			}[]
+			CodecProfiles: Function[]
 			ContainerProfiles: any[]
-			DirectPlayProfiles: {
-				AudioCodec: any
-				Container: any
-				Type: any
-				VideoCodec: any
-			}[]
+			DirectPlayProfiles: Function[]
 			EnableAlbumArtInDidl: boolean
 			EnableMSMediaReceiverRegistrar: boolean
 			EnableSingleAlbumArtLimit: boolean
@@ -119,34 +111,11 @@ export interface Session {
 			MusicStreamingTranscodingBitrate: number
 			RequiresPlainFolders: boolean
 			RequiresPlainVideoItems: boolean
-			ResponseProfiles: {
-				Conditions: any
-				Container: any
-				MimeType: any
-				Type: any
-			}[]
-			SubtitleProfiles: {
-				Format: any
-				Method: any
-			}[]
+			ResponseProfiles: any[]
+			SubtitleProfiles: Function[]
 			SupportedMediaTypes: string
 			TimelineOffsetSeconds: number
-			TranscodingProfiles: {
-				AudioCodec: any
-				BreakOnNonKeyFrames: any
-				Container: any
-				Context: any
-				CopyTimestamps: any
-				EnableMpegtsM2TsMode: any
-				EstimateContentLength: any
-				MaxAudioChannels: any
-				MinSegments: any
-				Protocol: any
-				SegmentLength: any
-				TranscodeSeekInfo: any
-				Type: any
-				VideoCodec: any
-			}[]
+			TranscodingProfiles: Function[]
 			XmlRootAttributes: any[]
 		}
 		IconUrl: string
@@ -164,12 +133,61 @@ export interface Session {
 	DeviceName: string
 	Id: string
 	LastActivityDate: string
+	NowPlayingItem: {
+		BackdropImageTags: string[]
+		Chapters: Function[][]
+		CommunityRating: number
+		Container: string
+		CriticRating: number
+		DateCreated: string
+		ExternalUrls: Function[][]
+		GenreItems: Function[][]
+		Genres: string[]
+		HasSubtitles: boolean
+		Height: number
+		Id: string
+		ImageTags: {
+			Art: string
+			Banner: string
+			Disc: string
+			Logo: string
+			Primary: string
+			Thumb: string
+		}
+		IsFolder: boolean
+		LocalTrailerCount: number
+		MediaStreams: Function[][]
+		MediaType: string
+		Name: string
+		OfficialRating: string
+		OriginalTitle: string
+		Overview: string
+		ParentId: string
+		Path: string
+		PremiereDate: string
+		PrimaryImageAspectRatio: number
+		ProductionYear: number
+		ProviderIds: {
+			Imdb: string
+			Tmdb: string
+		}
+		RunTimeTicks: number
+		ServerId: string
+		Studios: Function[][]
+		Taglines: string[]
+		Type: string
+		Width: number
+	}
 	PlayState: {
+		AudioStreamIndex: number
 		CanSeek: boolean
 		IsMuted: boolean
 		IsPaused: boolean
-		RepeatMode: string
 		MediaSourceId: string
+		PlayMethod: string
+		PositionTicks: number
+		RepeatMode: string
+		VolumeLevel: number
 	}
 	PlayableMediaTypes: string[]
 	PlaylistItemId: string

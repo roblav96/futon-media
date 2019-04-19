@@ -7,6 +7,7 @@ import * as debrid from '@/debrids/debrid'
 
 export const client = new http.Http({
 	baseUrl: 'https://www.premiumize.me/api',
+	qsArrayFormat: 'bracket',
 	query: {
 		customer_id: process.env.PREMIUMIZE_ID,
 		pin: process.env.PREMIUMIZE_PIN,
@@ -22,8 +23,7 @@ export class Premiumize implements debrid.Debrid {
 				await utils.pRandom(500)
 				let response = (await client.post(`/cache/check`, {
 					query: { items: chunk },
-					verbose: true,
-					memoize: process.env.NODE_ENV == 'development',
+					memoize: process.env.DEVELOPMENT,
 				})) as CacheResponse
 				return chunk.map((v, i) => response.response[i])
 			}),

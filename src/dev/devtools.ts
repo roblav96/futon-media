@@ -13,7 +13,7 @@ if (process.env.NODE_ENV == 'development') {
 	setInterval(Function, 1 << 30)
 
 	_.merge(util.inspect.defaultOptions, {
-		depth: 4,
+		depth: 2,
 	} as util.InspectOptions)
 
 	let previous = Date.now()
@@ -29,7 +29,7 @@ if (process.env.NODE_ENV == 'development') {
 					let site = new StackTracey()[1]
 					let trace = site.beforeParse.replace(site.file, site.fileShort)
 					process.stdout.write(
-						`\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`
+						`\n\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`
 					)
 					args.push(`\n`)
 				}

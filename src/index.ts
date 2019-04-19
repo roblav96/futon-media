@@ -8,6 +8,7 @@ import '@/dev/devtools'
 import '@/emby/strm-playback'
 import * as tailLogs from '@/emby/tail-logs'
 import * as utils from '@/utils/utils'
+import * as websocket from '@/emby/websocket'
 import { scheduleJob } from 'node-schedule'
 import { syncPlaylists } from '@/emby/playlists'
 
@@ -15,10 +16,9 @@ async function start() {
 	if (!process.env.DEVELOPMENT) {
 		scheduleJob(`0 0 * * *`, syncPlaylists)
 	}
-	tailLogs.init()
-	// let proms = [] as Promise<any>[]
-	// proms.push(initTail())
-	// await Promise.all(proms)
+	// return syncPlaylists()
+	// tailLogs.init()
+	websocket.listen()
 }
 process.nextTick(async () => {
 	process.env.DEVELOPMENT && (await utils.pTimeout(1000))

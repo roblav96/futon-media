@@ -95,16 +95,16 @@ export class Http {
 		}
 
 		if (_.size(options.query)) {
-			let stringify = qs.stringify(options.query, {
-				arrayFormat: options.qsArrayFormat || 'bracket',
-			})
+			let stringify = qs.stringify(
+				options.query,
+				options.qsArrayFormat && { arrayFormat: options.qsArrayFormat }
+			)
 			options.url += `?${stringify}`
 		}
 
 		if (_.size(options.form)) {
-			options.body = qs.stringify(options.form)
 			options.headers['content-type'] = 'application/x-www-form-urlencoded'
-			options.headers['content-length'] = Buffer.byteLength(options.body)
+			options.body = qs.stringify(options.form)
 			_.unset(options, 'form')
 		}
 
