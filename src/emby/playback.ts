@@ -1,19 +1,15 @@
 import * as _ from 'lodash'
-import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as media from '@/media/media'
 import * as path from 'path'
-import * as qs from 'query-string'
 import * as Rx from '@/utils/rxjs'
 import * as scraper from '@/scrapers/scraper'
-import * as socket from '@/emby/socket'
 import * as tail from '@/emby/tail-logs'
 import * as trakt from '@/adapters/trakt'
-import * as utils from '@/utils/utils'
 
-const rxPlayback = tail.rxHttp.pipe(
+export const rxPlayback = tail.rxTailHttp.pipe(
 	Rx.Op.filter<PlaybackArgs>(({ url, query }) => {
 		let endings = ['PlaybackInfo', 'stream']
 		if (!endings.find(v => path.basename(url).startsWith(v))) return
@@ -38,12 +34,12 @@ const rxPlayback = tail.rxHttp.pipe(
 )
 
 rxPlayback.subscribe(async ({ url, query }) => {
-	return 
+	return
 	console.warn(`rxPlayback subscribe ->`, url, query)
 
 	let Session: emby.Session
 	try {
-		let Sessions = await emby.getSessions()
+		let Sessions = await emby.sessions.get()
 		Session = Sessions.find((v, i) => {
 			if (query.UserId) return v.UserId == query.UserId
 			if (query.DeviceId) return v.DeviceId == query.DeviceId
@@ -77,11 +73,11 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		if (!result) throw new Error(`!result`)
 		let item = new media.Item(result)
 
-		await emby.sendMessage(Session, `Scraping providers...`)
+		await Session.message(`Scraping providers...`)
 		let torrents = await scraper.scrapeAll(item)
 		torrents = torrents.filter(v => v.cached.includes('realdebrid'))
 		if (torrents.length == 0) throw new Error(`!torrents`)
-		await emby.sendMessage(Session, `Found ${torrents.length} results...`)
+		await Session.message(`Found ${torrents.length} results...`)
 
 		let sortby = User.Name.toLowerCase().includes('robert') ? 'bytes' : 'seeders'
 		torrents.sort((a, b) => b[sortby] - a[sortby])
@@ -90,13 +86,13 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		let link = await debrid.getLink(torrents, item)
 		if (!link) throw new Error(`!link`)
 		await fs.outputFile(Eitem.Path, link)
-		await emby.sendMessage(Session, `👍 Starting playback`)
-		
-		if (emby.isRoku(Session)) {
-			await emby.refreshLibrary()
+		await Session.message(`👍 Starting playback`)
+
+		if (Session.isRoku) {
+			await emby.library.refresh()
 		}
 
-		if (!emby.isRoku(Session)) {
+		if (!Session.isRoku) {
 			await emby.client.post(`/Sessions/${Session.Id}/Playing`, {
 				query: {
 					ItemIds: ItemId,
@@ -125,12 +121,12 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		//
 	} catch (error) {
 		console.error(`rxPlayback.subscribe -> %O`, error)
-		Session && emby.sendMessage(Session, error)
+		Session && Session.message(error)
 	}
 })
 
-type PlaybackArgs = { url: string; query: PlaybackQuery }
-type PlaybackQuery = Partial<{
+export type PlaybackArgs = { url: string; query: PlaybackQuery }
+export type PlaybackQuery = Partial<{
 	AudioStreamIndex: string
 	AutoOpenLiveStream: string
 	DeviceId: string

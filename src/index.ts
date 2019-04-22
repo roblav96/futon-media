@@ -5,13 +5,16 @@ import 'dotenv/config'
 import 'node-env-dev'
 import '@/dev/devtools'
 
-setTimeout(() => {
-	return Promise.all([
-		import('@/emby/emby'),
-		import('@/emby/playback'),
-		import('@/emby/playlists'),
-		import('@/emby/socket'),
-		import('@/emby/strm-files'),
-		import('@/emby/tail-logs'),
-	]).catch(error => console.error(`start -> %O`, error))
-}, process.DEVELOPMENT && 1000) // let the debugger attach
+// use dynamic imports to avoid undefined circular references
+async function start() {
+	await import('@/emby/emby')
+	// await import('@/emby/playback')
+	// await import('@/emby/playlists')
+	// await import('@/emby/socket')
+	// await import('@/emby/strm-files')
+	// await import('@/emby/tail-logs')
+}
+setTimeout(
+	() => start().catch(error => console.error(`start -> %O`, error)),
+	process.DEVELOPMENT && 1000 // wait for Debugger attached
+)

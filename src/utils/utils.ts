@@ -1,12 +1,12 @@
 import * as _ from 'lodash'
-import * as path from 'path'
-import * as dayjs from 'dayjs'
-import * as stripBom from 'strip-bom'
-import * as jslevenshtein from 'js-levenshtein'
-import * as relativeTime from 'dayjs/plugin/relativeTime'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
-import stripAnsi from 'strip-ansi'
+import * as dayjs from 'dayjs'
+import * as jslevenshtein from 'js-levenshtein'
+import * as path from 'path'
+import * as relativeTime from 'dayjs/plugin/relativeTime'
+import * as stripBom from 'strip-bom'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
+import stripAnsi from 'strip-ansi'
 import _numbro, { default as Numbro } from 'numbro'
 const numbro = require('numbro') as typeof _numbro
 

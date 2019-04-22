@@ -28,5 +28,5 @@ export async function scrape() {
 	let link = await debrid.getLink([torrent], item)
 	if (!link) throw new Error(`!link`)
 	await emby.addLinks(item, [link])
-	await emby.refreshLibrary()
+	await emby.library.refresh()
 }

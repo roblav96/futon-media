@@ -3,6 +3,7 @@ import * as ansi from 'ansi-colors'
 import * as dayjs from 'dayjs'
 import * as dts from 'dts-generate'
 import * as ms from 'pretty-ms'
+import * as qs from 'query-string'
 import * as shimmer from 'shimmer'
 import * as StackTracey from 'stacktracey'
 import * as util from 'util'
@@ -49,7 +50,7 @@ if (process.DEVELOPMENT) {
 		`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
 	)
 
-	Object.assign(global, { _, dayjs, dts })
+	Object.assign(global, { _, dayjs, dts, qs })
 }
 
 declare global {
