@@ -54,17 +54,21 @@ rxPlayback.subscribe(async ({ url, query }) => {
 			emby.client.get(`/Users/${Session.UserId}/Items/${ItemId}`) as Promise<emby.Item>,
 		])
 
-		let { PlayState, NowPlayingItem } = Session
-		if (PlayState && PlayState.MediaSourceId) return
-		if (NowPlayingItem && NowPlayingItem.Container) return
+		let { NowPlayingItem } = Session
+		if (NowPlayingItem && NowPlayingItem.Container) {
+			return console.warn(`NowPlayingItem.Container ->`, Eitem.Name)
+		}
 
-		let strm = _.trim(await fs.readFile(Eitem.Path, 'utf-8'))
-		if (strm != `/dev/null`) return
+		let strm = (await fs.readFile(Eitem.Path, 'utf-8')).trim()
+		if (strm != `/dev/null`) {
+			return console.warn(`strm != /dev/null ->`, Eitem.Name)
+		}
 
 		let [provider, id] = Object.entries(Eitem.ProviderIds)[0]
 		let result = ((await trakt.client.get(
 			`/search/${provider.toLowerCase()}/${id}`
 		)) as trakt.Result[])[0]
+		if (!result) throw new Error(`!result`)
 		let item = new media.Item(result)
 
 		await emby.sendMessage(Session.Id, `Scraping providers...`)
@@ -72,9 +76,9 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		torrents = torrents.filter(v => v.cached.includes('realdebrid'))
 		if (torrents.length == 0) throw new Error(`!torrents`)
 		await emby.sendMessage(Session.Id, `Found ${torrents.length} results...`)
+
 		let sortby = User.Name.toLowerCase().includes('robert') ? 'bytes' : 'seeders'
 		torrents.sort((a, b) => b[sortby] - a[sortby])
-
 		console.log(`torrents ->`, torrents.map(v => v.toJSON()))
 
 		let link = await debrid.getLink(torrents, item)
@@ -101,9 +105,11 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		)
 		await Promise.race([utils.pTimeout(30000), rxContainer.toPromise()])
 		await fs.outputFile(Eitem.Path, `/dev/null`)
+
+		//
 	} catch (error) {
 		console.error(`rxPlayback subscribe -> %O`, error)
-		if (Session) emby.sendMessage(Session.Id, error)
+		Session && emby.sendMessage(Session.Id, error)
 	}
 })
 

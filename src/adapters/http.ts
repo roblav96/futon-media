@@ -1,14 +1,15 @@
 import * as _ from 'lodash'
+import * as crypto from 'crypto'
+import * as errors from 'http-errors'
+import * as fastParse from 'fast-json-parse'
+import * as fs from 'fs-extra'
 import * as http from 'http'
 import * as httpie from 'httpie'
 import * as memoize from 'mem'
-import * as qs from 'query-string'
-import * as errors from 'http-errors'
 import * as normalize from 'normalize-url'
+import * as path from 'path'
+import * as qs from 'query-string'
 import * as Url from 'url-parse'
-import * as ConfigStore from 'configstore'
-import * as pkgup from 'read-pkg-up'
-import * as fastParse from 'fast-json-parse'
 import fastStringify from 'fast-safe-stringify'
 
 interface Config extends http.RequestOptions {
@@ -49,10 +50,6 @@ export class Http {
 		verbose: process.env.DEVELOPMENT,
 	} as Config
 
-	private storage = new ConfigStore(
-		`${pkgup.sync({ cwd: __dirname }).pkg.name}/${new Url(this.config.baseUrl).hostname}`
-	)
-
 	constructor(public config = {} as Config) {
 		_.defaultsDeep(this.config, Http.defaults)
 	}
@@ -62,7 +59,6 @@ export class Http {
 	}
 
 	async request(config: Config) {
-		let t = Date.now()
 		let options = Http.merge(this.config, config)
 
 		options.url.startsWith('http') && (options.baseUrl = '')
@@ -115,20 +111,21 @@ export class Http {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 
-		let mkey = options.memoize && fastStringify(config)
+		let mpath = options.memoize && Http.mpath(config)
 		let response: httpie.HttpieResponse
-		if (options.memoize && this.storage.has(mkey)) {
-			let parsed = fastParse(this.storage.get(mkey))
-			if (parsed.err) this.storage.delete(mkey)
+		if (options.memoize && (await fs.pathExists(mpath))) {
+			let parsed = fastParse(await fs.readFile(mpath))
+			if (parsed.err) await fs.remove(mpath)
 			else response = parsed.value
 		}
 		if (!response) {
-			// options.memoize && console.warn(`!memoized ->`, min.url)
+			options.memoize && console.warn(`!memoized ->`, min.url)
+			let t = Date.now()
 			response = await httpie
 				.send(options.method, options.url, options as any)
 				.catch(error => error)
-			if (!_.isError(response) && options.memoize) {
-				this.storage.set(mkey, fastStringify(response))
+			if (options.memoize && !_.isError(response)) {
+				await fs.outputFile(mpath, fastStringify(response))
 				options.verbose && console.log(`<-`, `${Date.now() - t}ms`, min.url, min.query)
 			}
 		}
@@ -167,6 +164,11 @@ export class Http {
 	}
 	delete(url: string, config = {} as Config) {
 		return this.request({ method: 'DELETE', ...config, url }).then(({ data }) => data)
+	}
+
+	private static mpath(config: Config) {
+		let hash = crypto.createHash('sha256').update(fastStringify(config))
+		return path.join(__dirname, hash.digest('hex'))
 	}
 
 	private static merge(...configs: Config[]) {

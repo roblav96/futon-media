@@ -6,18 +6,18 @@ import 'node-env-dev'
 import '@/dev/devtools'
 
 import '@/emby/strm-playback'
+import * as playlists from '@/emby/playlists'
+import * as schedule from 'node-schedule'
 import * as socket from '@/emby/socket'
 import * as tailLogs from '@/emby/tail-logs'
 import * as utils from '@/utils/utils'
-import { scheduleJob } from 'node-schedule'
-import { syncPlaylists } from '@/emby/playlists'
 
 async function start() {
-	// return syncPlaylists()
+	// return playlists.syncPlaylists()
 	tailLogs.watch()
 	socket.listen()
 	if (!process.env.DEVELOPMENT) {
-		scheduleJob(`0 0 * * *`, syncPlaylists)
+		schedule.scheduleJob(`0 0 * * *`, playlists.syncPlaylists)
 	}
 }
 process.nextTick(async () => {
