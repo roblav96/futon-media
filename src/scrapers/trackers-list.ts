@@ -19,10 +19,12 @@ setTimeout(async function sync() {
 
 		let resolved = (await Promise.all([
 			http.client.get(
-				'https://raw.githubusercontent.com/ngosang/trackerslist/master/blacklist.txt'
+				'https://raw.githubusercontent.com/ngosang/trackerslist/master/blacklist.txt',
+				{ verbose: false }
 			),
 			http.client.get(
-				'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt'
+				'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt',
+				{ verbose: false }
 			),
 			// http.client.get('https://newtrackon.com/api/stable'),
 		])) as string[]

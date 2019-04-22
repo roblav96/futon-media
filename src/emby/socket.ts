@@ -15,7 +15,7 @@ interface EmbyEvent<Data = any> {
 export const rx = new Rx.Subject<EmbyEvent>()
 export const rxSession = rx.pipe(
 	Rx.Op.filter(event => event.name == 'Sessions'),
-	Rx.Op.map(event => emby.sortSessions(event.data)[0])
+	Rx.Op.map(event => emby.toSessions(event.data)[0])
 )
 
 export const listen = _.once(() => {

@@ -8,6 +8,7 @@ import * as httpie from 'httpie'
 import * as memoize from 'mem'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
+import * as pkgup from 'read-pkg-up'
 import * as qs from 'query-string'
 import * as Url from 'url-parse'
 import fastStringify from 'fast-safe-stringify'
@@ -21,6 +22,7 @@ interface Config extends http.RequestOptions {
 	form?: any
 	memoize?: boolean
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'HEAD' | 'DELETE'
+	profile?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
 	query?: Record<string, string | number | string[] | number[]>
 	url?: string
@@ -105,30 +107,31 @@ export class Http {
 		}
 
 		if (options.verbose) {
-			console.log(`->`, options.method, min.url, min.query)
+			console.log(`->`, options.method, options.url) // min.url, min.query)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 
-		let mpath = options.memoize && Http.mpath(config)
+		let t = Date.now()
 		let response: httpie.HttpieResponse
+		let mpath = options.memoize && Http.mpath(config)
 		if (options.memoize && (await fs.pathExists(mpath))) {
 			let parsed = fastParse(await fs.readFile(mpath))
 			if (parsed.err) await fs.remove(mpath)
 			else response = parsed.value
 		}
 		if (!response) {
-			options.memoize && console.warn(`!memoized ->`, min.url)
-			let t = Date.now()
+			// options.memoize && console.warn(`!memoized ->`, min.url)
 			response = await httpie
 				.send(options.method, options.url, options as any)
 				.catch(error => error)
 			if (options.memoize && !_.isError(response)) {
-				await fs.outputFile(mpath, fastStringify(response))
-				options.verbose && console.log(`<-`, `${Date.now() - t}ms`, min.url, min.query)
+				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
+				await fs.outputFile(mpath, fastStringify(_.omit(response, omits)))
 			}
 		}
+		options.profile && console.log(`<-`, `${Date.now() - t}ms`, min.url, min.query)
 
 		if (!response.statusMessage) {
 			let message = errors[response.statusCode]
@@ -166,9 +169,10 @@ export class Http {
 		return this.request({ method: 'DELETE', ...config, url }).then(({ data }) => data)
 	}
 
+	private static mroot = path.dirname(pkgup.sync({ cwd: __dirname }).path)
 	private static mpath(config: Config) {
 		let hash = crypto.createHash('sha256').update(fastStringify(config))
-		return path.join(__dirname, hash.digest('hex'))
+		return path.join(Http.mroot, `node_modules/.cache/http/${hash.digest('hex')}`)
 	}
 
 	private static merge(...configs: Config[]) {

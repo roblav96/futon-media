@@ -24,7 +24,7 @@ export async function getCached(hashes: string[]) {
 export async function getLink(torrents: torrent.Torrent[], item: media.Item) {
 	let episodes = item.episode && (item.season.episode_count || item.season.aired_episodes)
 	for (let torrent of torrents) {
-		console.log(`getLink torrent ->`, torrent)
+		console.log(`getLink torrent ->`, torrent.toJSON())
 		let debrid = debrids[torrent.cached[0]]
 		let files = await debrid.files(torrent.magnet)
 		if (files.length == 0) {

@@ -16,7 +16,7 @@ export const client = new http.Http({
 export class RealDebrid implements debrid.Debrid {
 	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, _.ceil(hashes.length / 40))
+		let chunks = utils.chunks(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
 				await utils.pRandom(500)

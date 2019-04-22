@@ -13,33 +13,32 @@ export const client = new http.Http({
 	},
 })
 
-export function toStrmPath(item: media.Item, quality = '' as Quality) {
-	let title = utils.toSlug(item.main.title, { toName: true })
-	let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
-	file += `/${item.movie ? 'movies' : 'shows'}`
-	if (item.movie) {
-		let year = item.main.year || new Date(item.main.released).getFullYear()
-		title += ` (${year})`
-		file += `/${title}/${title}`
-		// file += `/${item.ids.slug}/${item.ids.slug}`
-	} else if (item.episode) {
-		let year = item.main.year || new Date(item.main.first_aired).getFullYear()
-		title += ` (${year})`
-		file += `/${title}`
-		// file += `/Season ${item.S.n}`
-		file += `/s${item.S.z}e${item.E.z}`
-		// file += `/${item.main.title} - S${item.S.z}E${item.E.z}`
-		// file += `/${item.ids.slug}/${item.ids.slug}-S${item.S.z}E${item.E.z}`
-	} else throw new Error(`Incomplete item -> ${item.title}`)
-	quality && (file += ` - ${quality}`)
-	file += `.strm`
-	return file
+export async function getSessions() {
+	return toSessions((await client.get(`/Sessions`)) as Session[])
+}
+export function toSessions(Sessions: Session[]) {
+	return Sessions.filter(({ UserName }) => UserName && UserName != 'admin').sort((a, b) => {
+		return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
+	})
 }
 
-export async function getAllSessions() {
-	let Sessions = (await client.get(`/Sessions`)) as Session[]
-	return sortSessions(Sessions)
-}
+// export const sessions = {
+// 	async get(all = false) {
+// 		let Sessions = (await client.get(`/Sessions`)) as Session[]
+// 		return sessions.sort(all === true ? Sessions : sessions.filter(Sessions))
+// 	},
+// 	to(Sessions: Session[]) {
+// 		return sessions.sort(sessions.filter(Sessions))
+// 	},
+// 	filter(Sessions: Session[]) {
+// 		return Sessions.filter(({ UserName }) => UserName && UserName != 'admin')
+// 	},
+// 	sort(Sessions: Session[]) {
+// 		return Sessions.sort((a, b) => {
+// 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
+// 		})
+// 	},
+// }
 
 export async function addLinks(item: media.Item, links: string[]) {
 	// let base = path.join(process.cwd(), 'dist')
@@ -71,21 +70,42 @@ export async function refreshLibrary() {
 	await client.post(`/Library/Refresh`)
 }
 
-export async function sendMessage(sessionId: string, data: string | Error) {
-	if (!sessionId) return
+export function isRoku(Session: Session) {
+	return `${Session.Client} ${Session.DeviceName}`.toLowerCase().includes('roku')
+}
+
+export async function sendMessage(Session: Session, data: string | Error) {
+	if (!Session || isRoku(Session)) return
 	let body = { Text: data, TimeoutMs: 5000 }
 	if (_.isError(data)) {
 		// 🛑 ❌ 🔴 ⛔ 🚫
 		body.Text = `⛔ Error: ${data.message}`
 		body.TimeoutMs *= 2
 	}
-	await client.post(`/Sessions/${sessionId}/Message`, { body }).catch(_.noop)
+	await client.post(`/Sessions/${Session.Id}/Message`, { body }).catch(_.noop)
 }
 
-export function sortSessions(Sessions: Session[]) {
-	return Sessions.sort(
-		(a, b) => new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
-	)
+export function toStrmPath(item: media.Item, quality = '' as Quality) {
+	let title = utils.toSlug(item.main.title, { toName: true })
+	let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
+	file += `/${item.movie ? 'movies' : 'shows'}`
+	if (item.movie) {
+		let year = item.main.year || new Date(item.main.released).getFullYear()
+		title += ` (${year})`
+		file += `/${title}/${title}`
+		// file += `/${item.ids.slug}/${item.ids.slug}`
+	} else if (item.episode) {
+		let year = item.main.year || new Date(item.main.first_aired).getFullYear()
+		title += ` (${year})`
+		file += `/${title}`
+		// file += `/Season ${item.S.n}`
+		file += `/s${item.S.z}e${item.E.z}`
+		// file += `/${item.main.title} - S${item.S.z}E${item.E.z}`
+		// file += `/${item.ids.slug}/${item.ids.slug}-S${item.S.z}E${item.E.z}`
+	} else throw new Error(`Incomplete item -> ${item.title}`)
+	quality && (file += ` - ${quality}`)
+	file += `.strm`
+	return file
 }
 
 export type Quality = '480p' | '720p' | '1080p' | '4K'

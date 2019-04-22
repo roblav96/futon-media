@@ -17,33 +17,37 @@ const rxPlayback = tail.rxHttp.pipe(
 	Rx.Op.filter<PlaybackArgs>(({ url, query }) => {
 		let endings = ['PlaybackInfo', 'stream']
 		if (!endings.find(v => path.basename(url).startsWith(v))) return
-		// console.log(`rxPlayback filter ->`, url, query)
+		let fixcase = {
+			audiostreamindex: 'AudioStreamIndex',
+			autoopenlivestream: 'AutoOpenLiveStream',
+			deviceid: 'DeviceId',
+			isplayback: 'IsPlayback',
+			maxstreamingbitrate: 'MaxStreamingBitrate',
+			mediasourceid: 'MediaSourceId',
+			starttimeticks: 'StartTimeTicks',
+			subtitlestreamindex: 'SubtitleStreamIndex',
+			userid: 'UserId',
+		}
+		query = _.mapKeys(query, (v, k) => fixcase[k] || k)
+		console.log(`rxPlayback filter ->`, url, query)
 		if (!(query.UserId || query.DeviceId)) return
-		if (query.mediasourceid) {
-			query.MediaSourceId = query.mediasourceid
-			_.unset(query, 'mediasourceid')
-		}
 		if (!query.MediaSourceId) return
-		if (query.isplayback) {
-			query.IsPlayback = query.isplayback
-			_.unset(query, 'isplayback')
-		}
 		if (query.IsPlayback == 'false') return
 		return true
 	})
 )
 
 rxPlayback.subscribe(async ({ url, query }) => {
+	return 
 	console.warn(`rxPlayback subscribe ->`, url, query)
 
 	let Session: emby.Session
 	try {
-		let Sessions = await emby.getAllSessions()
+		let Sessions = await emby.getSessions()
 		Session = Sessions.find((v, i) => {
 			if (query.UserId) return v.UserId == query.UserId
 			if (query.DeviceId) return v.DeviceId == query.DeviceId
 		})
-		// !Session && (Session = Sessions[0])
 		if (!Session) throw new Error(`!Session`)
 		console.log(`Session ->`, Session)
 
@@ -54,14 +58,16 @@ rxPlayback.subscribe(async ({ url, query }) => {
 			emby.client.get(`/Users/${Session.UserId}/Items/${ItemId}`) as Promise<emby.Item>,
 		])
 
-		let { NowPlayingItem } = Session
-		if (NowPlayingItem && NowPlayingItem.Container) {
-			return console.warn(`NowPlayingItem.Container ->`, Eitem.Name)
-		}
+		// let { NowPlayingItem, PlayState } = Session
+		// console.log(`PlayState ->`, PlayState)
+		// if (NowPlayingItem && NowPlayingItem.Container) {
+		// 	return console.warn(`NowPlayingItem.Container ->`, Eitem.Name)
+		// }
 
-		let strm = (await fs.readFile(Eitem.Path, 'utf-8')).trim()
+		let strm = _.trim(await fs.readFile(Eitem.Path, 'utf-8'))
 		if (strm != `/dev/null`) {
-			return console.warn(`strm != /dev/null ->`, Eitem.Name)
+			console.warn(`strm != /dev/null ->`, Eitem.Name)
+			return
 		}
 
 		let [provider, id] = Object.entries(Eitem.ProviderIds)[0]
@@ -71,56 +77,65 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		if (!result) throw new Error(`!result`)
 		let item = new media.Item(result)
 
-		await emby.sendMessage(Session.Id, `Scraping providers...`)
+		await emby.sendMessage(Session, `Scraping providers...`)
 		let torrents = await scraper.scrapeAll(item)
 		torrents = torrents.filter(v => v.cached.includes('realdebrid'))
 		if (torrents.length == 0) throw new Error(`!torrents`)
-		await emby.sendMessage(Session.Id, `Found ${torrents.length} results...`)
+		await emby.sendMessage(Session, `Found ${torrents.length} results...`)
 
 		let sortby = User.Name.toLowerCase().includes('robert') ? 'bytes' : 'seeders'
 		torrents.sort((a, b) => b[sortby] - a[sortby])
-		console.log(`torrents ->`, torrents.map(v => v.toJSON()))
+		// console.log(`torrents ->`, torrents.map(v => v.toJSON()))
 
 		let link = await debrid.getLink(torrents, item)
 		if (!link) throw new Error(`!link`)
 		await fs.outputFile(Eitem.Path, link)
-		await emby.sendMessage(Session.Id, `👍 Starting playback`)
+		await emby.sendMessage(Session, `👍 Starting playback`)
+		
+		if (emby.isRoku(Session)) {
+			await emby.refreshLibrary()
+		}
 
-		await emby.client.post(`/Sessions/${Session.Id}/Playing`, {
-			query: {
-				ItemIds: ItemId,
-				MediaSourceId: query.MediaSourceId,
-				PlayCommand: 'PlayNow',
-				StartPositionTicks: query.StartTimeTicks,
-				SubtitleStreamIndex: query.SubtitleStreamIndex,
-			},
-		})
+		if (!emby.isRoku(Session)) {
+			await emby.client.post(`/Sessions/${Session.Id}/Playing`, {
+				query: {
+					ItemIds: ItemId,
+					MediaSourceId: query.MediaSourceId,
+					PlayCommand: 'PlayNow',
+					StartPositionTicks: query.StartTimeTicks,
+					SubtitleStreamIndex: query.SubtitleStreamIndex,
+				},
+			})
+		}
 
-		let rxContainer = socket.rxSession.pipe(
-			Rx.Op.filter(({ Id, NowPlayingItem }) => {
-				if (Id != Session.Id) return
-				return _.isString(NowPlayingItem && NowPlayingItem.Container)
-			}),
-			Rx.Op.take(5)
-		)
-		await Promise.race([utils.pTimeout(30000), rxContainer.toPromise()])
-		await fs.outputFile(Eitem.Path, `/dev/null`)
+		// let rxContainer = socket.rxSession.pipe(
+		// 	Rx.Op.filter(({ Id, NowPlayingItem }) => {
+		// 		if (Id != Session.Id) return
+		// 		console.log(`rxContainer ->`, NowPlayingItem && NowPlayingItem.Container)
+		// 		return _.isString(NowPlayingItem && NowPlayingItem.Container)
+		// 	}),
+		// 	Rx.Op.take(5)
+		// )
+		// await Rx.race(Rx.interval(30000), rxContainer).toPromise()
+		// await Promise.race([utils.pTimeout(30000), rxContainer.toPromise()])
+		// await utils.pTimeout(30000)
+		// await fs.outputFile(Eitem.Path, `/dev/null`)
+		// console.warn(`outputFile Eitem.Path /dev/null`)
 
 		//
 	} catch (error) {
 		console.error(`rxPlayback subscribe -> %O`, error)
-		Session && emby.sendMessage(Session.Id, error)
+		Session && emby.sendMessage(Session, error)
 	}
 })
 
 type PlaybackArgs = { url: string; query: PlaybackQuery }
 type PlaybackQuery = Partial<{
+	AudioStreamIndex: string
 	AutoOpenLiveStream: string
 	DeviceId: string
 	IsPlayback: string
-	isplayback: string
 	MaxStreamingBitrate: string
-	mediasourceid: string
 	MediaSourceId: string
 	StartTimeTicks: string
 	SubtitleStreamIndex: string

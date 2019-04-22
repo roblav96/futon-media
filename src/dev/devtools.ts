@@ -14,7 +14,7 @@ if (process.env.NODE_ENV == 'development') {
 	setInterval(Function, 1 << 30)
 
 	_.merge(util.inspect.defaultOptions, {
-		depth: 2,
+		depth: 1,
 	} as util.InspectOptions)
 
 	let previous = Date.now()
@@ -30,7 +30,7 @@ if (process.env.NODE_ENV == 'development') {
 					let site = new StackTracey()[1]
 					let trace = site.beforeParse.replace(site.file, site.fileShort)
 					process.stdout.write(
-						`\n\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`
+						`\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`
 					)
 					args.push(`\n`)
 				}
@@ -58,7 +58,7 @@ if (process.env.NODE_ENV == 'development') {
 declare global {
 	namespace NodeJS {
 		interface ProcessEnv {
-			DEVELOPMENT: boolean
+			DEVELOPMENT: string
 		}
 		interface Global {
 			dts: typeof dts

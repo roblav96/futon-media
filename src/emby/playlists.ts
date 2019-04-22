@@ -14,12 +14,15 @@ export async function syncPlaylists() {
 	// let list = lists[7].list
 	// let url = `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`
 	let url = mocks.TRAKT_LIST_ITEMS_URL
-	let results = (await trakt.client.get(url)) as trakt.Result[]
+	let results = (await trakt.client.get(url, {
+		memoize: process.env.DEVELOPMENT,
+	})) as trakt.Result[]
 	results.splice(10)
 	let items = results.map(v => new media.Item(v))
 	await pAll(
 		items.map(item => async () => {
-			await fs.outputFile(emby.toStrmPath(item), `/dev/null`)
+			await fs.outputFile(emby.toStrmPath(item), `http://localhost:8099/strm?trakt=${item.ids.trakt}`)
+			// await fs.outputFile(emby.toStrmPath(item), `/dev/null`)
 		}),
 		{ concurrency: 1 }
 	)

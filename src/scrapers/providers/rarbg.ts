@@ -65,7 +65,7 @@ export class Rarbg extends scraper.Scraper {
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(slug)),
 			verbose: true,
-			memoize: process.env.NODE_ENV == 'development',
+			memoize: process.env.DEVELOPMENT,
 		})) as Response
 		return (response.torrent_results || []).map(v => {
 			return {
