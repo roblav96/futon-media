@@ -1,10 +1,11 @@
+import * as _ from 'lodash'
+import * as ansi from 'ansi-colors'
+import * as dayjs from 'dayjs'
 import * as dts from 'dts-generate'
+import * as ms from 'pretty-ms'
 import * as path from 'path'
 import * as shimmer from 'shimmer'
 import * as StackTracey from 'stacktracey'
-import * as ansi from 'ansi-colors'
-import * as ms from 'pretty-ms'
-import * as _ from 'lodash'
 import * as util from 'util'
 
 if (process.env.NODE_ENV == 'development') {
@@ -51,7 +52,7 @@ if (process.env.NODE_ENV == 'development') {
 		`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
 	)
 
-	Object.assign(global, { dts })
+	Object.assign(global, { _, dayjs, dts })
 }
 
 declare global {

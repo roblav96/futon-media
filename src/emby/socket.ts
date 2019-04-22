@@ -6,8 +6,7 @@ import * as Rx from '@/utils/rxjs'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import ISockette from 'sockette'
-const Sockette = require('sockette') as typeof ISockette
+import Sockette from '@/utils/sockette'
 
 interface EmbyEvent<Data = any> {
 	name: string
@@ -26,7 +25,7 @@ export const listen = _.once(() => {
 		timeout: 1000,
 		maxAttempts: Infinity,
 		onerror(error) {
-			console.error(`emby socket ->`, error)
+			console.error(`emby socket ->`, _.omit(error, 'target'))
 		},
 		onopen(message) {
 			console.info(`emby socket open ->`, new Url(message.target.url).origin)

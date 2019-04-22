@@ -9,11 +9,11 @@ import * as qs from 'query-string'
 import * as Rx from '@/utils/rxjs'
 import * as scraper from '@/scrapers/scraper'
 import * as socket from '@/emby/socket'
+import * as tail from '@/emby/tail-logs'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
-import { rxHttpUrl } from '@/emby/tail-logs'
 
-const rxPlayback = rxHttpUrl.pipe(
+const rxPlayback = tail.rxHttp.pipe(
 	Rx.Op.filter<PlaybackArgs>(({ url, query }) => {
 		let endings = ['PlaybackInfo', 'stream']
 		if (!endings.find(v => path.basename(url).startsWith(v))) return
@@ -43,10 +43,12 @@ rxPlayback.subscribe(async ({ url, query }) => {
 			if (query.UserId) return v.UserId == query.UserId
 			if (query.DeviceId) return v.DeviceId == query.DeviceId
 		})
-		!Session && (Session = Sessions[0])
+		// !Session && (Session = Sessions[0])
+		if (!Session) throw new Error(`!Session`)
 		console.log(`Session ->`, Session)
 
 		let ItemId = url.split('/').find(v => v && !isNaN(v as any))
+		if (!ItemId) throw new Error(`!ItemId`)
 		let [User, Eitem] = await Promise.all([
 			emby.client.get(`/Users/${Session.UserId}`) as Promise<emby.User>,
 			emby.client.get(`/Users/${Session.UserId}/Items/${ItemId}`) as Promise<emby.Item>,

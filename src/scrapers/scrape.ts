@@ -25,12 +25,8 @@ export async function scrape() {
 
 	return
 
-	let service = torrent.cached[0] || (debrid.entries[0][0] as debrid.Debrids)
-	let links = await debrid.debrids[service].links(torrent.magnet)
-	console.log(`links ->`, links)
-	if (links.length == 0) {
-		return console.warn(`links.length == 0`)
-	}
-	await emby.addLinks(item, links)
+	let link = await debrid.getLink([torrent], item)
+	if (!link) throw new Error(`!link`)
+	await emby.addLinks(item, [link])
 	await emby.refreshLibrary()
 }

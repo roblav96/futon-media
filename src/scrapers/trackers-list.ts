@@ -35,7 +35,7 @@ setTimeout(async function sync() {
 		_.remove(GOOD, v => BAD.includes(v))
 		storage.set('GOOD', GOOD)
 
-		let future = dayjs().add(15, 'minute')
+		let future = dayjs().add(1, 'hour')
 		storage.set('STAMP', future.valueOf())
 	} catch (error) {
 		console.error(`trackers sync Error ->`, error)

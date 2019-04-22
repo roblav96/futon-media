@@ -8,7 +8,7 @@ import * as utils from '@/utils/utils'
 import { Tail } from 'tail'
 
 export const rxLine = new Rx.Subject<string>()
-export const rxHttpUrl = rxLine.pipe(
+export const rxHttp = rxLine.pipe(
 	Rx.Op.map(line => {
 		if (!line.match(/Info HttpServer: HTTP [GP]/)) return
 		let match = (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
@@ -21,7 +21,7 @@ export const rxHttpUrl = rxLine.pipe(
 
 export const watch = _.once(async () => {
 	// return rxLine.next(mocks.LINE)
-	let { LogPath } = await emby.client.get('/System/Info', { verbose: true })
+	let { LogPath } = await emby.client.get('/System/Info')
 	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
 		follow: true,
 		separator: /\n\d{4}-\d{2}-\d{2}\s/,

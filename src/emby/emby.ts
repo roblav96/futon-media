@@ -1,10 +1,10 @@
 import * as _ from 'lodash'
 import * as fs from 'fs-extra'
-import * as path from 'path'
-import * as pAll from 'p-all'
-import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
+import * as path from 'path'
+import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: `${process.env.EMBY_API_URL}/emby`,
@@ -75,7 +75,8 @@ export async function sendMessage(sessionId: string, data: string | Error) {
 	if (!sessionId) return
 	let body = { Text: data, TimeoutMs: 5000 }
 	if (_.isError(data)) {
-		body.Text = `❌ Error: ${data.message}`
+		// 🛑 ❌ 🔴 ⛔ 🚫
+		body.Text = `⛔ Error: ${data.message}`
 		body.TimeoutMs *= 2
 	}
 	await client.post(`/Sessions/${sessionId}/Message`, { body }).catch(_.noop)

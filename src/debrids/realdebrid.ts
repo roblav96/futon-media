@@ -1,10 +1,10 @@
 import * as _ from 'lodash'
+import * as debrid from '@/debrids/debrid'
+import * as http from '@/adapters/http'
+import * as magneturi from 'magnet-uri'
 import * as pAll from 'p-all'
 import * as path from 'path'
-import * as magneturi from 'magnet-uri'
 import * as utils from '@/utils/utils'
-import * as http from '@/adapters/http'
-import * as debrid from '@/debrids/debrid'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
@@ -16,7 +16,7 @@ export const client = new http.Http({
 export class RealDebrid implements debrid.Debrid {
 	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = _.chunk(hashes, 40)
+		let chunks = utils.chunks(hashes, _.ceil(hashes.length / 40))
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
 				await utils.pRandom(500)
@@ -30,7 +30,7 @@ export class RealDebrid implements debrid.Debrid {
 		)).flat()
 	}
 
-	filterFiles(files: File[], dn: string) {
+	private filterFiles(files: File[], dn: string) {
 		let skips = ['sample', 'trailer']
 		skips = utils.accuracy(dn, skips.join(' '))
 		return files.filter(file => {
@@ -39,7 +39,7 @@ export class RealDebrid implements debrid.Debrid {
 		})
 	}
 
-	async item(magnet: string) {
+	private async item(magnet: string) {
 		let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
 
 		let items = (await client.get('/torrents')) as Item[]

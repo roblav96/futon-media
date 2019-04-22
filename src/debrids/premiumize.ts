@@ -1,9 +1,9 @@
 import * as _ from 'lodash'
-import * as pAll from 'p-all'
-import * as magneturi from 'magnet-uri'
-import * as utils from '@/utils/utils'
-import * as http from '@/adapters/http'
 import * as debrid from '@/debrids/debrid'
+import * as http from '@/adapters/http'
+import * as magneturi from 'magnet-uri'
+import * as pAll from 'p-all'
+import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://www.premiumize.me/api',
@@ -17,7 +17,7 @@ export const client = new http.Http({
 export class Premiumize implements debrid.Debrid {
 	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = _.chunk(hashes, 40)
+		let chunks = utils.chunks(hashes, _.ceil(hashes.length / 40))
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
 				await utils.pRandom(500)

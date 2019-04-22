@@ -27,9 +27,12 @@ export async function getLink(torrents: torrent.Torrent[], item: media.Item) {
 		console.log(`getLink torrent ->`, torrent)
 		let debrid = debrids[torrent.cached[0]]
 		let files = await debrid.files(torrent.magnet)
-		if (files.length == 0) continue
+		if (files.length == 0) {
+			console.warn(`getLink files.length == 0 ->`, torrent.name)
+			continue
+		}
 		let index = 0
-		if (episodes && files.length == episodes) {
+		if (item.episode && files.length == episodes) {
 			index = item.E.n
 		}
 		let link = await debrid.link(torrent.magnet, index)

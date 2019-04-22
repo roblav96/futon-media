@@ -80,7 +80,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 	return split.join(options.separator)
 }
 
-export const VIDEO_EXTS = ['mkv', 'webm', 'mp4', 'mpeg', 'mov', 'wmv', 'm4a']
+export const VIDEO_EXTS = ['m4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
 	return VIDEO_EXTS.includes(path.extname(file).slice(1))
 }
@@ -90,14 +90,28 @@ export function slider(value: number, min: number, max: number) {
 	return ((value - min) / (max - min)) * 100
 }
 
+export function dispersed(value: number, index: number, max: number) {
+	return Math.round(Math.max(index, 0) * (value / Math.max(max, 1)))
+}
+
+export function chunks<T = any>(values: T[], max: number) {
+	let size = Math.ceil(values.length / Math.max(max, 1))
+	let chunks = Array.from(Array(size), v => []) as T[][]
+	values.forEach((v, i) => chunks[i % chunks.length].push(v))
+	return chunks
+}
+
 export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]) {
 	Object.defineProperty(target, key, { value })
 }
 
 export function compactNumber(value: number) {
-	return numbro(value)
-		.format({ average: true, mantissa: 1, optionalMantissa: true } as Numbro.Format)
-		.toUpperCase()
+	let numb = numbro(value).format({
+		average: true,
+		mantissa: 1,
+		optionalMantissa: true,
+	} as Numbro.Format)
+	return numb.toUpperCase()
 }
 
 export function toStamp(value: string) {
