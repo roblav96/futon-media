@@ -49,7 +49,7 @@ export class Http {
 		headers: {
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
 		},
-		verbose: process.env.DEVELOPMENT,
+		verbose: process.DEVELOPMENT,
 	} as Config
 
 	constructor(public config = {} as Config) {

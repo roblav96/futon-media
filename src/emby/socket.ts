@@ -14,18 +14,18 @@ interface EmbyEvent<Data = any> {
 }
 export const rx = new Rx.Subject<EmbyEvent>()
 export const rxSession = rx.pipe(
-	Rx.Op.filter(event => event.name == 'Sessions'),
-	Rx.Op.map(event => emby.toSessions(event.data)[0])
+	Rx.Op.filter(({ name }) => name == 'Sessions'),
+	Rx.Op.map(({ data }) => emby.toSessions(data)[0])
 )
 
-export const listen = _.once(() => {
+_.once(() => {
 	let url = process.env.EMBY_API_URL.replace('http', 'ws')
 	url += `/embywebsocket?api_key=${process.env.EMBY_API_KEY}`
 	let ws = new Sockette(url, {
 		timeout: 1000,
 		maxAttempts: Infinity,
-		onerror(error) {
-			console.error(`emby socket ->`, _.omit(error, 'target'))
+		onerror({ error }) {
+			console.error(`emby socket -> %O`, error)
 		},
 		onopen(message) {
 			console.info(`emby socket open ->`, new Url(message.target.url).origin)
@@ -38,4 +38,4 @@ export const listen = _.once(() => {
 			rx.next({ name, data })
 		},
 	})
-})
+})()

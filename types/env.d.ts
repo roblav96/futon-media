@@ -2,7 +2,7 @@ interface Env {
 	EMBY_API_KEY: string
 	EMBY_API_URL: string
 	EMBY_LIBRARY: string
-	NODE_ENV: 'development' | 'production'
+	EMBY_STRM_PORT: string
 	OMDB_KEY: string
 	ORION_APP: string
 	ORION_KEY: string

@@ -19,7 +19,7 @@ export const rxHttp = rxLine.pipe(
 	Rx.Op.filter(v => !!v)
 )
 
-export const watch = _.once(async () => {
+_.once(async () => {
 	// return rxLine.next(mocks.LINE)
 	let { LogPath } = await emby.client.get('/System/Info')
 	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
@@ -28,5 +28,5 @@ export const watch = _.once(async () => {
 		useWatchFile: true,
 	})
 	stream.on('line', line => rxLine.next(_.trim(line)))
-	stream.on('error', error => console.error(`tailLogs stream Error ->`, error))
-})
+	stream.on('error', error => console.error(`tailLogs stream -> %O`, error))
+})()

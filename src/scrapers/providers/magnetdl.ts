@@ -36,7 +36,7 @@ export class MagnetDl extends scraper.Scraper {
 					stamp: utils.toStamp($el.find(`td:nth-child(3)`).text()),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} Error ->`, error)
+				console.error(`${this.constructor.name} -> %O`, error)
 			}
 		})
 		return results

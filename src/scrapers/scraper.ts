@@ -82,7 +82,7 @@ export class Scraper {
 			combinations.map(([slug, sort], index) => async () => {
 				index > 0 && (await utils.pRandom(1000))
 				return (await this.getResults(slug, sort).catch(error => {
-					console.error(`${this.constructor.name} Error ->`, error)
+					console.error(`${this.constructor.name} -> %O`, error)
 					return [] as Result[]
 				})).map(result => ({
 					providers: [this.constructor.name],

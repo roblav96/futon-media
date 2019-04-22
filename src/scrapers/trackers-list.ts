@@ -40,6 +40,6 @@ setTimeout(async function sync() {
 		let future = dayjs().add(1, 'hour')
 		storage.set('STAMP', future.valueOf())
 	} catch (error) {
-		console.error(`trackers sync Error ->`, error)
+		console.error(`trackers sync -> %O`, error)
 	}
 }, 1000)

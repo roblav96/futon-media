@@ -14,31 +14,14 @@ export const client = new http.Http({
 })
 
 export async function getSessions() {
-	return toSessions((await client.get(`/Sessions`)) as Session[])
+	let Sessions = (await client.get(`/Sessions`)) as Session[]
+	return toSessions(Sessions)
 }
 export function toSessions(Sessions: Session[]) {
 	return Sessions.filter(({ UserName }) => UserName && UserName != 'admin').sort((a, b) => {
 		return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
 	})
 }
-
-// export const sessions = {
-// 	async get(all = false) {
-// 		let Sessions = (await client.get(`/Sessions`)) as Session[]
-// 		return sessions.sort(all === true ? Sessions : sessions.filter(Sessions))
-// 	},
-// 	to(Sessions: Session[]) {
-// 		return sessions.sort(sessions.filter(Sessions))
-// 	},
-// 	filter(Sessions: Session[]) {
-// 		return Sessions.filter(({ UserName }) => UserName && UserName != 'admin')
-// 	},
-// 	sort(Sessions: Session[]) {
-// 		return Sessions.sort((a, b) => {
-// 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
-// 		})
-// 	},
-// }
 
 export async function addLinks(item: media.Item, links: string[]) {
 	// let base = path.join(process.cwd(), 'dist')

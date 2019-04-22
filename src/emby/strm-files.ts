@@ -3,7 +3,13 @@ import * as Fastify from 'fastify'
 import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
 
-const fastify = Fastify({ logger: false })
+const fastify = Fastify({ logger: true })
+
+fastify.server.headersTimeout = 30000
+fastify.server.keepAliveTimeout = 10000
+fastify.server.timeout = 60000
+
+fastify.after(error => error && console.error(`after -> %O`, error))
 
 fastify.get('/strm', async (request, reply) => {
 	console.log(`request ->`, request.query)
@@ -18,6 +24,9 @@ socket.rxSession.subscribe(Session => {
 	console.log(`Session ->`, Session)
 })
 
-export const listen = _.once(() => {
-	fastify.listen(8099)
-})
+_.once(() => {
+	fastify.listen(
+		_.parseInt(process.env.EMBY_STRM_PORT),
+		error => error && console.error(`fastify.listen -> %O`, error)
+	)
+})()

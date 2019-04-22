@@ -3,14 +3,11 @@ import * as ansi from 'ansi-colors'
 import * as dayjs from 'dayjs'
 import * as dts from 'dts-generate'
 import * as ms from 'pretty-ms'
-import * as path from 'path'
 import * as shimmer from 'shimmer'
 import * as StackTracey from 'stacktracey'
 import * as util from 'util'
 
-if (process.env.NODE_ENV == 'development') {
-	process.env.DEVELOPMENT = true
-
+if (process.DEVELOPMENT) {
 	setInterval(Function, 1 << 30)
 
 	_.merge(util.inspect.defaultOptions, {
@@ -57,9 +54,6 @@ if (process.env.NODE_ENV == 'development') {
 
 declare global {
 	namespace NodeJS {
-		interface ProcessEnv {
-			DEVELOPMENT: string
-		}
 		interface Global {
 			dts: typeof dts
 		}

@@ -124,7 +124,7 @@ rxPlayback.subscribe(async ({ url, query }) => {
 
 		//
 	} catch (error) {
-		console.error(`rxPlayback subscribe -> %O`, error)
+		console.error(`rxPlayback.subscribe -> %O`, error)
 		Session && emby.sendMessage(Session, error)
 	}
 })

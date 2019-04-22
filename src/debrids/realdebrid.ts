@@ -22,7 +22,7 @@ export class RealDebrid implements debrid.Debrid {
 				await utils.pRandom(500)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client.get(url, {
-					memoize: process.env.DEVELOPMENT,
+					memoize: process.DEVELOPMENT,
 				})) as CacheResponse
 				return chunk.map(v => _.size(_.get(response, `${v}.rd`, [])) > 0)
 			}),
