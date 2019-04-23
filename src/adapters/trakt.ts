@@ -5,8 +5,9 @@ import { Http } from '@/adapters/http'
 export const client = new Http({
 	baseUrl: 'https://api.trakt.tv',
 	headers: {
-		'trakt-api-version': '2',
+		'authorization': `Bearer ${process.env.TRAKT_SECRET}`,
 		'trakt-api-key': process.env.TRAKT_KEY,
+		'trakt-api-version': '2',
 	},
 	query: {
 		extended: 'full',
@@ -14,6 +15,10 @@ export const client = new Http({
 	afterResponse: {
 		append: [
 			async (options, response) => {
+				const debloat = value => {
+					let keys = ['available_translations', 'images']
+					keys.forEach(key => _.unset(value, key))
+				}
 				if (_.isPlainObject(response.data)) {
 					debloat(response.data)
 				}
@@ -28,22 +33,35 @@ export const client = new Http({
 	},
 })
 
-function debloat(value: any) {
-	let keys = ['available_translations', 'images']
-	keys.forEach(key => _.unset(value, key))
-}
+// export async function allUrls() {
+// 	let urls = [
+// 		`/sync/watchlist/movies`,
+// 		`/sync/watchlist/shows`,
+// 		`/movies/boxoffice`,
+// 		`/movies/trending`,
+// 		`/movies/popular`,
+// 		`/movies/anticipated`,
+// 		`/movies/trending`,
+// 		`/movies/trending`,
+// 		`/movies/trending`,
+// 		`/movies/trending`,
+// 		`____`,
+// 		`____`,
+// 		`____`,
+// 		`____`,
+// 		`____`,
+// 		`____`,
+// 		`____`,
+// 	] as string[]
+// }
+
+// export async function watchlist(mtype: media.MainContentTypes) {
+// 	let results = (await client.get(`/sync/watchlist/${mtype}`)) as Watchlist[]
+// 	return results.map(v => new media.Item(v))
+// }
 
 export const RESULT_ITEM = {
 	score: 'score',
-	// paused_at: 'progress',
-	// watched_at: 'history',
-	// listed_at: 'watchlist',
-	// collected_at: 'collection',
-	// watchers: 'trending',
-	// first_aired: 'calendar',
-	// character: 'character',
-	// last_watched_at: 'watched',
-	// last_collected_at: 'collection',
 } as Record<keyof Result, keyof media.Item>
 
 export interface IDs {
@@ -171,16 +189,47 @@ export interface Result extends Extras {
 }
 
 export interface Extras {
-	// id: number
-	// listed_at: string
-	// rank: number
+	rank: number
 	score: number
+}
+
+export interface Progress extends Result {
+	id: number
+	paused_at: string
+	progress: number
+}
+
+export interface History extends Result {
+	id: number
+	action: string
+	watched_at: string
+}
+
+export interface Watchlist extends Result {
+	id: number
+	rank: number
+	listed_at: string
+}
+
+export interface Collection extends Result {
+	collected_at: string
+	last_collected_at: string
+	last_updated_at: string
+	seasons: {
+		episodes: {
+			collected_at: string
+			number: number
+		}[]
+		number: number
+	}[]
 }
 
 export interface ResponseList {
 	comment_count: number
 	like_count: number
+	liked_at: string
 	list: List
+	type: string
 }
 
 export interface List {

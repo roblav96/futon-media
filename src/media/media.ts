@@ -6,6 +6,9 @@ import * as utils from '@/utils/utils'
 import * as Memoize from '@/utils/memoize'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
+export const MAIN_TYPES = ['movie', 'show'] as MainContentType[]
+export const TYPESS = ['movies', 'shows', 'seasons', 'episodes', 'people'] as ContentTypes[]
+export const MAIN_TYPESS = ['movies', 'shows'] as MainContentTypes[]
 
 export interface Item extends trakt.Extras {}
 @Memoize.Class
@@ -79,7 +82,9 @@ export class Item {
 }
 
 export type ContentType = 'movie' | 'show' | 'season' | 'episode' | 'person'
+export type MainContentType = 'movie' | 'show'
 export type ContentTypes = 'movies' | 'shows' | 'seasons' | 'episodes' | 'people'
+export type MainContentTypes = 'movies' | 'shows'
 export type Full = typeof Item.prototype.movie &
 	typeof Item.prototype.show &
 	typeof Item.prototype.season &

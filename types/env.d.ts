@@ -15,6 +15,7 @@ interface Env {
 	REDIS_PORT: string
 	TMDB_KEY: string
 	TRAKT_KEY: string
+	TRAKT_SECRET: string
 }
 
 declare namespace NodeJS {

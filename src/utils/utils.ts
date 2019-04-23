@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
-import * as jslevenshtein from 'js-levenshtein'
+import * as levenshtein from 'js-levenshtein'
 import * as path from 'path'
 import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
@@ -22,6 +22,10 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 
 export function clean(value: string) {
 	return stripBom(stripAnsi(_.unescape(_.deburr(value))))
+}
+
+export function squash(value: string) {
+	return value.replace(/[^\x20-\x7E]/g, '')
 }
 
 export function isForeign(value: string) {
@@ -47,12 +51,9 @@ export function accuracy(value: string, target: string) {
 export function leven(value: string, target: string) {
 	value = minify(value)
 	target = minify(target)
-	return Math.abs(value.length - target.length - jslevenshtein(value, target))
+	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
-// export function levenshtein(value: string, target: string) {
-// 	return jslevenshtein(minify(value), minify(target))
-// }
-// export { jslevenshtein }
+export { levenshtein }
 
 export function parseInt(value: string) {
 	return Number.parseInt(value.replace(/[^\d.]/g, ''))

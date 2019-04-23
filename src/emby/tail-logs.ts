@@ -21,7 +21,6 @@ export const rxHttpServer = rxTail.pipe(
 )
 
 process.nextTick(async () => {
-	// return rxTail.next(mocks.LINE)
 	let { LogPath } = await emby.client.get('/System/Info')
 	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
 		follow: true,

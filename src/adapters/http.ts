@@ -13,7 +13,7 @@ import * as qs from 'query-string'
 import * as Url from 'url-parse'
 import fastStringify from 'fast-safe-stringify'
 
-interface Config extends http.RequestOptions {
+export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: httpie.HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
@@ -47,6 +47,7 @@ export class Http {
 	static defaults = {
 		method: 'GET',
 		headers: {
+			'content-type': 'application/json',
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
 		},
 		verbose: process.DEVELOPMENT,
@@ -143,7 +144,7 @@ export class Http {
 		}
 
 		if (options.debug) {
-			console.log(`[DEBUG] <-`, options.method, options.url, options, response)
+			console.log(`[DEBUG] <-`, options.method, options.url, response)
 		}
 
 		if (options.afterResponse) {

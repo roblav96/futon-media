@@ -8,6 +8,11 @@ export const rxSession = socket.rxSocket.pipe(
 	Rx.Op.map(({ Data }) => new Session(sessions.primaries(Data)[0]))
 )
 
+export const rxUserUpdated = socket.rxSocket.pipe(
+	Rx.Op.filter(({ MessageType }) => MessageType == 'UserUpdated'),
+	Rx.Op.map(({ Data }) => Data as User)
+)
+
 export const sessions = {
 	async get() {
 		let Sessions = (await emby.client.get(`/Sessions`)) as Session[]

@@ -9,9 +9,21 @@ import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
 
-export const rxLibrary = socket.rxSocket.pipe(
+export const rxLibraryChanged = socket.rxSocket.pipe(
 	Rx.Op.filter(({ MessageType }) => MessageType == 'LibraryChanged'),
 	Rx.Op.map(({ Data }) => Data as LibraryChanged)
+)
+export const rxRefreshProgress = socket.rxSocket.pipe(
+	Rx.Op.filter(({ MessageType }) => MessageType == 'RefreshProgress'),
+	Rx.Op.map(({ Data }) => Data as RefreshProgress)
+)
+export const rxScheduledTasksInfo = socket.rxSocket.pipe(
+	Rx.Op.filter(({ MessageType }) => MessageType == 'ScheduledTasksInfo'),
+	Rx.Op.map(({ Data }) => Data as ScheduledTasksInfo)
+)
+export const rxScheduledTaskEnded = socket.rxSocket.pipe(
+	Rx.Op.filter(({ MessageType }) => MessageType == 'ScheduledTaskEnded'),
+	Rx.Op.map(({ Data }) => Data as ScheduledTaskEnded)
 )
 
 export const library = {
@@ -210,4 +222,29 @@ export interface LibraryChanged {
 	ItemsAdded: any[]
 	ItemsRemoved: any[]
 	ItemsUpdated: string[]
+}
+
+export interface RefreshProgress {
+	ItemId: string
+	Progress: string
+}
+
+export interface ScheduledTasksInfo {
+	Category: string
+	Description: string
+	Id: string
+	IsHidden: boolean
+	Key: string
+	Name: string
+	State: string
+	Triggers: any[]
+}
+
+export interface ScheduledTaskEnded {
+	EndTimeUtc: string
+	Id: string
+	Key: string
+	Name: string
+	StartTimeUtc: string
+	Status: string
 }
