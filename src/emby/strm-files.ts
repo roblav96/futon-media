@@ -3,7 +3,6 @@ import * as Fastify from 'fastify'
 import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
 import redis from '@/adapters/redis'
-import storage from '@/adapters/storage'
 
 export const fastify = Fastify({ logger: true })
 

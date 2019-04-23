@@ -2,6 +2,14 @@ import * as _ from 'lodash'
 import * as pkgup from 'read-pkg-up'
 import * as IORedis from 'ioredis'
 
+export namespace Redis {
+	export type Coms = string[][]
+	export interface Event<T = any> {
+		data: T
+		name: string
+	}
+}
+
 export class Redis extends IORedis {
 	private static opts(opts: IORedis.RedisOptions) {
 		let pkgname = pkgup.sync({ cwd: __dirname }).pkg.name
@@ -22,6 +30,44 @@ export class Redis extends IORedis {
 
 	constructor(opts: IORedis.RedisOptions) {
 		super(Redis.opts(opts))
+	}
+
+	async purge(rkey: string, pattern = ':*') {
+		let keys = await this.keys(rkey + pattern)
+		console.warn('PURGE ->', rkey + pattern, '->', keys.length)
+		await this.coms(keys.map(v => ['del', v]))
+		return keys
+	}
+
+	async coms(coms = [] as Redis.Coms) {
+		let results = ((await this.pipeline(coms).exec()) || []) as any[]
+		for (let i = 0; i < results.length; i++) {
+			if (results[i][0]) {
+				throw new Error(`coms[${i}] ${coms[i]} results[${i}] ${results[i][0]}`)
+			}
+			results[i] = results[i][1]
+		}
+		return results
+	}
+
+	fixHMget(hmget: any[], keys: string[]) {
+		return hmget.reduce((target, value, index) => {
+			target[keys[index]] = value
+			return target
+		}, {})
+	}
+
+	toHset(from: any) {
+		return Object.entries(from).reduce((target, [key, value]) => {
+			target[key] = JSON.stringify(value)
+			return target
+		}, {})
+	}
+	fromHget(to: any) {
+		for (let key in to) {
+			to[key] = JSON.parse(to[key])
+		}
+		return to
 	}
 }
 

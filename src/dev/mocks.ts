@@ -527,7 +527,7 @@ export const EPISODES = {
 		},
 	} as trakt.Result & tmdb.Result,
 
-	westworld: {
+	'westworld': {
 		episode: {
 			comment_count: 16,
 			first_aired: '2018-04-30T01:00:00.000Z',
