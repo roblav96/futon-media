@@ -8,48 +8,42 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import { findBestMatch } from 'string-similarity'
 
-let limit = process.DEVELOPMENT ? 10 : 25
+const LIMIT = process.DEVELOPMENT ? 10 : 25
+
 const STATIC_SCHEMAS = [
-	[`My Watchlist`, `/sync/watchlist/<%= types %>`],
-	[`My Collection`, `/sync/collection/<%= types %>`],
-	[`Anticipated`, `/<%= types %>/anticipated`],
-	[`Popular`, `/<%= types %>/popular`],
-	[`Trending`, `/<%= types %>/trending`],
-	[`Most Played Weekly`, `/<%= types %>/played/weekly`, { query: { limit } }],
-	[`Most Played Monthly`, `/<%= types %>/played/monthly`, { query: { limit } }],
-	[`Most Played Yearly`, `/<%= types %>/played/yearly`, { query: { limit } }],
-	[`Most Played All Time`, `/<%= types %>/played/all`, { query: { limit } }],
-	[`Most Watched Weekly`, `/<%= types %>/watched/weekly`, { query: { limit } }],
-	[`Most Watched Monthly`, `/<%= types %>/watched/monthly`, { query: { limit } }],
-	[`Most Watched Yearly`, `/<%= types %>/watched/yearly`, { query: { limit } }],
-	[`Most Watched All Time`, `/<%= types %>/watched/all`, { query: { limit } }],
-	[`Most Collected Weekly`, `/<%= types %>/collected/weekly`, { query: { limit } }],
-	[`Most Collected Monthly`, `/<%= types %>/collected/monthly`, { query: { limit } }],
-	[`Most Collected Yearly`, `/<%= types %>/collected/yearly`, { query: { limit } }],
-	[`Most Collected All Time`, `/<%= types %>/collected/all`, { query: { limit } }],
-	[`Recommendations`, `/recommendations/<%= types %>`, { query: { limit } }],
+	[`My Watchlist`, `/sync/watchlist/<%= type %>`, { query: { limit: 999 } }],
+	[`My Collection`, `/sync/collection/<%= type %>`, { query: { limit: 999 } }],
+	[`Anticipated`, `/<%= type %>/anticipated`],
+	[`Popular`, `/<%= type %>/popular`],
+	[`Trending`, `/<%= type %>/trending`],
+	[`Most Played Weekly`, `/<%= type %>/played/weekly`],
+	[`Most Played Monthly`, `/<%= type %>/played/monthly`],
+	[`Most Played Yearly`, `/<%= type %>/played/yearly`],
+	[`Most Played All Time`, `/<%= type %>/played/all`],
+	[`Most Watched Weekly`, `/<%= type %>/watched/weekly`],
+	[`Most Watched Monthly`, `/<%= type %>/watched/monthly`],
+	[`Most Watched Yearly`, `/<%= type %>/watched/yearly`],
+	[`Most Watched All Time`, `/<%= type %>/watched/all`],
+	[`Most Collected Weekly`, `/<%= type %>/collected/weekly`],
+	[`Most Collected Monthly`, `/<%= type %>/collected/monthly`],
+	[`Most Collected Yearly`, `/<%= type %>/collected/yearly`],
+	[`Most Collected All Time`, `/<%= type %>/collected/all`],
+	[`Recommendations`, `/recommendations/<%= type %>`],
 ] as [string, string, http.Config?][]
 
 export interface PlaylistSchema {
 	config: http.Config
-	count: number
-	created: number
-	likes: number
 	name: string
-	types: media.MainContentTypes
-	updated: number
 	url: string
 }
 
 async function allSchemas() {
 	let schemas = STATIC_SCHEMAS.map(schema =>
-		media.MAIN_TYPESS.map(types => {
+		media.MAIN_TYPESS.map((type, i) => {
 			return {
-				config: schema[2],
-				name: schema[0],
-				types,
-				url: _.template(schema[1])({ types }),
-			} as PlaylistSchema
+				name: `${['Movies', 'TV Shows'][i]}: ${schema[0]}`,
+				url: _.template(schema[1])({ type }),
+			} as Partial<PlaylistSchema>
 		})
 	).flat()
 
@@ -57,47 +51,40 @@ async function allSchemas() {
 		['popular', 'trending'].map(async ltype => {
 			await utils.pRandom(500)
 			let lresponse = (await trakt.client.get(`/lists/${ltype}`, {
-				query: { extended: '' },
+				query: { limit: LIMIT, extended: '' },
 				memoize: process.DEVELOPMENT,
 			})) as trakt.ResponseList[]
 			return lresponse.map(v => v.list)
 		})
 	)).flat()
 
-	let limit = process.DEVELOPMENT ? 10 : 999
 	let likedlists = (await trakt.client.get(`/users/likes/lists`, {
-		query: { limit, extended: '' },
+		query: { limit: 999, extended: '' },
 		memoize: process.DEVELOPMENT,
 	})) as trakt.ResponseList[]
 	lists.push(...likedlists.map(v => v.list))
 
 	lists = _.uniqWith(lists, (from, to) => from.ids.trakt == to.ids.trakt)
+	lists.sort((a, b) => b.likes - a.likes)
 
 	let lschemas = lists.map(list => {
-		let slug = utils.toSlug(`${list.name} ${list.description}`)
-		let best = findBestMatch(slug, ['movies', 'tv shows'])
-		let types = media.MAIN_TYPESS[best.bestMatchIndex]
 		return {
-			count: list.item_count,
-			created: new Date(list.created_at).valueOf(),
-			likes: list.likes,
 			name: _.startCase(utils.toSlug(list.name, { toName: true })),
-			types,
-			updated: new Date(list.updated_at).valueOf(),
-			url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items/${types}`,
+			url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
 		} as PlaylistSchema
 	})
-	schemas.push(...lschemas.sort((a, b) => b.likes - a.likes))
 
-	schemas.forEach(schema => {
-		_.merge(schema, { config: { query: { extended: '' } } as http.Config })
+	return schemas.concat(lschemas).map(schema => {
+		return _.defaults(schema, {
+			config: { query: { limit: LIMIT, extended: '' } } as http.Config,
+		})
 	})
-
-	return schemas
 }
 
 export async function syncPlaylists() {
 	let schemas = await allSchemas()
+	console.log(`schemas ->`, schemas)
+	console.log(`schemas.length ->`, schemas.length)
 	if (process.DEVELOPMENT) schemas = utils.chunks(schemas, 10)[0]
 	// console.log(`schemas ->`, schemas)
 }
