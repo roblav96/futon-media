@@ -6,6 +6,8 @@ import * as media from '@/media/media'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
+import * as pAll from 'p-all'
+import * as pQueue from 'p-queue'
 import { findBestMatch } from 'string-similarity'
 
 const LIMIT = process.DEVELOPMENT ? 10 : 25
@@ -34,6 +36,7 @@ const STATIC_SCHEMAS = [
 export interface PlaylistSchema {
 	config: http.Config
 	name: string
+	type: media.MainContentType
 	url: string
 }
 
@@ -41,18 +44,20 @@ async function allSchemas() {
 	let schemas = STATIC_SCHEMAS.map(schema =>
 		media.MAIN_TYPESS.map((type, i) => {
 			return {
+				config: schema[2],
 				name: `${['Movies', 'TV Shows'][i]}: ${schema[0]}`,
+				type: media.MAIN_TYPES[i],
 				url: _.template(schema[1])({ type }),
-			} as Partial<PlaylistSchema>
+			} as PlaylistSchema
 		})
 	).flat()
 
 	let lists = (await Promise.all(
 		['popular', 'trending'].map(async ltype => {
-			await utils.pRandom(500)
+			await utils.pRandom(1000)
 			let lresponse = (await trakt.client.get(`/lists/${ltype}`, {
 				query: { limit: LIMIT, extended: '' },
-				memoize: process.DEVELOPMENT,
+				// memoize: process.DEVELOPMENT,
 			})) as trakt.ResponseList[]
 			return lresponse.map(v => v.list)
 		})
@@ -60,7 +65,7 @@ async function allSchemas() {
 
 	let likedlists = (await trakt.client.get(`/users/likes/lists`, {
 		query: { limit: 999, extended: '' },
-		memoize: process.DEVELOPMENT,
+		// memoize: process.DEVELOPMENT,
 	})) as trakt.ResponseList[]
 	lists.push(...likedlists.map(v => v.list))
 
@@ -74,19 +79,30 @@ async function allSchemas() {
 		} as PlaylistSchema
 	})
 
-	return schemas.concat(lschemas).map(schema => {
-		return _.defaults(schema, {
-			config: { query: { limit: LIMIT, extended: '' } } as http.Config,
-		})
-	})
+	return schemas.concat(lschemas)
 }
 
 export async function syncPlaylists() {
 	let schemas = await allSchemas()
-	console.log(`schemas ->`, schemas)
-	console.log(`schemas.length ->`, schemas.length)
-	if (process.DEVELOPMENT) schemas = utils.chunks(schemas, 10)[0]
-	// console.log(`schemas ->`, schemas)
+	let resolved = await pAll(
+		schemas.map(schema => async () => {
+			await utils.pRandom(5000)
+			_.defaultsDeep(schema, {
+				config: { query: { limit: LIMIT, extended: '' } } as http.Config,
+			})
+			let results = (await trakt.client.get(schema.url, schema.config)) as trakt.Result[]
+			let items = results.map(v => {
+				if (schema.type) {
+					!v[schema.type] && (v = { [schema.type]: v } as any)
+					!v.type && (v.type = schema.type)
+				}
+				return new media.Item(v)
+			})
+			console.log(`items ->`, items)
+		}),
+		{ concurrency: 1 }
+	)
+	console.warn(`syncPlaylists resolved ->`, resolved)
 }
 
 process.nextTick(() => {

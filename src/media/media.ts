@@ -71,6 +71,7 @@ export class Item {
 
 	use(result: PartialDeep<trakt.Result & tmdb.Result>) {
 		let picked = _.pick(result, TYPES)
+		if (_.size(picked) == 0) throw new Error(`!picked -> ${result}`)
 		_.defaultsDeep(this, picked)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
 			let ikey = trakt.RESULT_ITEM[rkey]

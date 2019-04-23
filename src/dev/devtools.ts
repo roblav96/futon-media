@@ -13,7 +13,7 @@ if (process.DEVELOPMENT) {
 	setInterval(Function, 1 << 30)
 
 	_.merge(util.inspect.defaultOptions, {
-		depth: 1,
+		depth: 2,
 	} as util.InspectOptions)
 
 	let previous = Date.now()

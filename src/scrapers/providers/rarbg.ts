@@ -34,7 +34,7 @@ async function syncToken() {
 		query: { get_token: 'get_token' },
 	})
 	client.config.query['token'] = token
-	await utils.pTimeout(500)
+	await utils.pTimeout(1000)
 	return token
 }
 
