@@ -5,7 +5,7 @@ import 'dotenv/config'
 import 'node-env-dev'
 import '@/dev/devtools'
 
-// use dynamic imports to avoid undefined circular references
+// use dynamic imports to avoid circular null references
 async function start() {
 	await import('@/emby/emby')
 	await import('@/emby/playback')

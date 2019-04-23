@@ -71,9 +71,7 @@ export class Item {
 		_.defaultsDeep(this, picked)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
 			let ikey = trakt.RESULT_ITEM[rkey]
-			if (ikey) {
-				this[ikey] = rvalue
-			}
+			if (ikey) this[ikey] = rvalue
 		}
 		Memoize.clear(this)
 		return this

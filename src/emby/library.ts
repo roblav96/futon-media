@@ -4,6 +4,7 @@ import * as fs from 'fs-extra'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
+import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
@@ -17,34 +18,35 @@ export const library = {
 	async refresh() {
 		await emby.client.post(`/Library/Refresh`)
 	},
-}
-
-export function toStrmPath(item: media.Item, quality = '' as emby.Quality) {
-	let title = utils.toSlug(item.main.title, { toName: true })
-	let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
-	file += `/${item.movie ? 'movies' : 'shows'}`
-	if (item.movie) {
-		let year = item.main.year || new Date(item.main.released).getFullYear()
-		title += ` (${year})`
-		file += `/${title}/${title}`
-		// file += `/${item.ids.slug}/${item.ids.slug}`
-	} else if (item.episode) {
-		let year = item.main.year || new Date(item.main.first_aired).getFullYear()
-		title += ` (${year})`
-		file += `/${title}`
-		// file += `/Season ${item.S.n}`
-		file += `/s${item.S.z}e${item.E.z}`
-		// file += `/${item.main.title} - S${item.S.z}E${item.E.z}`
-		// file += `/${item.ids.slug}/${item.ids.slug}-S${item.S.z}E${item.E.z}`
-	} else throw new Error(`Incomplete item -> ${item.title}`)
-	quality && (file += ` - ${quality}`)
-	file += `.strm`
-	return file
+	strmFile(item: media.Item, quality = '' as emby.Quality) {
+		let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
+		file += `/${item.movie ? 'movies' : 'shows'}`
+		let year = item.main.year
+		let title = utils.toSlug(item.main.title, { toName: true })
+		if (item.movie) {
+			!year && (year = new Date(item.main.released).getFullYear())
+			title += ` (${year})`
+			file += `/${title}/${title}`
+		} else if (item.episode) {
+			!year && (year = new Date(item.main.first_aired).getFullYear())
+			file += `/${title} (${year})`
+			file += `/Season ${item.S.n}`
+			file += `/${title} - S${item.S.z}E${item.E.z}`
+			item.episode.title && (file += ` - ${item.episode.title}`)
+		} else {
+			throw new Error(`toStrm !item -> ${item.title}`)
+		}
+		quality && (file += ` - ${quality}`)
+		file += `.strm`
+		let url = `${emby.DOMAIN}:${emby.STRM_PORT}/strm`
+		url += `?${qs.stringify(item.full.ids)}`
+		return { file, url }
+	},
 }
 
 export async function addLinks(item: media.Item, links: string[]) {
 	// let base = path.join(process.cwd(), 'dist')
-	let base = process.env.EMBY_LIBRARY || process.cwd()
+	let base = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
 
 	let dir = item.movie ? 'movies' : 'shows'
 	if (!(await fs.pathExists(path.join(base, dir)))) {

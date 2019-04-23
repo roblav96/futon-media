@@ -1,13 +1,14 @@
 import * as _ from 'lodash'
+import * as emby from '@/emby/emby'
 import * as Fastify from 'fastify'
-import * as socket from '@/emby/socket'
+import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import redis from '@/adapters/redis'
 
-export const fastify = Fastify({ logger: true })
+export const fastify = Fastify({ logger: false })
 
 fastify.server.headersTimeout = 30000
-fastify.server.keepAliveTimeout = 10000
+fastify.server.keepAliveTimeout = 15000
 fastify.server.timeout = 60000
 
 fastify.after(error => error && console.error(`after -> %O`, error))
@@ -21,13 +22,9 @@ fastify.get('/strm', async (request, reply) => {
 	)
 })
 
-process.nextTick(async () => {
+async function listen() {
 	let info = await redis.info()
-	console.log(`info ->`, info)
-
-	if (!process.env.EMBY_STRM_PORT) throw new Error(`!process.env.EMBY_STRM_PORT`)
-	fastify.listen(
-		_.parseInt(process.env.EMBY_STRM_PORT),
-		error => error && console.error(`fastify.listen -> %O`, error)
-	)
-})
+	// console.log(`info ->`, info)
+	await fastify.listen(emby.STRM_PORT)
+}
+process.nextTick(() => listen().catch(error => console.error(`strm-files listen -> %O`, error)))

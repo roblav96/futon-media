@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as emby from '@/emby/emby'
 import * as fastParse from 'fast-json-parse'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
@@ -13,7 +14,7 @@ export interface EmbyEvent<Data = any> {
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(() => {
-	let url = process.env.EMBY_API_URL.replace('http', 'ws')
+	let url = `${emby.DOMAIN}:${emby.PORT}`.replace('http', 'ws')
 	url += `/embywebsocket?api_key=${process.env.EMBY_API_KEY}`
 	let ws = new Sockette(url, {
 		timeout: 1000,

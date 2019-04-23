@@ -41,7 +41,6 @@ export class Session {
 		if (this.isRoku) return
 		let body = { Text: data, TimeoutMs: 5000 }
 		if (_.isError(data)) {
-			// 🛑 ❌ 🔴 ⛔ 🚫
 			body.Text = `⛔ Error: ${data.message}`
 			body.TimeoutMs *= 2
 		}

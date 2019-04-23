@@ -42,8 +42,7 @@ export const rxPlayback = tail.rxHttpServer.pipe(
 )
 
 rxPlayback.subscribe(async ({ url, query }) => {
-	console.warn(`rxPlayback subscribe ->`, url, query)
-	return
+	return console.warn(`rxPlayback subscribe ->`, url, query)
 
 	let Session: emby.Session
 	try {

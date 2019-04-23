@@ -19,11 +19,9 @@ export async function syncPlaylists() {
 	await Promise.all(
 		results.map(async v => {
 			let item = new media.Item(v)
-			await fs.outputFile(
-				emby.toStrmPath(item),
-				`http://localhost:8099/strm?trakt=${item.ids.trakt}`
-			)
-			// await fs.outputFile(emby.toStrmPath(item), `/dev/null`)
+			let { file, url } = emby.library.strmFile(item)
+			console.log(`strmFile ->`, { file, url })
+			await fs.outputFile(file, url)
 		})
 	)
 	await emby.library.refresh()
