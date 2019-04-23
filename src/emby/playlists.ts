@@ -58,6 +58,7 @@ async function allSchemas() {
 			await utils.pRandom(500)
 			let lresponse = (await trakt.client.get(`/lists/${ltype}`, {
 				query: { extended: '' },
+				memoize: process.DEVELOPMENT,
 			})) as trakt.ResponseList[]
 			return lresponse.map(v => v.list)
 		})
@@ -66,51 +67,39 @@ async function allSchemas() {
 	let limit = process.DEVELOPMENT ? 10 : 999
 	let likedlists = (await trakt.client.get(`/users/likes/lists`, {
 		query: { limit, extended: '' },
+		memoize: process.DEVELOPMENT,
 	})) as trakt.ResponseList[]
 	lists.push(...likedlists.map(v => v.list))
 
 	lists = _.uniqWith(lists, (from, to) => from.ids.trakt == to.ids.trakt)
 
 	let lschemas = lists.map(list => {
-		let best = findBestMatch(`${list.name} ${list.description}`, ['movies', 'tv shows'])
+		let slug = utils.toSlug(`${list.name} ${list.description}`)
+		let best = findBestMatch(slug, ['movies', 'tv shows'])
+		let types = media.MAIN_TYPESS[best.bestMatchIndex]
 		return {
 			count: list.item_count,
 			created: new Date(list.created_at).valueOf(),
 			likes: list.likes,
-			name: list.name,
-			types: media.MAIN_TYPESS[best.bestMatchIndex],
+			name: _.startCase(utils.toSlug(list.name, { toName: true })),
+			types,
 			updated: new Date(list.updated_at).valueOf(),
-			url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
+			url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items/${types}`,
 		} as PlaylistSchema
 	})
-	lschemas.sort((a, b) => b.likes - a.likes)
+	schemas.push(...lschemas.sort((a, b) => b.likes - a.likes))
 
-	return schemas.concat(lschemas)
+	schemas.forEach(schema => {
+		_.merge(schema, { config: { query: { extended: '' } } as http.Config })
+	})
+
+	return schemas
 }
 
 export async function syncPlaylists() {
 	let schemas = await allSchemas()
-	let chunks = utils.chunks(schemas, 10)
-	console.log(`chunks ->`, chunks)
-	return
-
-	let lists = (await trakt.client.get(`/lists/trending`, {
-		memoize: process.DEVELOPMENT,
-	})) as trakt.ResponseList[]
-	let list = lists.map(v => v.list).find(v => v.ids.slug == 'rotten-tomatoes-best-of-2018')
-	list = list || lists[0].list
-	let results = (await trakt.client.get(
-		`/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
-		{ memoize: process.DEVELOPMENT }
-	)) as trakt.Result[]
-	results.splice(10)
-	for (let result of results) {
-		let item = new media.Item(result)
-		let { file, url } = emby.library.strmFile(item)
-		await fs.outputFile(file, url)
-	}
-	await emby.library.refresh()
-	console.log(`syncPlaylists -> DONE`)
+	if (process.DEVELOPMENT) schemas = utils.chunks(schemas, 10)[0]
+	// console.log(`schemas ->`, schemas)
 }
 
 process.nextTick(() => {
@@ -121,3 +110,21 @@ process.nextTick(() => {
 		schedule.scheduleJob(`0 0 * * *`, syncPlaylists)
 	}
 })
+
+// let lists = (await trakt.client.get(`/lists/trending`, {
+// 	memoize: process.DEVELOPMENT,
+// })) as trakt.ResponseList[]
+// let list = lists.map(v => v.list).find(v => v.ids.slug == 'rotten-tomatoes-best-of-2018')
+// list = list || lists[0].list
+// let results = (await trakt.client.get(
+// 	`/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
+// 	{ memoize: process.DEVELOPMENT }
+// )) as trakt.Result[]
+// results.splice(10)
+// for (let result of results) {
+// 	let item = new media.Item(result)
+// 	let { file, url } = emby.library.strmFile(item)
+// 	await fs.outputFile(file, url)
+// }
+// await emby.library.refresh()
+// console.log(`syncPlaylists -> DONE`)

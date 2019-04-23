@@ -21,7 +21,7 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 }
 
 export function clean(value: string) {
-	return stripBom(stripAnsi(_.unescape(_.deburr(value))))
+	return squash(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
 }
 
 export function squash(value: string) {
@@ -73,7 +73,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 		separator: ' ',
 	} as Parameters<typeof toSlug>[1])
 	let slug = slugify(
-		clean(value).replace(/'/g, ''),
+		clean(value.replace(/'/g, '')),
 		Object.assign({}, options, { separator: ' ' })
 	)
 	let filters = !options.toName ? ['a', 'an', 'and', 'of', 'the', 'to'] : []
