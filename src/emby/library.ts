@@ -4,12 +4,13 @@ import * as fs from 'fs-extra'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
-import * as Rx from '@/utils/rxjs'
+import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
 
-export const rxLibrary = socket.rxSocket.pipe<socket.EmbyEvent<LibraryChanged>>(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'LibraryChanged')
+export const rxLibrary = socket.rxSocket.pipe(
+	Rx.Op.filter(({ MessageType }) => MessageType == 'LibraryChanged'),
+	Rx.Op.map(({ Data }) => Data as LibraryChanged)
 )
 
 export const library = {

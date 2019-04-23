@@ -2,13 +2,13 @@ import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as media from '@/media/media'
-import * as mocks from '@/dev/mocks'
-import * as pAll from 'p-all'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 
 export async function syncPlaylists() {
-	let lists = (await trakt.client.get(`/lists/trending`)) as trakt.ResponseList[]
+	let lists = (await trakt.client.get(`/lists/trending`, {
+		memoize: process.DEVELOPMENT,
+	})) as trakt.ResponseList[]
 	let list = lists.map(v => v.list).find(v => v.ids.slug == 'rotten-tomatoes-best-of-2018')
 	list = list || lists[0].list
 	let results = (await trakt.client.get(

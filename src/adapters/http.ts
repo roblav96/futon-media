@@ -169,10 +169,10 @@ export class Http {
 		return this.request({ method: 'DELETE', ...config, url }).then(({ data }) => data)
 	}
 
-	private static mroot = path.dirname(pkgup.sync({ cwd: __dirname }).path)
+	private static mbase = path.dirname(pkgup.sync({ cwd: __dirname }).path)
 	private static mpath(config: Config) {
 		let hash = crypto.createHash('sha256').update(fastStringify(config))
-		return path.join(Http.mroot, `node_modules/.cache/http/${hash.digest('hex')}`)
+		return path.join(Http.mbase, `node_modules/.cache/memoize/http/${hash.digest('hex')}`)
 	}
 
 	private static merge(...configs: Config[]) {

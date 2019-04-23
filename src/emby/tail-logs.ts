@@ -1,25 +1,23 @@
 import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
-import * as mocks from '@/dev/mocks'
 import * as path from 'path'
 import * as qs from 'query-string'
-import * as Rx from '@/utils/rxjs'
-import * as utils from '@/utils/utils'
+import * as Rx from '@/shims/rxjs'
 import { Tail } from 'tail'
 
 export const rxTail = new Rx.Subject<string>()
-export const rxTailHttp = rxTail.pipe(
+
+export const rxHttpServer = rxTail.pipe(
 	Rx.Op.map(line => {
-		if (line.match(/Info HttpServer: HTTP [GP]/)) {
-			let match = (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
-			if (_.isString(match)) {
-				let { url, query } = qs.parseUrl(match)
-				// query = JSON.parse(JSON.stringify(query || {}))
-				return { url, query: query as Record<string, string> }
-			}
+		if (line.match(/Info HttpServer: HTTP [DGP]/)) {
+			return (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
 		}
 	}),
-	Rx.Op.filter(v => !!v)
+	Rx.Op.filter(v => _.isString(v)),
+	Rx.Op.map(match => {
+		let { url, query } = qs.parseUrl(match)
+		return { url, query: query as Record<string, string> }
+	})
 )
 
 process.nextTick(async () => {

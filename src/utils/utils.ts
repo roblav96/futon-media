@@ -3,21 +3,21 @@ import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
 import * as jslevenshtein from 'js-levenshtein'
 import * as path from 'path'
+import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
 import * as stripBom from 'strip-bom'
+import numbro, { INumbro } from '@/shims/numbro'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
 import stripAnsi from 'strip-ansi'
-import _numbro, { default as Numbro } from 'numbro'
-const numbro = require('numbro') as typeof _numbro
 
 dayjs.extend(relativeTime)
 dayjs.extend(customParseFormat)
 
-export function pTimeout<T = void>(duration: number, resolved?: T): Promise<T> {
-	return new Promise(r => setTimeout(r, duration)).then(() => resolved)
+export function pTimeout<T = void>(ms: number, value?: T): Promise<T> {
+	return pDelay(_.ceil(ms), { value })
 }
-export function pRandom(duration: number) {
-	return new Promise(r => setTimeout(r, _.round(_.random(duration / Math.PI, duration))))
+export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
+	return pDelay(_.ceil(_.random(ms / Math.PI, ms)), { value })
 }
 
 export function clean(value: string) {
@@ -110,7 +110,7 @@ export function compactNumber(value: number) {
 		average: true,
 		mantissa: 1,
 		optionalMantissa: true,
-	} as Numbro.Format)
+	} as INumbro.Format)
 	return numb.toUpperCase()
 }
 

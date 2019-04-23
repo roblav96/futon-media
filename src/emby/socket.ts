@@ -1,8 +1,8 @@
 import * as _ from 'lodash'
 import * as fastParse from 'fast-json-parse'
-import * as Rx from '@/utils/rxjs'
+import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
-import Sockette from '@/utils/sockette'
+import Sockette from '@/shims/sockette'
 
 export interface EmbyEvent<Data = any> {
 	Data: Data

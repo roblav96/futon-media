@@ -4,27 +4,35 @@ import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as media from '@/media/media'
 import * as path from 'path'
-import * as Rx from '@/utils/rxjs'
+import * as Rx from '@/shims/rxjs'
 import * as scraper from '@/scrapers/scraper'
 import * as tail from '@/emby/tail-logs'
 import * as trakt from '@/adapters/trakt'
 
-export const rxPlayback = tail.rxTailHttp.pipe(
-	Rx.Op.filter<PlaybackArgs>(({ url, query }) => {
-		let endings = ['PlaybackInfo', 'stream']
-		if (!endings.find(v => path.basename(url).startsWith(v))) return
-		let fixcase = {
-			audiostreamindex: 'AudioStreamIndex',
-			autoopenlivestream: 'AutoOpenLiveStream',
-			deviceid: 'DeviceId',
-			isplayback: 'IsPlayback',
-			maxstreamingbitrate: 'MaxStreamingBitrate',
-			mediasourceid: 'MediaSourceId',
-			starttimeticks: 'StartTimeTicks',
-			subtitlestreamindex: 'SubtitleStreamIndex',
-			userid: 'UserId',
-		}
-		query = _.mapKeys(query, (v, k) => fixcase[k] || k)
+export type PlaybackQuery = typeof PlaybackQuery
+const PlaybackQuery = {
+	AudioStreamIndex: '',
+	AutoOpenLiveStream: '',
+	DeviceId: '',
+	IsPlayback: '',
+	MaxStreamingBitrate: '',
+	MediaSourceId: '',
+	StartTimeTicks: '',
+	SubtitleStreamIndex: '',
+	UserId: '',
+}
+const FixPlaybackQuery = _.invert(_.mapValues(PlaybackQuery, (v, k) => k.toLowerCase()))
+
+export const rxPlayback = tail.rxHttpServer.pipe(
+	Rx.Op.filter(({ url }) => {
+		let basename = path.basename(url).toLowerCase()
+		let basenames = ['PlaybackInfo', 'stream', 'disc'].map(v => v.toLowerCase())
+		return _.isString(basenames.find(v => basename.includes(v)))
+	}),
+	Rx.Op.map(({ url, query }) => {
+		return { url, query: _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || k) as PlaybackQuery }
+	}),
+	Rx.Op.filter(({ url, query }) => {
 		console.log(`rxPlayback filter ->`, url, query)
 		if (!(query.UserId || query.DeviceId)) return
 		if (!query.MediaSourceId) return
@@ -34,8 +42,8 @@ export const rxPlayback = tail.rxTailHttp.pipe(
 )
 
 rxPlayback.subscribe(async ({ url, query }) => {
-	return
 	console.warn(`rxPlayback subscribe ->`, url, query)
+	return
 
 	let Session: emby.Session
 	try {
@@ -124,16 +132,3 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		Session && Session.message(error)
 	}
 })
-
-export type PlaybackArgs = { url: string; query: PlaybackQuery }
-export type PlaybackQuery = Partial<{
-	AudioStreamIndex: string
-	AutoOpenLiveStream: string
-	DeviceId: string
-	IsPlayback: string
-	MaxStreamingBitrate: string
-	MediaSourceId: string
-	StartTimeTicks: string
-	SubtitleStreamIndex: string
-	UserId: string
-}>

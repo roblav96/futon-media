@@ -2,6 +2,8 @@ import * as _ from 'lodash'
 import * as Fastify from 'fastify'
 import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
+import redis from '@/adapters/redis'
+import storage from '@/adapters/storage'
 
 export const fastify = Fastify({ logger: true })
 
@@ -20,7 +22,10 @@ fastify.get('/strm', async (request, reply) => {
 	)
 })
 
-process.nextTick(() => {
+process.nextTick(async () => {
+	let info = await redis.info()
+	console.log(`info ->`, info)
+
 	if (!process.env.EMBY_STRM_PORT) throw new Error(`!process.env.EMBY_STRM_PORT`)
 	fastify.listen(
 		_.parseInt(process.env.EMBY_STRM_PORT),

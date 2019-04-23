@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
-import * as Rx from '@/utils/rxjs'
+import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 
 export const rxSession = socket.rxSocket.pipe(
