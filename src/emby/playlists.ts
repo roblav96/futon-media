@@ -7,14 +7,22 @@ import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import * as pAll from 'p-all'
-import * as pQueue from 'p-queue'
-import { findBestMatch } from 'string-similarity'
+
+process.nextTick(() => {
+	if (process.DEVELOPMENT) {
+		// syncPlaylists()
+	}
+	if (!process.DEVELOPMENT) {
+		schedule.scheduleJob(`0 0 * * *`, syncPlaylists)
+	}
+})
 
 const LIMIT = process.DEVELOPMENT ? 10 : 25
 
 const STATIC_SCHEMAS = [
 	[`My Watchlist`, `/sync/watchlist/<%= type %>`, { query: { limit: 999 } }],
 	[`My Collection`, `/sync/collection/<%= type %>`, { query: { limit: 999 } }],
+	[`Recommendations`, `/recommendations/<%= type %>`],
 	[`Anticipated`, `/<%= type %>/anticipated`],
 	[`Popular`, `/<%= type %>/popular`],
 	[`Trending`, `/<%= type %>/trending`],
@@ -30,7 +38,6 @@ const STATIC_SCHEMAS = [
 	[`Most Collected Monthly`, `/<%= type %>/collected/monthly`],
 	[`Most Collected Yearly`, `/<%= type %>/collected/yearly`],
 	[`Most Collected All Time`, `/<%= type %>/collected/all`],
-	[`Recommendations`, `/recommendations/<%= type %>`],
 ] as [string, string, http.Config?][]
 
 export interface PlaylistSchema {
@@ -84,6 +91,7 @@ async function allSchemas() {
 
 export async function syncPlaylists() {
 	let schemas = await allSchemas()
+	if (process.DEVELOPMENT) schemas = utils.chunks(schemas, 10)[1]
 	let resolved = await pAll(
 		schemas.map(schema => async () => {
 			await utils.pRandom(5000)
@@ -98,21 +106,32 @@ export async function syncPlaylists() {
 				}
 				return new media.Item(v)
 			})
-			console.log(`items ->`, items)
+			for (let item of items) {
+				if (item.movie) {
+					let { file, url } = emby.library.strmFile(item)
+					await fs.outputFile(file, url)
+					continue
+				}
+				if (!item.show) throw new Error(`!item.show -> ${item}`)
+				await utils.pRandom(5000)
+				let seasons = (await trakt.client.get(
+					`/shows/${item.traktid}/seasons`
+				)) as trakt.Season[]
+				for (let season of seasons.filter(v => v.number > 0)) {
+					item.use({ season })
+					for (let i = 0; i < item.episodes; i++) {
+						item.use({ episode: { number: i + 1, season: season.number } })
+						let { file, url } = emby.library.strmFile(item)
+						console.log(`strmFile ->`, `\n▶`, file, `\n▶`, url)
+						await fs.outputFile(file, url)
+					}
+				}
+			}
 		}),
 		{ concurrency: 1 }
 	)
 	console.warn(`syncPlaylists resolved ->`, resolved)
 }
-
-process.nextTick(() => {
-	if (process.DEVELOPMENT) {
-		syncPlaylists()
-	}
-	if (!process.DEVELOPMENT) {
-		schedule.scheduleJob(`0 0 * * *`, syncPlaylists)
-	}
-})
 
 // let lists = (await trakt.client.get(`/lists/trending`, {
 // 	memoize: process.DEVELOPMENT,

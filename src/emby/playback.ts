@@ -8,6 +8,7 @@ import * as Rx from '@/shims/rxjs'
 import * as scraper from '@/scrapers/scraper'
 import * as tail from '@/emby/tail-logs'
 import * as trakt from '@/adapters/trakt'
+import * as Url from 'url-parse'
 
 export type PlaybackQuery = typeof PlaybackQuery
 const PlaybackQuery = {
@@ -33,7 +34,7 @@ export const rxPlayback = tail.rxHttpServer.pipe(
 		return { url, query: _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || k) as PlaybackQuery }
 	}),
 	Rx.Op.filter(({ url, query }) => {
-		console.log(`rxPlayback filter ->`, url, query)
+		// console.log(`rxHttpServer filter ->`, new Url(url).pathname, query)
 		if (!(query.UserId || query.DeviceId)) return
 		if (!query.MediaSourceId) return
 		if (query.IsPlayback == 'false') return
@@ -42,7 +43,8 @@ export const rxPlayback = tail.rxHttpServer.pipe(
 )
 
 rxPlayback.subscribe(async ({ url, query }) => {
-	return console.warn(`rxPlayback subscribe ->`, url, query)
+	return
+	console.log(`rxPlayback subscribe ->`, new Url(url).pathname, query)
 
 	let Session: emby.Session
 	try {

@@ -17,7 +17,7 @@ export class Eztv extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
-		if (this.item.category != 'show') {
+		if (!this.item.show) {
 			return []
 		}
 		let response = (await client.get('/get-torrents', {

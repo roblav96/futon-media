@@ -31,8 +31,9 @@ export function results(result: scraper.Result, item: media.Item) {
 		return console.log(`✖︎ name accuracy ->`, JSON.stringify(naccuracy), result.name)
 	}
 
+	let title = item.title + (item.E.t && ` ${item.E.t}`)
 	let skips = ['3d', 'cam', 'camrip', 'sample', 'trailer']
-	skips = utils.accuracy(item.titleExt, skips.join(' '))
+	skips = utils.accuracy(title, skips.join(' '))
 	let skipped = utils.accuracy(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {
 		let json = JSON.stringify(_.difference(skips, skipped))

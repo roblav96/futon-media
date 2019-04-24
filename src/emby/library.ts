@@ -33,25 +33,23 @@ export const library = {
 	strmFile(item: media.Item, quality = '' as emby.Quality) {
 		let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
 		file += `/${item.movie ? 'movies' : 'shows'}`
-		let year = item.main.year
 		let title = utils.toSlug(item.main.title, { toName: true })
 		if (item.movie) {
-			!year && (year = new Date(item.main.released).getFullYear())
-			title += ` (${year})`
+			title += ` (${item.year})`
 			file += `/${title}/${title}`
-		} else if (item.episode) {
-			!year && (year = new Date(item.main.first_aired).getFullYear())
-			file += `/${title} (${year})`
-			file += `/Season ${item.S.n}`
-			file += `/${title} - S${item.S.z}E${item.E.z}`
-			item.episode.title && (file += ` - ${item.episode.title}`)
+		} else if (item.show) {
+			file += `/${title} (${item.year})`
+			item.S.t && (file += `/${item.S.t}`)
+			file += `/s${item.S.z}e${item.E.z}`
 		} else {
 			throw new Error(`toStrm !item -> ${item.title}`)
 		}
 		quality && (file += ` - ${quality}`)
 		file += `.strm`
 		let url = `${emby.DOMAIN}:${emby.STRM_PORT}/strm`
-		url += `?${qs.stringify(item.full.ids)}`
+		let query = Object.assign({}, item.full.ids)
+		item.episode && Object.assign(query, { s: item.S.n, e: item.E.n })
+		url += `?${qs.stringify(query)}`
 		return { file, url }
 	},
 }

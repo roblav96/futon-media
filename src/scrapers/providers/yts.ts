@@ -18,7 +18,7 @@ export class Yts extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
-		if (this.item.category != 'movie') {
+		if (!this.item.movie) {
 			return []
 		}
 		let response = (await client.get('/list_movies.json', {

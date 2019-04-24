@@ -16,5 +16,5 @@ async function start() {
 }
 setTimeout(
 	() => start().catch(error => console.error(`start -> %O`, error)),
-	process.DEVELOPMENT && 1000 // wait for Debugger attached
+	process.DEVELOPMENT ? 1000 : 1 // wait for Debugger attached
 )

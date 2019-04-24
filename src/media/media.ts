@@ -1,9 +1,9 @@
 import * as _ from 'lodash'
-import * as memoize from 'mem'
-import * as trakt from '@/adapters/trakt'
-import * as tmdb from '@/adapters/tmdb'
-import * as utils from '@/utils/utils'
+import * as dayjs from 'dayjs'
 import * as Memoize from '@/utils/memoize'
+import * as tmdb from '@/adapters/tmdb'
+import * as trakt from '@/adapters/trakt'
+import * as utils from '@/utils/utils'
 
 export const TYPES = ['movie', 'show', 'season', 'episode', 'person'] as ContentType[]
 export const MAIN_TYPES = ['movie', 'show'] as MainContentType[]
@@ -34,35 +34,45 @@ export class Item {
 	get ids() {
 		return this.main.ids
 	}
-
-	get category() {
-		let category = this.type
-		this.movie && (category = 'movie')
-		this.show && (category = 'show')
-		return category
+	get traktid() {
+		let traktid = this.ids.trakt && this.ids.trakt.toString()
+		if (traktid) return traktid
+		if (_.has(this.ids, 'slug')) return this.ids.slug
+		if (_.has(this.ids, 'imdb')) return this.ids.imdb
+		return traktid
 	}
 
+	get year() {
+		let year = this.main.year || NaN
+		if (_.isFinite(year)) return year
+		if (_.has(this.movie, 'released')) return dayjs(this.movie.released).year()
+		if (_.has(this.show, 'first_aired')) return dayjs(this.show.first_aired).year()
+		if (_.has(this.season, 'first_aired')) return dayjs(this.season.first_aired).year()
+		return year
+	}
 	get title() {
 		let title = this.main.title
-		this.movie && (title += ` ${this.movie.year}`)
-		return title
-	}
-	get titleExt() {
-		let title = this.title
-		this.episode && (title += ` ${this.episode.title}`)
+		this.movie && this.year && (title += ` ${this.year}`)
 		return title
 	}
 
 	get S() {
-		let n = NaN
-		this.season && (n = this.season.number)
-		this.episode && (n = this.episode.season)
-		return { n, z: _.isFinite(n) ? utils.zeroSlug(n) : '' }
+		let S = { t: '', n: NaN, z: '' }
+		_.has(this.season, 'title') && (S.t = this.season.title)
+		_.has(this.season, 'number') && (S.n = this.season.number)
+		!_.isFinite(S.n) && _.has(this.episode, 'season') && (S.n = this.episode.season)
+		_.isFinite(S.n) && (S.z = utils.zeroSlug(S.n))
+		return S
 	}
 	get E() {
-		let n = NaN
-		this.episode && (n = this.episode.number)
-		return { n, z: _.isFinite(n) ? utils.zeroSlug(n) : '' }
+		let E = { t: '', n: NaN, z: '' }
+		_.has(this.episode, 'title') && (E.t = this.episode.title)
+		_.has(this.episode, 'number') && (E.n = this.episode.number)
+		_.isFinite(E.n) && (E.z = utils.zeroSlug(E.n))
+		return E
+	}
+	get episodes() {
+		return _.has(this.season, 'aired_episodes') ? this.season.aired_episodes : NaN
 	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {
@@ -71,8 +81,7 @@ export class Item {
 
 	use(result: PartialDeep<trakt.Result & tmdb.Result>) {
 		let picked = _.pick(result, TYPES)
-		if (_.size(picked) == 0) throw new Error(`!picked -> ${result}`)
-		_.defaultsDeep(this, picked)
+		_.merge(this, picked)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
 			let ikey = trakt.RESULT_ITEM[rkey]
 			if (ikey) this[ikey] = rvalue

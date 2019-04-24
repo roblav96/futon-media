@@ -1,18 +1,21 @@
 import * as EventEmitter3 from 'eventemitter3'
 import * as pEvent from 'p-event'
 
-export class Emitter<Events = EventEmitter3.Events> extends EventEmitter3<Events> {
+export default class Emitter<Names extends string = string, Data = any> extends EventEmitter3<
+	Names,
+	Data
+> {
 	get events() {
 		return this._events
 	}
 
-	hasListener(listener: EventEmitter3.Listener, context?: any, once?: boolean) {
+	hasListener(listener: EventEmitter3.Listener<Data>, context?: any, once?: boolean) {
 		let names = Object.keys(this.events)
 		let i: number,
 			len = names.length
 		for (i = 0; i < len; i++) {
 			let name = names[i]
-			let events = this.events[name] as EventEmitter3.Event[]
+			let events = this.events[name] as EventEmitter3.Event<Data>[]
 			if (!Array.isArray(events)) events = [events]
 			let ii: number,
 				lenn = events.length
@@ -36,7 +39,7 @@ export class Emitter<Events = EventEmitter3.Events> extends EventEmitter3<Events
 		return false
 	}
 
-	isListening<Name extends keyof Events>(name: Name, listener: Events[Name]) {
+	isListening<Name extends Names>(name: Name, listener: EventEmitter3.Listener<Data>) {
 		let listeners = this.listeners(name)
 		let i: number,
 			len = listeners.length
@@ -46,7 +49,11 @@ export class Emitter<Events = EventEmitter3.Events> extends EventEmitter3<Events
 		return false
 	}
 
-	offListener<Name extends keyof Events>(listener: Events[Name], context?: any, once?: boolean) {
+	offListener<Name extends Names>(
+		listener: EventEmitter3.Listener<Data>,
+		context?: any,
+		once?: boolean
+	) {
 		this.eventNames().forEach(name => {
 			this.listeners(name).forEach(fn => {
 				this.off(name, listener, context, once)
@@ -55,19 +62,18 @@ export class Emitter<Events = EventEmitter3.Events> extends EventEmitter3<Events
 		return this
 	}
 
-	offContext<Name extends keyof Events>(name: Name, context: any, once?: boolean) {
+	offContext<Name extends Names>(name: Name, context: any, once?: boolean) {
 		this.listeners(name).forEach(fn => {
 			this.off(name, fn, context, once)
 		})
 		return this
 	}
 
-	offAll<Name extends keyof Events>(name?: Name) {
+	offAll<Name extends Names>(name?: Name) {
 		return this.removeAllListeners(name)
 	}
 
-	toPromise<Name extends keyof Events>(name: Name) {
-		// @ts-ignore
-		return pEvent(this, name, { multiArgs: true }) as Promise<Parameters<Events[Name]>>
+	toPromise<Name extends Names>(name: Name) {
+		return pEvent(this, name, { multiArgs: true })
 	}
 }

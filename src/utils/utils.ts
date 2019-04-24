@@ -63,7 +63,7 @@ export function parseFloat(value: string) {
 }
 
 export function zeroSlug(value: number) {
-	return value && (value / 100).toFixed(2).slice(-2)
+	return _.isFinite(value) && (value / 100).toFixed(2).slice(-2)
 }
 
 export function toSlug(value: string, options = {} as SlugifyOptions & { toName?: boolean }) {
