@@ -6,15 +6,19 @@ import * as media from '@/media/media'
 import * as path from 'path'
 import * as Rx from '@/shims/rxjs'
 import * as scraper from '@/scrapers/scraper'
-import * as tail from '@/emby/tail-logs'
+import * as tail from '@/emby/tail'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 
 export type PlaybackQuery = typeof PlaybackQuery
 const PlaybackQuery = {
+	AllowAudioStreamCopy: '',
+	AllowVideoStreamCopy: '',
 	AudioStreamIndex: '',
 	AutoOpenLiveStream: '',
 	DeviceId: '',
+	EnableDirectPlay: '',
+	EnableDirectStream: '',
 	IsPlayback: '',
 	MaxStreamingBitrate: '',
 	MediaSourceId: '',
@@ -25,9 +29,9 @@ const PlaybackQuery = {
 const FixPlaybackQuery = _.invert(_.mapValues(PlaybackQuery, (v, k) => k.toLowerCase()))
 
 export const rxPlayback = tail.rxHttpServer.pipe(
-	Rx.Op.filter(({ url }) => {
+	Rx.Op.filter(({ url, query }) => {
 		let basename = path.basename(url).toLowerCase()
-		let basenames = ['PlaybackInfo', 'stream', 'disc'].map(v => v.toLowerCase())
+		let basenames = ['PlaybackInfo', 'stream'].map(v => v.toLowerCase())
 		return _.isString(basenames.find(v => basename.includes(v)))
 	}),
 	Rx.Op.map(({ url, query }) => {
@@ -36,7 +40,6 @@ export const rxPlayback = tail.rxHttpServer.pipe(
 	Rx.Op.filter(({ url, query }) => {
 		// console.log(`rxHttpServer filter ->`, new Url(url).pathname, query)
 		if (!(query.UserId || query.DeviceId)) return
-		if (!query.MediaSourceId) return
 		if (query.IsPlayback == 'false') return
 		return true
 	})

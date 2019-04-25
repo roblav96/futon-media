@@ -19,7 +19,7 @@ export const sessions = {
 		return sessions.primaries(Sessions).map(v => new Session(v))
 	},
 	primaries(Sessions: Session[]) {
-		return Sessions.filter(({ UserName }) => UserName && UserName != 'admin').sort((a, b) => {
+		return Sessions.filter(({ UserName }) => _.isString(UserName)).sort((a, b) => {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
 		})
 	},

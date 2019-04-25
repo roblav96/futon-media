@@ -11,8 +11,8 @@ async function start() {
 	await import('@/emby/playback')
 	await import('@/emby/playlists')
 	await import('@/emby/socket')
-	await import('@/emby/strm-files')
-	await import('@/emby/tail-logs')
+	await import('@/emby/strm')
+	await import('@/emby/tail')
 }
 setTimeout(
 	() => start().catch(error => console.error(`start -> %O`, error)),
