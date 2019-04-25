@@ -47,7 +47,7 @@ export const library = {
 		quality && (file += ` - ${quality}`)
 		file += `.strm`
 		let url = `${emby.DOMAIN}:${emby.STRM_PORT}/strm`
-		let query = Object.assign({}, item.full.ids)
+		let query = Object.assign({ type: item.type }, item.ids)
 		item.episode && Object.assign(query, { s: item.S.n, e: item.E.n })
 		url += `?${qs.stringify(query)}`
 		return { file, url }

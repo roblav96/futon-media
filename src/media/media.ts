@@ -19,9 +19,6 @@ export class Item {
 	episode: trakt.Episode & tmdb.Episode
 	person: trakt.Person & tmdb.Person
 
-	get type() {
-		return _.findLast(TYPES, type => !!this[type])
-	}
 	get full() {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
 	}
@@ -31,15 +28,18 @@ export class Item {
 		this.show && (main = this.show as any)
 		return main
 	}
+	get type() {
+		return MAIN_TYPES.find(type => !!this[type])
+	}
 	get ids() {
 		return this.main.ids
 	}
-	get traktid() {
-		let traktid = this.ids.trakt && this.ids.trakt.toString()
-		if (traktid) return traktid
+	get traktId() {
+		let traktId = this.ids.trakt && this.ids.trakt.toString()
+		if (traktId) return traktId
 		if (_.has(this.ids, 'slug')) return this.ids.slug
 		if (_.has(this.ids, 'imdb')) return this.ids.imdb
-		return traktid
+		return traktId
 	}
 
 	get year() {

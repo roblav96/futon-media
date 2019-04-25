@@ -35,11 +35,12 @@ export const rxPlayback = tail.rxHttpServer.pipe(
 		return _.isString(basenames.find(v => basename.includes(v)))
 	}),
 	Rx.Op.map(({ url, query }) => {
-		return { url, query: _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || k) as PlaybackQuery }
+		query = _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || _.upperFirst(k))
+		return { url, query: query as PlaybackQuery }
 	}),
 	Rx.Op.filter(({ url, query }) => {
 		// console.log(`rxHttpServer filter ->`, new Url(url).pathname, query)
-		if (!(query.UserId || query.DeviceId)) return
+		if (!query.UserId && !query.DeviceId) return
 		if (query.IsPlayback == 'false') return
 		return true
 	})

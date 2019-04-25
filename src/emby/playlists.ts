@@ -92,7 +92,7 @@ async function allSchemas() {
 export async function syncPlaylists() {
 	let schemas = await allSchemas()
 	if (process.DEVELOPMENT) schemas = utils.chunks(schemas, 10)[1]
-	let resolved = await pAll(
+	await pAll(
 		schemas.map(schema => async () => {
 			await utils.pRandom(5000)
 			_.defaultsDeep(schema, {
@@ -115,7 +115,7 @@ export async function syncPlaylists() {
 				if (!item.show) throw new Error(`!item.show -> ${item}`)
 				await utils.pRandom(5000)
 				let seasons = (await trakt.client.get(
-					`/shows/${item.traktid}/seasons`
+					`/shows/${item.traktId}/seasons`
 				)) as trakt.Season[]
 				for (let season of seasons.filter(v => v.number > 0)) {
 					item.use({ season })
@@ -130,7 +130,6 @@ export async function syncPlaylists() {
 		}),
 		{ concurrency: 1 }
 	)
-	console.warn(`syncPlaylists resolved ->`, resolved)
 }
 
 // let lists = (await trakt.client.get(`/lists/trending`, {
