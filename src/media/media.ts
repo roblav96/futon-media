@@ -35,8 +35,8 @@ export class Item {
 		return this.main.ids
 	}
 	get traktId() {
-		let traktId = this.ids.trakt && this.ids.trakt.toString()
-		if (traktId) return traktId
+		let traktId = ''
+		if (_.has(this.ids, 'trakt')) return this.ids.trakt.toString()
 		if (_.has(this.ids, 'slug')) return this.ids.slug
 		if (_.has(this.ids, 'imdb')) return this.ids.imdb
 		return traktId

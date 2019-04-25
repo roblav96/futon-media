@@ -1,5 +1,4 @@
 import * as EventEmitter3 from 'eventemitter3'
-import * as pEvent from 'p-event'
 
 export default class Emitter<Names extends string = string, Data = any> extends EventEmitter3<
 	Names,
@@ -74,6 +73,6 @@ export default class Emitter<Names extends string = string, Data = any> extends 
 	}
 
 	toPromise<Name extends Names>(name: Name) {
-		return pEvent(this, name, { multiArgs: true })
+		return new Promise<Data>(r => this.once(name, r))
 	}
 }

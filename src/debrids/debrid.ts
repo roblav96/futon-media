@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as media from '@/media/media'
 import * as pForever from 'p-forever'
 import * as torrent from '@/scrapers/torrent'
+import ffprobe from '@/adapters/ffprobe'
 import { premiumize } from '@/debrids/premiumize'
 import { realdebrid } from '@/debrids/realdebrid'
 

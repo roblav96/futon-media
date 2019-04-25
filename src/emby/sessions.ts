@@ -3,10 +3,12 @@ import * as emby from '@/emby/emby'
 import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 
-export const rxSession = socket.rxSocket.pipe(
+export const rxSessions = socket.rxSocket.pipe(
 	Rx.Op.filter(({ MessageType }) => MessageType == 'Sessions'),
-	Rx.Op.map(({ Data }) => new Session(sessions.primaries(Data)[0]))
+	Rx.Op.map(({ Data }) => sessions.primaries(Data).map(v => new Session(v)))
 )
+export const rxSession = new Rx.BehaviorSubject<Session>(null)
+rxSessions.subscribe(v => rxSession.next(v[0]))
 
 export const rxUserUpdated = socket.rxSocket.pipe(
 	Rx.Op.filter(({ MessageType }) => MessageType == 'UserUpdated'),
@@ -34,6 +36,10 @@ export class Session {
 		_.defaults(this, Session)
 	}
 
+	async Device() {
+		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
+	}
+
 	async User() {
 		return (await emby.client.get(`/Users/${this.UserId}`)) as User
 	}
@@ -59,9 +65,24 @@ export interface Session {
 	ApplicationVersion: string
 	Capabilities: {
 		DeviceProfile: {
-			CodecProfiles: Function[]
+			CodecProfiles: {
+				ApplyConditions: any[]
+				Codec: string
+				Conditions: {
+					Condition: any
+					IsRequired: any
+					Property: any
+					Value: any
+				}[]
+				Type: string
+			}[]
 			ContainerProfiles: any[]
-			DirectPlayProfiles: Function[]
+			DirectPlayProfiles: {
+				AudioCodec: string
+				Container: string
+				Type: string
+				VideoCodec: string
+			}[]
 			EnableAlbumArtInDidl: boolean
 			EnableMSMediaReceiverRegistrar: boolean
 			EnableSingleAlbumArtLimit: boolean
@@ -75,11 +96,33 @@ export interface Session {
 			MusicStreamingTranscodingBitrate: number
 			RequiresPlainFolders: boolean
 			RequiresPlainVideoItems: boolean
-			ResponseProfiles: any[]
-			SubtitleProfiles: Function[]
+			ResponseProfiles: {
+				Conditions: any[]
+				Container: string
+				MimeType: string
+				Type: string
+			}[]
+			SubtitleProfiles: {
+				Format: string
+				Method: string
+			}[]
 			SupportedMediaTypes: string
 			TimelineOffsetSeconds: number
-			TranscodingProfiles: Function[]
+			TranscodingProfiles: {
+				AudioCodec: string
+				BreakOnNonKeyFrames: boolean
+				Container: string
+				Context: string
+				CopyTimestamps: boolean
+				EnableMpegtsM2TsMode: boolean
+				EstimateContentLength: boolean
+				MaxAudioChannels: string
+				MinSegments: number
+				Protocol: string
+				SegmentLength: number
+				TranscodeSeekInfo: string
+				Type: string
+			}[]
 			XmlRootAttributes: any[]
 		}
 		IconUrl: string
@@ -225,4 +268,15 @@ export interface User {
 		RemoteClientBitrateLimit: number
 	}
 	ServerId: string
+}
+
+export interface Device {
+	AppName: string
+	AppVersion: string
+	DateLastActivity: string
+	IconUrl: string
+	Id: string
+	LastUserId: string
+	LastUserName: string
+	Name: string
 }

@@ -8,7 +8,6 @@ import '@/dev/devtools'
 // use dynamic imports to avoid circular null references
 async function start() {
 	await import('@/emby/emby')
-	await import('@/emby/playback')
 	await import('@/emby/playlists')
 	await import('@/emby/socket')
 	await import('@/emby/strm')

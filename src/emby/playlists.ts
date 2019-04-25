@@ -64,7 +64,6 @@ async function allSchemas() {
 			await utils.pRandom(1000)
 			let lresponse = (await trakt.client.get(`/lists/${ltype}`, {
 				query: { limit: LIMIT, extended: '' },
-				// memoize: process.DEVELOPMENT,
 			})) as trakt.ResponseList[]
 			return lresponse.map(v => v.list)
 		})
@@ -72,7 +71,6 @@ async function allSchemas() {
 
 	let likedlists = (await trakt.client.get(`/users/likes/lists`, {
 		query: { limit: 999, extended: '' },
-		// memoize: process.DEVELOPMENT,
 	})) as trakt.ResponseList[]
 	lists.push(...likedlists.map(v => v.list))
 
@@ -91,10 +89,12 @@ async function allSchemas() {
 
 export async function syncPlaylists() {
 	let schemas = await allSchemas()
-	if (process.DEVELOPMENT) schemas = utils.chunks(schemas, 10)[1]
+	if (process.DEVELOPMENT) schemas.splice(2)
+	let traktIds = [] as string[]
 	await pAll(
 		schemas.map(schema => async () => {
-			await utils.pRandom(5000)
+			await utils.pRandom(1000)
+			process.DEVELOPMENT && console.log(`schema ->`, schema.url)
 			_.defaultsDeep(schema, {
 				config: { query: { limit: LIMIT, extended: '' } } as http.Config,
 			})
@@ -107,13 +107,17 @@ export async function syncPlaylists() {
 				return new media.Item(v)
 			})
 			for (let item of items) {
+				if (traktIds.includes(item.traktId)) {
+					continue
+				}
 				if (item.movie) {
 					let { file, url } = emby.library.strmFile(item)
 					await fs.outputFile(file, url)
+					traktIds.push(item.traktId)
 					continue
 				}
 				if (!item.show) throw new Error(`!item.show -> ${item}`)
-				await utils.pRandom(5000)
+				await utils.pRandom(1000)
 				let seasons = (await trakt.client.get(
 					`/shows/${item.traktId}/seasons`
 				)) as trakt.Season[]
@@ -122,30 +126,15 @@ export async function syncPlaylists() {
 					for (let i = 0; i < item.episodes; i++) {
 						item.use({ episode: { number: i + 1, season: season.number } })
 						let { file, url } = emby.library.strmFile(item)
-						console.log(`strmFile ->`, `\n▶`, file, `\n▶`, url)
+						// console.log(`strmFile ->`, `\n▶`, file, `\n▶`, url)
 						await fs.outputFile(file, url)
 					}
 				}
+				traktIds.push(item.traktId)
 			}
 		}),
 		{ concurrency: 1 }
 	)
+	await emby.library.refresh()
+	console.warn(`syncPlaylists -> DONE`)
 }
-
-// let lists = (await trakt.client.get(`/lists/trending`, {
-// 	memoize: process.DEVELOPMENT,
-// })) as trakt.ResponseList[]
-// let list = lists.map(v => v.list).find(v => v.ids.slug == 'rotten-tomatoes-best-of-2018')
-// list = list || lists[0].list
-// let results = (await trakt.client.get(
-// 	`/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
-// 	{ memoize: process.DEVELOPMENT }
-// )) as trakt.Result[]
-// results.splice(10)
-// for (let result of results) {
-// 	let item = new media.Item(result)
-// 	let { file, url } = emby.library.strmFile(item)
-// 	await fs.outputFile(file, url)
-// }
-// await emby.library.refresh()
-// console.log(`syncPlaylists -> DONE`)

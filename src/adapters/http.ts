@@ -126,22 +126,22 @@ export class Http {
 			// options.memoize && console.warn(`!memoized ->`, min.url)
 			response = await httpie
 				.send(options.method, options.url, options as any)
-				.catch(error => error)
+				.catch(error => {
+					if (_.isFinite(error.statusCode)) {
+						if (!_.isString(error.statusMessage)) {
+							let message = errors[error.statusCode]
+							error.statusMessage = message ? message.name : 'ok'
+						}
+						error = new HTTPError(options, error)
+					}
+					return Promise.reject(error)
+				})
 			if (options.memoize && !_.isError(response)) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
 				await fs.outputFile(mpath, fastStringify(_.omit(response, omits)))
 			}
 		}
 		options.profile && console.log(`<-`, `${Date.now() - t}ms`, min.url, min.query)
-
-		if (!response.statusMessage) {
-			let message = errors[response.statusCode]
-			response.statusMessage = message ? message.name : 'ok'
-		}
-
-		if (_.isError(response)) {
-			throw new HTTPError(options, response)
-		}
 
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
