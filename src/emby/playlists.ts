@@ -111,8 +111,10 @@ export async function syncPlaylists() {
 					continue
 				}
 				if (item.movie) {
-					let { file, url } = emby.library.strmFile(item)
-					await fs.outputFile(file, url)
+					for (let quality of ['1080p', '4K'] as emby.Quality[]) {
+						let { file, url } = emby.library.strmFile(item, quality)
+						await fs.outputFile(file, url)
+					}
 					traktIds.push(item.traktId)
 					continue
 				}
@@ -123,11 +125,12 @@ export async function syncPlaylists() {
 				)) as trakt.Season[]
 				for (let season of seasons.filter(v => v.number > 0)) {
 					item.use({ season })
-					for (let i = 0; i < item.episodes; i++) {
+					for (let i = 0; i < item.S.e; i++) {
 						item.use({ episode: { number: i + 1, season: season.number } })
-						let { file, url } = emby.library.strmFile(item)
-						// console.log(`strmFile ->`, `\n▶`, file, `\n▶`, url)
-						await fs.outputFile(file, url)
+						for (let quality of ['1080p', '4K'] as emby.Quality[]) {
+							let { file, url } = emby.library.strmFile(item, quality)
+							await fs.outputFile(file, url)
+						}
 					}
 				}
 				traktIds.push(item.traktId)

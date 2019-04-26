@@ -34,7 +34,7 @@ async function syncToken() {
 		query: { get_token: 'get_token' },
 	})
 	client.config.query['token'] = token
-	await utils.pTimeout(1000)
+	await utils.pTimeout(500)
 	return token
 }
 
@@ -64,7 +64,6 @@ export class Rarbg extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(slug)),
-			verbose: true,
 			memoize: process.DEVELOPMENT,
 		})) as Response
 		return (response.torrent_results || []).map(v => {

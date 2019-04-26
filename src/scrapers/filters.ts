@@ -2,43 +2,41 @@ import * as _ from 'lodash'
 import * as qs from 'query-string'
 import * as magneturi from 'magnet-uri'
 import * as media from '@/media/media'
-import * as trackers from '@/scrapers/trackers-list'
+import * as trackers from '@/scrapers/trackers'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 
 export function results(result: scraper.Result, item: media.Item) {
-	/** clean and check magnet URL */
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 	if (!_.isString(magnet.xt)) {
-		return console.log(`✖︎ !magnet.xt ->`, result)
+		return // console.log(`❌ !magnet.xt ->`, result)
 	}
 	if (magnet.xt.length != 49) {
-		return console.log(`✖︎ magnet.xt.length != 49 ->`, result)
+		return // console.log(`❌ magnet.xt.length != 49 ->`, result)
 	}
 
-	/** check and repair name then slugify */
 	result.name = result.name || magnet.dn
 	if (!result.name) {
-		return console.log(`✖︎ !name ->`, result)
+		return // console.log(`❌ !name ->`, result)
 	}
 	if (utils.isForeign(result.name)) {
-		return console.log(`✖︎ isForeign name ->`, result.name)
+		return // console.log(`❌ isForeign name ->`, result.name)
 	}
 	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
 	let naccuracy = utils.accuracy(result.name, item.title)
 	if (naccuracy.length > 0) {
-		return console.log(`✖︎ name accuracy ->`, JSON.stringify(naccuracy), result.name)
+		return // console.log(`❌ name accuracy ->`, JSON.stringify(naccuracy), result.name)
 	}
 
 	let title = item.title
 	item.E.t && (title += ` ${item.E.t}`)
-	let skips = ['3d', 'cam', 'camrip', 'sample', 'trailer']
+	let skips = ['3d', 'cam', 'camrip', 'hdcam', 'sample', 'trailer']
 	skips = utils.accuracy(title, skips.join(' '))
 	let skipped = utils.accuracy(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {
 		let json = JSON.stringify(_.difference(skips, skipped))
-		return console.log(`✖︎ skips accuracy ->`, json, result.name)
+		return // console.log(`❌ skips accuracy ->`, json, result.name)
 	}
 
 	if (item.movie) return true
@@ -46,22 +44,29 @@ export function results(result: scraper.Result, item: media.Item) {
 	let slug = ` ${utils.toSlug(result.name, { toName: true }).toLowerCase()} `
 	if (item.show) {
 		try {
-			if (regex.s01e01(item, slug)) return true
+			result.packSize = 1
+			if (regex.s01e01(item, slug)) {
+				result.packSize = 0
+				return true
+			}
 			if (regex.nthseason(item, slug)) return true
-			if (regex.seasons1to2(item, slug)) return true
+			if (regex.seasons1to2(item, slug)) {
+				result.packSize = regex.seasons1to2(item, slug)
+				return true
+			}
 			if (regex.season1(item, slug)) return true
 			if (regex.s01(item, slug)) return true
 		} catch (error) {
-			console.log(`✖︎ ${error.message} ->`, result.name)
+			// console.log(`❌ ${error.message} ->`, result.name)
 			return false
 		}
 	}
 
-	console.log(`✖︎ return false ->`, result.name)
+	// console.log(`❌ return false ->`, result.name)
 	return false
 }
 
-const regex = {
+export const regex = {
 	/** `s01e01` `season 1 episode 1` */
 	s01e01(item: media.Item, slug: string) {
 		let matches = [
@@ -92,7 +97,7 @@ const regex = {
 		for (let match of matches) {
 			let ints = _.uniq(_.filter(_.split(match, ' ').map(utils.parseInt), v => _.isFinite(v)))
 			if (item.S.n >= _.min(ints) && item.S.n <= _.max(ints)) {
-				return true
+				return _.max(ints) - _.min(ints)
 			}
 		}
 	},
@@ -106,4 +111,8 @@ const regex = {
 		let matches = slug.match(/\ss(eason)?\s?\d{1,2}\s?/gi) || []
 		if (matches.map(v => utils.parseInt(v.trim())).includes(item.S.n)) return true
 	},
+}
+
+if (process.env.NODE_ENV == 'development') {
+	process.nextTick(async () => _.defaults(global, await import('@/scrapers/filters')))
 }

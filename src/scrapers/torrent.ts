@@ -1,15 +1,15 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
-import * as qs from 'query-string'
+import * as debrids from '@/debrids/debrids'
 import * as magneturi from 'magnet-uri'
-import * as utils from '@/utils/utils'
+import * as qs from 'query-string'
 import * as scraper from '@/scrapers/scraper'
-import * as trackers from '@/scrapers/trackers-list'
-import * as debrid from '@/debrids/debrid'
+import * as trackers from '@/scrapers/trackers'
+import * as utils from '@/utils/utils'
 
 export interface Torrent extends scraper.Result {}
 export class Torrent {
-	cached = [] as debrid.Debrids[]
+	cached = [] as debrids.Debrids[]
 
 	get age() {
 		return dayjs(this.stamp).fromNow()
@@ -21,7 +21,7 @@ export class Torrent {
 		return utils.fromBytes(this.bytes)
 	}
 	get min() {
-		let min = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrid.Debrids, string>
+		let min = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrids.Debrids, string>
 		return { cached: this.cached.map(v => min[v]).join(' ') }
 	}
 	get hash() {
@@ -32,25 +32,29 @@ export class Torrent {
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 		magnet.xt = magnet.xt.toLowerCase()
 		magnet.dn = result.name
-		/** filter bad trackers and merge good trackers */
+
 		magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
 		magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
 		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD))
-		/** re-encode magnet URL */
+
 		this.magnet = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
 
 		_.defaults(this, result)
 	}
 
 	toJSON() {
-		return {
+		let json = ({
 			age: this.age,
 			cached: this.cached.join(', '),
+			hash: this.hash,
 			name: this.name,
 			providers: this.providers.join(', '),
-			slugs: this.slugs.join(', '),
 			seeders: this.seeders,
 			size: this.size,
-		}
+			slugs: this.slugs.join(', '),
+		} as any) as Torrent
+		_.isFinite(this.packSize) && (json.packSize = this.packSize)
+		utils.defineValue(json, 'magnet', this.magnet)
+		return json
 	}
 }

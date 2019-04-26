@@ -43,8 +43,8 @@ export class Item {
 	}
 
 	get year() {
-		let year = this.main.year || NaN
-		if (_.isFinite(year)) return year
+		let year = NaN
+		if (_.isFinite(this.main.year)) return this.main.year
 		if (_.has(this.movie, 'released')) return dayjs(this.movie.released).year()
 		if (_.has(this.show, 'first_aired')) return dayjs(this.show.first_aired).year()
 		if (_.has(this.season, 'first_aired')) return dayjs(this.season.first_aired).year()
@@ -57,7 +57,9 @@ export class Item {
 	}
 
 	get S() {
-		let S = { t: '', n: NaN, z: '' }
+		let S = { e: NaN, t: '', n: NaN, z: '' }
+		_.has(this.season, 'aired_episodes') && (S.e = this.season.aired_episodes)
+		_.has(this.season, 'episode_count') && (S.e = this.season.episode_count)
 		_.has(this.season, 'title') && (S.t = this.season.title)
 		_.has(this.season, 'number') && (S.n = this.season.number)
 		!_.isFinite(S.n) && _.has(this.episode, 'season') && (S.n = this.episode.season)
@@ -70,9 +72,6 @@ export class Item {
 		_.has(this.episode, 'number') && (E.n = this.episode.number)
 		_.isFinite(E.n) && (E.z = utils.zeroSlug(E.n))
 		return E
-	}
-	get episodes() {
-		return _.has(this.season, 'aired_episodes') ? this.season.aired_episodes : NaN
 	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {

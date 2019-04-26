@@ -707,3 +707,7 @@ export const LINE = `2019-04-19 12:00:34.503 Info HttpServer: HTTP POST http://1
 export const LINK = `https://38.rdeb.io/d/JHXH54RZIXZ6O/Mission.Impossible.Fallout.2018.1080p.WEB-DL.DD5.1.H264-FGT.mkv`
 
 export const TRAKT_LIST_ITEMS_URL = `/users/lish408/lists/4440958/items`
+
+if (process.env.NODE_ENV == 'development') {
+	process.nextTick(async () => _.defaults(global, await import('@/dev/mocks')))
+}

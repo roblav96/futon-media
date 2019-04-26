@@ -14,13 +14,13 @@ export const client = new http.Http({
 	},
 })
 
-export class Premiumize implements debrid.Debrid {
+export class Premiumize extends debrid.Debrid {
 	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 40)
+		let chunks = _.chunk(hashes, 40)
 		return (await pAll(
 			chunks.map((chunk, index) => async () => {
-				await utils.pRandom(500)
+				await utils.pRandom(1000)
 				let response = (await client.post(`/cache/check`, {
 					query: { items: chunk },
 					memoize: process.DEVELOPMENT,
@@ -34,13 +34,11 @@ export class Premiumize implements debrid.Debrid {
 	async files(magnet: string) {
 		return []
 	}
-	
-	async link(magnet: string, index: number) {
+
+	async link(magnet: string, file: debrid.File) {
 		return ''
 	}
-
 }
-export const premiumize = new Premiumize()
 
 interface CacheResponse {
 	filename: string[]

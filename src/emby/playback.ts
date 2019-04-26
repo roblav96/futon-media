@@ -1,5 +1,5 @@
 import * as _ from 'lodash'
-import * as debrid from '@/debrids/debrid'
+import * as debrids from '@/debrids/debrids'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as media from '@/media/media'
@@ -96,7 +96,7 @@ rxPlayback.subscribe(async ({ url, query }) => {
 		torrents.sort((a, b) => b[sortby] - a[sortby])
 		// console.log(`torrents ->`, torrents.map(v => v.toJSON()))
 
-		let link = await debrid.getLink(torrents, item)
+		let link = await debrids.getLink(torrents, item)
 		if (!link) throw new Error(`!link`)
 		await fs.outputFile(Eitem.Path, link)
 		await Session.message(`👍 Starting playback`)

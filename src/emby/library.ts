@@ -30,7 +30,7 @@ export const library = {
 	async refresh() {
 		await emby.client.post(`/Library/Refresh`)
 	},
-	strmFile(item: media.Item) {
+	strmFile(item: media.Item, quality = '' as emby.Quality) {
 		let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
 		file += `/${item.type}s`
 		let title = item.main.title
@@ -40,7 +40,7 @@ export const library = {
 		} else if (_.isFinite(item.E.n)) {
 			file += `/${title}`
 			file += `/Season ${item.S.n}`
-			file += `/${item.main.title} S${item.S.z}E${item.E.z}`
+			file += `/${item.main.title} - S${item.S.z}E${item.E.z}`
 		} else {
 			throw new Error(`toStrm !item -> ${item.title}`)
 		}
@@ -51,38 +51,16 @@ export const library = {
 			title: utils.toSlug(item.main.title, { separator: '-' }),
 		}
 		item.episode && Object.assign(query, { s: item.S.n, e: item.E.n })
+		if (quality) {
+			file += ` - ${quality}`
+			Object.assign(query, { quality })
+		}
 		url += `?${qs.stringify(query)}`
 		return { file: path.normalize(`${file}.strm`), url }
 	},
 }
 
-export async function addLinks(item: media.Item, links: string[]) {
-	// let base = path.join(process.cwd(), 'dist')
-	let base = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
-
-	let dir = item.movie ? 'movies' : 'shows'
-	if (!(await fs.pathExists(path.join(base, dir)))) {
-		throw new Error(`!fs.pathExists(${path.join(base, dir)})`)
-	}
-	dir += `/${item.ids.slug}`
-	item.season && (dir += `/s${item.S.z}`)
-	let cwd = path.join(base, dir)
-	await fs.ensureDir(cwd)
-
-	await pAll(
-		links.map((link, index) => () => {
-			let name = `${item.ids.slug}`
-			if (item.season) {
-				name += `-s${item.S.z}`
-				name += `e${utils.zeroSlug(index + 1)}`
-			}
-			name += `.strm`
-			return fs.outputFile(path.join(cwd, name), link)
-		})
-	)
-}
-
-export type Quality = '480p' | '720p' | '1080p' | '4K'
+export type Quality = '1080p' | '4K'
 
 export interface Item {
 	BackdropImageTags: string[]

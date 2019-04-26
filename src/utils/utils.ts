@@ -13,6 +13,10 @@ import stripAnsi from 'strip-ansi'
 dayjs.extend(relativeTime)
 dayjs.extend(customParseFormat)
 
+export function duration(amount: number, unit: dayjs.OpUnitType) {
+	return dayjs(0).add(amount, unit).valueOf()
+}
+
 export function pTimeout<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(ms), { value })
 }

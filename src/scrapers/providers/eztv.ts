@@ -1,38 +1,40 @@
 import * as _ from 'lodash'
-import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
+import * as pForever from 'p-forever'
 import * as scraper from '@/scrapers/scraper'
+import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://eztv.io/api',
-	query: {
-		limit: 100,
-		page: 0,
-	} as Partial<Query>,
+	query: { limit: 100, page: 1 } as Partial<Query>,
 })
 
 export class Eztv extends scraper.Scraper {
 	slugs() {
-		return [this.item.ids.imdb]
+		return [this.item.ids.imdb.replace(/\D/g, '')]
 	}
 
-	async getResults(slug: string, sort: string) {
+	async getResults(imdb_id: string) {
 		if (!this.item.show) {
 			return []
 		}
-		let response = (await client.get('/get-torrents', {
-			query: { imdb_id: slug.replace(/\D/g, '') } as Partial<Query>,
-			verbose: true,
-			memoize: process.env.NODE_ENV == 'development',
-		})) as Response
-		let results = (response.torrents || []).filter(v => {
-			let { s, e } = { s: _.parseInt(v.season), e: _.parseInt(v.episode) }
-			if (this.item.episode) {
-				return this.item.S.n == s && this.item.E.n == e
-			} else if (this.item.season) {
-				return this.item.S.n == s
-			} else return true
-		})
+		let results = [] as Result[]
+		await pForever(async page => {
+			page > 1 && (await utils.pRandom(1000))
+			let response = (await client.get('/get-torrents', {
+				query: { imdb_id, page } as Partial<Query>,
+				memoize: process.DEVELOPMENT,
+			})) as Response
+			let torrents = (response.torrents || []).filter(v => {
+				if (_.isFinite(this.item.E.n) && v.season && v.episode) {
+					return this.item.S.n == (v.season as any) && this.item.E.n == (v.episode as any)
+				} else if (_.isFinite(this.item.S.n) && v.season) {
+					return this.item.S.n == (v.season as any)
+				} else return true
+			})
+			results.push(...torrents)
+			return response.torrents_count > page * 100 ? ++page : pForever.end
+		}, 1)
 		return results.map(v => {
 			return {
 				bytes: _.parseInt(v.size_bytes),

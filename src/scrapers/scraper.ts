@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
-import * as debrid from '@/debrids/debrid'
+import * as debrids from '@/debrids/debrids'
 import * as filters from '@/scrapers/filters'
 import * as http from '@/adapters/http'
 import * as magneturi from 'magnet-uri'
@@ -9,23 +9,22 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as torrent from '@/scrapers/torrent'
-import * as trackers from '@/scrapers/trackers-list'
 import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	// console.log(`results ->`, results.splice(0).map(scraper.toJSON))
 	// (await import('@/scrapers/providers/btbit')).BtBit, // (await import('@/scrapers/providers/snowfl')).Snowfl,
 	let providers = [
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
+		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
@@ -44,7 +43,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		return true
 	})
 
-	let cached = await debrid.getCached(torrents.map(v => v.hash))
+	let cached = await debrids.getCached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cached[i]))
 
 	return torrents
@@ -112,6 +111,7 @@ export interface Result {
 	bytes: number
 	magnet: string
 	name: string
+	packSize: number
 	providers: string[]
 	seeders: number
 	slugs: string[]
