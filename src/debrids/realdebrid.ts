@@ -14,7 +14,7 @@ export const client = new http.Http({
 })
 
 export class RealDebrid extends debrid.Debrid {
-	async cached(hashes: string[]) {
+	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
 		let cached = hashes.map(v => false)
@@ -34,15 +34,14 @@ export class RealDebrid extends debrid.Debrid {
 		return cached
 	}
 
-	async files(magnet: string) {
-		let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
+	async sync() {
 		let response = (await client.get(
-			`/torrents/instantAvailability/${infoHash}`
+			`/torrents/instantAvailability/${this.infoHash}`
 		)) as CacheResponse
 		console.log(`files response ->`, response)
-		let rds = response[infoHash].rd as CacheFiles[]
+		let rds = response[this.infoHash].rd as CacheFiles[]
 		let cached = rds.sort((a, b) => _.size(b) - _.size(a))[0]
-		let files = Object.entries(cached).map(([id, file]) => {
+		this._files = Object.entries(cached).map(([id, file]) => {
 			return {
 				bytes: file.filesize,
 				id: _.parseInt(id),
@@ -50,28 +49,26 @@ export class RealDebrid extends debrid.Debrid {
 				path: `/${file.filename}`,
 			} as debrid.File
 		})
-		return files.sort((a, b) => a.id - b.id)
+		this._files.sort((a, b) => a.id - b.id)
+		return this.files
 	}
 
-	async link(magnet: string, file: debrid.File) {
-		let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
-		let files = await this.files(magnet)
-
+	async link(file: debrid.File) {
 		let items = (await client.get('/torrents')) as Item[]
-		let item = items.find(v => v.hash.toLowerCase() == infoHash.toLowerCase())
+		let item = items.find(v => v.hash.toLowerCase() == this.infoHash)
 
 		if (!item) {
 			let download = (await client.post('/torrents/addMagnet', {
-				form: { magnet },
+				form: { magnet: this.magnet },
 			})) as Download
 			await client.post(`/torrents/selectFiles/${download.id}`, {
-				form: { files: files.map(v => v.id).join() },
+				form: { files: this._files.map(v => v.id).join() },
 			})
 			item = (await client.get(`/torrents/info/${download.id}`)) as Item
 		}
 		if (item.links.length == 0) return
 
-		let index = files.findIndex(v => v.id == file.id)
+		let index = this._files.findIndex(v => v.id == file.id)
 		let unrestrict = (await client.post(`/unrestrict/link`, {
 			form: { link: item.links[index] },
 		})) as Unrestrict

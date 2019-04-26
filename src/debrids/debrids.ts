@@ -7,10 +7,7 @@ import ffprobe from '@/adapters/ffprobe'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = {
-	realdebrid: (new RealDebrid() as any) as debrid.Debrid,
-	premiumize: (new Premiumize() as any) as debrid.Debrid,
-}
+export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize }
 
 export async function getCached(hashes: string[]) {
 	let entries = Object.entries(debrids)
@@ -24,20 +21,22 @@ export async function getLink(torrents: torrent.Torrent[], item: media.Item) {
 	console.log(`getLink torrents ->`, torrents.map(v => v.toJSON()))
 	for (let torrent of torrents) {
 		console.log(`getLink torrent ->`, torrent.toJSON())
-		let debrid = debrids[torrent.cached[0]]
-		let files = debrid.toFiles(await debrid.files(torrent.magnet), torrent.name)
-		console.log(`files ->`, files)
+
+		let debrid = new debrids[torrent.cached[0]](torrent.magnet)
+		let files = await debrid.sync()
 		if (files.length == 0) {
 			console.warn(`getLink !files ->`, torrent.name)
 			continue
 		}
-		let index = 0
-		if (_.isFinite(item.E.n)) {
-			if (files.length == item.S.e) {
-				index = item.E.n - 1
-			}
-		}
-		let link = await debrid.link(torrent.magnet, files[index])
+
+		let title = item.title
+		item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
+		let levens = files.map(file => ({ file, leven: utils.leven(file.name, title) }))
+		levens.sort((a, b) => a.leven - b.leven)
+		console.log(`levens ->`, levens)
+		let file = levens[0].file
+
+		let link = await debrid.link(file)
 		if (link) {
 			link.startsWith('http:') && (link = link.replace('http:', 'https:'))
 			return link

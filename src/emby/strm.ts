@@ -40,7 +40,7 @@ async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery)
 		let episode = await trakt.client.get(`/${type}s/${traktId}/seasons/${s}/episodes/${e}`)
 		item.use({ type: 'episode', episode })
 	}
-	console.log(`item ->`, item)
+	// console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
 	torrents.sort((a, b) => b.bytes - a.bytes)

@@ -1,15 +1,23 @@
+import * as magneturi from 'magnet-uri'
 import * as path from 'path'
 import * as utils from '@/utils/utils'
 
 export abstract class Debrid {
-	abstract cached(hashes: string[]): Promise<boolean[]>
-	abstract files(magnet: string): Promise<File[]>
-	abstract link(magnet: string, file: File): Promise<string>
+	abstract sync(): Promise<File[]>
+	abstract link(file: File): Promise<string>
 
-	toFiles(files: File[], name: string) {
+	protected dn = ''
+	protected infoHash = ''
+	constructor(protected magnet: string) {
+		let { dn, infoHash } = magneturi.decode(magnet)
+		Object.assign(this, { dn, infoHash: infoHash.toLowerCase() })
+	}
+
+	protected _files = [] as File[]
+	get files() {
 		let skips = ['sample', 'trailer']
-		skips = utils.accuracy(name, skips.join(' '))
-		return files.filter(file => {
+		skips = utils.accuracy(this.dn, skips.join(' '))
+		return this._files.filter(file => {
 			if (file.name.toLowerCase().startsWith(`rarbg.com`)) return false
 			if (!utils.isVideo(file.path)) return false
 			let accuracy = utils.accuracy(file.name, skips.join(' '))
@@ -21,6 +29,7 @@ export abstract class Debrid {
 export interface File {
 	bytes: number
 	id: number
+	link: string
 	name: string
 	path: string
 }

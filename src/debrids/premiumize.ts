@@ -3,6 +3,7 @@ import * as debrid from '@/debrids/debrid'
 import * as http from '@/adapters/http'
 import * as magneturi from 'magnet-uri'
 import * as pAll from 'p-all'
+import * as path from 'path'
 import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
@@ -15,7 +16,7 @@ export const client = new http.Http({
 })
 
 export class Premiumize extends debrid.Debrid {
-	async cached(hashes: string[]) {
+	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
 		let cached = hashes.map(v => false)
@@ -34,25 +35,27 @@ export class Premiumize extends debrid.Debrid {
 			{ concurrency: 3 }
 		)
 		return cached
-		// let chunks = _.chunk(hashes, 40)
-		// return (await pAll(
-		// 	chunks.map((chunk, index) => async () => {
-		// 		await utils.pRandom(1000)
-		// 		let response = (await client.post(`/cache/check`, {
-		// 			query: { items: chunk },
-		// 		})) as CacheResponse
-		// 		return chunk.map((v, i) => response.response[i])
-		// 	}),
-		// 	{ concurrency: 3 }
-		// )).flat()
 	}
 
-	async files(magnet: string) {
-		return []
+	async sync() {
+		let content = (await client.post(`/transfer/directdl`, {
+			query: { src: this.magnet },
+		})).content as Item[]
+		this._files = (content || []).map(file => {
+			let name = path.basename(file.path)
+			return {
+				bytes: _.parseInt(file.size),
+				link: file.link,
+				name: name.slice(0, name.lastIndexOf('.')),
+				path: `/${file.path}`,
+			} as debrid.File
+		})
+		this._files.sort((a, b) => utils.parseInt(a.name) - utils.parseInt(b.name))
+		return this.files
 	}
 
-	async link(magnet: string, file: debrid.File) {
-		return ''
+	async link(file: debrid.File) {
+		return file.link
 	}
 }
 
@@ -88,7 +91,8 @@ interface Item {
 	id: string
 	link: string
 	name: string
-	size: number
+	path: string
+	size: string
 	stream_link: string
 	transcode_status: string
 	type: string
