@@ -44,18 +44,18 @@ export function results(result: scraper.Result, item: media.Item) {
 	let slug = ` ${utils.toSlug(result.name, { toName: true }).toLowerCase()} `
 	if (item.show) {
 		try {
-			result.packSize = 1
+			result.packs = 1
 			if (regex.s01e01(item, slug)) {
-				result.packSize = 0
+				result.packs = 0
 				return true
 			}
 			if (regex.nthseason(item, slug)) return true
-			if (regex.seasons1to2(item, slug)) {
-				result.packSize = regex.seasons1to2(item, slug)
+			if (regex.seasonone(item, slug)) return true
+			let seasons1to2 = regex.seasons1to2(item, slug)
+			if (_.isFinite(seasons1to2)) {
+				result.packs = seasons1to2
 				return true
 			}
-			if (regex.season1(item, slug)) return true
-			if (regex.s01(item, slug)) return true
 		} catch (error) {
 			// console.log(`❌ ${error.message} ->`, result.name)
 			return false
@@ -73,8 +73,9 @@ export const regex = {
 			slug.match(/\ss\d{1,2}e\d{1,2}\s/gi) || [],
 			slug.match(/\ss(eason)?\s?\d{1,2}\se(pisode)?\s?\d{1,2}\s/gi) || [],
 		].flat()
+		matches = (matches || []).map(v => v.trim())
 		matches = matches.map(v => {
-			let [s, e] = _.split(v.trim(), 'e').map(utils.parseInt)
+			let [s, e] = _.split(v, 'e').map(utils.parseInt)
 			return `s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 		})
 		if (matches.length == 0) return
@@ -85,31 +86,37 @@ export const regex = {
 	},
 	/** `1st season` */
 	nthseason(item: media.Item, slug: string) {
-		let matches = slug.match(/\s\d{1,2}[a-z]{2}\sseason\s/gi) || ([] as string[])
-		let seasons = matches.map(v => utils.parseInt(v.trim()))
+		let matches = slug.match(/\s\d{1,2}[a-z]{2}\sseason\s/gi)
+		matches = (matches || []).map(v => v.trim())
+		let seasons = matches.map(v => utils.parseInt(v))
 		if (seasons.includes(item.S.n)) return true
+	},
+	/** `season one` */
+	seasonone(item: media.Item, slug: string) {
+		let nstrs = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+		let matches = slug.match(
+			/\ss(eason)?\s(one|two|three|four|five|six|seven|eight|nine|ten)\s/gi
+		)
+		matches = (matches || []).map(v => v.trim())
+		let nstr = matches.map(v => v.split(' ').pop())[0]
+		let index = nstrs.findIndex(v => v == nstr) + 1
+		if (item.S.n == index) return true
 	},
 	/** `seasons 1 - 2` */
 	seasons1to2(item: media.Item, slug: string) {
 		slug = slug.replace(/(through)|(and)|(to)/gi, ' ').replace(/\s+/g, ' ')
-		let matches = slug.match(/\ss(eason(s)?)?\s?\d{1,2}\s?s?(eason)?(\s?\d{1,2}\s)+/gi)
+		let matches = [
+			slug.match(/\s?s(eason(s)?)?\s?\d{1,2}\s?s?(eason)?(\s?\d{1,2}\s)+/gi) || [],
+			slug.match(/\s?s(eason)?\s?\d{1,2}\s/gi) || [],
+		].flat()
 		matches = (matches || []).map(v => v.trim())
-		for (let match of matches) {
-			let ints = _.uniq(_.filter(_.split(match, ' ').map(utils.parseInt), v => _.isFinite(v)))
-			if (item.S.n >= _.min(ints) && item.S.n <= _.max(ints)) {
-				return _.max(ints) - _.min(ints)
-			}
+		matches = matches.join(' ').split(' ')
+		// console.log(`[seasons1to2] ${slug} ->`, matches)
+		let ints = matches.map(utils.parseInt).filter(_.isFinite)
+		let { min, max } = { min: _.min(ints), max: _.max(ints) }
+		if (item.S.n >= min && item.S.n <= max) {
+			return max - min + 1
 		}
-	},
-	/** `season 1` */
-	season1(item: media.Item, slug: string) {
-		let matches = slug.match(/\s(s(eason)?)?\s?\d{1,2}\s?(s(eason)?)?\s/gi) || []
-		if (matches.map(v => utils.parseInt(v.trim())).includes(item.S.n)) return true
-	},
-	/** `s01` */
-	s01(item: media.Item, slug: string) {
-		let matches = slug.match(/\ss(eason)?\s?\d{1,2}\s?/gi) || []
-		if (matches.map(v => utils.parseInt(v.trim())).includes(item.S.n)) return true
 	},
 }
 

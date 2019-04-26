@@ -27,6 +27,9 @@ export class Torrent {
 	get hash() {
 		return magneturi.decode(this.magnet).infoHash.toLowerCase()
 	}
+	get pbytes() {
+		return 
+	}
 
 	constructor(result: scraper.Result) {
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
@@ -53,7 +56,7 @@ export class Torrent {
 			size: this.size,
 			slugs: this.slugs.join(', '),
 		} as any) as Torrent
-		_.isFinite(this.packSize) && (json.packSize = this.packSize)
+		_.isFinite(this.packs) && (json.packs = this.packs)
 		utils.defineValue(json, 'magnet', this.magnet)
 		return json
 	}

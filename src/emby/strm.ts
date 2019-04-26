@@ -46,8 +46,8 @@ async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery)
 	torrents.sort((a, b) => b.bytes - a.bytes)
 	if (type == 'show') {
 		torrents.sort((a, b) => {
-			let asize = a.packSize ? (a.bytes / item.S.e) * a.packSize : a.bytes
-			let bsize = b.packSize ? (b.bytes / item.S.e) * b.packSize : b.bytes
+			let asize = a.packs ? a.bytes / (item.S.e * a.packs) : a.bytes
+			let bsize = b.packs ? b.bytes / (item.S.e * b.packs) : b.bytes
 			return bsize - asize
 		})
 	}
@@ -70,12 +70,15 @@ fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
 		return !isNaN(v) && k != 'traktId' ? _.parseInt(v) : v
 	}) as StrmQuery
-	let { title, traktId, quality } = query
+	let { e, quality, s, title, traktId, type } = query
 	console.log(`${title} ${quality} query ->`, query)
 
 	let Session = (await emby.sessions.get())[0]
 
-	let rkey = `strm:${traktId}:${quality}`
+	let rkey = `strm:${traktId}`
+	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
+	rkey += `:${quality}`
+
 	let link = await redis.get(rkey)
 	if (!link) {
 		if (!emitter.eventNames().includes(traktId)) {

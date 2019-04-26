@@ -16,25 +16,29 @@ export const client = new http.Http({
 export class RealDebrid extends debrid.Debrid {
 	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = _.chunk(hashes, 40)
-		return (await pAll(
-			chunks.map((chunk, index) => async () => {
+		let chunks = utils.chunks(hashes, 40)
+		let cached = hashes.map(v => false)
+		await pAll(
+			chunks.map(chunk => async () => {
 				await utils.pRandom(1000)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
-				let response = (await client.get(url, {
-					memoize: process.DEVELOPMENT,
-				})) as CacheResponse
-				return chunk.map(v => _.size(_.get(response, `${v}.rd`, [])) > 0)
+				let response = (await client.get(url)) as CacheResponse
+				chunk.forEach(hash => {
+					if (_.isPlainObject(_.get(response, `${hash}.rd[0]`))) {
+						cached[hashes.findIndex(v => v == hash)] = true
+					}
+				})
 			}),
 			{ concurrency: 3 }
-		)).flat()
+		)
+		return cached
 	}
 
 	async files(magnet: string) {
 		let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
-		let response = (await client.get(`/torrents/instantAvailability/${infoHash}`, {
-			memoize: process.DEVELOPMENT,
-		})) as CacheResponse
+		let response = (await client.get(
+			`/torrents/instantAvailability/${infoHash}`
+		)) as CacheResponse
 		console.log(`files response ->`, response)
 		let rds = response[infoHash].rd as CacheFiles[]
 		let cached = rds.sort((a, b) => _.size(b) - _.size(a))[0]

@@ -17,18 +17,34 @@ export const client = new http.Http({
 export class Premiumize extends debrid.Debrid {
 	async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = _.chunk(hashes, 40)
-		return (await pAll(
-			chunks.map((chunk, index) => async () => {
+		let chunks = utils.chunks(hashes, 40)
+		let cached = hashes.map(v => false)
+		await pAll(
+			chunks.map(chunk => async () => {
 				await utils.pRandom(1000)
 				let response = (await client.post(`/cache/check`, {
 					query: { items: chunk },
-					memoize: process.DEVELOPMENT,
 				})) as CacheResponse
-				return chunk.map((v, i) => response.response[i])
+				chunk.forEach((hash, i) => {
+					if (_.get(response, `response[${i}]`) == true) {
+						cached[hashes.findIndex(v => v == hash)] = true
+					}
+				})
 			}),
 			{ concurrency: 3 }
-		)).flat()
+		)
+		return cached
+		// let chunks = _.chunk(hashes, 40)
+		// return (await pAll(
+		// 	chunks.map((chunk, index) => async () => {
+		// 		await utils.pRandom(1000)
+		// 		let response = (await client.post(`/cache/check`, {
+		// 			query: { items: chunk },
+		// 		})) as CacheResponse
+		// 		return chunk.map((v, i) => response.response[i])
+		// 	}),
+		// 	{ concurrency: 3 }
+		// )).flat()
 	}
 
 	async files(magnet: string) {

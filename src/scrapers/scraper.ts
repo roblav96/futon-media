@@ -111,7 +111,7 @@ export interface Result {
 	bytes: number
 	magnet: string
 	name: string
-	packSize: number
+	packs: number
 	providers: string[]
 	seeders: number
 	slugs: string[]
