@@ -72,6 +72,7 @@ export class RealDebrid extends debrid.Debrid {
 				form: { files: this._files.map(v => v.id).join() },
 			})
 			item = (await client.get(`/torrents/info/${download.id}`)) as Item
+			await client.delete(`/torrents/delete/${download.id}`)
 		}
 		if (item.links.length == 0) return
 
@@ -81,9 +82,8 @@ export class RealDebrid extends debrid.Debrid {
 		let unrestrict = (await client.post(`/unrestrict/link`, {
 			form: { link: item.links[index] },
 		})) as Unrestrict
-		let download = unrestrict.download
-		if (!utils.isVideo(download)) return
-		return download
+		if (!utils.isVideo(unrestrict.download)) return
+		return unrestrict.download
 	}
 
 	// private async item(magnet: string) {

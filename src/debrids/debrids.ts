@@ -22,24 +22,26 @@ export async function getLink(torrents: torrent.Torrent[], item: media.Item) {
 	for (let torrent of torrents) {
 		console.log(`getLink torrent ->`, torrent.toJSON())
 
-		let debrid = new debrids[torrent.cached[0]](torrent.magnet)
-		let files = await debrid.sync()
-		if (files.length == 0) {
-			console.warn(`getLink !files ->`, torrent.name)
-			continue
-		}
+		for (let cached of torrent.cached) {
+			let debrid = new debrids[cached](torrent.magnet)
+			let files = await debrid.sync()
+			if (files.length == 0) {
+				console.warn(`getLink !files ->`, torrent.name)
+				continue
+			}
 
-		let title = item.title
-		item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
-		let levens = files.map(file => ({ file, leven: utils.leven(file.name, title) }))
-		levens.sort((a, b) => a.leven - b.leven)
-		console.log(`levens ${title} ->`, levens)
-		let file = levens[0].file
+			let title = item.title
+			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
+			let levens = files.map(file => ({ file, leven: utils.leven(file.name, title) }))
+			levens.sort((a, b) => a.leven - b.leven)
+			console.log(`levens ${title} ->`, levens)
+			let file = levens[0].file
 
-		let link = await debrid.link(file)
-		if (link) {
-			link.startsWith('http:') && (link = link.replace('http:', 'https:'))
-			return link
+			let link = await debrid.link(file)
+			if (link) {
+				link.startsWith('http:') && (link = link.replace('http:', 'https:'))
+				return link
+			}
 		}
 	}
 }

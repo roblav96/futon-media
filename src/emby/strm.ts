@@ -82,15 +82,14 @@ fastify.get('/strm', async (request, reply) => {
 	let link = await redis.get(rkey)
 	if (!link) {
 		if (!emitter.eventNames().includes(traktId)) {
+			let seconds = utils.duration(1, 'minute') / 1000
 			getDebridLink(query).then(
 				async link => {
-					let seconds = utils.duration(1, process.DEVELOPMENT ? 'minute' : 'week') / 1000
 					await redis.setex(rkey, seconds, link)
 					emitter.emit(traktId, link)
 				},
 				async error => {
 					console.error(`${title} ${quality} getDebridLink -> %O`, error)
-					let seconds = utils.duration(1, process.DEVELOPMENT ? 'minute' : 'hour') / 1000
 					await redis.setex(rkey, seconds, `/dev/null`)
 					emitter.emit(traktId, `/dev/null`)
 				}
