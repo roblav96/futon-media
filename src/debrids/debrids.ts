@@ -33,7 +33,7 @@ export async function getLink(torrents: torrent.Torrent[], item: media.Item) {
 		item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 		let levens = files.map(file => ({ file, leven: utils.leven(file.name, title) }))
 		levens.sort((a, b) => a.leven - b.leven)
-		console.log(`levens ->`, levens)
+		console.log(`levens ${title} ->`, levens)
 		let file = levens[0].file
 
 		let link = await debrid.link(file)

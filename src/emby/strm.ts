@@ -51,9 +51,9 @@ async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery)
 			return bsize - asize
 		})
 	}
-	console.log(`scrapeAll torrents ->`, torrents.map(v => v.toJSON()))
+	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.toJSON()))
 
-	torrents = torrents.filter(v => v.cached.includes('realdebrid'))
+	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`!torrents`)
 
 	if (quality != '4K') {

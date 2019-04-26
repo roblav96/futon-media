@@ -38,9 +38,16 @@ export class RealDebrid extends debrid.Debrid {
 		let response = (await client.get(
 			`/torrents/instantAvailability/${this.infoHash}`
 		)) as CacheResponse
-		console.log(`files response ->`, response)
 		let rds = response[this.infoHash].rd as CacheFiles[]
-		let cached = rds.sort((a, b) => _.size(b) - _.size(a))[0]
+		let cacheds = rds.sort((a, b) => {
+			let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
+			let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
+			return bsize - asize
+		})
+		let cached = cacheds.find(v => {
+			let names = _.toPairs(v).map(([id, file]) => file.filename)
+			return names.filter(v => !utils.isVideo(v)).length == 0
+		})
 		this._files = Object.entries(cached).map(([id, file]) => {
 			return {
 				bytes: file.filesize,
@@ -68,11 +75,15 @@ export class RealDebrid extends debrid.Debrid {
 		}
 		if (item.links.length == 0) return
 
-		let index = this._files.findIndex(v => v.id == file.id)
+		let selected = item.files.filter(v => v.selected == 1)
+		let index = _.max([selected.findIndex(v => v.path.includes(file.name)), 0])
+
 		let unrestrict = (await client.post(`/unrestrict/link`, {
 			form: { link: item.links[index] },
 		})) as Unrestrict
-		return unrestrict.download
+		let download = unrestrict.download
+		if (!utils.isVideo(download)) return
+		return download
 	}
 
 	// private async item(magnet: string) {
