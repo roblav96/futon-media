@@ -16,8 +16,7 @@ export class SolidTorrents extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/search', {
 			query: { sort, q: slug } as Partial<Query>,
-			verbose: true,
-			memoize: process.env.NODE_ENV == 'development',
+			memoize: process.DEVELOPMENT,
 		})) as Response
 		return (response.results || []).map(v => {
 			return {

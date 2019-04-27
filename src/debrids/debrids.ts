@@ -18,27 +18,41 @@ export async function cached(hashes: string[]) {
 }
 
 export async function download(torrents: torrent.Torrent[], item: media.Item) {
-	console.log(`download torrents ->`, torrents.map(v => v.toJSON()))
+	// console.log(`download torrents ->`, torrents.map(v => v.json()))
+	let debrid = new RealDebrid()
 	for (let torrent of torrents) {
-		console.log(`download torrent ->`, torrent.toJSON())
+		console.log(`download torrent ->`, torrent.json())
+		if (torrent.cached.includes('realdebrid')) {
+			return
+		}
+		if (await debrid.use(torrent.magnet).download()) {
+			return
+		}
+	}
+}
+
+export async function getStreamUrl(torrents: torrent.Torrent[], item: media.Item) {
+	// console.log(`stream torrents ->`, torrents.map(v => v.json()))
+	for (let torrent of torrents) {
+		console.log(`stream torrent ->`, torrent.json())
 
 		for (let cached of torrent.cached) {
-			let debrid = await new debrids[cached](torrent.magnet).sync()
-			if (debrid.files.length == 0) {
-				console.warn(`download !files ->`, torrent.name)
+			let debrid = new debrids[cached]().use(torrent.magnet)
+			let files = await debrid.getFiles()
+			if (files.length == 0) {
+				console.warn(`stream !files ->`, torrent.name)
 				continue
 			}
 
 			let title = item.title
 			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
-			let levens = debrid.files.map(file => ({ file, leven: utils.leven(file.name, title) }))
+			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 			levens.sort((a, b) => a.leven - b.leven)
 			console.log(`levens ${title} ->`, levens)
 
-			let link = await debrid.link(levens[0].file)
-			if (link) {
-				link.startsWith('http:') && (link = link.replace('http:', 'https:'))
-				return link
+			let stream = await debrid.streamUrl(levens[0])
+			if (stream) {
+				return stream.startsWith('http:') ? stream.replace('http:', 'https:') : stream
 			}
 		}
 	}

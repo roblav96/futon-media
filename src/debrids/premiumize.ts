@@ -15,7 +15,7 @@ export const client = new http.Http({
 	},
 })
 
-export class Premiumize extends debrid.Debrid {
+export class Premiumize extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
@@ -37,10 +37,25 @@ export class Premiumize extends debrid.Debrid {
 		return cached
 	}
 
-	async sync() {
+	async download() {
+		!this.transfers && (this.transfers = (await client.get('/transfer/list')).transfers)
+		if (this.transfers.find(v => utils.leven(v.name, this.dn) == 0)) {
+			console.warn(`exists ->`, this.dn)
+			return true
+		}
+
+		await client.post('/transfer/create', {
+			form: { src: this.magnet },
+		})
+		console.log(`download added ->`, this.dn)
+		return true
+	}
+
+	async getFiles() {
 		let content = (await client.post(`/transfer/directdl`, {
 			query: { src: this.magnet },
 		})).content as Item[]
+
 		this.files = (content || []).map(file => {
 			let name = path.basename(`/${file.path}`)
 			return {
@@ -51,10 +66,10 @@ export class Premiumize extends debrid.Debrid {
 			} as debrid.File
 		})
 		this.files.sort((a, b) => utils.parseInt(a.path) - utils.parseInt(b.path))
-		return this
+		return this.files
 	}
 
-	async link(file: debrid.File) {
+	async streamUrl(file: debrid.File) {
 		return file.link
 	}
 }

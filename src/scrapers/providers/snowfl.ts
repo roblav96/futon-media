@@ -21,7 +21,6 @@ let STAMP = (storage.get('STAMP') || 0) as number
 async function syncToken() {
 	let html = (await client.get('/b.min.js', {
 		query: { v: nonce() } as Partial<Query>,
-		verbose: true,
 	})) as string
 	let index = html.search(/\"\w{35}\"/i)
 	let token = html.slice(index + 1, index + 36)
@@ -43,8 +42,7 @@ export class Snowfl extends scraper.Scraper {
 		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
 		let response = ((await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
-			verbose: true,
-			memoize: process.env.NODE_ENV == 'development',
+			memoize: process.DEVELOPMENT,
 		})) || []) as Result[]
 		let results = response.filter(v => !!v.magnet)
 		return results.map(v => {
@@ -87,7 +85,7 @@ interface Result {
 
 // async function fixMagnet(result: Result) {
 // 	await utils.pTimeout(_.random(3000))
-// 	let $ = cheerio.load(await http.client.get(result.url, { verbose: true }))
+// 	let $ = cheerio.load(await http.client.get(result.url))
 // 	let hash = $('.infohash-box span').text()
 // 	result.magnet = `magnet:?xt=urn:btih:${hash}&dn=${result.name}`
 // 	// let first = $('ul.download-links-dontblock a').first()
@@ -106,7 +104,6 @@ interface Result {
 // 	let base64 = Buffer.from(encodeURIComponent(result.url)).toString('base64')
 // 	let response = (await client.get(`/${TOKEN}/${site}/${base64}`, {
 // 		query: { _: Date.now() } as Partial<Query>,
-// 		verbose: true,
 // 	})) as MagnetResponse
 // 	result.magnet = response && response.url
 // }

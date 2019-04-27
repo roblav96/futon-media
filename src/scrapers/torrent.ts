@@ -27,9 +27,6 @@ export class Torrent {
 	get hash() {
 		return magneturi.decode(this.magnet).infoHash.toLowerCase()
 	}
-	get pbytes() {
-		return 
-	}
 
 	constructor(result: scraper.Result) {
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
@@ -38,26 +35,31 @@ export class Torrent {
 
 		magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
 		magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
-		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD))
+		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD)).sort()
 
-		this.magnet = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
+		this.magnet = `magnet:?${qs.stringify(
+			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
+			{ encode: false, sort: false }
+		)}`
+		// this.magnet = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
+		// console.log(`this.magnet ->`, this.magnet)
 
 		_.defaults(this, result)
 	}
 
-	toJSON() {
-		let json = ({
+	json() {
+		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		return {
 			age: this.age,
 			cached: this.cached.join(', '),
 			hash: this.hash,
+			magnet: magneturi.encode({ xt: magnet.xt, dn: magnet.dn }),
 			name: this.name,
+			packs: this.packs,
 			providers: this.providers.join(', '),
 			seeders: this.seeders,
 			size: this.size,
 			slugs: this.slugs.join(', '),
-		} as any) as Torrent
-		_.isFinite(this.packs) && (json.packs = this.packs)
-		utils.defineValue(json, 'magnet', this.magnet)
-		return json
+		}
 	}
 }

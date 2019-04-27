@@ -48,7 +48,7 @@ export const library = {
 		let query = {
 			type: item.type,
 			traktId: item.traktId,
-			title: utils.toSlug(item.main.title, { separator: '-' }),
+			title: utils.toSlug(item.main.title, { toName: true, separator: '-' }),
 		}
 		item.episode && Object.assign(query, { s: item.S.n, e: item.E.n })
 		if (quality) {

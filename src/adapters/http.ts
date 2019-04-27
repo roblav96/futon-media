@@ -25,8 +25,8 @@ export interface Config extends http.RequestOptions {
 	profile?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
 	query?: Record<string, string | number | string[] | number[]>
+	silent?: boolean
 	url?: string
-	verbose?: boolean
 }
 type Hooks<T> = { append?: T[]; prepend?: T[] }
 
@@ -50,7 +50,7 @@ export class Http {
 			'content-type': 'application/json',
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
 		},
-		verbose: process.DEVELOPMENT,
+		silent: !process.DEVELOPMENT,
 	} as Config
 
 	constructor(public config = {} as Config) {
@@ -104,11 +104,10 @@ export class Http {
 		if (_.size(options.form)) {
 			options.headers['content-type'] = 'application/x-www-form-urlencoded'
 			options.body = qs.stringify(options.form)
-			_.unset(options, 'form')
 		}
 
-		if (options.verbose) {
-			console.log(`->`, options.method, options.url) // min.url, min.query)
+		if (!options.silent) {
+			console.log(`->`, options.method, /** options.url */ min.url, min.query)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)

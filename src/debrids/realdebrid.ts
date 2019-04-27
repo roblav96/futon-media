@@ -13,7 +13,7 @@ export const client = new http.Http({
 	},
 })
 
-export class RealDebrid extends debrid.Debrid {
+export class RealDebrid extends debrid.Debrid<Item> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
@@ -34,11 +34,40 @@ export class RealDebrid extends debrid.Debrid {
 		return cached
 	}
 
-	async sync() {
+	async download() {
+		!this.transfers && (this.transfers = await client.get('/torrents'))
+		if (this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)) {
+			console.warn(`exists ->`, this.dn)
+			return true
+		}
+
+		let download = (await client.post('/torrents/addMagnet', {
+			form: { magnet: this.magnet },
+			debug: true,
+		})) as Download
+		await utils.pTimeout(1000)
+		let item = (await client.get(`/torrents/info/${download.id}`)) as Item
+
+		let files = item.files.filter(v => utils.isVideo(v.path))
+		if (files.length == 0) {
+			console.warn(`files.length == 0 ->`, this.dn)
+			await client.delete(`/torrents/delete/${download.id}`)
+			return false
+		}
+
+		await client.post(`/torrents/selectFiles/${download.id}`, {
+			form: { files: files.map(v => v.id).join() },
+		})
+		console.log(`download added ->`, this.dn)
+		return true
+	}
+
+	async getFiles() {
 		let response = (await client.get(
 			`/torrents/instantAvailability/${this.infoHash}`
 		)) as CacheResponse
 		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFiles[]
+
 		_.remove(rds, rd => {
 			let names = _.toPairs(rd).map(([id, file]) => file.filename)
 			return names.find(v => !utils.isVideo(v))
@@ -48,6 +77,7 @@ export class RealDebrid extends debrid.Debrid {
 			let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
 			return bsize - asize
 		})
+
 		this.files = _.toPairs(rds[0]).map(([id, file]) => {
 			return {
 				bytes: file.filesize,
@@ -57,10 +87,10 @@ export class RealDebrid extends debrid.Debrid {
 			} as debrid.File
 		})
 		this.files.sort((a, b) => a.id - b.id)
-		return this
+		return this.files
 	}
 
-	async link(file: debrid.File) {
+	async streamUrl(file: debrid.File) {
 		let items = (await client.get('/torrents')) as Item[]
 		let item = items.find(v => v.hash.toLowerCase() == this.infoHash)
 
@@ -77,18 +107,18 @@ export class RealDebrid extends debrid.Debrid {
 			await client.delete(`/torrents/delete/${download.id}`)
 		}
 		if (item.links.length == 0) {
-			console.warn(`item.links.length == 0 -> ${item.filename}`)
+			console.warn(`item.links.length == 0 ->`, this.dn)
 			return
 		}
 		if (item.files.length == 0) {
-			console.warn(`item.files.length == 0 -> ${item.filename}`)
+			console.warn(`item.files.length == 0 ->`, this.dn)
 			return
 		}
 
 		let selected = item.files.filter(v => v.selected == 1)
 		let index = selected.findIndex(v => v.path.includes(file.name))
 		if (index == -1) {
-			console.warn(`index == -1 -> ${item.filename}`)
+			console.warn(`index == -1 ->`, this.dn)
 			return
 		}
 
@@ -96,7 +126,7 @@ export class RealDebrid extends debrid.Debrid {
 			form: { link: item.links[index] },
 		})) as Unrestrict
 		if (!utils.isVideo(download)) {
-			console.warn(`!utils.isVideo(download) -> ${item.filename}`)
+			console.warn(`!utils.isVideo(download) ->`, this.dn)
 			return
 		}
 		return download

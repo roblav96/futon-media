@@ -17,8 +17,7 @@ export class MagnetDl extends scraper.Scraper {
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`
 		let $ = cheerio.load(
 			await client.get(url.toLowerCase(), {
-				verbose: true,
-				memoize: process.env.NODE_ENV == 'development',
+				memoize: process.DEVELOPMENT,
 			})
 		)
 		let results = [] as scraper.Result[]

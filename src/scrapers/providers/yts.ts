@@ -23,8 +23,7 @@ export class Yts extends scraper.Scraper {
 		}
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
-			verbose: true,
-			memoize: process.env.NODE_ENV == 'development',
+			memoize: process.DEVELOPMENT,
 		})) as Response
 		let results = ((response.data && response.data.movies) || []).map(m =>
 			m.torrents.map((v, i) => {

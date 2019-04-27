@@ -7,6 +7,7 @@ import * as media from '@/media/media'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as scraper from '@/scrapers/scraper'
+import * as torrent from '@/scrapers/torrent'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
@@ -30,7 +31,7 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery) {
+async function getDebridStreamUrl({ e, quality, s, title, traktId, type }: StrmQuery) {
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
@@ -51,7 +52,15 @@ async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery)
 			return bsize - asize
 		})
 	}
-	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.toJSON()))
+	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json()))
+
+	let torrents4k = JSON.parse(JSON.stringify(torrents))
+	console.log(`torrents4k ->`, torrents4k)
+	emitter.once(traktId, () =>
+		debrids.download(torrents4k.map(v => new torrent.Torrent(v)), item).catch(error => {
+			console.error(`debrids.download ${item.title} -> %O`, error)
+		})
+	)
 
 	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`!torrents`)
@@ -60,10 +69,10 @@ async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery)
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let download = await debrids.download(torrents, item)
-	if (!download) throw new Error(`!download`)
-	console.warn(`${title} ${quality} download ->`, download)
-	return download
+	let stream = await debrids.getStreamUrl(torrents, item)
+	if (!stream) throw new Error(`!stream`)
+	console.warn(`${title} ${quality} stream ->`, stream)
+	return stream
 }
 
 fastify.get('/strm', async (request, reply) => {
@@ -82,14 +91,14 @@ fastify.get('/strm', async (request, reply) => {
 	let link = await redis.get(rkey)
 	if (!link) {
 		if (!emitter.eventNames().includes(traktId)) {
-			let seconds = utils.duration(1, 'minute') / 1000
-			getDebridLink(query).then(
+			let seconds = utils.duration(1, process.DEVELOPMENT ? 'minute' : 'hour') / 1000
+			getDebridStreamUrl(query).then(
 				async link => {
 					await redis.setex(rkey, seconds, link)
 					emitter.emit(traktId, link)
 				},
 				async error => {
-					console.error(`${title} ${quality} getDebridLink -> %O`, error)
+					console.error(`${title} ${quality} getDebridStreamUrl -> %O`, error)
 					await redis.setex(rkey, seconds, `/dev/null`)
 					emitter.emit(traktId, `/dev/null`)
 				}
@@ -114,11 +123,3 @@ interface StrmQuery {
 	traktId: string
 	type: media.MainContentType
 }
-
-// const PriorityQueue = (new PQueue() as any)._queueClass as PQueue.QueueClassConstructor<
-// 	PQueue.DefaultAddOptions & { id: string }
-// >
-// class QueueClass extends PriorityQueue {
-// 	ids = [] as string[]
-// }
-// const queue = new PQueue({ queueClass: QueueClass })

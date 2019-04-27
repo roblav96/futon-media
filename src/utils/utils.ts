@@ -14,7 +14,8 @@ dayjs.extend(relativeTime)
 dayjs.extend(customParseFormat)
 
 export function duration(amount: number, unit: dayjs.OpUnitType) {
-	return dayjs(0).add(amount, unit).valueOf()
+	let day = dayjs(0).add(amount, unit)
+	return day.valueOf()
 }
 
 export function pTimeout<T = void>(ms: number, value?: T): Promise<T> {
@@ -162,6 +163,6 @@ export function fromBytes(value: number, precision = 1) {
 	return `${(value / unit.num).toFixed(precision)} ${unit.str}`
 }
 
-if (process.env.NODE_ENV == 'development') {
+if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/utils/utils')))
 }

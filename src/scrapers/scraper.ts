@@ -12,7 +12,7 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
-	// console.log(`results ->`, results.splice(0).map(scraper.toJSON))
+	// console.log(`results ->`, results.splice(0).map(scraper.json))
 	// (await import('@/scrapers/providers/btbit')).BtBit, // (await import('@/scrapers/providers/snowfl')).Snowfl,
 	let providers = [
 		(await import('@/scrapers/providers/btdb')).Btdb,
@@ -99,7 +99,7 @@ export class Scraper {
 	}
 }
 
-export function toJSON(result: Result) {
+export function json(result: Result) {
 	return {
 		..._.omit(result, 'magnet', 'hash'),
 		bytes: utils.fromBytes(result.bytes),

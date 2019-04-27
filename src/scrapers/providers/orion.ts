@@ -11,7 +11,7 @@ export const client = new http.Http({
 		action: 'retrieve',
 		keyapp: process.env.ORION_APP,
 		keyuser: process.env.ORION_KEY,
-		limitcount: process.env.NODE_ENV == 'development' ? 10 : 20,
+		limitcount: process.DEVELOPMENT ? 10 : 20,
 		mode: 'stream',
 		protocoltorrent: 'magnet',
 		sortorder: 'descending',
@@ -35,8 +35,7 @@ export class Orion extends scraper.Scraper {
 		let query = { sortvalue: sort } as Query
 		let response = (await client.get(`/`, {
 			query: Object.assign(query, JSON.parse(slug)),
-			verbose: true,
-			memoize: process.env.NODE_ENV == 'development',
+			memoize: process.DEVELOPMENT,
 		})) as Response
 		let streams = (_.has(response, 'data.streams') && response.data.streams) || []
 		streams = streams.filter(stream => {

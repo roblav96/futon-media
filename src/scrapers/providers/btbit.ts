@@ -16,8 +16,7 @@ export class BtBit extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
 			await client.get(`/list/${slug}/1-${sort}-2.html`, {
-				verbose: true,
-				memoize: process.env.NODE_ENV == 'development',
+				memoize: process.DEVELOPMENT,
 			})
 		)
 		let results = [] as scraper.Result[]

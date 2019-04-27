@@ -18,8 +18,7 @@ export class Pirateiro extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get(`/torrents`, {
 				query: { search: slug, orderby: sort, [category]: 1 } as Partial<Query>,
-				verbose: true,
-				memoize: process.env.NODE_ENV == 'development',
+				memoize: process.DEVELOPMENT,
 			})
 		)
 		let results = [] as scraper.Result[]

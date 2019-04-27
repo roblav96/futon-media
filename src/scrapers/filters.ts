@@ -120,6 +120,6 @@ export const regex = {
 	},
 }
 
-if (process.env.NODE_ENV == 'development') {
+if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/scrapers/filters')))
 }

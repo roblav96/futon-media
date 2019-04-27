@@ -16,8 +16,7 @@ export class Magnet4You extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get(`/search.php`, {
 				query: { s: `*${slug}*`, sort } as Partial<Query>,
-				verbose: true,
-				memoize: process.env.NODE_ENV == 'development',
+				memoize: process.DEVELOPMENT,
 			})
 		)
 		let results = [] as scraper.Result[]

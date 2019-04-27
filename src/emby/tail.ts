@@ -21,7 +21,7 @@ export const rxHttp = rxTail.pipe(
 )
 
 process.nextTick(async () => {
-	let { LogPath } = await emby.client.get('/System/Info')
+	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
 	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
 		follow: true,
 		separator: /\n\d{4}-\d{2}-\d{2}\s/,

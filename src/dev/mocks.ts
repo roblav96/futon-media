@@ -708,6 +708,6 @@ export const LINK = `https://38.rdeb.io/d/JHXH54RZIXZ6O/Mission.Impossible.Fallo
 
 export const TRAKT_LIST_ITEMS_URL = `/users/lish408/lists/4440958/items`
 
-if (process.env.NODE_ENV == 'development') {
+if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/dev/mocks')))
 }

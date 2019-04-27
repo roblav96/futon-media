@@ -19,8 +19,7 @@ export class ExtraTorrent extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get('/', {
 				query: { search: slug, srt: sort } as Partial<Query>,
-				verbose: true,
-				memoize: process.env.NODE_ENV == 'development',
+				memoize: process.DEVELOPMENT,
 			})
 		)
 		let results = [] as scraper.Result[]
