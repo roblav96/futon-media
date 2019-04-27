@@ -43,7 +43,6 @@ export class RealDebrid extends debrid.Debrid<Item> {
 
 		let download = (await client.post('/torrents/addMagnet', {
 			form: { magnet: this.magnet },
-			debug: true,
 		})) as Download
 		await utils.pTimeout(1000)
 		let item = (await client.get(`/torrents/info/${download.id}`)) as Item
@@ -58,7 +57,6 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		await client.post(`/torrents/selectFiles/${download.id}`, {
 			form: { files: files.map(v => v.id).join() },
 		})
-		console.log(`download added ->`, this.dn)
 		return true
 	}
 

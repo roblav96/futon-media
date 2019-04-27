@@ -107,7 +107,7 @@ export class Http {
 		}
 
 		if (!options.silent) {
-			console.log(`->`, options.method, /** options.url */ min.url, min.query)
+			console.log(`[${options.method}]`, min.url, `\n${min.query}`)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
@@ -140,8 +140,10 @@ export class Http {
 				await fs.outputFile(mpath, fastStringify(_.omit(response, omits)))
 			}
 		}
-		options.profile && console.log(`<-`, `${Date.now() - t}ms`, min.url, min.query)
 
+		if (options.profile) {
+			console.log(`${Date.now() - t}ms`, min.url)
+		}
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
 		}

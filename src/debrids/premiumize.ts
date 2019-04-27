@@ -43,11 +43,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 			console.warn(`exists ->`, this.dn)
 			return true
 		}
-
-		await client.post('/transfer/create', {
-			form: { src: this.magnet },
-		})
-		console.log(`download added ->`, this.dn)
+		await client.post('/transfer/create', { form: { src: this.magnet } })
 		return true
 	}
 

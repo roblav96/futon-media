@@ -37,23 +37,22 @@ export class Torrent {
 		magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
 		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD)).sort()
 
-		this.magnet = `magnet:?${qs.stringify(
+		result.magnet = `magnet:?${qs.stringify(
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
-		// this.magnet = magneturi.encode({ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr })
-		// console.log(`this.magnet ->`, this.magnet)
 
-		_.defaults(this, result)
+		_.merge(this, result)
 	}
 
 	json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return {
 			age: this.age,
 			cached: this.cached.join(', '),
 			hash: this.hash,
-			magnet: magneturi.encode({ xt: magnet.xt, dn: magnet.dn }),
+			magnet: `magnet:?${minify}`,
 			name: this.name,
 			packs: this.packs,
 			providers: this.providers.join(', '),

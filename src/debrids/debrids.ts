@@ -21,17 +21,17 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 	// console.log(`download torrents ->`, torrents.map(v => v.json()))
 	let debrid = new RealDebrid()
 	for (let torrent of torrents) {
-		console.log(`download torrent ->`, torrent.json())
 		if (torrent.cached.includes('realdebrid')) {
 			return
 		}
+		console.log(`download torrent ->`, torrent.json())
 		if (await debrid.use(torrent.magnet).download()) {
 			return
 		}
 	}
 }
 
-export async function getStreamUrl(torrents: torrent.Torrent[], item: media.Item) {
+export async function getStream(torrents: torrent.Torrent[], item: media.Item) {
 	// console.log(`stream torrents ->`, torrents.map(v => v.json()))
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json())

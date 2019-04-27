@@ -31,7 +31,7 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStreamUrl({ e, quality, s, title, traktId, type }: StrmQuery) {
+async function getDebridStream({ e, quality, s, title, traktId, type }: StrmQuery) {
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
@@ -54,10 +54,11 @@ async function getDebridStreamUrl({ e, quality, s, title, traktId, type }: StrmQ
 	}
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json()))
 
-	let torrents4k = JSON.parse(JSON.stringify(torrents))
-	console.log(`torrents4k ->`, torrents4k)
+	let downloads = torrents.slice(0, torrents.findIndex(v => v.cached.includes('realdebrid')))
+	downloads = JSON.parse(JSON.stringify(downloads)).map(v => new torrent.Torrent(v))
+	// console.log(`downloads ->`, downloads)
 	emitter.once(traktId, () =>
-		debrids.download(torrents4k.map(v => new torrent.Torrent(v)), item).catch(error => {
+		debrids.download(downloads, item).catch(error => {
 			console.error(`debrids.download ${item.title} -> %O`, error)
 		})
 	)
@@ -69,7 +70,7 @@ async function getDebridStreamUrl({ e, quality, s, title, traktId, type }: StrmQ
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let stream = await debrids.getStreamUrl(torrents, item)
+	let stream = await debrids.getStream(torrents, item)
 	if (!stream) throw new Error(`!stream`)
 	console.warn(`${title} ${quality} stream ->`, stream)
 	return stream
@@ -92,13 +93,13 @@ fastify.get('/strm', async (request, reply) => {
 	if (!link) {
 		if (!emitter.eventNames().includes(traktId)) {
 			let seconds = utils.duration(1, process.DEVELOPMENT ? 'minute' : 'hour') / 1000
-			getDebridStreamUrl(query).then(
+			getDebridStream(query).then(
 				async link => {
 					await redis.setex(rkey, seconds, link)
 					emitter.emit(traktId, link)
 				},
 				async error => {
-					console.error(`${title} ${quality} getDebridStreamUrl -> %O`, error)
+					console.error(`${title} ${quality} getDebridStream -> %O`, error)
 					await redis.setex(rkey, seconds, `/dev/null`)
 					emitter.emit(traktId, `/dev/null`)
 				}
