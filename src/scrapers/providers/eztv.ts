@@ -26,10 +26,12 @@ export class Eztv extends scraper.Scraper {
 				memoize: process.DEVELOPMENT,
 			})) as Response
 			let torrents = (response.torrents || []).filter(v => {
-				if (_.isFinite(this.item.E.n) && v.season && v.episode) {
-					return this.item.S.n == (v.season as any) && this.item.E.n == (v.episode as any)
-				} else if (_.isFinite(this.item.S.n) && v.season) {
-					return this.item.S.n == (v.season as any)
+				let season = _.parseInt(v.season)
+				let episode = _.parseInt(v.episode)
+				if (_.isFinite(this.item.E.n) && season && episode) {
+					return this.item.S.n == season && this.item.E.n == episode
+				} else if (_.isFinite(this.item.S.n) && season) {
+					return this.item.S.n == season
 				} else return true
 			})
 			results.push(...torrents)

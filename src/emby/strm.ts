@@ -4,6 +4,7 @@ import * as debrids from '@/debrids/debrids'
 import * as emby from '@/emby/emby'
 import * as Fastify from 'fastify'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as scraper from '@/scrapers/scraper'
@@ -27,7 +28,7 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStream({ e, quality, s, title, traktId, type }: emby.StrmQuery) {
+async function getDebridTorrents({ e, s, title, traktId, type }: emby.StrmQuery) {
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
@@ -58,57 +59,74 @@ async function getDebridStream({ e, quality, s, title, traktId, type }: emby.Str
 		})
 	)
 
-	torrents = torrents.filter(v => v.cached.length > 0)
+	return { item, torrents: torrents.filter(v => v.cached.length > 0) }
+}
+
+async function getDebridSession() {
+	let UserId = await emby.rxPlaybackUserId.pipe(Rx.Op.take(1)).toPromise()
+	console.log(`getSession rxPlaybackUserId ->`, UserId)
+	return await emby.sessions.fromUserId(UserId)
+}
+
+async function getDebridStream(strmquery: emby.StrmQuery) {
+	let [Session, { item, torrents }] = await Promise.all([
+		getDebridSession(),
+		getDebridTorrents(strmquery),
+	])
 	if (torrents.length == 0) throw new Error(`!torrents`)
 
-	if (quality != '4K') {
+	if (Session.quality != '4K') {
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let stream = await debrids.getStream(torrents, item, quality == '1080p')
+	let stream = await debrids.getStream(torrents, item, Session.quality != '4K')
 	if (!stream) throw new Error(`!stream`)
-	console.warn(`${title} ${quality} stream ->`, stream)
+	console.warn(`stream ->`, strmquery.title, Session.quality, stream)
 	return stream
 }
 
+emby.rxPlaybackIsFalse.subscribe(async ({ query }) => {
+	let Session = await emby.sessions.fromUserId(query.UserId)
+	let { Item, item } = await Session.Item(query.ItemId)
+	let rkey = `strm:${item.traktId}`
+	if (item.type) {
+		rkey += `:s${utils.zeroSlug(Item.ParentIndexNumber)}`
+		rkey += `e${utils.zeroSlug(Item.IndexNumber)}`
+	}
+	console.warn(`redis.del ->`, rkey)
+	await redis.del(rkey)
+})
+
 fastify.get('/strm', async (request, reply) => {
-	let query = _.mapValues(request.query, (v, k) => {
+	let strmquery = _.mapValues(request.query, (v, k) => {
 		return !isNaN(v) && k != 'traktId' ? _.parseInt(v) : v
 	}) as emby.StrmQuery
-	let { e, quality, s, title, traktId, type } = query
-	console.log(`${title} ${quality} query ->`, query)
-
-	let Session = (await emby.sessions.get())[0]
+	let { e, s, title, traktId, type } = strmquery
+	console.log(`fastify strm ->`, title)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
-	rkey += `:${quality}`
 
-	let link = await redis.get(rkey)
-	if (!link) {
+	let stream = await redis.get(rkey)
+	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
-			let seconds = utils.duration(1, process.DEVELOPMENT ? 'minute' : 'hour') / 1000
-			getDebridStream(query).then(
-				async link => {
-					await redis.setex(rkey, seconds, link)
-					emitter.emit(traktId, link)
+			getDebridStream(strmquery).then(
+				async stream => {
+					let seconds = utils.duration(1, 'day') / 1000
+					await redis.setex(rkey, seconds, stream)
+					emitter.emit(traktId, stream)
 				},
 				async error => {
-					console.error(`${title} ${quality} getDebridStream -> %O`, error)
+					console.error(`getDebridStream ${title} -> %O`, error)
+					let seconds = utils.duration(1, 'minute') / 1000
 					await redis.setex(rkey, seconds, `/dev/null`)
 					emitter.emit(traktId, `/dev/null`)
 				}
 			)
 		}
-		link = await emitter.toPromise(traktId)
+		stream = await emitter.toPromise(traktId)
 	}
 
-	if (quality == '4K' && Session.Capabilities.DeviceProfile) {
-		reply.redirect(`/dev/null`)
-		return
-	}
-
-	reply.redirect(link)
+	console.log(`redirect ->`, stream)
+	reply.redirect(stream)
 })
-
-

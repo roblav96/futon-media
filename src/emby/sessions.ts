@@ -1,7 +1,9 @@
 import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
+import * as media from '@/media/media'
 import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
+import * as trakt from '@/adapters/trakt'
 
 export const rxSession = socket.filter<Session>('Session')
 export const rxUser = socket.filter<User>('User')
@@ -16,6 +18,9 @@ export const sessions = {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
 		})
 	},
+	async fromUserId(UserId: string) {
+		return (await sessions.get()).find(v => v.UserId == UserId)
+	},
 }
 
 export class Session {
@@ -23,8 +28,15 @@ export class Session {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
 
+	get quality(): emby.Quality {
+		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
+		let profiles = _.get(this, dotpath, []) as TranscodingProfiles[]
+		let max = _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
+		return max == 2 ? '1080p' : '4K'
+	}
+
 	constructor(Session: Session) {
-		_.defaults(this, Session)
+		_.merge(this, Session)
 	}
 
 	async Device() {
@@ -35,8 +47,13 @@ export class Session {
 		return (await emby.client.get(`/Users/${this.UserId}`)) as User
 	}
 
-	async Item(ItemId: number) {
-		return (await emby.client.get(`/Users/${this.UserId}/Items/${ItemId}`)) as emby.Item
+	async Item(ItemId: string) {
+		let Item = (await emby.client.get(`/Users/${this.UserId}/Items/${ItemId}`)) as emby.Item
+		let [provider, id] = Object.entries(Item.ProviderIds)[0]
+		let result = ((await trakt.client.get(
+			`/search/${provider.toLowerCase()}/${id}`
+		)) as trakt.Result[])[0]
+		return { Item, item: new media.Item(result) }
 	}
 
 	async message(data: string | Error) {
@@ -99,21 +116,7 @@ export interface Session {
 			}[]
 			SupportedMediaTypes: string
 			TimelineOffsetSeconds: number
-			TranscodingProfiles: {
-				AudioCodec: string
-				BreakOnNonKeyFrames: boolean
-				Container: string
-				Context: string
-				CopyTimestamps: boolean
-				EnableMpegtsM2TsMode: boolean
-				EstimateContentLength: boolean
-				MaxAudioChannels: string
-				MinSegments: number
-				Protocol: string
-				SegmentLength: number
-				TranscodeSeekInfo: string
-				Type: string
-			}[]
+			TranscodingProfiles: TranscodingProfiles[]
 			XmlRootAttributes: any[]
 		}
 		IconUrl: string
@@ -195,6 +198,22 @@ export interface Session {
 	SupportsRemoteControl: boolean
 	UserId: string
 	UserName: string
+}
+
+export interface TranscodingProfiles {
+	AudioCodec: string
+	BreakOnNonKeyFrames: boolean
+	Container: string
+	Context: string
+	CopyTimestamps: boolean
+	EnableMpegtsM2TsMode: boolean
+	EstimateContentLength: boolean
+	MaxAudioChannels: string
+	MinSegments: number
+	Protocol: string
+	SegmentLength: number
+	TranscodeSeekInfo: string
+	Type: string
 }
 
 export interface User {

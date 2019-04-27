@@ -50,8 +50,9 @@ export const rxSocket = rxMessage.pipe(
 // })
 
 export function filter<IData>(MessageType: string) {
-	return rxSocket.pipe<EmbyEvent<IData>>(
-		Rx.Op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType)
+	return rxSocket.pipe(
+		Rx.Op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
+		Rx.Op.map(({ Data }) => Data as IData)
 	)
 }
 

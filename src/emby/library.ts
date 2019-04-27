@@ -15,9 +15,9 @@ export const rxRefreshProgress = socket.filter<RefreshProgress>('RefreshProgress
 export const rxScheduledTasksInfo = socket.filter<ScheduledTasksInfo>('ScheduledTasksInfo')
 export const rxScheduledTaskEnded = socket.filter<ScheduledTaskEnded>('ScheduledTaskEnded')
 
-rxLibraryChanged.subscribe(LibraryChanged => {
-	console.warn(`LibraryChanged ->`, LibraryChanged)
-})
+// rxLibraryChanged.subscribe(LibraryChanged => {
+// 	console.warn(`LibraryChanged ->`, LibraryChanged)
+// })
 
 export const library = {
 	qualities: ['1080p', '4K'] as Quality[],
@@ -35,27 +35,18 @@ export const library = {
 		if (item.show) {
 			file += `/${title} (${item.year})`
 			file += `/Season ${item.S.n}`
-			file += `/${title} - S${item.S.z}E${item.E.z}`
+			file += `/${title} S${item.S.z}E${item.E.z}`
 		}
+		file += `.strm`
 
 		let query = {
 			type: item.type,
 			traktId: item.traktId,
-			title: utils.toSlug(item.main.title, { toName: true, separator: '-' }),
+			title: utils.toSlug(item.main.title, { toName: true, separator: '-', lowercase: true }),
 		} as StrmQuery
 		item.episode && (query = { ...query, s: item.S.n, e: item.E.n })
 
-		for (let quality of library.qualities) {
-			console.log(
-				`toStrm ->`,
-				path.normalize(`${file} - ${quality}.strm`),
-				`${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify({ ...query, quality })}`
-			)
-			await fs.outputFile(
-				path.normalize(`${file} - ${quality}.strm`),
-				`${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify({ ...query, quality })}`
-			)
-		}
+		await fs.outputFile(file, `${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify(query)}`)
 	},
 	async add(item: media.Item) {
 		if (item.movie) {
@@ -81,7 +72,6 @@ export type Quality = '1080p' | '4K'
 
 export interface StrmQuery {
 	e: number
-	quality: Quality
 	s: number
 	title: string
 	traktId: string
@@ -216,6 +206,19 @@ export interface Item {
 		PlaybackPositionTicks: number
 		Played: boolean
 	}
+	IndexNumber: number
+	ParentBackdropImageTags: string[]
+	ParentBackdropItemId: string
+	ParentIndexNumber: number
+	ParentLogoImageTag: string
+	ParentLogoItemId: string
+	ParentThumbImageTag: string
+	ParentThumbItemId: string
+	SeasonId: string
+	SeasonName: string
+	SeriesId: string
+	SeriesName: string
+	SeriesPrimaryImageTag: string
 }
 
 export interface LibraryChanged {

@@ -34,7 +34,7 @@ export const rxSearch = tail.rxHttp.pipe(
 		return { url, query: query as SearchQuery }
 	}),
 	Rx.Op.map(({ query }) => query.SearchTerm),
-	Rx.Op.filter(SearchTerm => _.isString(SearchTerm) && SearchTerm.length >= 3),
+	Rx.Op.filter(SearchTerm => !!SearchTerm && SearchTerm.length >= 3),
 	Rx.Op.distinctUntilChanged()
 )
 
