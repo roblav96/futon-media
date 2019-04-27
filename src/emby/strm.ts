@@ -60,10 +60,10 @@ async function getDebridLink({ e, quality, s, title, traktId, type }: StrmQuery)
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let link = await debrids.getLink(torrents, item)
-	if (!link) throw new Error(`!link`)
-	console.warn(`${title} ${quality} link ->`, link)
-	return link
+	let download = await debrids.download(torrents, item)
+	if (!download) throw new Error(`!download`)
+	console.warn(`${title} ${quality} download ->`, download)
+	return download
 }
 
 fastify.get('/strm', async (request, reply) => {

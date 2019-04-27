@@ -41,8 +41,8 @@ export class Premiumize extends debrid.Debrid {
 		let content = (await client.post(`/transfer/directdl`, {
 			query: { src: this.magnet },
 		})).content as Item[]
-		this._files = (content || []).map(file => {
-			let name = path.basename(file.path)
+		this.files = (content || []).map(file => {
+			let name = path.basename(`/${file.path}`)
 			return {
 				bytes: _.parseInt(file.size),
 				link: file.link,
@@ -50,8 +50,8 @@ export class Premiumize extends debrid.Debrid {
 				path: `/${file.path}`,
 			} as debrid.File
 		})
-		this._files.sort((a, b) => utils.parseInt(a.name) - utils.parseInt(b.name))
-		return this.files
+		this.files.sort((a, b) => utils.parseInt(a.path) - utils.parseInt(b.path))
+		return this
 	}
 
 	async link(file: debrid.File) {

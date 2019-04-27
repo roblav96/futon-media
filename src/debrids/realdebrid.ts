@@ -38,17 +38,17 @@ export class RealDebrid extends debrid.Debrid {
 		let response = (await client.get(
 			`/torrents/instantAvailability/${this.infoHash}`
 		)) as CacheResponse
-		let rds = response[this.infoHash].rd as CacheFiles[]
-		let cacheds = rds.sort((a, b) => {
+		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFiles[]
+		_.remove(rds, rd => {
+			let names = _.toPairs(rd).map(([id, file]) => file.filename)
+			return names.find(v => !utils.isVideo(v))
+		})
+		rds.sort((a, b) => {
 			let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
 			let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
 			return bsize - asize
 		})
-		let cached = cacheds.find(v => {
-			let names = _.toPairs(v).map(([id, file]) => file.filename)
-			return names.filter(v => !utils.isVideo(v)).length == 0
-		})
-		this._files = Object.entries(cached).map(([id, file]) => {
+		this.files = _.toPairs(rds[0]).map(([id, file]) => {
 			return {
 				bytes: file.filesize,
 				id: _.parseInt(id),
@@ -56,109 +56,51 @@ export class RealDebrid extends debrid.Debrid {
 				path: `/${file.filename}`,
 			} as debrid.File
 		})
-		this._files.sort((a, b) => a.id - b.id)
-		return this.files
+		this.files.sort((a, b) => a.id - b.id)
+		return this
 	}
 
 	async link(file: debrid.File) {
 		let items = (await client.get('/torrents')) as Item[]
 		let item = items.find(v => v.hash.toLowerCase() == this.infoHash)
 
-		if (!item) {
+		if (item) {
+			item = (await client.get(`/torrents/info/${item.id}`)) as Item
+		} else {
 			let download = (await client.post('/torrents/addMagnet', {
 				form: { magnet: this.magnet },
 			})) as Download
 			await client.post(`/torrents/selectFiles/${download.id}`, {
-				form: { files: this._files.map(v => v.id).join() },
+				form: { files: this.files.map(v => v.id).join() },
 			})
 			item = (await client.get(`/torrents/info/${download.id}`)) as Item
 			await client.delete(`/torrents/delete/${download.id}`)
 		}
-		if (item.links.length == 0) return
+		if (item.links.length == 0) {
+			console.warn(`item.links.length == 0 -> ${item.filename}`)
+			return
+		}
+		if (item.files.length == 0) {
+			console.warn(`item.files.length == 0 -> ${item.filename}`)
+			return
+		}
 
 		let selected = item.files.filter(v => v.selected == 1)
-		let index = _.max([selected.findIndex(v => v.path.includes(file.name)), 0])
+		let index = selected.findIndex(v => v.path.includes(file.name))
+		if (index == -1) {
+			console.warn(`index == -1 -> ${item.filename}`)
+			return
+		}
 
-		let unrestrict = (await client.post(`/unrestrict/link`, {
+		let { download } = (await client.post(`/unrestrict/link`, {
 			form: { link: item.links[index] },
 		})) as Unrestrict
-		if (!utils.isVideo(unrestrict.download)) return
-		return unrestrict.download
+		if (!utils.isVideo(download)) {
+			console.warn(`!utils.isVideo(download) -> ${item.filename}`)
+			return
+		}
+		return download
 	}
-
-	// private async item(magnet: string) {
-	// 	let { infoHash, dn } = magneturi.decode(magnet) as Record<string, string>
-
-	// 	let items = (await client.get('/torrents')) as Item[]
-	// 	let item = items.find(v => v.hash.toLowerCase() == infoHash.toLowerCase())
-
-	// 	if (!item) {
-	// 		let download = (await client.post('/torrents/addMagnet', {
-	// 			form: { magnet },
-	// 		})) as Download
-
-	// 		await utils.pTimeout(1000)
-	// 		item = (await client.get(`/torrents/info/${download.id}`)) as Item
-
-	// 		let files = this.filterFiles(item.files, dn)
-	// 		if (files.length == 0) {
-	// 			console.warn(`files.length == 0 ->`, item.filename)
-	// 			await client.delete(`/torrents/delete/${download.id}`)
-	// 			return item
-	// 		}
-	// 		await client.post(`/torrents/selectFiles/${download.id}`, {
-	// 			form: { files: files.map(v => v.id).join() },
-	// 		})
-
-	// 		item = (await client.get(`/torrents/info/${download.id}`)) as Item
-	// 	}
-
-	// 	return item
-	// }
-
-	// async files(magnet: string) {
-	// 	let item = await this.item(magnet)
-	// 	if (item.links.length == 0) {
-	// 		return []
-	// 	}
-	// 	_.merge(item, await client.get(`/torrents/info/${item.id}`))
-
-	// 	let { dn } = magneturi.decode(magnet) as Record<string, string>
-	// 	let files = this.filterFiles(item.files, dn).map(file => {
-	// 		return {
-	// 			bytes: file.bytes,
-	// 			name: file.path.split('/').pop(),
-	// 			path: file.path,
-	// 		} as debrid.File
-	// 	})
-	// 	if (files.length != item.links.length) {
-	// 		console.warn(`files.length != item.links.length ->`, dn)
-	// 		return []
-	// 	}
-	// 	return files
-	// }
-
-	// async link(magnet: string, index: number) {
-	// 	let item = await this.item(magnet)
-	// 	if (item.links.length == 0) return
-	// 	let download = (await client.post(`/unrestrict/link`, {
-	// 		form: { link: item.links[index] },
-	// 	})) as Unrestrict
-	// 	return download.download
-	// }
-
-	// let downloads = (await client.get('/downloads')) as Unrestrict[]
-	// downloads = downloads.filter(v => v.streamable == 1)
-
-	// return (await pAll(
-	// 	item.links.map(link => async () => {
-	// 		await utils.pRandom(500)
-	// 		return (await client.post(`/unrestrict/link`, {
-	// 			form: { link },
-	// 		})) as Unrestrict
-	// 	}),
-	// 	{ concurrency: 3 }
-	// )).map(v => v.download)
 }
 
 type CacheResponse = Record<string, { rd: CacheFiles[] }>

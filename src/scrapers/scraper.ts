@@ -43,7 +43,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		return true
 	})
 
-	let cached = await debrids.getCached(torrents.map(v => v.hash))
+	let cached = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cached[i]))
 
 	return torrents

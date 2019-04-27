@@ -60,7 +60,7 @@ export function leven(value: string, target: string) {
 export { levenshtein }
 
 export function parseInt(value: string) {
-	return Number.parseInt(value.replace(/[^\d.]/g, ''))
+	return Number.parseInt(value.replace(/[^\d]/g, ''))
 }
 export function parseFloat(value: string) {
 	return Number.parseFloat(value.replace(/[^\d.]/g, ''))

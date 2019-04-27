@@ -7,7 +7,7 @@ import { Tail } from 'tail'
 
 export const rxTail = new Rx.Subject<string>()
 
-export const rxHttpServer = rxTail.pipe(
+export const rxHttp = rxTail.pipe(
 	Rx.Op.map(line => {
 		if (line.match(/Info HttpServer: HTTP [DGP]/)) {
 			return (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
