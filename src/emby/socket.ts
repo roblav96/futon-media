@@ -5,14 +5,6 @@ import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
 import Sockette from '@/shims/sockette'
 
-export interface EmbyEvent<Data = any> {
-	Data: Data
-	MessageId: string
-	MessageType: string
-}
-
-export const rxSocket = new Rx.Subject<EmbyEvent>()
-
 process.nextTick(() => {
 	let url = `${emby.DOMAIN}:${emby.PORT}`.replace('http', 'ws')
 	url += `/embywebsocket?api_key=${process.env.EMBY_API_KEY}`
@@ -34,7 +26,37 @@ process.nextTick(() => {
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
 			if (err) return console.error(`socket onmessage -> %O`, err)
-			rxSocket.next(value)
+			rxMessage.next(value)
 		},
 	})
 })
+
+const rxMessage = new Rx.Subject<EmbyEvent>()
+export const rxSocket = rxMessage.pipe(
+	Rx.Op.map(EmbyEvent => {
+		let { MessageType, MessageId, Data } = EmbyEvent
+
+		MessageType == 'Sessions' &&
+			Object.assign(EmbyEvent, {
+				MessageType: 'Session',
+				Data: new emby.Session(emby.sessions.primaries(Data)[0]),
+			})
+
+		return EmbyEvent
+	})
+)
+rxSocket.subscribe(({ MessageType, Data }) => {
+	console.log(`rxSocket ->`, MessageType, Data)
+})
+
+export function filter<IData>(MessageType: string) {
+	return rxSocket.pipe<EmbyEvent<IData>>(
+		Rx.Op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType)
+	)
+}
+
+export interface EmbyEvent<Data = any> {
+	Data: Data
+	MessageId: string
+	MessageType: string
+}

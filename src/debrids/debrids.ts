@@ -31,7 +31,7 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 	}
 }
 
-export async function getStream(torrents: torrent.Torrent[], item: media.Item) {
+export async function getStream(torrents: torrent.Torrent[], item: media.Item, stereo: boolean) {
 	// console.log(`stream torrents ->`, torrents.map(v => v.json()))
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json())
@@ -52,7 +52,12 @@ export async function getStream(torrents: torrent.Torrent[], item: media.Item) {
 
 			let stream = await debrid.streamUrl(levens[0])
 			if (stream) {
-				return stream.startsWith('http:') ? stream.replace('http:', 'https:') : stream
+				stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
+				if (stereo) {
+					let probe = await ffprobe(stream)
+					if (!probe.streams.find(v => v.channels == 2)) continue
+				}
+				return stream
 			}
 		}
 	}

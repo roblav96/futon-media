@@ -34,21 +34,29 @@ export const rxSearch = tail.rxHttp.pipe(
 		return { url, query: query as SearchQuery }
 	}),
 	Rx.Op.filter(({ query }) => !!query.SearchTerm),
-	Rx.Op.debounceTime(1)
+	Rx.Op.debounceTime(100)
 )
 
 rxSearch.subscribe(async ({ url, query }) => {
-	// console.log(`rxSearch ->`, new Url(url).pathname, query)
+	console.log(`rxSearch ->`, new Url(url).pathname, query)
 	let { SearchTerm } = query
 	console.log(`SearchTerm ->`, SearchTerm)
 	let response = (await tmdb.client.get(`/search/multi`, {
-		query: { query: SearchTerm, language: 'en-US' },
+		query: { query: SearchTerm },
 	})) as tmdb.Paginated<tmdb.Full>
-	let results = (response.results || []).filter(v => {
+	let tmresults = (response.results || []).filter(v => {
 		return (
 			['movie', 'tv'].includes(v.media_type) &&
 			(v.original_language == 'en' && !v.adult && v.vote_count >= 100)
 		)
 	})
-	console.log(`results ->`, results)
+	for (let { id, media_type } of tmresults) {
+		let type = tmdb.toType(media_type)
+		let results = (await trakt.client.get(`/search/tmdb/${id}`, {
+			query: { type, extended: '' },
+		})) as trakt.Result[]
+		let result = results.find(v => v[type].ids.tmdb == id)
+		await emby.library.add(new media.Item(result))
+	}
+	await emby.library.refresh()
 })

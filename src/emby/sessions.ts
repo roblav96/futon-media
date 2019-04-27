@@ -3,17 +3,8 @@ import * as emby from '@/emby/emby'
 import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 
-export const rxSessions = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'Sessions'),
-	Rx.Op.map(({ Data }) => sessions.primaries(Data).map(v => new Session(v)))
-)
-export const rxSession = new Rx.BehaviorSubject<Session>(null)
-rxSessions.subscribe(v => rxSession.next(v[0]))
-
-export const rxUserUpdated = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'UserUpdated'),
-	Rx.Op.map(({ Data }) => Data as User)
-)
+export const rxSession = socket.filter<Session>('Session')
+export const rxUser = socket.filter<User>('User')
 
 export const sessions = {
 	async get() {

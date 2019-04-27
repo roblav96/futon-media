@@ -12,13 +12,9 @@ import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import Emitter from '@/shims/emitter'
-import ffprobe from '@/adapters/ffprobe'
 import redis from '@/adapters/redis'
 
 async function listen() {
-	// ffprobe(
-	// 	`https://miriam.makefast.co/dl/SewyeARRQy52TW6yrcM3YQ/1556551274/675000842/5ba4f74d335200.99795817/Sicario.Day.Of.The.Soldado.2018.1080p.BluRay.x264-%5BYTS.AM%5D.mp4`
-	// )
 	await fastify.listen(emby.STRM_PORT)
 }
 process.nextTick(() => listen().catch(error => console.error(`fastify listen -> %O`, error)))
@@ -31,7 +27,7 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStream({ e, quality, s, title, traktId, type }: StrmQuery) {
+async function getDebridStream({ e, quality, s, title, traktId, type }: emby.StrmQuery) {
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
@@ -54,9 +50,8 @@ async function getDebridStream({ e, quality, s, title, traktId, type }: StrmQuer
 	}
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json()))
 
-	let downloads = torrents.slice(0, torrents.findIndex(v => v.cached.includes('realdebrid')))
-	downloads = JSON.parse(JSON.stringify(downloads)).map(v => new torrent.Torrent(v))
-	// console.log(`downloads ->`, downloads)
+	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
+	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
 	emitter.once(traktId, () =>
 		debrids.download(downloads, item).catch(error => {
 			console.error(`debrids.download ${item.title} -> %O`, error)
@@ -70,7 +65,7 @@ async function getDebridStream({ e, quality, s, title, traktId, type }: StrmQuer
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let stream = await debrids.getStream(torrents, item)
+	let stream = await debrids.getStream(torrents, item, quality == '1080p')
 	if (!stream) throw new Error(`!stream`)
 	console.warn(`${title} ${quality} stream ->`, stream)
 	return stream
@@ -79,7 +74,7 @@ async function getDebridStream({ e, quality, s, title, traktId, type }: StrmQuer
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
 		return !isNaN(v) && k != 'traktId' ? _.parseInt(v) : v
-	}) as StrmQuery
+	}) as emby.StrmQuery
 	let { e, quality, s, title, traktId, type } = query
 	console.log(`${title} ${quality} query ->`, query)
 
@@ -116,11 +111,4 @@ fastify.get('/strm', async (request, reply) => {
 	reply.redirect(link)
 })
 
-interface StrmQuery {
-	e: number
-	quality: emby.Quality
-	s: number
-	title: string
-	traktId: string
-	type: media.MainContentType
-}
+

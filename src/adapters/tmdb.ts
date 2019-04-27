@@ -28,9 +28,13 @@ function debloat(value: any) {
 	keys.forEach(key => _.unset(value, key))
 }
 
+export function toType(media_type: string) {
+	return media_type == 'tv' ? 'show' : (media_type as media.ContentType)
+}
+
 export function toResult(full: Full) {
 	let type = full.media_type == 'tv' ? 'show' : full.media_type
-	return ({ [type]: full } as any) as Result
+	return ({ type, [type]: full } as any) as Result
 }
 
 export interface Paginated<T> {

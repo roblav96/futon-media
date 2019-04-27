@@ -25,12 +25,11 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(_.random(ms / Math.PI, ms)), { value })
 }
 
-export function clean(value: string) {
-	return squash(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
-}
-
 export function squash(value: string) {
 	return value.replace(/[^\x20-\x7E]/g, '')
+}
+export function clean(value: string) {
+	return squash(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
 }
 
 export function isForeign(value: string) {
@@ -77,10 +76,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 		lowercase: !options.toName,
 		separator: ' ',
 	} as Parameters<typeof toSlug>[1])
-	let slug = slugify(
-		clean(value.replace(/'/g, '')),
-		Object.assign({}, options, { separator: ' ' })
-	)
+	let slug = slugify(clean(value.replace(/'/g, '')), { ...options, separator: ' ' })
 	let filters = !options.toName ? ['a', 'an', 'and', 'of', 'the', 'to'] : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)

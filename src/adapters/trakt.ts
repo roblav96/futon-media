@@ -33,33 +33,6 @@ export const client = new Http({
 	},
 })
 
-// export async function allUrls() {
-// 	let urls = [
-// 		`/sync/watchlist/movies`,
-// 		`/sync/watchlist/shows`,
-// 		`/movies/boxoffice`,
-// 		`/movies/trending`,
-// 		`/movies/popular`,
-// 		`/movies/anticipated`,
-// 		`/movies/trending`,
-// 		`/movies/trending`,
-// 		`/movies/trending`,
-// 		`/movies/trending`,
-// 		`____`,
-// 		`____`,
-// 		`____`,
-// 		`____`,
-// 		`____`,
-// 		`____`,
-// 		`____`,
-// 	] as string[]
-// }
-
-// export async function watchlist(mtype: media.MainContentTypes) {
-// 	let results = (await client.get(`/sync/watchlist/${mtype}`)) as Watchlist[]
-// 	return results.map(v => new media.Item(v))
-// }
-
 export const RESULT_ITEM = {
 	score: 'score',
 } as Record<keyof Result, keyof media.Item>

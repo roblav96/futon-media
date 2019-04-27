@@ -40,13 +40,6 @@ const STATIC_SCHEMAS = [
 	[`Most Collected All Time`, `/<%= type %>/collected/all`],
 ] as [string, string, http.Config?][]
 
-export interface PlaylistSchema {
-	config: http.Config
-	name: string
-	type: media.MainContentType
-	url: string
-}
-
 async function allSchemas() {
 	let schemas = STATIC_SCHEMAS.map(schema =>
 		media.MAIN_TYPESS.map((type, i) => {
@@ -91,53 +84,34 @@ export async function syncPlaylists() {
 	let schemas = await allSchemas()
 	if (process.DEVELOPMENT) schemas.splice(2)
 	let traktIds = [] as string[]
-	await pAll(
-		schemas.map(schema => async () => {
-			await utils.pRandom(1000)
-			process.DEVELOPMENT && console.log(`schema ->`, schema.url)
-			_.defaultsDeep(schema, {
-				config: { query: { limit: LIMIT, extended: '' } } as http.Config,
-			})
-			let results = (await trakt.client.get(schema.url, schema.config)) as trakt.Result[]
-			let items = results.map(v => {
-				if (schema.type) {
-					!v[schema.type] && (v = { [schema.type]: v } as any)
-					!v.type && (v.type = schema.type)
-				}
-				return new media.Item(v)
-			})
-			for (let item of items) {
-				if (traktIds.includes(item.traktId)) {
-					continue
-				}
-				if (item.movie) {
-					for (let quality of ['1080p', '4K'] as emby.Quality[]) {
-						let { file, url } = emby.library.strmFile(item, quality)
-						await fs.outputFile(file, url)
-					}
-					traktIds.push(item.traktId)
-					continue
-				}
-				if (!item.show) throw new Error(`!item.show -> ${item}`)
-				await utils.pRandom(1000)
-				let seasons = (await trakt.client.get(
-					`/shows/${item.traktId}/seasons`
-				)) as trakt.Season[]
-				for (let season of seasons.filter(v => v.number > 0)) {
-					item.use({ season })
-					for (let i = 0; i < item.S.e; i++) {
-						item.use({ episode: { number: i + 1, season: season.number } })
-						for (let quality of ['1080p', '4K'] as emby.Quality[]) {
-							let { file, url } = emby.library.strmFile(item, quality)
-							await fs.outputFile(file, url)
-						}
-					}
-				}
-				traktIds.push(item.traktId)
+	for (let schema of schemas) {
+		await utils.pRandom(1000)
+		process.DEVELOPMENT && console.log(`schema ->`, schema.url)
+		_.defaultsDeep(schema, {
+			config: { query: { limit: LIMIT, extended: '' } } as http.Config,
+		})
+		let results = (await trakt.client.get(schema.url, schema.config)) as trakt.Result[]
+		let items = results.map(v => {
+			if (schema.type) {
+				!v[schema.type] && (v = { [schema.type]: v } as any)
+				!v.type && (v.type = schema.type)
 			}
-		}),
-		{ concurrency: 1 }
-	)
+			return new media.Item(v)
+		})
+		for (let item of items) {
+			if (!traktIds.includes(item.traktId)) {
+				traktIds.push(item.traktId)
+				await emby.library.add(item)
+			}
+		}
+	}
 	await emby.library.refresh()
 	console.warn(`syncPlaylists -> DONE`)
+}
+
+export interface PlaylistSchema {
+	config: http.Config
+	name: string
+	type: media.MainContentType
+	url: string
 }

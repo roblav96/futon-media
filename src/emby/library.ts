@@ -7,60 +7,86 @@ import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
+import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
-export const rxLibraryChanged = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'LibraryChanged'),
-	Rx.Op.map(({ Data }) => Data as LibraryChanged)
-)
-export const rxRefreshProgress = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'RefreshProgress'),
-	Rx.Op.map(({ Data }) => Data as RefreshProgress)
-)
-export const rxScheduledTasksInfo = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'ScheduledTasksInfo'),
-	Rx.Op.map(({ Data }) => Data as ScheduledTasksInfo)
-)
-export const rxScheduledTaskEnded = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'ScheduledTaskEnded'),
-	Rx.Op.map(({ Data }) => Data as ScheduledTaskEnded)
-)
+export const rxLibraryChanged = socket.filter<LibraryChanged>('LibraryChanged')
+export const rxRefreshProgress = socket.filter<RefreshProgress>('RefreshProgress')
+export const rxScheduledTasksInfo = socket.filter<ScheduledTasksInfo>('ScheduledTasksInfo')
+export const rxScheduledTaskEnded = socket.filter<ScheduledTaskEnded>('ScheduledTaskEnded')
+
+rxLibraryChanged.subscribe(LibraryChanged => {
+	console.warn(`LibraryChanged ->`, LibraryChanged)
+})
 
 export const library = {
+	qualities: ['1080p', '4K'] as Quality[],
 	async refresh() {
 		await emby.client.post(`/Library/Refresh`)
 	},
-	strmFile(item: media.Item, quality = '' as emby.Quality) {
+	async toStrm(item: media.Item) {
 		let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
 		file += `/${item.type}s`
-		let title = item.main.title
-		_.isFinite(item.year) && (title += ` (${item.year})`)
+
+		let title = utils.toSlug(item.main.title, { toName: true })
 		if (item.movie) {
-			file += `/${title}/${title}`
-		} else if (_.isFinite(item.E.n)) {
-			file += `/${title}`
-			file += `/Season ${item.S.n}`
-			file += `/${item.main.title} - S${item.S.z}E${item.E.z}`
-		} else {
-			throw new Error(`toStrm !item -> ${item.title}`)
+			file += `/${title} (${item.year})/${title} (${item.year})`
 		}
-		let url = `${emby.DOMAIN}:${emby.STRM_PORT}/strm`
+		if (item.show) {
+			file += `/${title} (${item.year})`
+			file += `/Season ${item.S.n}`
+			file += `/${title} - S${item.S.z}E${item.E.z}`
+		}
+
 		let query = {
 			type: item.type,
 			traktId: item.traktId,
 			title: utils.toSlug(item.main.title, { toName: true, separator: '-' }),
+		} as StrmQuery
+		item.episode && (query = { ...query, s: item.S.n, e: item.E.n })
+
+		for (let quality of library.qualities) {
+			console.log(
+				`toStrm ->`,
+				path.normalize(`${file} - ${quality}.strm`),
+				`${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify({ ...query, quality })}`
+			)
+			await fs.outputFile(
+				path.normalize(`${file} - ${quality}.strm`),
+				`${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify({ ...query, quality })}`
+			)
 		}
-		item.episode && Object.assign(query, { s: item.S.n, e: item.E.n })
-		if (quality) {
-			file += ` - ${quality}`
-			Object.assign(query, { quality })
+	},
+	async add(item: media.Item) {
+		if (item.movie) {
+			await library.toStrm(item)
 		}
-		url += `?${qs.stringify(query)}`
-		return { file: path.normalize(`${file}.strm`), url }
+		if (item.show) {
+			await utils.pRandom(1000)
+			let seasons = (await trakt.client.get(
+				`/shows/${item.traktId}/seasons`
+			)) as trakt.Season[]
+			for (let season of seasons.filter(v => v.number > 0)) {
+				item.use({ season })
+				for (let i = 1; i <= item.S.a; i++) {
+					item.use({ episode: { number: i, season: season.number } })
+					await library.toStrm(item)
+				}
+			}
+		}
 	},
 }
 
 export type Quality = '1080p' | '4K'
+
+export interface StrmQuery {
+	e: number
+	quality: Quality
+	s: number
+	title: string
+	traktId: string
+	type: media.MainContentType
+}
 
 export interface Item {
 	BackdropImageTags: string[]

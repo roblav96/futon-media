@@ -107,7 +107,7 @@ export class Http {
 		}
 
 		if (!options.silent) {
-			console.log(`[${options.method}]`, min.url, `\n${min.query}`)
+			console.log(`[${options.method}]`, min.url, min.query)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
