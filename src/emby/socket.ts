@@ -45,9 +45,9 @@ export const rxSocket = rxMessage.pipe(
 		return EmbyEvent
 	})
 )
-rxSocket.subscribe(({ MessageType, Data }) => {
-	console.log(`rxSocket ->`, MessageType, Data)
-})
+// rxSocket.subscribe(({ MessageType, Data }) => {
+// 	console.log(`rxSocket ->`, MessageType, Data)
+// })
 
 export function filter<IData>(MessageType: string) {
 	return rxSocket.pipe<EmbyEvent<IData>>(

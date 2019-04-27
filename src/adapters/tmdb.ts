@@ -1,5 +1,7 @@
 import * as _ from 'lodash'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
+import * as trakt from '@/adapters/trakt'
 import { Http } from '@/adapters/http'
 
 export const client = new Http({
@@ -26,6 +28,29 @@ export const client = new Http({
 function debloat(value: any) {
 	let keys = ['crew', 'guest_stars', 'production_companies']
 	keys.forEach(key => _.unset(value, key))
+}
+
+export async function search(query: string, type = 'multi' as media.MainContentType) {
+	let response = (await client.get(`/search/${type}`, {
+		query: { query },
+	})) as Paginated<Full>
+	let fulls = (response.results || []).filter(v => {
+		return (
+			['movie', 'tv'].includes(v.media_type) &&
+			(v.original_language == 'en' && !v.adult && v.vote_count >= 100)
+		)
+	})
+	let results = await pAll(fulls.map(result => () => toTrakt(result)), { concurrency: 1 })
+	results.sort((a, b) => (b[b.type] as trakt.Full).votes - (a[a.type] as trakt.Full).votes)
+	return results.filter(Boolean)
+}
+
+export async function toTrakt({ id, media_type }: Full) {
+	let type = toType(media_type)
+	let results = (await trakt.client.get(`/search/tmdb/${id}`, {
+		query: { type },
+	})) as trakt.Result[]
+	return results.find(v => v[type].ids.tmdb == id)
 }
 
 export function toType(media_type: string) {
