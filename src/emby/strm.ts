@@ -85,9 +85,9 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 // 	let Views = await Session.Views()
 // 	global.dts(_.merge({}, ...Views), `_.merge({}, ...Views)`)
 // })
-// emby.rxHttp.subscribe(({ url, query }) => {
-// 	console.log(`rxHttp ->`, url, query)
-// })
+emby.rxHttp.subscribe(({ url, query }) => {
+	console.log(`rxHttp ->`, new Url(url).pathname, query)
+})
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {

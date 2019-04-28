@@ -1,8 +1,8 @@
 interface Env {
+	EMBY_API_ADMIN: string
 	EMBY_API_HOST: string
 	EMBY_API_KEY: string
 	EMBY_API_PORT: string
-	EMBY_API_USER_ID: string
 	EMBY_LIBRARY_PATH: string
 	OMDB_KEY: string
 	ORION_APP: string
