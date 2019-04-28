@@ -81,30 +81,33 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 // })
 // emby.rxPlaybackInfo.subscribe(async ({ query }) => {
 // 	console.log(`rxPlaybackInfo ->`, query)
-// 	let Session = await emby.sessions.withUserId(query.UserId)
+// 	let Session = await emby.sessions.byUserId(query.UserId)
 // 	let Views = await Session.Views()
 // 	global.dts(_.merge({}, ...Views), `_.merge({}, ...Views)`)
 // })
-emby.rxHttp.subscribe(({ url, query }) => {
-	console.log(`rxHttp ->`, url, query)
-})
+// emby.rxHttp.subscribe(({ url, query }) => {
+// 	console.log(`rxHttp ->`, url, query)
+// })
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
 		if (k == 'traktId') return v
 		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
+	// return console.warn(`[RETURN] strm ->`, query.title)
 
-	let Sessions = await emby.sessions.get()
-	for (let Session of Sessions) {
-		let Latest = await Session.Latest()
-		console.log(`Latest ->`, Session.DeviceName, Latest)
-	}
-	let Session = Sessions.filter(v => !v.IsStreaming)[0]
-	query.quality = Session.Quality
+	await emby.sessions.sync()
+	let SessionExt = emby.AllSessionExts[0]
+	console.log(`SessionExt ->`, SessionExt.json)
+	// let Sessions = await emby.sessions.get()
+	// for (let Session of Sessions) {
+	// 	let Latest = await Session.Latest()
+	// 	console.log(`Latest ->`, Session.DeviceName, Latest)
+	// }
+	// let Session = Sessions.filter(v => !v.IsStreaming)[0]
+	query.quality = '1080p' // SessionExt.Quality
 	let { e, s, title, traktId, type, quality } = query
-	console.warn(`${title} strm ->`, quality, Session.DeviceName, Session.Age)
-	console.log(`Sessions ->`, Sessions.map(v => v.json))
+	console.warn(`${title} strm ->`, SessionExt.Quality, SessionExt.DeviceName, SessionExt.Age)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
@@ -114,6 +117,7 @@ fastify.get('/strm', async (request, reply) => {
 		if (!emitter.eventNames().includes(traktId)) {
 			getDebridStream(query).then(
 				async stream => {
+					if (!stream) throw new Error(`!stream`)
 					let seconds = utils.duration(1, 'day') / 1000
 					await redis.setex(rkey, seconds, stream)
 					emitter.emit(traktId, stream)
@@ -121,8 +125,8 @@ fastify.get('/strm', async (request, reply) => {
 				async error => {
 					console.error(`getDebridStream ${title} -> %O`, error)
 					let seconds = utils.duration(1, 'minute') / 1000
-					await redis.setex(rkey, seconds, `/dev/null`)
-					emitter.emit(traktId, `/dev/null`)
+					await redis.setex(rkey, seconds, 'dev/null')
+					emitter.emit(traktId, 'dev/null')
 				}
 			)
 		}

@@ -25,7 +25,7 @@ export const library = {
 		await emby.client.post(`/Library/Refresh`)
 	},
 	async toStrm(item: media.Item) {
-		let file = path.normalize(process.env.EMBY_LIBRARY || process.cwd())
+		let file = path.normalize(process.env.EMBY_LIBRARY_PATH || process.cwd())
 		file += `/${item.type}s`
 
 		let title = utils.toSlug(item.main.title, { toName: true })

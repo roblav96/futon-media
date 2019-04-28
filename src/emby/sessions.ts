@@ -1,63 +1,90 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
+import * as difference from 'deep-diff'
+import * as deepmerge from 'deepmerge'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as socket from '@/emby/socket'
+import * as utils from '@/utils/utils'
 import * as trakt from '@/adapters/trakt'
 
-export const rxSessions = socket.rxSocket.pipe(
-	Rx.Op.filter(({ MessageType }) => MessageType == 'Sessions'),
-	Rx.Op.map(({ Data }) => sessions.parse(Data))
-)
+// export const AllSessionExts = [] as SessionExt[]
+export const AllSessionExts = new Map<string, SessionExt>()
 
-export const rxSession = new Rx.BehaviorSubject({} as Session)
-rxSessions.subscribe(Sessions => {
-	let Session = Sessions[0]
-	if (!rxSession.value.LastActivityDate) return rxSession.next(Session)
-	let a = new Date(Session.LastActivityDate).valueOf()
-	let b = new Date(rxSession.value.LastActivityDate).valueOf()
-	if (a > b) rxSession.next(Session)
-})
-
-async function resync() {
-	console.log(`resync`)
+async function sync() {
+	let Sessions = await sessions.get()
+	for (let newSession of Sessions) {
+		let oldSessionExt = AllSessionExts.get(newSession.Id)
+		if (!oldSessionExt) {
+			AllSessionExts.set(newSession.Id, new SessionExt(newSession))
+			continue
+		}
+		let diffs = difference.diff(oldSessionExt, newSession)
+		if (!diffs) continue
+		console.log(`diffs ->`, oldSessionExt.DeviceName, diffs)
+		let newSessionExt = new SessionExt(newSession)
+		if (newSessionExt.Stamp > oldSessionExt.Stamp) {
+			console.log(`newSessionExt.Age ->`, newSessionExt.Age)
+			AllSessionExts.set(newSessionExt.Id, newSessionExt)
+		}
+		// console.log(`diffs ->`, oldSessionExt.DeviceName, diffs)
+		// if (diffs && diffs[0] && diffs[0].path.includes('LastActivityDate')) {
+		// 	if (diffs[0].kind == 'E') {
+		// 	}
+		// 	// let first = diffs[0] as difference.DiffEdit<Session>
+		// 	// first.kind
+		// 	AllSessionExts.splice(index, 1, new SessionExt(newSession))
+		// }
+	}
+	// AllSessionExts.sort((a, b) => b.Stamp - a.Stamp)
+	console.log(`AllSessionExts ->`, Array.from(AllSessionExts.values()))
 }
 
-process.nextTick(async () => {
-	let Sessions = await sessions.get()
-	console.log(`Sessions ->`, Sessions)
-	rxSession.next(Sessions[0])
-	schedule.scheduleJob(`* * * * * *`, () =>
-		resync().catch(error => console.error(`resync Sessions -> %O`, error))
-	)
-})
+let job = schedule.scheduleJob(`*/5 * * * * *`, () =>
+	sync().catch(error => console.error(`sync AllSessionExts -> %O`, error))
+)
+process.nextTick(() => job.invoke())
+// process.nextTick(() => {
+// 	setInterval(() => {
+// 		sync().catch(error => console.error(`sync AllSessionExts -> %O`, error))
+// 	}, 5000)
+// })
+
+// export const rxSession = new Rx.BehaviorSubject({} as Session)
+// rxSessions.subscribe(Sessions => {
+// 	let Session = Sessions[0]
+// 	if (!rxSession.value.LastActivityDate) return rxSession.next(Session)
+// 	let a = new Date(Session.LastActivityDate).valueOf()
+// 	let b = new Date(rxSession.value.LastActivityDate).valueOf()
+// 	if (a > b) rxSession.next(Session)
+// })
 // process.nextTick(() => sessions.get().then(([v]) => rxSession.next(v)))
 
 export const sessions = {
+	sync,
 	async get() {
-		return sessions.parse((await emby.client.get('/Sessions')) as Session[])
+		let Sessions = (await emby.client.get('/Sessions')) as Session[]
+	console.log(`Sessions ->`, JSON.parse(JSON.stringify(Sessions)))
+		return Sessions.filter(({ UserName }) => !!UserName)
 	},
-	async admin() {
-		return (await sessions.get()).find(v => v.UserId == process.env.EMBY_API_USER)
+	async exts() {
+		return (await sessions.get()).map(v => new SessionExt(v))
 	},
-	async withUserId(UserId: string) {
-		return (await sessions.get()).find(v => v.UserId == UserId)
-	},
-	parse(Sessions: Session[]) {
-		Sessions = Sessions.filter(({ UserName }) => !!UserName).sort((a, b) => {
-			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
-		})
-		return Sessions.map(v => new Session(v))
-	},
+	// async admin() {
+	// 	return AllSessionExts.find(v => v.UserId == process.env.EMBY_API_USER)
+	// },
+	// async byUserId(UserId: string) {
+	// 	return AllSessionExts.find(v => v.UserId == UserId)
+	// },
 	async broadcast(message: string) {
-		let Sessions = await sessions.get()
-		Sessions.forEach(v => v.message(message))
+		AllSessionExts.forEach(v => v.message(message))
 	},
 }
 
-export class Session {
+export interface SessionExt extends Session {}
+export class SessionExt {
 	get IsRoku() {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
@@ -72,6 +99,9 @@ export class Session {
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
+	}
+	get Age() {
+		return Date.now() - this.Stamp
 	}
 
 	get AudioStreamIndex() {
@@ -137,11 +167,14 @@ export class Session {
 		)
 	}
 
-	Age: number
 	constructor(Session: Session) {
 		_.merge(this, Session)
-		this.Age = Date.now() - this.Stamp
+		// this.use(Session)
 	}
+	// use(Session: Session) {
+	// 	_.merge(this, Session)
+	// 	return this
+	// }
 
 	async Device() {
 		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
