@@ -29,8 +29,8 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, title, traktId, type, quality }: emby.StrmQuery) {
-	await utils.pTimeout(10000)
-	throw new Error(`message`)
+	// await utils.pTimeout(10000)
+	// throw new Error(`message`)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -52,7 +52,7 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 			return bsize - asize
 		})
 	}
-	console.log(`scrapeAll torrents ->`, torrents.map(v => v.json()))
+	console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
 
 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
@@ -75,23 +75,20 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 	return stream
 }
 
-// emby.rxSession.subscribe(Session => {
-// 	if (!Session.DeviceName) return
-// 	console.log(`emby.rxSession ->`, Session.DeviceName)
-// })
+emby.rxSession.subscribe(Session => {
+	if (!Session.DeviceName) return
+	console.log(`emby.rxSession ->`, Session.json)
+})
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
 		return !isNaN(v) && k != 'traktId' ? _.parseInt(v) : v
 	}) as emby.StrmQuery
-	let { quality, DeviceName } = emby.rxSession.value
-	query.quality = quality
-	let { e, s, title, traktId, type } = query
-	console.warn(`fastify strm ->`, title, quality, DeviceName)
 
-	let Sessions = await emby.sessions.get()
-	console.log(`emby.rxSession.age ->`, emby.rxSession.value.age)
-	console.log(`sessions.get.ages ->`, Sessions.map(v => `${v.DeviceName} -> ${v.age}`))
+	let Session = (await emby.sessions.get()).filter(v => !v.isPlaying)[0]
+	query.quality = Session.quality
+	let { e, s, title, traktId, type, quality } = query
+	console.warn(`${title} strm ->`, quality, Session.DeviceName, Session.age)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)

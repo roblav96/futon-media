@@ -28,6 +28,23 @@ export class Torrent {
 		return magneturi.decode(this.magnet).infoHash.toLowerCase()
 	}
 
+	get json() {
+		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
+		return {
+			age: this.age,
+			cached: this.cached.join(', '),
+			hash: this.hash,
+			magnet: `magnet:?${minify}`,
+			name: this.name,
+			packs: this.packs,
+			providers: this.providers.join(', '),
+			seeders: this.seeders,
+			size: this.size,
+			slugs: this.slugs.join(', '),
+		}
+	}
+
 	constructor(result: scraper.Result) {
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 		magnet.xt = magnet.xt.toLowerCase()
@@ -43,22 +60,5 @@ export class Torrent {
 		)}`
 
 		_.merge(this, result)
-	}
-
-	json() {
-		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
-		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
-		return {
-			age: this.age,
-			cached: this.cached.join(', '),
-			hash: this.hash,
-			magnet: `magnet:?${minify}`,
-			name: this.name,
-			packs: this.packs,
-			providers: this.providers.join(', '),
-			seeders: this.seeders,
-			size: this.size,
-			slugs: this.slugs.join(', '),
-		}
 	}
 }

@@ -18,13 +18,13 @@ export async function cached(hashes: string[]) {
 }
 
 export async function download(torrents: torrent.Torrent[], item: media.Item) {
-	// console.log(`download torrents ->`, torrents.map(v => v.json()))
+	// console.log(`download torrents ->`, torrents.map(v => v.json))
 	let debrid = new RealDebrid()
 	for (let torrent of torrents) {
 		if (torrent.cached.includes('realdebrid')) {
 			return
 		}
-		console.log(`download torrent ->`, torrent.json())
+		console.log(`download torrent ->`, torrent.json)
 		if (await debrid.use(torrent.magnet).download()) {
 			return
 		}
@@ -32,9 +32,9 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 }
 
 export async function getStream(torrents: torrent.Torrent[], item: media.Item, stereo: boolean) {
-	// console.log(`stream torrents ->`, torrents.map(v => v.json()))
+	// console.log(`stream torrents ->`, torrents.map(v => v.json))
 	for (let torrent of torrents) {
-		console.log(`stream torrent ->`, torrent.json())
+		console.log(`stream torrent ->`, torrent.json)
 
 		for (let cached of torrent.cached) {
 			let debrid = new debrids[cached]().use(torrent.magnet)

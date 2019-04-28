@@ -3,25 +3,43 @@ import * as execa from 'execa'
 import * as fastParse from 'fast-json-parse'
 import { path as ffpath } from 'ffprobe-static'
 
-export default async function ffprobe(streamUrl: string) {
-	let { stdout } = await execa(ffpath, [
-		'-print_format',
-		'json',
-		'-show_error',
-		'-show_format',
-		'-show_streams',
-		streamUrl,
-	])
+const defaults = {
+	chapters: false,
+	format: false,
+	streams: true,
+}
+export default async function ffprobe(
+	streamUrl: string,
+	options = defaults as Partial<typeof defaults>
+) {
+	let pairs = Object.entries(options).filter(([k, v]) => v)
+	let flags = ['-print_format', 'json', '-show_error'].concat(pairs.map(([k]) => `-show_${k}`))
+	let { stdout } = await execa(ffpath, flags.concat(streamUrl))
 	let { err, value } = fastParse(stdout)
 	if (err) throw err
 	return value as FFProbe
 }
 
 // ffprobe(
-// 	`https://miriam.makefast.co/dl/SewyeARRQy52TW6yrcM3YQ/1556551274/675000842/5ba4f74d335200.99795817/Sicario.Day.Of.The.Soldado.2018.1080p.BluRay.x264-%5BYTS.AM%5D.mp4`
-// )
+// 	`https://37.rdeb.io/d/Z24TYAXEJW5KQ/Mission.Impossible.Fallout.2018.IMAX.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv`,
+// 	// `https://miriam.makefast.co/dl/SewyeARRQy52TW6yrcM3YQ/1556551274/675000842/5ba4f74d335200.99795817/Sicario.Day.Of.The.Soldado.2018.1080p.BluRay.x264-%5BYTS.AM%5D.mp4`,
+// 	{ chapters: true /** format: true, streams: true */ }
+// ).then(probe => {
+// 	console.log(`probe ->`, probe)
+// })
 
 interface FFProbe {
+	chapters: {
+		end: number
+		end_time: string
+		id: number
+		start: number
+		start_time: string
+		tags: {
+			title: string
+		}
+		time_base: string
+	}[]
 	format: {
 		bit_rate: string
 		duration: string
@@ -56,7 +74,37 @@ interface FFProbe {
 		codec_type: string
 		coded_height: number
 		coded_width: number
+		color_primaries: string
+		color_range: string
+		color_space: string
+		color_transfer: string
 		display_aspect_ratio: string
+		dmix_mode: string
+		duration: string
+		duration_ts: number
+		has_b_frames: number
+		height: number
+		index: number
+		is_avc: string
+		level: number
+		loro_cmixlev: string
+		loro_surmixlev: string
+		ltrt_cmixlev: string
+		ltrt_surmixlev: string
+		max_bit_rate: string
+		nal_length_size: string
+		nb_frames: string
+		pix_fmt: string
+		profile: string
+		r_frame_rate: string
+		refs: number
+		sample_aspect_ratio: string
+		sample_fmt: string
+		sample_rate: string
+		start_pts: number
+		start_time: string
+		time_base: string
+		width: number
 		disposition: {
 			attached_pic: number
 			clean_effects: number
@@ -71,30 +119,9 @@ interface FFProbe {
 			timed_thumbnails: number
 			visual_impaired: number
 		}
-		duration: string
-		duration_ts: number
-		has_b_frames: number
-		height: number
-		index: number
-		is_avc: string
-		level: number
-		max_bit_rate: string
-		nal_length_size: string
-		nb_frames: string
-		pix_fmt: string
-		profile: string
-		r_frame_rate: string
-		refs: number
-		sample_aspect_ratio: string
-		sample_fmt: string
-		sample_rate: string
-		start_pts: number
-		start_time: string
 		tags: {
 			handler_name: string
 			language: string
 		}
-		time_base: string
-		width: number
 	}[]
 }

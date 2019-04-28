@@ -47,22 +47,48 @@ export class Session {
 	get isRoku() {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
-
-	get quality(): emby.Quality {
+	get channels() {
 		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
 		let profiles = _.get(this, dotpath) as TranscodingProfiles[]
-		if (!_.isArray(profiles)) return '4K'
-		let max = _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
-		return max == 2 ? '1080p' : '4K'
+		if (!_.isArray(profiles)) return NaN
+		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
+	}
+	get quality(): emby.Quality {
+		return _.isFinite(this.channels) && this.channels == 2 ? '1080p' : '4K'
+	}
+	get isPlaying() {
+		if (!this.NowPlayingItem) return false
+		let { Container } = this.NowPlayingItem
+		let { AudioStreamIndex, MediaSourceId, PositionTicks } = this.PlayState
+		return (
+			Container && _.isFinite(AudioStreamIndex) && MediaSourceId && _.isFinite(PositionTicks)
+		)
+	}
+	get stamp() {
+		return new Date(this.LastActivityDate).valueOf()
 	}
 
-	get age() {
-		let day = dayjs(this.LastActivityDate)
-		return `+${Date.now() - day.valueOf()}ms ${day.fromNow()}`
+	get json() {
+		return {
+			age: `+${this.age}ms`, // ${dayjs(this.LastActivityDate).fromNow(false)}`,
+			channels: this.channels,
+			Client: this.Client,
+			DeviceId: this.DeviceId,
+			DeviceName: this.DeviceName,
+			Id: this.Id,
+			isPlaying: this.isPlaying,
+			isRoku: this.isRoku,
+			MediaSourceId: _.get(this, 'PlayState.MediaSourceId'),
+			NowPlayingItem: _.get(this, 'NowPlayingItem.Name'),
+			quality: this.quality,
+			UserName: this.UserName,
+		}
 	}
 
+	age: number
 	constructor(Session: Session) {
 		_.merge(this, Session)
+		this.age = Date.now() - this.stamp
 	}
 
 	async Device() {
