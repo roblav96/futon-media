@@ -59,6 +59,9 @@ export function leven(value: string, target: string) {
 }
 export { levenshtein }
 
+export function isNumeric(value: string) {
+	return !_.isEmpty(value) && !isNaN(value as any)
+}
 export function parseInt(value: string) {
 	return Number.parseInt(value.replace(/[^\d]/g, ''))
 }

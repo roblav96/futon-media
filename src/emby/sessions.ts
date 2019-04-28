@@ -44,51 +44,83 @@ export const sessions = {
 }
 
 export class Session {
-	get isRoku() {
+	get IsRoku() {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
-	get channels() {
+	get Channels() {
 		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
 		let profiles = _.get(this, dotpath) as TranscodingProfiles[]
 		if (!_.isArray(profiles)) return NaN
 		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
-	get quality(): emby.Quality {
-		return _.isFinite(this.channels) && this.channels == 2 ? '1080p' : '4K'
+	get Quality(): emby.Quality {
+		return _.isFinite(this.Channels) && this.Channels == 2 ? '1080p' : '4K'
 	}
-	get isPlaying() {
-		if (!this.NowPlayingItem) return false
-		let { Container } = this.NowPlayingItem
-		let { AudioStreamIndex, MediaSourceId, PositionTicks } = this.PlayState
-		return (
-			Container && _.isFinite(AudioStreamIndex) && MediaSourceId && _.isFinite(PositionTicks)
-		)
-	}
-	get stamp() {
+	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}
 
-	get json() {
-		return {
-			age: `+${this.age}ms`, // ${dayjs(this.LastActivityDate).fromNow(false)}`,
-			channels: this.channels,
-			Client: this.Client,
-			DeviceId: this.DeviceId,
-			DeviceName: this.DeviceName,
-			Id: this.Id,
-			isPlaying: this.isPlaying,
-			isRoku: this.isRoku,
-			MediaSourceId: _.get(this, 'PlayState.MediaSourceId'),
-			NowPlayingItem: _.get(this, 'NowPlayingItem.Name'),
-			quality: this.quality,
-			UserName: this.UserName,
-		}
+	get AudioStreamIndex() {
+		return _.get(this, 'PlayState.AudioStreamIndex')
+	}
+	get MediaSourceId() {
+		return _.get(this, 'PlayState.MediaSourceId')
+	}
+	get PlayMethod() {
+		return _.get(this, 'PlayState.PlayMethod')
+	}
+	get PositionTicks() {
+		return _.get(this, 'PlayState.PositionTicks')
+	}
+	get IsPlayState() {
+		let finite = _.isFinite(this.AudioStreamIndex) && _.isFinite(this.PositionTicks)
+		return finite && !!this.MediaSourceId && !!this.PlayMethod
 	}
 
-	age: number
+	get Container() {
+		return _.get(this, 'NowPlayingItem.Container')
+	}
+	get ItemName() {
+		return _.get(this, 'NowPlayingItem.Name')
+	}
+	get StrmPath() {
+		return _.get(this, 'NowPlayingItem.Path')
+	}
+	get ItemId() {
+		return _.get(this, 'NowPlayingItem.Id')
+	}
+	get IsNowPlaying() {
+		return !!this.Container && !!this.ItemName && !!this.StrmPath && !!this.ItemId
+	}
+
+	get IsStreaming() {
+		return !!this.IsPlayState && !!this.IsNowPlaying && this.Age <= 100
+	}
+
+	get json() {
+		return _.fromPairs(
+			_.toPairs({
+				Age: `+${this.Age}ms`,
+				Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
+				Channels: this.Channels,
+				Client: this.Client,
+				Container: this.Container,
+				DeviceName: this.DeviceName,
+				IsNowPlaying: this.IsNowPlaying,
+				IsPlayState: this.IsPlayState,
+				IsStreaming: this.IsStreaming,
+				ItemName: this.ItemName,
+				Quality: this.Quality,
+				StrmPath: this.StrmPath,
+				UserName: this.UserName,
+			}).filter(([k, v]) => !_.isNil(v))
+		)
+	}
+
+	Age: number
 	constructor(Session: Session) {
 		_.merge(this, Session)
-		this.age = Date.now() - this.stamp
+		this.Age = Date.now() - this.Stamp
 	}
 
 	async Device() {

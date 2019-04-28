@@ -29,8 +29,8 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, title, traktId, type, quality }: emby.StrmQuery) {
-	// await utils.pTimeout(10000)
-	// throw new Error(`message`)
+	await utils.pTimeout(10000)
+	throw new Error(`DEVELOPMENT`)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -75,20 +75,24 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 	return stream
 }
 
-emby.rxSession.subscribe(Session => {
-	if (!Session.DeviceName) return
-	console.log(`emby.rxSession ->`, Session.json)
-})
+// emby.rxSession.subscribe(Session => {
+// 	if (!Session.DeviceName) return
+// 	console.log(`emby.rxSession ->`, Session.json)
+// })
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
-		return !isNaN(v) && k != 'traktId' ? _.parseInt(v) : v
+		if (k == 'traktId') return v
+		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
+	console.log(`query ->`, query)
 
-	let Session = (await emby.sessions.get()).filter(v => !v.isPlaying)[0]
-	query.quality = Session.quality
+	let Sessions = await emby.sessions.get()
+	let Session = Sessions.filter(v => !v.IsStreaming)[0]
+	query.quality = Session.Quality
 	let { e, s, title, traktId, type, quality } = query
-	console.warn(`${title} strm ->`, quality, Session.DeviceName, Session.age)
+	console.warn(`${title} strm ->`, quality, Session.DeviceName, Session.Age)
+	console.log(`Sessions ->`, Sessions.map(v => v.json))
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)

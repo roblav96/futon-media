@@ -5,6 +5,7 @@ import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 import * as tail from '@/emby/tail'
 import * as Url from 'url-parse'
+import * as utils from '@/utils/utils'
 
 export type PlaybackQuery = typeof PlaybackQuery
 const PlaybackQuery = {
@@ -21,12 +22,13 @@ const PlaybackQuery = {
 	MaxStreamingBitrate: '',
 	MediaSourceId: '',
 	StartTimeTicks: '',
+	Static: '',
 	SubtitleStreamIndex: '',
 	UserId: '',
 }
 const FixPlaybackQuery = _.invert(_.mapValues(PlaybackQuery, (v, k) => k.toLowerCase()))
 
-export const rxPlayback = tail.rxHttp.pipe(
+export const rxPlaybackInfo = tail.rxHttp.pipe(
 	Rx.Op.filter(({ url }) => path.basename(url).toLowerCase() == 'playbackinfo'),
 	// Rx.Op.filter(({ url }) => {
 	// 	let base = path.basename(url).toLowerCase()
@@ -34,6 +36,7 @@ export const rxPlayback = tail.rxHttp.pipe(
 	// }),
 	Rx.Op.map(({ url, query }) => {
 		query = _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || _.upperFirst(k))
+		let ItemId = _.reverse(url.split('/')).find(v => utils.isNumeric(v))
 		query.ItemId = url.split('/').slice(-2)[0]
 		return { url, query: query as PlaybackQuery }
 	})
@@ -48,11 +51,11 @@ export const rxPlayback = tail.rxHttp.pipe(
 // tail.rxHttp.subscribe(({ url, query }) => {
 // 	console.log(`rxHttp ->`, new Url(url).pathname, query)
 // })
-export const rxPlaybackIsFalse = rxPlayback.pipe(
+export const rxPlaybackInfoIsFalse = rxPlaybackInfo.pipe(
 	Rx.Op.filter(({ query }) => query.IsPlayback == 'false')
 	// Rx.Op.filter(({ query }) => query.IsPlayback == 'false' || query.Format == 'json')
 )
-export const rxPlaybackUserId = rxPlayback.pipe(
+export const rxPlaybackInfoUserId = rxPlaybackInfo.pipe(
 	Rx.Op.filter(({ query }) => !!query.UserId),
 	Rx.Op.map(({ query }) => query.UserId)
 )
