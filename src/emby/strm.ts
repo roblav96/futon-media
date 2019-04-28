@@ -52,7 +52,8 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 			return bsize - asize
 		})
 	}
-	console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
+	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
+	console.log(`scrapeAll torrents ->`, torrents.length)
 
 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
