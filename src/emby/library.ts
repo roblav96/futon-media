@@ -6,18 +6,8 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
-import * as socket from '@/emby/socket'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
-
-export const rxLibraryChanged = socket.filter<LibraryChanged>('LibraryChanged')
-export const rxRefreshProgress = socket.filter<RefreshProgress>('RefreshProgress')
-export const rxScheduledTasksInfo = socket.filter<ScheduledTasksInfo>('ScheduledTasksInfo')
-export const rxScheduledTaskEnded = socket.filter<ScheduledTaskEnded>('ScheduledTaskEnded')
-
-// rxLibraryChanged.subscribe(LibraryChanged => {
-// 	console.warn(`LibraryChanged ->`, LibraryChanged)
-// })
 
 export const library = {
 	qualities: ['1080p', '4K'] as Quality[],

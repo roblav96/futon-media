@@ -10,7 +10,6 @@ import Sockette from '@/shims/sockette'
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
-	return console.warn(`[RETURN] rxSocket`)
 	let url = `${emby.DOMAIN}:${emby.PORT}`.replace('http', 'ws')
 	let query = { api_key: process.env.EMBY_API_KEY }
 	let ws = new Sockette(`${url}/embywebsocket?${qs.stringify(query)}`, {

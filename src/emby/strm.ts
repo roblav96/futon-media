@@ -94,20 +94,14 @@ fastify.get('/strm', async (request, reply) => {
 		if (k == 'traktId') return v
 		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
-	// return console.warn(`[RETURN] strm ->`, query.title)
+	console.warn(`strm ->`, query.title)
 
-	await emby.sessions.sync()
-	let SessionExt = emby.AllSessionExts[0]
-	console.log(`SessionExt ->`, SessionExt.json)
-	// let Sessions = await emby.sessions.get()
-	// for (let Session of Sessions) {
-	// 	let Latest = await Session.Latest()
-	// 	console.log(`Latest ->`, Session.DeviceName, Latest)
-	// }
-	// let Session = Sessions.filter(v => !v.IsStreaming)[0]
-	query.quality = '1080p' // SessionExt.Quality
+	let Sessions = await emby.sessions.get()
+	console.log(`Sessions ->`, Sessions.map(v => v.json))
+	let Session = Sessions.find(v => !v.IsStreaming)
+	console.log(`Session ->`, Session.json)
+	query.quality = Session.Quality
 	let { e, s, title, traktId, type, quality } = query
-	console.warn(`${title} strm ->`, SessionExt.Quality, SessionExt.DeviceName, SessionExt.Age)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
@@ -117,7 +111,6 @@ fastify.get('/strm', async (request, reply) => {
 		if (!emitter.eventNames().includes(traktId)) {
 			getDebridStream(query).then(
 				async stream => {
-					if (!stream) throw new Error(`!stream`)
 					let seconds = utils.duration(1, 'day') / 1000
 					await redis.setex(rkey, seconds, stream)
 					emitter.emit(traktId, stream)

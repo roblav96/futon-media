@@ -1,92 +1,30 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
-import * as difference from 'deep-diff'
-import * as deepmerge from 'deepmerge'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
-import * as Rx from '@/shims/rxjs'
-import * as schedule from 'node-schedule'
-import * as socket from '@/emby/socket'
-import * as utils from '@/utils/utils'
 import * as trakt from '@/adapters/trakt'
 
-export const SessionExts = [] as SessionExt[]
-
-async function sync() {
-	let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
-	Sessions = Sessions.filter(({ UserName }) => !!UserName)
-	for (let newSession of Sessions) {
-		let oldSessionExt = SessionExts.find(v => v.Id == newSession.Id)
-		if (!oldSessionExt) {
-			SessionExts.push(new SessionExt(newSession))
-			continue
-		}
-		let diffs = difference.diff(oldSessionExt, newSession)
-		if (!diffs) {
-			continue
-		}
-		console.log(`diffs [${oldSessionExt.DeviceName}] ->`, diffs)
-		let newSessionExt = new SessionExt(newSession)
-		if (newSessionExt.Stamp <= oldSessionExt.Stamp) {
-			continue
-		}
-		console.log(`newSessionExt.Age [${oldSessionExt.DeviceName}] ->`, newSessionExt.Age)
-		let index = SessionExts.findIndex(v => v.Id == newSessionExt.Id)
-		SessionExts[index] = newSessionExt
-	}
-	// SessionExts.sort((a, b) => b.Stamp - a.Stamp)
-	// console.log(`SessionExts ->`, Array.from(SessionExts.values()).map(v => v.json))
-}
-
-let job = schedule.scheduleJob(`* * * * * *`, () =>
-	sync().catch(error => console.error(`sync SessionExts -> %O`, error))
-)
-process.nextTick(() => job.invoke())
-// process.nextTick(() => {
-// 	setInterval(() => {
-// 		sync().catch(error => console.error(`sync SessionExts -> %O`, error))
-// 	}, 5000)
-// })
-
-// export const rxSession = new Rx.BehaviorSubject({} as Session)
-// rxSessions.subscribe(Sessions => {
-// 	let Session = Sessions[0]
-// 	if (!rxSession.value.LastActivityDate) return rxSession.next(Session)
-// 	let a = new Date(Session.LastActivityDate).valueOf()
-// 	let b = new Date(rxSession.value.LastActivityDate).valueOf()
-// 	if (a > b) rxSession.next(Session)
-// })
-// process.nextTick(() => sessions.get().then(([v]) => rxSession.next(v)))
-
 export const sessions = {
-	sync,
 	async get() {
 		let Sessions = (await emby.client.get('/Sessions')) as Session[]
-		return Sessions.filter(({ UserName }) => !!UserName)
+		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new Session(v))
+		return Sessions.sort((a, b) => b.Stamp - a.Stamp)
 	},
-	async exts() {
-		let SessionExts = (await sessions.get()).map(v => new SessionExt(v))
-		return SessionExts.sort((a, b) => b.Stamp - a.Stamp)
-	},
-	find(fn: (SessionExt: SessionExt) => boolean) {
-		return Array.from(SessionExts.values()).find(fn)
-	},
-	byUserId(UserId: string) {
-		return sessions.find(v => v.UserId == UserId)
+	async byUserId(UserId: string) {
+		return (await sessions.get()).find(v => v.UserId == UserId)
 	},
 	broadcast(message: string) {
-		SessionExts.forEach(v => v.message(message))
+		sessions.get().then(exts => exts.forEach(v => v.message(message)))
 	},
 }
 
-export interface SessionExt extends Session {}
-export class SessionExt {
+export class Session {
 	get IsRoku() {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
 	get Channels() {
-		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
-		let profiles = _.get(this, dotpath) as TranscodingProfiles[]
+		let dotprop = `Capabilities.DeviceProfile.TranscodingProfiles`
+		let profiles = _.get(this, dotprop) as TranscodingProfiles[]
 		if (!_.isArray(profiles)) return NaN
 		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
@@ -134,7 +72,7 @@ export class SessionExt {
 	}
 
 	get IsStreaming() {
-		return !!this.IsPlayState && !!this.IsNowPlaying && this.Age <= 100
+		return !!this.IsPlayState && !!this.IsNowPlaying
 	}
 
 	get Ids() {
@@ -146,7 +84,7 @@ export class SessionExt {
 	get json() {
 		return _.fromPairs(
 			_.toPairs({
-				Age: `+${this.Age}ms`,
+				Age: this.Age,
 				Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
 				Channels: this.Channels,
 				Client: this.Client,
