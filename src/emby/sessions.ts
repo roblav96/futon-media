@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as Rx from '@/shims/rxjs'
@@ -7,7 +8,7 @@ import * as trakt from '@/adapters/trakt'
 
 export const rxSessions = socket.rxSocket.pipe(
 	Rx.Op.filter(({ MessageType }) => MessageType == 'Sessions'),
-	Rx.Op.map(({ Data }) => sessions.parse(Data).map(v => new Session(v)))
+	Rx.Op.map(({ Data }) => sessions.parse(Data))
 )
 
 export const rxSession = new Rx.BehaviorSubject({} as Session)
@@ -53,6 +54,11 @@ export class Session {
 		if (!_.isArray(profiles)) return '4K'
 		let max = _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 		return max == 2 ? '1080p' : '4K'
+	}
+
+	get age() {
+		let day = dayjs(this.LastActivityDate)
+		return `+${Date.now() - day.valueOf()}ms ${day.fromNow()}`
 	}
 
 	constructor(Session: Session) {

@@ -75,10 +75,10 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 	return stream
 }
 
-emby.rxSession.subscribe(Session => {
-	if (!Session.DeviceName) return
-	console.log(`emby.rxSession ->`, Session.DeviceName)
-})
+// emby.rxSession.subscribe(Session => {
+// 	if (!Session.DeviceName) return
+// 	console.log(`emby.rxSession ->`, Session.DeviceName)
+// })
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
@@ -88,6 +88,10 @@ fastify.get('/strm', async (request, reply) => {
 	query.quality = quality
 	let { e, s, title, traktId, type } = query
 	console.warn(`fastify strm ->`, title, quality, DeviceName)
+
+	let Sessions = await emby.sessions.get()
+	console.log(`emby.rxSession.age ->`, emby.rxSession.value.age)
+	console.log(`sessions.get.ages ->`, Sessions.map(v => `${v.DeviceName} -> ${v.age}`))
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
