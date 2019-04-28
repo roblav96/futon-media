@@ -10,9 +10,7 @@ import * as pAll from 'p-all'
 
 process.nextTick(() => {
 	let job = schedule.scheduleJob('0 0 * * *', () => syncPlaylists())
-	if (process.DEVELOPMENT) {
-		// job.invoke()
-	}
+	// process.DEVELOPMENT && job.invoke()
 })
 
 const LIMIT = process.DEVELOPMENT ? 10 : 25
@@ -84,7 +82,7 @@ export async function syncPlaylists() {
 	let traktIds = [] as string[]
 	for (let schema of schemas) {
 		await utils.pRandom(1000)
-		process.DEVELOPMENT && console.log(`schema ->`, schema.url)
+		console.log(`schema ->`, schema.url)
 		_.defaultsDeep(schema, {
 			config: { query: { limit: LIMIT, extended: '' } } as http.Config,
 		})

@@ -40,7 +40,9 @@ export const library = {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
 
-		let url = `${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify(query)}`
+		let url = emby.DOMAIN
+		process.DEVELOPMENT && (url+=`:${emby.STRM_PORT}`)
+		url += `/strm?${qs.stringify(query)}`
 		await fs.outputFile(file, url)
 	},
 	async add(item: media.Item) {
