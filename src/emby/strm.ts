@@ -28,7 +28,10 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridTorrents({ e, s, title, traktId, type }: emby.StrmQuery) {
+async function getDebridStream({ e, s, title, traktId, type, quality }: emby.StrmQuery) {
+	await utils.pTimeout(10000)
+	throw new Error(`message`)
+
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
@@ -38,7 +41,7 @@ async function getDebridTorrents({ e, s, title, traktId, type }: emby.StrmQuery)
 		let episode = await trakt.client.get(`/${type}s/${traktId}/seasons/${s}/episodes/${e}`)
 		item.use({ type: 'episode', episode })
 	}
-	// console.log(`item ->`, item)
+	console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
 	torrents.sort((a, b) => b.bytes - a.bytes)
@@ -49,7 +52,7 @@ async function getDebridTorrents({ e, s, title, traktId, type }: emby.StrmQuery)
 			return bsize - asize
 		})
 	}
-	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json()))
+	console.log(`scrapeAll torrents ->`, torrents.map(v => v.json()))
 
 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
@@ -59,50 +62,32 @@ async function getDebridTorrents({ e, s, title, traktId, type }: emby.StrmQuery)
 		})
 	)
 
-	return { item, torrents: torrents.filter(v => v.cached.length > 0) }
-}
-
-async function getDebridSession() {
-	let UserId = await emby.rxPlaybackUserId.pipe(Rx.Op.take(1)).toPromise()
-	console.log(`getSession rxPlaybackUserId ->`, UserId)
-	return await emby.sessions.fromUserId(UserId)
-}
-
-async function getDebridStream(strmquery: emby.StrmQuery) {
-	let [Session, { item, torrents }] = await Promise.all([
-		getDebridSession(),
-		getDebridTorrents(strmquery),
-	])
+	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`!torrents`)
 
-	if (Session.quality != '4K') {
+	if (quality != '4K') {
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let stream = await debrids.getStream(torrents, item, Session.quality != '4K')
+	let stream = await debrids.getStream(torrents, item, quality != '4K')
 	if (!stream) throw new Error(`!stream`)
-	console.warn(`stream ->`, strmquery.title, Session.quality, stream)
+	console.warn(`stream ->`, title, quality, stream)
 	return stream
 }
 
-emby.rxPlaybackIsFalse.subscribe(async ({ query }) => {
-	let Session = await emby.sessions.fromUserId(query.UserId)
-	let { Item, item } = await Session.Item(query.ItemId)
-	let rkey = `strm:${item.traktId}`
-	if (item.type) {
-		rkey += `:s${utils.zeroSlug(Item.ParentIndexNumber)}`
-		rkey += `e${utils.zeroSlug(Item.IndexNumber)}`
-	}
-	console.warn(`redis.del ->`, rkey)
-	await redis.del(rkey)
+emby.rxSession.subscribe(Session => {
+	if (!Session.DeviceName) return
+	console.log(`emby.rxSession ->`, Session.DeviceName)
 })
 
 fastify.get('/strm', async (request, reply) => {
-	let strmquery = _.mapValues(request.query, (v, k) => {
+	let query = _.mapValues(request.query, (v, k) => {
 		return !isNaN(v) && k != 'traktId' ? _.parseInt(v) : v
 	}) as emby.StrmQuery
-	let { e, s, title, traktId, type } = strmquery
-	console.log(`fastify strm ->`, title)
+	let { quality, DeviceName } = emby.rxSession.value
+	query.quality = quality
+	let { e, s, title, traktId, type } = query
+	console.warn(`fastify strm ->`, title, quality, DeviceName)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
@@ -110,7 +95,7 @@ fastify.get('/strm', async (request, reply) => {
 	let stream = await redis.get(rkey)
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
-			getDebridStream(strmquery).then(
+			getDebridStream(query).then(
 				async stream => {
 					let seconds = utils.duration(1, 'day') / 1000
 					await redis.setex(rkey, seconds, stream)
@@ -130,3 +115,24 @@ fastify.get('/strm', async (request, reply) => {
 	console.log(`redirect ->`, stream)
 	reply.redirect(stream)
 })
+
+// async function getDebridSession() {
+// 	let UserId = await emby.rxPlaybackUserId.pipe(Rx.Op.take(1)).toPromise()
+// 	console.log(`getSession rxPlaybackUserId ->`, UserId)
+// 	let Session = await emby.sessions.fromUserId(UserId)
+// 	console.log(`Session ->`, Session)
+// 	return Session
+// }
+
+// emby.rxPlaybackIsFalse.subscribe(async ({ query }) => {
+// 	let Session = await emby.sessions.admin()
+// 	let { Item, item } = await Session.item(query.ItemId)
+// 	console.log(`Item ->`, Item)
+// 	let rkey = `strm:${item.traktId}`
+// 	if (_.isFinite(Item.ParentIndexNumber) && _.isFinite(Item.IndexNumber)) {
+// 		rkey += `:s${utils.zeroSlug(Item.ParentIndexNumber)}`
+// 		rkey += `e${utils.zeroSlug(Item.IndexNumber)}`
+// 	}
+// 	console.warn(`redis.del ->`, rkey)
+// 	await redis.del(rkey)
+// })

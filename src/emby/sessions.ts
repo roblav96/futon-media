@@ -5,21 +5,40 @@ import * as Rx from '@/shims/rxjs'
 import * as socket from '@/emby/socket'
 import * as trakt from '@/adapters/trakt'
 
-export const rxSession = socket.filter<Session>('Session')
-export const rxUser = socket.filter<User>('User')
+export const rxSessions = socket.rxSocket.pipe(
+	Rx.Op.filter(({ MessageType }) => MessageType == 'Sessions'),
+	Rx.Op.map(({ Data }) => sessions.parse(Data).map(v => new Session(v)))
+)
+
+export const rxSession = new Rx.BehaviorSubject({} as Session)
+rxSessions.subscribe(Sessions => {
+	let Session = Sessions[0]
+	if (!rxSession.value.LastActivityDate) return rxSession.next(Session)
+	let a = new Date(Session.LastActivityDate).valueOf()
+	let b = new Date(rxSession.value.LastActivityDate).valueOf()
+	if (a > b) rxSession.next(Session)
+})
+process.nextTick(() => sessions.get().then(([v]) => rxSession.next(v)))
 
 export const sessions = {
 	async get() {
-		let Sessions = (await emby.client.get(`/Sessions`)) as Session[]
-		return sessions.primaries(Sessions).map(v => new Session(v))
+		return sessions.parse((await emby.client.get('/Sessions')) as Session[])
 	},
-	primaries(Sessions: Session[]) {
-		return Sessions.filter(({ UserName }) => _.isString(UserName)).sort((a, b) => {
-			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
-		})
+	async admin() {
+		return (await sessions.get()).find(v => v.UserId == process.env.EMBY_API_USER)
 	},
 	async fromUserId(UserId: string) {
 		return (await sessions.get()).find(v => v.UserId == UserId)
+	},
+	parse(Sessions: Session[]) {
+		Sessions = Sessions.filter(({ UserName }) => !!UserName).sort((a, b) => {
+			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
+		})
+		return Sessions.map(v => new Session(v))
+	},
+	async broadcast(message: string) {
+		let Sessions = await sessions.get()
+		Sessions.forEach(v => v.message(message))
 	},
 }
 
@@ -30,7 +49,8 @@ export class Session {
 
 	get quality(): emby.Quality {
 		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
-		let profiles = _.get(this, dotpath, []) as TranscodingProfiles[]
+		let profiles = _.get(this, dotpath) as TranscodingProfiles[]
+		if (!_.isArray(profiles)) return '4K'
 		let max = _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 		return max == 2 ? '1080p' : '4K'
 	}
@@ -48,22 +68,29 @@ export class Session {
 	}
 
 	async Item(ItemId: string) {
-		let Item = (await emby.client.get(`/Users/${this.UserId}/Items/${ItemId}`)) as emby.Item
-		let [provider, id] = Object.entries(Item.ProviderIds)[0]
-		let result = ((await trakt.client.get(
-			`/search/${provider.toLowerCase()}/${id}`
-		)) as trakt.Result[])[0]
-		return { Item, item: new media.Item(result) }
+		return (await emby.client.get(`/Users/${this.UserId}/Items/${ItemId}`)) as emby.Item
 	}
 
-	async message(data: string | Error) {
-		if (this.isRoku) return
-		let body = { Text: data, TimeoutMs: 5000 }
+	async item(ItemId: string) {
+		let Item = await this.Item(ItemId)
+		let pairs = _.toPairs(Item.ProviderIds).map(pair => pair.map(v => v.toLowerCase()))
+		pairs.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))[0]
+		for (let [provider, id] of pairs) {
+			let results = (await trakt.client.get(`/search/${provider}/${id}`)) as trakt.Result[]
+			let result = results.length == 1 && results[0]
+			!result && (result = results.find(v => v[v.type].ids[provider].toString() == id))
+			if (result) return { Item, item: new media.Item(result) }
+		}
+		throw new Error(`!result`)
+	}
+
+	message(data: string | Error) {
+		let body = { Text: `⚪ ${data}`, TimeoutMs: 5000 }
 		if (_.isError(data)) {
-			body.Text = `⛔ Error: ${data.message}`
+			body.Text = `🔴 Error: ${data.message}`
 			body.TimeoutMs *= 2
 		}
-		await emby.client.post(`/Sessions/${this.Id}/Message`, { body }).catch(_.noop)
+		emby.client.post(`/Sessions/${this.Id}/Message`, { body }).catch(_.noop)
 	}
 }
 

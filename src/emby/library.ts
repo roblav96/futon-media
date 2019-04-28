@@ -72,6 +72,7 @@ export type Quality = '1080p' | '4K'
 
 export interface StrmQuery {
 	e: number
+	quality: Quality
 	s: number
 	title: string
 	traktId: string
