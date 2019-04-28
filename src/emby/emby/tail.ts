@@ -25,20 +25,20 @@ process.nextTick(async () => {
 })
 
 class Tail {
-	watcher: sane.Watcher
+	// watcher: sane.Watcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
 		console.log(`Tail ->`, path.basename(logfile))
 
-		this.watcher = sane(logfile)
-		this.watcher.once('delete', () => {
-			console.log(`Tail watcher delete ->`)
-			this.destroy()
-		})
-		this.watcher.once('error', error => {
-			console.error(`Tail watcher error -> %O`, error)
-			this.destroy()
-		})
+		// this.watcher = sane(logfile)
+		// this.watcher.once('delete', () => {
+		// 	console.log(`Tail watcher delete ->`)
+		// 	this.destroy()
+		// })
+		// this.watcher.once('error', error => {
+		// 	console.error(`Tail watcher error -> %O`, error)
+		// 	this.destroy()
+		// })
 
 		this.child = execa('tail', ['-fn0', logfile], {
 			killSignal: 'SIGKILL',
@@ -78,8 +78,8 @@ class Tail {
 		this.child.stderr.removeAllListeners()
 		this.child.removeAllListeners()
 		this.child.kill()
-		this.watcher.removeAllListeners()
-		this.watcher.close()
+		// this.watcher.removeAllListeners()
+		// this.watcher.close()
 	}
 }
 

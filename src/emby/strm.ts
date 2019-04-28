@@ -12,7 +12,6 @@ import * as torrent from '@/scrapers/torrent'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
 import Emitter from '@/shims/emitter'
 import redis from '@/adapters/redis'
 
@@ -30,8 +29,8 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, title, traktId, type, quality }: emby.StrmQuery) {
-	await utils.pTimeout(10000)
-	throw new Error(`DEVELOPMENT`)
+	// await utils.pTimeout(10000)
+	// throw new Error(`DEVELOPMENT`)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -76,14 +75,14 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 	return stream
 }
 
-const rxItem = emby.rxHttp.pipe(
-	Rx.Op.filter(({ query }) => !!query.ItemId && !!query.UserId),
-	Rx.Op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
-	Rx.Op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
-)
-rxItem.subscribe(({ ItemId, UserId }) => {
-	console.log(`rxItem ->`, ItemId, UserId)
-})
+// const rxItem = emby.rxHttp.pipe(
+// 	Rx.Op.filter(({ query }) => !!query.ItemId && !!query.UserId),
+// 	Rx.Op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
+// 	Rx.Op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
+// )
+// rxItem.subscribe(({ ItemId, UserId }) => {
+// 	console.log(`rxItem ->`, ItemId, UserId)
+// })
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
@@ -91,7 +90,7 @@ fastify.get('/strm', async (request, reply) => {
 		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
 	let { e, s, title, traktId, type, quality } = query
-	console.warn(`fastify strm ->`, title)
+	console.warn(`fastify strm ->`, title, query)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
@@ -100,9 +99,7 @@ fastify.get('/strm', async (request, reply) => {
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
 			let Sessions = await emby.sessions.get()
-			console.log(`Sessions ->`, Sessions.map(v => v.json))
 			let Session = Sessions.find(v => !v.IsStreaming)
-			console.log(`Session ->`, Session.json)
 			query.quality = Session.Quality
 			getDebridStream(query).then(
 				async stream => {

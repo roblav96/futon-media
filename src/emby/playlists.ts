@@ -9,11 +9,9 @@ import * as utils from '@/utils/utils'
 import * as pAll from 'p-all'
 
 process.nextTick(() => {
+	let job = schedule.scheduleJob('0 0 * * *', () => syncPlaylists())
 	if (process.DEVELOPMENT) {
-		// syncPlaylists()
-	}
-	if (!process.DEVELOPMENT) {
-		// schedule.scheduleJob('0 0 * * *', syncPlaylists)
+		// job.invoke()
 	}
 })
 

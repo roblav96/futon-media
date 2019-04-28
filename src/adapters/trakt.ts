@@ -10,9 +10,7 @@ export const client = new Http({
 		'trakt-api-version': '2',
 	},
 	query: {
-		countries: 'us',
 		extended: 'full',
-		languages: 'en',
 	},
 	afterResponse: {
 		append: [
@@ -41,7 +39,7 @@ export const RESULT_ITEM = {
 
 export async function search(query: string, type = 'movie,show' as media.MainContentType) {
 	let results = (await client.get(`/search/${type}`, {
-		query: { query, fields: 'title' },
+		query: { query, countries: 'us', fields: 'title', languages: 'en' },
 	})) as Result[]
 	results.sort((a, b) => (b[b.type] as Full).votes - (a[a.type] as Full).votes)
 	return results.filter(v => {

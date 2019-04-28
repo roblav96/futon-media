@@ -1,6 +1,6 @@
 {
 	"name": "futon-media-cli",
-	"version": "0.1.5",
+	"version": "0.2.4",
 	"description": "Interactive CLI tool used to create .strm files for Emby Media",
 	"main": "dist/index.js",
 	"files": [
@@ -53,6 +53,7 @@
 		"js-levenshtein": "^1.1.6",
 		"level": "^5.0.1",
 		"leveldown": "^5.0.3",
+		"levelup": "^4.0.1",
 		"lodash": "^4.17.11",
 		"magnet-uri": "^5.2.4",
 		"mem": "^4.3.0",
@@ -96,6 +97,7 @@
 		"@types/http-errors": "^1.6.1",
 		"@types/ioredis": "^4.0.10",
 		"@types/leveldown": "^4.0.0",
+		"@types/levelup": "^3.1.0",
 		"@types/lodash": "^4.14.123",
 		"@types/magnet-uri": "^5.1.2",
 		"@types/node": "^11.13.6",
@@ -115,7 +117,6 @@
 		"del-cli": "^1.1.0",
 		"dts-generate": "^1.1.0",
 		"just-wait": "^1.0.11",
-		"levelup": "^4.0.1",
 		"make-dir-cli": "^2.0.0",
 		"nodemon": "^1.18.11",
 		"redrun": "^7.1.5",

@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
-import * as pkgup from 'read-pkg-up'
 import * as IORedis from 'ioredis'
+import * as pkgup from 'read-pkg-up'
+import * as schedule from 'node-schedule'
 
 export namespace Redis {
 	export type Coms = string[][]
@@ -20,11 +21,11 @@ export class Redis extends IORedis {
 			password: process.env.REDIS_PASSWORD,
 			port: _.parseInt(process.env.REDIS_PORT) || 6379,
 		} as IORedis.RedisOptions)
-		if (!process.DEVELOPMENT) {
-			opts.path = '/var/run/redis_' + opts.port + '.sock'
-			_.unset(opts, 'host')
-			_.unset(opts, 'port')
-		}
+		// if (!process.DEVELOPMENT) {
+		// 	opts.path = '/var/run/redis_' + opts.port + '.sock'
+		// 	_.unset(opts, 'host')
+		// 	_.unset(opts, 'port')
+		// }
 		return opts
 	}
 
@@ -73,3 +74,5 @@ export class Redis extends IORedis {
 
 export const redis = new Redis({ name: 'redis' })
 export default redis
+
+setTimeout(() => schedule.scheduleJob('*/5 * * * * *', () => redis.ping()), 1000)
