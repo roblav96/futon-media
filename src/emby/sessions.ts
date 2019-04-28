@@ -3,6 +3,7 @@ import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as Rx from '@/shims/rxjs'
+import * as schedule from 'node-schedule'
 import * as socket from '@/emby/socket'
 import * as trakt from '@/adapters/trakt'
 
@@ -19,7 +20,20 @@ rxSessions.subscribe(Sessions => {
 	let b = new Date(rxSession.value.LastActivityDate).valueOf()
 	if (a > b) rxSession.next(Session)
 })
-process.nextTick(() => sessions.get().then(([v]) => rxSession.next(v)))
+
+async function resync() {
+	console.log(`resync`)
+}
+
+process.nextTick(async () => {
+	let Sessions = await sessions.get()
+	console.log(`Sessions ->`, Sessions)
+	rxSession.next(Sessions[0])
+	schedule.scheduleJob(`* * * * * *`, () =>
+		resync().catch(error => console.error(`resync Sessions -> %O`, error))
+	)
+})
+// process.nextTick(() => sessions.get().then(([v]) => rxSession.next(v)))
 
 export const sessions = {
 	async get() {
@@ -28,7 +42,7 @@ export const sessions = {
 	async admin() {
 		return (await sessions.get()).find(v => v.UserId == process.env.EMBY_API_USER)
 	},
-	async fromUserId(UserId: string) {
+	async withUserId(UserId: string) {
 		return (await sessions.get()).find(v => v.UserId == UserId)
 	},
 	parse(Sessions: Session[]) {
@@ -97,6 +111,12 @@ export class Session {
 		return !!this.IsPlayState && !!this.IsNowPlaying && this.Age <= 100
 	}
 
+	get Ids() {
+		let Ids = _.get(this, 'NowPlayingItem.ProviderIds', {})
+		Ids = _.mapKeys(Ids, (v, k) => k.toLowerCase())
+		return Ids as { imdb: string; tmdb: string; tvdb: string }
+	}
+
 	get json() {
 		return _.fromPairs(
 			_.toPairs({
@@ -129,6 +149,16 @@ export class Session {
 
 	async User() {
 		return (await emby.client.get(`/Users/${this.UserId}`)) as User
+	}
+
+	async Latest() {
+		return (await emby.client.get(`/Users/${this.UserId}/Items/Latest`, {
+			query: { Limit: 5 },
+		})) as emby.Item[]
+	}
+
+	async Views() {
+		return (await emby.client.get(`/Users/${this.UserId}/Views`)) as emby.View[]
 	}
 
 	async Item(ItemId: string) {
@@ -262,6 +292,7 @@ export interface Session {
 		ProviderIds: {
 			Imdb: string
 			Tmdb: string
+			Tvdb: string
 		}
 		RunTimeTicks: number
 		ServerId: string

@@ -14,3 +14,4 @@ export const client = new http.Http({
 export * from '@/emby/library'
 export * from '@/emby/playback'
 export * from '@/emby/sessions'
+export * from '@/emby/tail'

@@ -36,8 +36,7 @@ export const rxPlaybackInfo = tail.rxHttp.pipe(
 	// }),
 	Rx.Op.map(({ url, query }) => {
 		query = _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || _.upperFirst(k))
-		let ItemId = _.reverse(url.split('/')).find(v => utils.isNumeric(v))
-		query.ItemId = url.split('/').slice(-2)[0]
+		query.ItemId = _.reverse(url.split('/')).find(v => utils.isNumeric(v))
 		return { url, query: query as PlaybackQuery }
 	})
 	// Rx.Op.filter(({ url, query }) => !!query.UserId)

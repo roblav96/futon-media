@@ -13,7 +13,6 @@ async function start() {
 	await import('@/emby/search')
 	await import('@/emby/socket')
 	await import('@/emby/strm')
-	await import('@/emby/tail')
 }
 setTimeout(
 	() => start().catch(error => console.error(`start -> %O`, error)),

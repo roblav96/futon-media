@@ -77,17 +77,29 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 
 // emby.rxSession.subscribe(Session => {
 // 	if (!Session.DeviceName) return
-// 	console.log(`emby.rxSession ->`, Session.json)
+// 	console.log(`rxSession ->`, Session.json)
 // })
+// emby.rxPlaybackInfo.subscribe(async ({ query }) => {
+// 	console.log(`rxPlaybackInfo ->`, query)
+// 	let Session = await emby.sessions.withUserId(query.UserId)
+// 	let Views = await Session.Views()
+// 	global.dts(_.merge({}, ...Views), `_.merge({}, ...Views)`)
+// })
+emby.rxHttp.subscribe(({ url, query }) => {
+	console.log(`rxHttp ->`, url, query)
+})
 
 fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k) => {
 		if (k == 'traktId') return v
 		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
-	console.log(`query ->`, query)
 
 	let Sessions = await emby.sessions.get()
+	for (let Session of Sessions) {
+		let Latest = await Session.Latest()
+		console.log(`Latest ->`, Session.DeviceName, Latest)
+	}
 	let Session = Sessions.filter(v => !v.IsStreaming)[0]
 	query.quality = Session.Quality
 	let { e, s, title, traktId, type, quality } = query

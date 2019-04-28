@@ -222,6 +222,11 @@ export interface Item {
 	SeriesPrimaryImageTag: string
 }
 
+export interface View {
+	Items: Item[]
+	TotalRecordCount: number
+}
+
 export interface LibraryChanged {
 	CollectionFolders: any[]
 	FoldersAddedTo: any[]

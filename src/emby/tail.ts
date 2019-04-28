@@ -7,6 +7,17 @@ import { Tail } from 'tail'
 
 export const rxTail = new Rx.Subject<string>()
 
+process.nextTick(async () => {
+	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
+	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
+		follow: true,
+		separator: /\n\d{4}-\d{2}-\d{2}\s/,
+		useWatchFile: true,
+	})
+	stream.on('line', line => rxTail.next(_.trim(line)))
+	stream.on('error', error => console.error(`tailLogs stream -> %O`, error))
+})
+
 export const rxHttp = rxTail.pipe(
 	Rx.Op.map(line => {
 		if (line.match(/Info HttpServer: HTTP [DGP]/)) {
@@ -19,14 +30,3 @@ export const rxHttp = rxTail.pipe(
 		return { url, query: query as Record<string, string> }
 	})
 )
-
-process.nextTick(async () => {
-	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
-	let stream = new Tail(path.join(LogPath, 'embyserver.txt'), {
-		follow: true,
-		separator: /\n\d{4}-\d{2}-\d{2}\s/,
-		useWatchFile: true,
-	})
-	stream.on('line', line => rxTail.next(_.trim(line)))
-	stream.on('error', error => console.error(`tailLogs stream -> %O`, error))
-})
