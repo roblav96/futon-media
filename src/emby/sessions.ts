@@ -10,45 +10,41 @@ import * as socket from '@/emby/socket'
 import * as utils from '@/utils/utils'
 import * as trakt from '@/adapters/trakt'
 
-// export const AllSessionExts = [] as SessionExt[]
-export const AllSessionExts = new Map<string, SessionExt>()
+export const SessionExts = [] as SessionExt[]
 
 async function sync() {
-	let Sessions = await sessions.get()
+	let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
+	Sessions = Sessions.filter(({ UserName }) => !!UserName)
 	for (let newSession of Sessions) {
-		let oldSessionExt = AllSessionExts.get(newSession.Id)
+		let oldSessionExt = SessionExts.find(v => v.Id == newSession.Id)
 		if (!oldSessionExt) {
-			AllSessionExts.set(newSession.Id, new SessionExt(newSession))
+			SessionExts.push(new SessionExt(newSession))
 			continue
 		}
 		let diffs = difference.diff(oldSessionExt, newSession)
-		if (!diffs) continue
-		console.log(`diffs ->`, oldSessionExt.DeviceName, diffs)
-		let newSessionExt = new SessionExt(newSession)
-		if (newSessionExt.Stamp > oldSessionExt.Stamp) {
-			console.log(`newSessionExt.Age ->`, newSessionExt.Age)
-			AllSessionExts.set(newSessionExt.Id, newSessionExt)
+		if (!diffs) {
+			continue
 		}
-		// console.log(`diffs ->`, oldSessionExt.DeviceName, diffs)
-		// if (diffs && diffs[0] && diffs[0].path.includes('LastActivityDate')) {
-		// 	if (diffs[0].kind == 'E') {
-		// 	}
-		// 	// let first = diffs[0] as difference.DiffEdit<Session>
-		// 	// first.kind
-		// 	AllSessionExts.splice(index, 1, new SessionExt(newSession))
-		// }
+		console.log(`diffs [${oldSessionExt.DeviceName}] ->`, diffs)
+		let newSessionExt = new SessionExt(newSession)
+		if (newSessionExt.Stamp <= oldSessionExt.Stamp) {
+			continue
+		}
+		console.log(`newSessionExt.Age [${oldSessionExt.DeviceName}] ->`, newSessionExt.Age)
+		let index = SessionExts.findIndex(v => v.Id == newSessionExt.Id)
+		SessionExts[index] = newSessionExt
 	}
-	// AllSessionExts.sort((a, b) => b.Stamp - a.Stamp)
-	console.log(`AllSessionExts ->`, Array.from(AllSessionExts.values()))
+	// SessionExts.sort((a, b) => b.Stamp - a.Stamp)
+	// console.log(`SessionExts ->`, Array.from(SessionExts.values()).map(v => v.json))
 }
 
-let job = schedule.scheduleJob(`*/5 * * * * *`, () =>
-	sync().catch(error => console.error(`sync AllSessionExts -> %O`, error))
+let job = schedule.scheduleJob(`* * * * * *`, () =>
+	sync().catch(error => console.error(`sync SessionExts -> %O`, error))
 )
 process.nextTick(() => job.invoke())
 // process.nextTick(() => {
 // 	setInterval(() => {
-// 		sync().catch(error => console.error(`sync AllSessionExts -> %O`, error))
+// 		sync().catch(error => console.error(`sync SessionExts -> %O`, error))
 // 	}, 5000)
 // })
 
@@ -66,20 +62,20 @@ export const sessions = {
 	sync,
 	async get() {
 		let Sessions = (await emby.client.get('/Sessions')) as Session[]
-	console.log(`Sessions ->`, JSON.parse(JSON.stringify(Sessions)))
 		return Sessions.filter(({ UserName }) => !!UserName)
 	},
 	async exts() {
-		return (await sessions.get()).map(v => new SessionExt(v))
+		let SessionExts = (await sessions.get()).map(v => new SessionExt(v))
+		return SessionExts.sort((a, b) => b.Stamp - a.Stamp)
 	},
-	// async admin() {
-	// 	return AllSessionExts.find(v => v.UserId == process.env.EMBY_API_USER)
-	// },
-	// async byUserId(UserId: string) {
-	// 	return AllSessionExts.find(v => v.UserId == UserId)
-	// },
-	async broadcast(message: string) {
-		AllSessionExts.forEach(v => v.message(message))
+	find(fn: (SessionExt: SessionExt) => boolean) {
+		return Array.from(SessionExts.values()).find(fn)
+	},
+	byUserId(UserId: string) {
+		return sessions.find(v => v.UserId == UserId)
+	},
+	broadcast(message: string) {
+		SessionExts.forEach(v => v.message(message))
 	},
 }
 
@@ -169,12 +165,7 @@ export class SessionExt {
 
 	constructor(Session: Session) {
 		_.merge(this, Session)
-		// this.use(Session)
 	}
-	// use(Session: Session) {
-	// 	_.merge(this, Session)
-	// 	return this
-	// }
 
 	async Device() {
 		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device

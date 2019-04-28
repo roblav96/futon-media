@@ -24,7 +24,7 @@ process.nextTick(async () => {
 		},
 		onopen({ target }) {
 			console.info(`socket onopen ->`, target.url)
-			ws.json({ MessageType: 'SessionsStart', Data: '0,1' })
+			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
 			// ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			// ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
 		},
