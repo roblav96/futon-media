@@ -13,7 +13,7 @@ process.nextTick(() => {
 		// syncPlaylists()
 	}
 	if (!process.DEVELOPMENT) {
-		// schedule.scheduleJob(`0 0 * * *`, syncPlaylists)
+		// schedule.scheduleJob('0 0 * * *', syncPlaylists)
 	}
 })
 

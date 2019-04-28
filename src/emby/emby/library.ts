@@ -12,7 +12,7 @@ import * as utils from '@/utils/utils'
 export const library = {
 	qualities: ['1080p', '4K'] as Quality[],
 	async refresh() {
-		await emby.client.post(`/Library/Refresh`)
+		await emby.client.post('/Library/Refresh')
 	},
 	async toStrm(item: media.Item) {
 		let file = path.normalize(process.env.EMBY_LIBRARY_PATH || process.cwd())
@@ -27,16 +27,21 @@ export const library = {
 			file += `/Season ${item.S.n}`
 			file += `/${title} S${item.S.z}E${item.E.z}`
 		}
-		file += `.strm`
+		file += '.strm'
 
 		let query = {
-			type: item.type,
-			traktId: item.traktId,
+			...item.ids,
 			title: utils.toSlug(item.main.title, { toName: true, separator: '-', lowercase: true }),
+			traktId: item.traktId,
+			type: item.type,
+			year: item.year,
 		} as StrmQuery
-		item.episode && (query = { ...query, s: item.S.n, e: item.E.n })
+		if (item.episode) {
+			query = { ...query, s: item.S.n, e: item.E.n }
+		}
 
-		await fs.outputFile(file, `${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify(query)}`)
+		let url = `${emby.DOMAIN}:${emby.STRM_PORT}/strm?${qs.stringify(query)}`
+		await fs.outputFile(file, url)
 	},
 	async add(item: media.Item) {
 		if (item.movie) {
@@ -60,13 +65,14 @@ export const library = {
 
 export type Quality = '1080p' | '4K'
 
-export interface StrmQuery {
+export interface StrmQuery extends trakt.IDs {
 	e: number
 	quality: Quality
 	s: number
 	title: string
 	traktId: string
 	type: media.MainContentType
+	year: number
 }
 
 export interface Item {

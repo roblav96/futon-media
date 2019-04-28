@@ -2,7 +2,6 @@ import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
 import * as path from 'path'
 import * as Rx from '@/shims/rxjs'
-import * as tail from '@/emby/tail'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 
@@ -27,7 +26,7 @@ const PlaybackQuery = {
 }
 const FixPlaybackQuery = _.invert(_.mapValues(PlaybackQuery, (v, k) => k.toLowerCase()))
 
-export const rxPlaybackInfo = tail.rxHttp.pipe(
+export const rxPlaybackInfo = emby.rxHttp.pipe(
 	Rx.Op.filter(({ url }) => path.basename(url).toLowerCase() == 'playbackinfo'),
 	// Rx.Op.filter(({ url }) => {
 	// 	let base = path.basename(url).toLowerCase()
@@ -46,7 +45,7 @@ export const rxPlaybackInfo = tail.rxHttp.pipe(
 // socket.rxSocket.subscribe(({ MessageType, Data }) => {
 // 	console.log(`rxSocket ->`, MessageType, Data)
 // })
-// tail.rxHttp.subscribe(({ url, query }) => {
+// emby.rxHttp.subscribe(({ url, query }) => {
 // 	console.log(`rxHttp ->`, new Url(url).pathname, query)
 // })
 export const rxPlaybackInfoIsFalse = rxPlaybackInfo.pipe(

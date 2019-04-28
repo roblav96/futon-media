@@ -11,7 +11,6 @@ async function start() {
 	await import('@/emby/emby')
 	await import('@/emby/playlists')
 	await import('@/emby/search')
-	// await import('@/emby/socket')
 	await import('@/emby/strm')
 }
 setTimeout(

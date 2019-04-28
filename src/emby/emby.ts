@@ -11,7 +11,6 @@ export const client = new http.Http({
 	query: { api_key: process.env.EMBY_API_KEY },
 })
 
-export * from '@/emby/library'
-export * from '@/emby/playback'
-export * from '@/emby/sessions'
-export * from '@/emby/tail'
+export * from '@/emby/emby/library'
+export * from '@/emby/emby/sessions'
+export * from '@/emby/emby/tail'

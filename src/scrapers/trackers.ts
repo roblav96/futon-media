@@ -6,7 +6,7 @@ import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as schedule from 'node-schedule'
 
-const job = schedule.scheduleJob(`0 * * * *`, () =>
+const job = schedule.scheduleJob('0 * * * *', () =>
 	sync().catch(error => console.error(`trackers sync -> %O`, error))
 )
 setTimeout(() => job.invoke(), 1000)

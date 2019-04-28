@@ -3,43 +3,24 @@ import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as path from 'path'
 import * as Rx from '@/shims/rxjs'
-import * as tail from '@/emby/tail'
-import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
-import * as Url from 'url-parse'
+import * as utils from '@/utils/utils'
 
-interface SearchQuery extends Partial<typeof SearchQuery> {}
-const SearchQuery = {
-	EnableTotalRecordCount: '',
-	Fields: '',
-	Format: '',
-	ImageTypeLimit: '',
-	IncludeArtists: '',
-	IncludeGenres: '',
-	IncludeItemTypes: '',
-	IncludeMedia: '',
-	IncludePeople: '',
-	IncludeStudios: '',
-	Limit: '',
-	Recursive: '',
-	SearchTerm: '',
-	UserId: '',
-}
-const FixSearchQuery = _.invert(_.mapValues(SearchQuery, (v, k) => k.toLowerCase()))
-
-export const rxSearch = tail.rxHttp.pipe(
+export const rxSearch = emby.rxHttp.pipe(
 	Rx.Op.filter(({ url }) => ['items', 'hints'].includes(path.basename(url).toLowerCase())),
 	Rx.Op.map(({ url, query }) => {
-		query = _.mapKeys(query, (v, k) => FixSearchQuery[k] || _.upperFirst(k))
-		return { url, query: query as SearchQuery }
+		query = _.mapKeys(query, (v, k) => k.toLowerCase())
+		return query.searchterm
 	}),
-	Rx.Op.map(({ query }) => query.SearchTerm),
-	Rx.Op.filter(SearchTerm => !!SearchTerm && SearchTerm.length >= 3),
+	Rx.Op.filter(search => !!search && search.length >= 3),
 	Rx.Op.distinctUntilChanged()
 )
 
-rxSearch.subscribe(async SearchTerm => {
-	let results = await trakt.search(SearchTerm)
+rxSearch.subscribe(async search => {
+	search = utils.toSlug(search, { toName: true, lowercase: true })
+	console.log(`rxSearch search ->`, search)
+	let results = await trakt.search(search)
+	console.log(`rxSearch results ->`, results)
 	if (results.length == 0) return
 	for (let result of results) {
 		await emby.library.add(new media.Item(result))

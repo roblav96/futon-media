@@ -12,6 +12,7 @@ import * as torrent from '@/scrapers/torrent'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+import db from '@/adapters/db'
 import Emitter from '@/shims/emitter'
 import redis from '@/adapters/redis'
 
@@ -75,18 +76,13 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 	return stream
 }
 
-// emby.rxSession.subscribe(Session => {
-// 	if (!Session.DeviceName) return
-// 	console.log(`rxSession ->`, Session.json)
-// })
-// emby.rxPlaybackInfo.subscribe(async ({ query }) => {
-// 	console.log(`rxPlaybackInfo ->`, query)
-// 	let Session = await emby.sessions.byUserId(query.UserId)
-// 	let Views = await Session.Views()
-// 	global.dts(_.merge({}, ...Views), `_.merge({}, ...Views)`)
-// })
-emby.rxHttp.subscribe(({ url, query }) => {
-	console.log(`rxHttp ->`, new Url(url).pathname, query)
+const rxItem = emby.rxHttp.pipe(
+	Rx.Op.filter(({ query }) => !!query.ItemId && !!query.UserId),
+	Rx.Op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
+	Rx.Op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
+)
+rxItem.subscribe(({ ItemId, UserId }) => {
+	console.log(`rxItem ->`, ItemId, UserId)
 })
 
 fastify.get('/strm', async (request, reply) => {
@@ -94,14 +90,8 @@ fastify.get('/strm', async (request, reply) => {
 		if (k == 'traktId') return v
 		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
-	console.warn(`strm ->`, query.title)
-
-	let Sessions = await emby.sessions.get()
-	console.log(`Sessions ->`, Sessions.map(v => v.json))
-	let Session = Sessions.find(v => !v.IsStreaming)
-	console.log(`Session ->`, Session.json)
-	query.quality = Session.Quality
 	let { e, s, title, traktId, type, quality } = query
+	console.warn(`fastify strm ->`, title)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
@@ -109,6 +99,11 @@ fastify.get('/strm', async (request, reply) => {
 	let stream = await redis.get(rkey)
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
+			let Sessions = await emby.sessions.get()
+			console.log(`Sessions ->`, Sessions.map(v => v.json))
+			let Session = Sessions.find(v => !v.IsStreaming)
+			console.log(`Session ->`, Session.json)
+			query.quality = Session.Quality
 			getDebridStream(query).then(
 				async stream => {
 					let seconds = utils.duration(1, 'day') / 1000

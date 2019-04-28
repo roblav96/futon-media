@@ -11,7 +11,7 @@
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"skipLibCheck": false,
-		"sourceMap": true,
+		"inlineSourceMap": true,
 		"target": "es5",
 		"paths": {
 			"@/*": ["src/*"]
