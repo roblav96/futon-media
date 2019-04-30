@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
+import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 
 export const sessions = {
@@ -29,7 +30,7 @@ export class Session {
 		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
 	get Quality(): emby.Quality {
-		return _.isFinite(this.Channels) && this.Channels == 2 ? '1080p' : '4K'
+		return this.Channels == 2 || this.IsRoku ? '1080p' : '4K'
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
@@ -298,70 +299,6 @@ export interface TranscodingProfiles {
 	SegmentLength: number
 	TranscodeSeekInfo: string
 	Type: string
-}
-
-export interface User {
-	Configuration: {
-		DisplayCollectionsView: boolean
-		DisplayMissingEpisodes: boolean
-		EnableLocalPassword: boolean
-		EnableNextEpisodeAutoPlay: boolean
-		GroupedFolders: any[]
-		HidePlayedInLatest: boolean
-		LatestItemsExcludes: any[]
-		MyMediaExcludes: any[]
-		OrderedViews: string[]
-		PlayDefaultAudioTrack: boolean
-		RememberAudioSelections: boolean
-		RememberSubtitleSelections: boolean
-		SubtitleMode: string
-	}
-	HasConfiguredEasyPassword: boolean
-	HasConfiguredPassword: boolean
-	HasPassword: boolean
-	Id: string
-	LastActivityDate: string
-	LastLoginDate: string
-	Name: string
-	Policy: {
-		AccessSchedules: any[]
-		AuthenticationProviderId: string
-		BlockUnratedItems: any[]
-		BlockedTags: any[]
-		DisablePremiumFeatures: boolean
-		EnableAllChannels: boolean
-		EnableAllDevices: boolean
-		EnableAllFolders: boolean
-		EnableAudioPlaybackTranscoding: boolean
-		EnableContentDeletion: boolean
-		EnableContentDeletionFromFolders: any[]
-		EnableContentDownloading: boolean
-		EnableLiveTvAccess: boolean
-		EnableLiveTvManagement: boolean
-		EnableMediaConversion: boolean
-		EnableMediaPlayback: boolean
-		EnablePlaybackRemuxing: boolean
-		EnablePublicSharing: boolean
-		EnableRemoteAccess: boolean
-		EnableRemoteControlOfOtherUsers: boolean
-		EnableSharedDeviceControl: boolean
-		EnableSubtitleDownloading: boolean
-		EnableSubtitleManagement: boolean
-		EnableSyncTranscoding: boolean
-		EnableUserPreferenceAccess: boolean
-		EnableVideoPlaybackTranscoding: boolean
-		EnabledChannels: any[]
-		EnabledDevices: any[]
-		EnabledFolders: any[]
-		ExcludedSubFolders: any[]
-		InvalidLoginAttemptCount: number
-		IsAdministrator: boolean
-		IsDisabled: boolean
-		IsHidden: boolean
-		IsHiddenRemotely: boolean
-		RemoteClientBitrateLimit: number
-	}
-	ServerId: string
 }
 
 export interface Device {

@@ -29,6 +29,8 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, title, traktId, type, quality }: emby.StrmQuery) {
+	console.warn(`getDebridStream ->`, quality, title)
+
 	// await utils.pTimeout(10000)
 	// throw new Error(`DEVELOPMENT`)
 
@@ -41,7 +43,7 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 		let episode = await trakt.client.get(`/${type}s/${traktId}/seasons/${s}/episodes/${e}`)
 		item.use({ type: 'episode', episode })
 	}
-	console.log(`item ->`, item)
+	console.log(`item ->`, item.title)
 
 	let torrents = await scraper.scrapeAll(item)
 	torrents.sort((a, b) => b.bytes - a.bytes)
@@ -53,9 +55,9 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 		})
 	}
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
-	console.log(`scrapeAll torrents ->`, torrents.length)
 
-	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
+	// let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
+	let index = torrents.findIndex(v => v.cached.length > 0)
 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
 	emitter.once(traktId, () =>
 		debrids.download(downloads, item).catch(error => {
@@ -93,7 +95,7 @@ fastify.get('/strm', async (request, reply) => {
 		return utils.isNumeric(v) ? _.parseInt(v) : v
 	}) as emby.StrmQuery
 	let { e, s, title, traktId, type, quality } = query
-	console.warn(`fastify strm ->`, title, query)
+	// console.warn(`fastify strm ->`, title, query)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)

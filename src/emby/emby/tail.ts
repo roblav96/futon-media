@@ -5,44 +5,39 @@ import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
-import * as sane from 'sane'
 import * as schedule from 'node-schedule'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+import exit = require('exit-hook')
 
 export const rxTail = new Rx.Subject<string>()
 
 process.nextTick(async () => {
 	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
-	let logfile = path.join(LogPath, 'embyserver.txt')
-	let tail: Tail
-	let job = schedule.scheduleJob('*/5 * * * * *', () => {
-		if (!fs.pathExistsSync(logfile)) return
-		if (tail && !tail.child.killed) return
-		tail = new Tail(logfile)
-	})
-	job.invoke()
+	Tail.logfile = path.join(LogPath, 'embyserver.txt')
+	exit(() => Tail.tail && Tail.tail.destroy())
+	schedule.scheduleJob('*/5 * * * * *', Tail.check).invoke()
 })
 
 class Tail {
-	// watcher: sane.Watcher
+	static tail: Tail
+	static logfile: string
+	static check() {
+		if (!Tail.logfile) return
+		if (!fs.pathExistsSync(Tail.logfile)) return
+		if (Tail.tail && !Tail.tail.child.killed) return
+		Tail.tail = new Tail(Tail.logfile)
+	}
+	watcher: fs.FSWatcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
 		console.log(`Tail ->`, path.basename(logfile))
 
-		// this.watcher = sane(logfile)
-		// this.watcher.once('delete', () => {
-		// 	console.log(`Tail watcher delete ->`)
-		// 	this.destroy()
-		// })
-		// this.watcher.once('error', error => {
-		// 	console.error(`Tail watcher error -> %O`, error)
-		// 	this.destroy()
-		// })
+		this.watcher = fs.watch(logfile)
+		this.watcher.once('change', () => this.destroy())
+		this.watcher.once('error', () => this.destroy())
 
-		this.child = execa('tail', ['-fn0', logfile], {
-			killSignal: 'SIGKILL',
-		})
+		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
 			chunk = `\n${_.trim((chunk || '').toString())}`
 			let lines = chunk.split(/\n\d{4}-\d{2}-\d{2}\s/g)
@@ -51,35 +46,16 @@ class Tail {
 				line && rxTail.next(line)
 			}
 		})
-
-		this.child.stderr.once('data', (chunk: string) => {
-			console.error(`Tail child stderr -> %O`, `${chunk.toString()}`)
-			this.destroy()
-		})
-		this.child.once('error', error => {
-			console.error(`Tail child error -> %O`, error)
-			this.destroy()
-		})
-		this.child.once('close', (code, signal) => {
-			console.warn(`Tail child close ->`, code, signal)
-			this.destroy()
-		})
-		this.child.once('disconnect', () => {
-			console.warn(`Tail child disconnect ->`)
-			this.destroy()
-		})
-		this.child.once('exit', (code, signal) => {
-			console.warn(`Tail child exit ->`, code, signal)
-			this.destroy()
-		})
+		this.child.stderr.once('data', () => this.destroy())
+		this.child.once('error', () => this.destroy())
+		this.child.once('close', () => this.destroy())
+		this.child.once('disconnect', () => this.destroy())
+		this.child.once('exit', () => this.destroy())
 	}
 	destroy() {
 		this.child.stdout.removeAllListeners()
-		this.child.stderr.removeAllListeners()
-		this.child.removeAllListeners()
-		this.child.kill()
-		// this.watcher.removeAllListeners()
-		// this.watcher.close()
+		this.child.kill('SIGTERM')
+		this.watcher.close()
 	}
 }
 

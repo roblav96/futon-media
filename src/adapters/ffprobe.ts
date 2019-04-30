@@ -10,7 +10,7 @@ const defaults = {
 }
 export default async function ffprobe(
 	streamUrl: string,
-	options = defaults as Partial<typeof defaults>
+	options: { chapters?: boolean; format?: boolean; streams?: boolean }
 ) {
 	let pairs = Object.entries(options).filter(([k, v]) => v)
 	let flags = ['-print_format', 'json', '-show_error'].concat(pairs.map(([k]) => `-show_${k}`))

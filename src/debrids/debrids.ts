@@ -7,7 +7,7 @@ import ffprobe from '@/adapters/ffprobe'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize }
+export const debrids = { premiumize: Premiumize, realdebrid: RealDebrid }
 
 export async function cached(hashes: string[]) {
 	let entries = Object.entries(debrids)
@@ -54,7 +54,7 @@ export async function getStream(torrents: torrent.Torrent[], item: media.Item, s
 			if (stream) {
 				stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
 				if (stereo) {
-					let probe = await ffprobe(stream)
+					let probe = await ffprobe(stream, { streams: true })
 					if (!probe.streams.find(v => v.channels == 2)) continue
 				}
 				return stream

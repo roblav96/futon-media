@@ -90,6 +90,12 @@ export function isVideo(file: string) {
 	return VIDEO_EXTS.includes(path.extname(file).slice(1))
 }
 
+export function alphabetically(a: string, b: string) {
+	a = _.trim(a.toLowerCase()).slice(0, 1)
+	b = _.trim(b.toLowerCase()).slice(0, 1)
+	return a < b ? -1 : a > b ? 1 : 0 as number
+}
+
 export function slider(value: number, min: number, max: number) {
 	if (max - min == 0) return 0
 	return ((value - min) / (max - min)) * 100
