@@ -12,9 +12,12 @@ export const users = {
 }
 
 process.nextTick(async () => {
-	let Users = await users.get()
-	// console.log(`Users ->`, Users)
-	// dts(Users, `Users`)
+	// let Users = await users.get()
+	let Sessions = await emby.sessions.get()
+	Sessions[0].Capabilities.DeviceProfile.CodecProfiles[0].Conditions[0].IsNotRequired = null
+	console.log(`Sessions ->`, Sessions)
+	let output = await dts(Sessions, `Sessions`, true)
+	console.log(`output ->`, output)
 })
 
 export class User {}

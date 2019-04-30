@@ -1,6 +1,8 @@
 import * as _ from 'lodash'
 import * as ansi from 'ansi-colors'
 import * as dayjs from 'dayjs'
+import * as deepdiff from 'deep-diff'
+import * as deepmerge from 'deepmerge'
 import * as dts from 'dts-generate'
 import * as ms from 'pretty-ms'
 import * as qs from 'query-string'
@@ -51,7 +53,7 @@ if (process.DEVELOPMENT) {
 		`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
 	)
 
-	Object.assign(global, { _, dayjs, dts, qs, similarity })
+	Object.assign(global, { _, dayjs, deepdiff, deepmerge, dts, qs, similarity })
 }
 
 declare global {

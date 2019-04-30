@@ -16,7 +16,7 @@ process.nextTick(async () => {
 	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
 	Tail.logfile = path.join(LogPath, 'embyserver.txt')
 	exit(() => Tail.tail && Tail.tail.destroy())
-	schedule.scheduleJob('*/5 * * * * *', Tail.check).invoke()
+	schedule.scheduleJob('*/5 * * * * *', () => Tail.check()).invoke()
 })
 
 class Tail {
@@ -28,6 +28,7 @@ class Tail {
 		if (Tail.tail && !Tail.tail.child.killed) return
 		Tail.tail = new Tail(Tail.logfile)
 	}
+
 	watcher: fs.FSWatcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
@@ -52,6 +53,7 @@ class Tail {
 		this.child.once('disconnect', () => this.destroy())
 		this.child.once('exit', () => this.destroy())
 	}
+
 	destroy() {
 		this.child.stdout.removeAllListeners()
 		this.child.kill('SIGTERM')
