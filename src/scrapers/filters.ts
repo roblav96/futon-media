@@ -39,9 +39,15 @@ export function results(result: scraper.Result, item: media.Item) {
 		return // console.log(`❌ skips accuracy ->`, json, result.name)
 	}
 
-	if (item.movie) return true
-
 	let slug = ` ${utils.toSlug(result.name, { toName: true }).toLowerCase()} `
+	if (item.movie) {
+		let years = slug.split(' ').map(v => utils.parseInt(v))
+		years = years.filter(v => _.inRange(v, 1950, new Date().getFullYear() + 1))
+		if (_.uniq(years).length >= 2) {
+			return // console.log(`❌ years.length >= 2 ->`, result.name)
+		}
+		return true
+	}
 	if (item.show) {
 		try {
 			result.packs = 1

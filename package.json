@@ -53,6 +53,7 @@
 		"ioredis": "^4.9.0",
 		"js-levenshtein": "^1.1.6",
 		"level": "^5.0.1",
+		"level-ttl": "^3.1.1",
 		"leveldown": "^5.0.3",
 		"levelup": "^4.0.1",
 		"lodash": "^4.17.11",

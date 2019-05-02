@@ -29,8 +29,11 @@ export class Session {
 		if (!_.isArray(profiles)) return NaN
 		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
+	get Stereo() {
+		return this.Channels == 2
+	}
 	get Quality(): emby.Quality {
-		return this.Channels == 2 || this.IsRoku ? '1080p' : '4K'
+		return this.IsRoku ? '1080p' : '4K'
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()

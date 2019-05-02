@@ -97,7 +97,6 @@ export type Quality = '1080p' | '4K'
 
 export interface StrmQuery extends trakt.IDs {
 	e: number
-	quality: Quality
 	s: number
 	traktId: string
 	type: media.MainContentType

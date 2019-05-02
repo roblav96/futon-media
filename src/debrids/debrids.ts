@@ -48,14 +48,23 @@ export async function getStream(torrents: torrent.Torrent[], item: media.Item, s
 			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 			levens.sort((a, b) => a.leven - b.leven)
-			console.log(`levens ${title} ->`, levens)
+			console.log(`stream levens ->`, title, levens)
 
 			let stream = await debrid.streamUrl(levens[0])
 			if (stream) {
 				stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
-				if (stereo) {
-					let probe = await ffprobe(stream, { streams: true })
-					if (!probe.streams.find(v => v.channels == 2)) continue
+				let probe = await ffprobe(stream, { streams: true })
+				console.log(`stream probe ->`, torrent.name, probe)
+				if (stereo && !probe.streams.find(v => v.channels == 2)) {
+					console.warn(`stream probe !channels ->`, torrent.name)
+					continue
+				}
+				let english = probe.streams.find(
+					v => v.codec_type == 'audio' && v.tags.language.toLowerCase().startsWith('en')
+				)
+				if (!english) {
+					console.warn(`stream probe !english ->`, torrent.name)
+					continue
 				}
 				return stream
 			}
