@@ -128,6 +128,7 @@ export class Http {
 				.send(options.method, options.url, options as any)
 				.catch(error => {
 					if (_.isFinite(error.statusCode)) {
+						// console.log(`error ->`, error, options)
 						if (!_.isString(error.statusMessage)) {
 							let message = errors[error.statusCode]
 							error.statusMessage = message ? message.name : 'ok'

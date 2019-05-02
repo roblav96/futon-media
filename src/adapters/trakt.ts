@@ -34,6 +34,9 @@ export const client = new Http({
 })
 
 export const RESULT_ITEM = {
+	collected_at: 'collected_at',
+	listed_at: 'listed_at',
+	rank: 'rank',
 	score: 'score',
 } as Record<keyof Result, keyof media.Item>
 
@@ -173,6 +176,8 @@ export interface Result extends Extras {
 }
 
 export interface Extras {
+	collected_at: string
+	listed_at: string
 	rank: number
 	score: number
 }

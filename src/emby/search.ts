@@ -18,12 +18,15 @@ export const rxSearch = emby.rxHttp.pipe(
 
 rxSearch.subscribe(async search => {
 	search = utils.toSlug(search, { toName: true, lowercase: true })
-	console.log(`rxSearch search ->`, search)
+	// console.warn(`rxSearch search ->`, search)
 	let results = await trakt.search(search)
-	console.log(`rxSearch results ->`, results)
-	if (results.length == 0) return
-	for (let result of results) {
-		await emby.library.add(new media.Item(result))
+	let items = results.map(v => new media.Item(v))
+	items = items.filter(v => v.isEnglish && v.isReleased && v.isPopular)
+	// console.log(`rxSearch items ->`, items)
+	if (items.length > 0) {
+		for (let item of items) {
+			await emby.library.add(item)
+		}
+		await emby.library.refresh()
 	}
-	await emby.library.refresh()
 })

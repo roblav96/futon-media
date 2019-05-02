@@ -11,27 +11,53 @@ import * as utils from '@/utils/utils'
 
 export const library = {
 	qualities: ['1080p', '4K'] as Quality[],
-	async refresh() {
-		await emby.client.post('/Library/Refresh')
+
+	async refresh(wait = false) {
+		let proms = [] as Promise<any>[]
+		if (wait == true) {
+			let rxTask = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
+				Rx.Op.filter(Tasks => Tasks.find(v => v.Key == 'RefreshLibrary').State == 'Idle'),
+				Rx.Op.take(1)
+			)
+			proms.push(rxTask.toPromise())
+		}
+		proms.push(emby.client.post('/Library/Refresh'))
+		console.log(`await Promise.all(proms)`)
+		await Promise.all(proms)
 	},
+
+	async Items(query?: { Fields?: string[]; ParentId?: string; IncludeItemTypes?: string[] }) {
+		query = _.defaults(query || {}, {
+			Fields: [],
+			IncludeItemTypes: ['Movie', 'Series'],
+			Recursive: 'true',
+		})
+		query.Fields = _.uniq(query.Fields.concat(['Path', 'ProviderIds']))
+		let Items = (await emby.client.get('/Items', {
+			query: _.mapValues(query, v => (_.isArray(v) ? v.join() : v)),
+		})).Items as emby.Item[]
+		return Items.filter(v => fs.pathExistsSync(v.Path || ''))
+	},
+
 	async toStrm(item: media.Item) {
 		let file = path.normalize(process.env.EMBY_LIBRARY_PATH || process.cwd())
 		file += `/${item.type}s`
 
-		let title = utils.toSlug(item.main.title, { toName: true })
+		// if (item.movie) file += `/${item.ids.slug}/${item.ids.slug}`
+		// if (item.show) file += `/${item.ids.slug}/s${item.S.z}e${item.E.z}`
+
+		let title = item.main.title
 		if (item.movie) {
 			file += `/${title} (${item.year})/${title} (${item.year})`
 		}
 		if (item.show) {
 			file += `/${title} (${item.year})`
 			file += `/Season ${item.S.n}`
-			file += `/${title} S${item.S.z}E${item.E.z}`
+			file += `/${title} - S${item.S.z}E${item.E.z}`
 		}
-		file += '.strm'
 
 		let query = {
 			...item.ids,
-			title: utils.toSlug(item.main.title, { toName: true, separator: '-', lowercase: true }),
 			traktId: item.traktId,
 			type: item.type,
 			year: item.year,
@@ -40,17 +66,19 @@ export const library = {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
 
-		let url = emby.DOMAIN
-		process.DEVELOPMENT && (url+=`:${emby.STRM_PORT}`)
+		// let url = emby.DOMAIN
+		// process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
+		let url = `http://localhost:${emby.STRM_PORT}`
 		url += `/strm?${qs.stringify(query)}`
-		await fs.outputFile(file, url)
+		await fs.outputFile(`${file}.strm`, url)
 	},
+
 	async add(item: media.Item) {
 		if (item.movie) {
 			await library.toStrm(item)
 		}
 		if (item.show) {
-			await utils.pRandom(1000)
+			await utils.pRandom(100)
 			let seasons = (await trakt.client.get(
 				`/shows/${item.traktId}/seasons`
 			)) as trakt.Season[]
@@ -71,7 +99,6 @@ export interface StrmQuery extends trakt.IDs {
 	e: number
 	quality: Quality
 	s: number
-	title: string
 	traktId: string
 	type: media.MainContentType
 	year: number
@@ -85,6 +112,7 @@ export interface Item {
 	CommunityRating: number
 	CriticRating: number
 	DateCreated: string
+	DisplayOrder: string
 	DisplayPreferencesId: string
 	Etag: string
 	ExternalUrls: {
@@ -184,6 +212,9 @@ export interface Item {
 		Imdb: string
 		Tmdb: string
 		TmdbCollection: string
+		TvRage: string
+		Tvdb: string
+		Zap2It: string
 	}
 	RemoteTrailers: {
 		Name: string
@@ -235,20 +266,26 @@ export interface LibraryChanged {
 	ItemsUpdated: string[]
 }
 
-export interface RefreshProgress {
-	ItemId: string
-	Progress: string
-}
-
 export interface ScheduledTasksInfo {
 	Category: string
 	Description: string
 	Id: string
 	IsHidden: boolean
 	Key: string
+	LastExecutionResult: {
+		EndTimeUtc: string
+		Id: string
+		Key: string
+		Name: string
+		StartTimeUtc: string
+		Status: string
+	}
 	Name: string
 	State: string
-	Triggers: any[]
+	Triggers: {
+		IntervalTicks: number
+		Type: string
+	}[]
 }
 
 export interface ScheduledTaskEnded {
@@ -258,4 +295,9 @@ export interface ScheduledTaskEnded {
 	Name: string
 	StartTimeUtc: string
 	Status: string
+}
+
+export interface RefreshProgress {
+	ItemId: string
+	Progress: string
 }

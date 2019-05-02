@@ -24,8 +24,8 @@ export class Session {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
 	get Channels() {
-		let dotprop = `Capabilities.DeviceProfile.TranscodingProfiles`
-		let profiles = _.get(this, dotprop) as TranscodingProfiles[]
+		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
+		let profiles = _.get(this, dotpath) as TranscodingProfiles[]
 		if (!_.isArray(profiles)) return NaN
 		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
@@ -111,7 +111,7 @@ export class Session {
 	}
 
 	async User() {
-		return (await emby.client.get(`/Users/${this.UserId}`)) as User
+		return await emby.users.byUserId(this.UserId)
 	}
 
 	async Latest() {

@@ -2,25 +2,23 @@ import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
 import * as schedule from 'node-schedule'
 import * as utils from '@/utils/utils'
-import * as dts from '@/utils/dts'
 
 export const users = {
 	async get() {
 		let Users = (await emby.client.get('/Users')) as User[]
+		Users = Users.map(v => new User(v))
 		return Users.sort((a, b) => utils.alphabetically(a.Name, b.Name))
+	},
+	async byUserId(UserId: string) {
+		return new User(await emby.client.get(`/Users/${UserId}`))
 	},
 }
 
-process.nextTick(async () => {
-	// let Users = await users.get()
-	let Sessions = await emby.sessions.get()
-	Sessions[0].Capabilities.DeviceProfile.CodecProfiles[0].Conditions[0].IsNotRequired = null
-	console.log(`Sessions ->`, Sessions)
-	let output = await dts(Sessions, `Sessions`, true)
-	console.log(`output ->`, output)
-})
-
-export class User {}
+export class User {
+	constructor(User: User) {
+		_.merge(this, User)
+	}
+}
 
 export interface User {
 	Configuration: {

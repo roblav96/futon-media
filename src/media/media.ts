@@ -56,6 +56,23 @@ export class Item {
 		return title
 	}
 
+	get isEnglish() {
+		let english = [] as boolean[]
+		_.has(this.main, 'country') && english.push((this.main.country || '').includes('us'))
+		_.has(this.main, 'language') && english.push((this.main.language || '').includes('en'))
+		return english.filter(Boolean).length == 2
+	}
+	get isReleased() {
+		let now = Date.now()
+		if (_.has(this.movie, 'released')) return new Date(this.movie.released).valueOf() < now
+		if (_.has(this.show, 'first_aired')) return new Date(this.show.first_aired).valueOf() < now
+		return false
+	}
+	get isPopular() {
+		if (_.has(this.main, 'votes')) return this.main.votes >= 1000
+		return false
+	}
+
 	/** season */
 	get S() {
 		let S = {

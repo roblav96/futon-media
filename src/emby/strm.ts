@@ -13,7 +13,7 @@ import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import Emitter from '@/shims/emitter'
-// import redis from '@/adapters/redis'
+import db from '@/adapters/db'
 
 async function listen() {
 	await fastify.listen(emby.STRM_PORT)
@@ -28,8 +28,8 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStream({ e, s, title, traktId, type, quality }: emby.StrmQuery) {
-	console.warn(`getDebridStream ->`, quality, title)
+async function getDebridStream({ e, s, slug, traktId, type, quality }: emby.StrmQuery) {
+	console.warn(`getDebridStream ->`, quality, slug)
 
 	// await utils.pTimeout(10000)
 	// throw new Error(`DEVELOPMENT`)
@@ -74,7 +74,7 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 
 	let stream = await debrids.getStream(torrents, item, quality != '4K')
 	if (!stream) throw new Error(`!stream`)
-	console.warn(`stream ->`, title, quality, stream)
+	console.warn(`stream ->`, slug, quality, stream)
 	return stream
 }
 
@@ -90,18 +90,18 @@ async function getDebridStream({ e, s, title, traktId, type, quality }: emby.Str
 const DB = new Map<string, string>()
 
 fastify.get('/strm', async (request, reply) => {
-	let query = _.mapValues(request.query, (v, k) => {
-		if (k == 'traktId') return v
-		return utils.isNumeric(v) ? _.parseInt(v) : v
-	}) as emby.StrmQuery
-	let { e, s, title, traktId, type, quality } = query
-	// console.warn(`fastify strm ->`, title, query)
+	let query = _.mapValues(request.query, (v, k) =>
+		utils.isNumeric(v) ? _.parseInt(v) : v
+	) as emby.StrmQuery
+	query.traktId = query.traktId.toString()
+	let { e, s, slug, traktId, type, quality } = query
+	console.warn(`fastify strm ->`, slug, query)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
 
 	// let stream = await redis.get(rkey)
-	let stream = DB.get(rkey)
+	let stream = await db.get(rkey) as string
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
 			let Sessions = await emby.sessions.get()
@@ -111,14 +111,14 @@ fastify.get('/strm', async (request, reply) => {
 				async stream => {
 					// let seconds = utils.duration(1, 'day') / 1000
 					// await redis.setex(rkey, seconds, stream)
-					DB.set(rkey, stream)
+					db.put(rkey, stream)
 					emitter.emit(traktId, stream)
 				},
 				async error => {
-					console.error(`getDebridStream ${title} -> %O`, error)
+					console.error(`getDebridStream ${slug} -> %O`, error)
 					// let seconds = utils.duration(1, 'minute') / 1000
 					// await redis.setex(rkey, seconds, '/dev/null')
-					DB.set(rkey, '/dev/null')
+					db.put(rkey, '/dev/null')
 					emitter.emit(traktId, '/dev/null')
 				}
 			)

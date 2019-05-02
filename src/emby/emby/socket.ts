@@ -22,10 +22,10 @@ process.nextTick(async () => {
 			console.warn(`socket onclose ->`, code, reason)
 		},
 		onopen({ target }) {
-			console.info(`socket onopen ->`, target.url)
+			console.info(`socket onopen ->`, new Url(target.url).pathname)
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
-			// ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
-			// ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
+			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
+			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
@@ -34,6 +34,21 @@ process.nextTick(async () => {
 		},
 	})
 })
+
+export const socket = {
+	filter<IData>(MessageType: string) {
+		return rxSocket.pipe(
+			Rx.Op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
+			Rx.Op.map(({ Data }) => Data as IData)
+		)
+	},
+}
+
+export interface EmbyEvent<Data = any> {
+	Data: Data
+	MessageId: string
+	MessageType: string
+}
 
 // rxSocket.subscribe(({ MessageType, Data }) => {
 // 	if (MessageType == 'Sessions') {
@@ -55,16 +70,3 @@ process.nextTick(async () => {
 // rxSocket.subscribe(({ MessageType, Data }) => {
 // 	console.log(`rxSocket ->`, MessageType, Data)
 // })
-
-export function filter<IData>(MessageType: string) {
-	return rxSocket.pipe(
-		Rx.Op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
-		Rx.Op.map(({ Data }) => Data as IData)
-	)
-}
-
-export interface EmbyEvent<Data = any> {
-	Data: Data
-	MessageId: string
-	MessageType: string
-}
