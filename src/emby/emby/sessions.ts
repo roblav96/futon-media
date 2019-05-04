@@ -23,11 +23,34 @@ export class Session {
 	get IsRoku() {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
+	get Codecs() {
+		let { audio, video } = { audio: '', video: '' }
+
+		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
+		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
+		audio += _.join(cprofiles.filter(v => v.Type == 'Audio').map(v => v.Codec), ',')
+		video += _.join(cprofiles.filter(v => v.Type == 'Video').map(v => v.Codec), ',')
+
+		let dpath = 'Capabilities.DeviceProfile.DirectPlayProfiles'
+		let dprofiles = _.get(this, dpath, []) as DirectPlayProfiles[]
+		audio += _.join(dprofiles.map(v => v.AudioCodec).filter(Boolean), ',')
+		video += _.join(dprofiles.map(v => v.VideoCodec).filter(Boolean), ',')
+
+		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
+		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
+		audio += _.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')
+		video += _.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')
+
+		return {
+			audio: _.uniq(audio.toLowerCase().split(',')).sort(),
+			video: _.uniq(video.toLowerCase().split(',')).sort(),
+		}
+	}
 	get Channels() {
-		let dotpath = `Capabilities.DeviceProfile.TranscodingProfiles`
-		let profiles = _.get(this, dotpath) as TranscodingProfiles[]
-		if (!_.isArray(profiles)) return NaN
-		return _.max([2].concat(profiles.map(v => _.parseInt(v.MaxAudioChannels))))
+		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
+		let tprofiles = _.get(this, tpath) as TranscodingProfiles[]
+		if (!_.isArray(tprofiles)) return NaN
+		return _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
 	get Stereo() {
 		return this.Channels == 2
@@ -41,18 +64,21 @@ export class Session {
 	get Age() {
 		return Date.now() - this.Stamp
 	}
+	get Bitrate() {
+		return _.get(this, 'Capabilities.DeviceProfile.MaxStreamingBitrate', NaN) as number
+	}
 
 	get AudioStreamIndex() {
-		return _.get(this, 'PlayState.AudioStreamIndex')
+		return _.get(this, 'PlayState.AudioStreamIndex') as number
 	}
 	get MediaSourceId() {
-		return _.get(this, 'PlayState.MediaSourceId')
+		return _.get(this, 'PlayState.MediaSourceId') as string
 	}
 	get PlayMethod() {
-		return _.get(this, 'PlayState.PlayMethod')
+		return _.get(this, 'PlayState.PlayMethod') as string
 	}
 	get PositionTicks() {
-		return _.get(this, 'PlayState.PositionTicks')
+		return _.get(this, 'PlayState.PositionTicks') as number
 	}
 	get IsPlayState() {
 		let finite = _.isFinite(this.AudioStreamIndex) && _.isFinite(this.PositionTicks)
@@ -60,16 +86,16 @@ export class Session {
 	}
 
 	get Container() {
-		return _.get(this, 'NowPlayingItem.Container')
+		return _.get(this, 'NowPlayingItem.Container') as string
 	}
 	get ItemName() {
-		return _.get(this, 'NowPlayingItem.Name')
+		return _.get(this, 'NowPlayingItem.Name') as string
 	}
 	get StrmPath() {
-		return _.get(this, 'NowPlayingItem.Path')
+		return _.get(this, 'NowPlayingItem.Path') as string
 	}
 	get ItemId() {
-		return _.get(this, 'NowPlayingItem.Id')
+		return _.get(this, 'NowPlayingItem.Id') as string
 	}
 	get IsNowPlaying() {
 		return !!this.Container && !!this.ItemName && !!this.StrmPath && !!this.ItemId
@@ -160,24 +186,9 @@ export interface Session {
 	ApplicationVersion: string
 	Capabilities: {
 		DeviceProfile: {
-			CodecProfiles: {
-				ApplyConditions: any[]
-				Codec: string
-				Conditions: {
-					Condition: any
-					IsRequired: any
-					Property: any
-					Value: any
-				}[]
-				Type: string
-			}[]
+			CodecProfiles: CodecProfiles[]
 			ContainerProfiles: any[]
-			DirectPlayProfiles: {
-				AudioCodec: string
-				Container: string
-				Type: string
-				VideoCodec: string
-			}[]
+			DirectPlayProfiles: DirectPlayProfiles[]
 			EnableAlbumArtInDidl: boolean
 			EnableMSMediaReceiverRegistrar: boolean
 			EnableSingleAlbumArtLimit: boolean
@@ -288,7 +299,26 @@ export interface Session {
 	UserName: string
 }
 
-export interface TranscodingProfiles {
+interface CodecProfiles {
+	ApplyConditions: any[]
+	Codec: string
+	Conditions: {
+		Condition: any
+		IsRequired: any
+		Property: any
+		Value: any
+	}[]
+	Type: string
+}
+
+interface DirectPlayProfiles {
+	AudioCodec: string
+	Container: string
+	Type: string
+	VideoCodec: string
+}
+
+interface TranscodingProfiles {
 	AudioCodec: string
 	BreakOnNonKeyFrames: boolean
 	Container: string
@@ -302,9 +332,10 @@ export interface TranscodingProfiles {
 	SegmentLength: number
 	TranscodeSeekInfo: string
 	Type: string
+	VideoCodec: string
 }
 
-export interface Device {
+interface Device {
 	AppName: string
 	AppVersion: string
 	DateLastActivity: string

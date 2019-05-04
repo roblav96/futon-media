@@ -87,13 +87,16 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 
 export const VIDEO_EXTS = ['m4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
-	return VIDEO_EXTS.includes(path.extname(file).slice(1))
+	return (
+		VIDEO_EXTS.includes(path.extname(file).slice(1)) &&
+		!file.toLowerCase().endsWith('rarbg.com.mp4')
+	)
 }
 
 export function alphabetically(a: string, b: string) {
 	a = _.trim(a.toLowerCase()).slice(0, 1)
 	b = _.trim(b.toLowerCase()).slice(0, 1)
-	return a < b ? -1 : a > b ? 1 : 0 as number
+	return a < b ? -1 : a > b ? 1 : (0 as number)
 }
 
 export function slider(value: number, min: number, max: number) {

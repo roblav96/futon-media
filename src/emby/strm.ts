@@ -26,19 +26,21 @@ fastify.server.headersTimeout = 30000
 fastify.server.keepAliveTimeout = 15000
 fastify.server.timeout = 60000
 
-fastify.setErrorHandler((error, request, reply) => {
-	console.error(`fastify -> %O`, error)
-	return reply.redirect('/dev/null')
-})
+// fastify.setErrorHandler((error, request, reply) => {
+// 	console.error(`fastify -> %O`, error)
+// 	return reply.redirect('/dev/null')
+// })
 
 const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
-	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
-	console.log(`getDebridStream ->`, slug)
+	let { Quality, Channels, Codecs } = (await emby.sessions.get()).find(v => !v.IsStreaming)
+	console.log(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
+	// console.log(`Session ->`, Session)
 
+	// console.log(`Bitrate ->`, `${utils.fromBytes(Session.Bitrate, 0)}/s`)
 	// await utils.pTimeout(10000)
-	// throw new Error(`DEVELOPMENT`)
+	// throw new Error(`DEV`)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -49,7 +51,6 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 		let episode = await trakt.client.get(`/${type}s/${traktId}/seasons/${s}/episodes/${e}`)
 		item.use({ type: 'episode', episode })
 	}
-	console.log(`item ->`, item.title)
 
 	let torrents = await scraper.scrapeAll(item)
 	torrents.sort((a, b) => b.bytes - a.bytes)
@@ -62,31 +63,33 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	}
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
 
-	// let index = torrents.findIndex(v => v.cached.length > 0)
-	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
-	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
-	emitter.once(traktId, () =>
-		debrids.download(downloads, item).catch(error => {
-			console.error(`debrids.download ${item.title} -> %O`, error)
-		})
-	)
+	if (!process.DEVELOPMENT) {
+		// let index = torrents.findIndex(v => v.cached.length > 0)
+		let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
+		let downloads = torrents.slice(0, _.clamp(index, 0, 5))
+		emitter.once(traktId, () =>
+			debrids.download(downloads, item).catch(error => {
+				console.error(`debrids.download ${item.title} -> %O`, error)
+			})
+		)
+	}
 
 	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`!torrents`)
 
-	if (Session.Quality == '1080p') {
+	if (Quality == '1080p') {
 		torrents = torrents.filter(({ name }) => {
 			name = name.toLowerCase()
 			return !(name.includes('4k') || name.includes('2160p'))
 		})
 	}
-	if (Session.Stereo) {
+	if (Channels <= 2) {
 		torrents.sort((a, b) => b.seeders - a.seeders)
 	}
 
-	let stream = await debrids.getStream(torrents, item, Session.Stereo)
+	let stream = await debrids.getStream(torrents, item, Codecs.video, Channels)
 	if (!stream) throw new Error(`!stream`)
-	console.log(`getDebridStream ->`, slug, stream)
+	console.log(`getDebridStream '${slug}' ->`, stream)
 	return stream
 }
 
@@ -96,7 +99,11 @@ fastify.get('/strm', async (request, reply) => {
 	) as emby.StrmQuery
 	query.traktId = query.traktId.toString()
 	let { e, s, slug, traktId, type } = query
-	console.warn(`fastify strm ->`, slug, query)
+	console.warn(`fastify strm '${slug}' ->`, query)
+
+	// console.time(`Session`)
+	// let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
+	// console.timeEnd(`Session`)
 
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
@@ -110,7 +117,7 @@ fastify.get('/strm', async (request, reply) => {
 					emitter.emit(traktId, stream)
 				},
 				async error => {
-					console.error(`getDebridStream ${slug} -> %O`, error)
+					console.error(`getDebridStream '${slug}' -> %O`, error)
 					await db.put(rkey, '/dev/null', utils.duration(1, 'minute'))
 					emitter.emit(traktId, '/dev/null')
 				}
@@ -119,7 +126,7 @@ fastify.get('/strm', async (request, reply) => {
 		stream = await emitter.toPromise(traktId)
 	}
 
-	console.log(`redirect ->`, stream)
+	// console.log(`redirect '${slug}' ->`, stream)
 	reply.redirect(stream)
 })
 

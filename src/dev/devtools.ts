@@ -33,7 +33,7 @@ if (process.DEVELOPMENT) {
 					process.stdout.write(
 						`\n${ansi[color]('■')} ${ansi.dim(`+${ms(delta)} ${trace}`)}\n`
 					)
-					args.push(`\n`)
+					// args.push(`\n`)
 				}
 				return fn.apply(console, args)
 			}

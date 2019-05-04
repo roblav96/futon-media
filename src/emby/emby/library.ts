@@ -22,7 +22,6 @@ export const library = {
 			proms.push(rxTask.toPromise())
 		}
 		proms.push(emby.client.post('/Library/Refresh'))
-		console.log(`await Promise.all(proms)`)
 		await Promise.all(proms)
 	},
 

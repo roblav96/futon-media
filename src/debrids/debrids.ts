@@ -31,7 +31,12 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 	}
 }
 
-export async function getStream(torrents: torrent.Torrent[], item: media.Item, stereo: boolean) {
+export async function getStream(
+	torrents: torrent.Torrent[],
+	item: media.Item,
+	codecs: string[],
+	channels: number
+) {
 	// console.log(`stream torrents ->`, torrents.map(v => v.json))
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json)
@@ -48,24 +53,42 @@ export async function getStream(torrents: torrent.Torrent[], item: media.Item, s
 			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 			levens.sort((a, b) => a.leven - b.leven)
-			console.log(`stream levens ->`, title, levens)
+			console.log(`stream levens ->`, torrent.name, levens)
 
 			let stream = await debrid.streamUrl(levens[0])
 			if (stream) {
 				stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
 				let probe = await ffprobe(stream, { streams: true })
-				console.log(`stream probe ->`, torrent.name, probe)
-				if (stereo && !probe.streams.find(v => v.channels == 2)) {
-					console.warn(`stream probe !channels ->`, torrent.name)
+				console.log(`stream probe ->`, stream, process.DEVELOPMENT && probe)
+
+				if (channels && !probe.streams.find(v => v.channels <= channels)) {
+					console.warn(`stream probe !channels ->`, torrent.name, channels)
 					continue
 				}
-				let english = probe.streams.find(
-					v => v.codec_type == 'audio' && v.tags.language.toLowerCase().startsWith('en')
+
+				let video = probe.streams.find(
+					v => v.codec_type && v.codec_type.toLowerCase() == 'video'
 				)
+				if (video && codecs && !codecs.includes(video.codec_name.toLowerCase())) {
+					console.warn(`stream probe !codec ->`, torrent.name, video.codec_name)
+					continue
+				}
+
+				let english = probe.streams.find(v => {
+					if (v.codec_type.toLowerCase() == 'audio') {
+						if (v.tags.language) {
+							let language = v.tags.language.toLowerCase()
+							return language.startsWith('en') || language.startsWith('un')
+						}
+						let keys = _.keys(v.tags).map(v => v.toLowerCase())
+						return !!keys.find(v => v.endsWith('eng'))
+					}
+				})
 				if (!english) {
 					console.warn(`stream probe !english ->`, torrent.name)
 					continue
 				}
+
 				return stream
 			}
 		}

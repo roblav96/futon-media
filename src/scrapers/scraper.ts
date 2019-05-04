@@ -13,18 +13,19 @@ import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	// console.log(`results ->`, results.splice(0).map(scraper.json))
-	// (await import('@/scrapers/providers/btbit')).BtBit, // (await import('@/scrapers/providers/snowfl')).Snowfl,
 	let providers = [
-		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
-		(await import('@/scrapers/providers/eztv')).Eztv,
+		// // // (await import('@/scrapers/providers/btbit')).BtBit,
+		// (await import('@/scrapers/providers/btdb')).Btdb,
+		// (await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
 		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		// // (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/yts')).Yts,
+		// // (await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
@@ -37,9 +38,9 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
-		!to.bytes && from.bytes && (to.bytes = from.bytes)
-		!to.stamp && from.stamp && (to.stamp = from.stamp)
-		!to.seeders && from.seeders && (to.seeders = from.seeders)
+		to.bytes = _.max([to.bytes, from.bytes])
+		to.stamp = _.max([to.stamp, from.stamp])
+		to.seeders = _.max([to.seeders, from.seeders])
 		return true
 	})
 
@@ -61,7 +62,7 @@ export class Scraper {
 		this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
 		this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
 		this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
-		slugs.length == 0 && slugs.unshift(this.item.title)
+		/** slugs.length == 0 && */ slugs.push(this.item.title)
 		return slugs.map(v => utils.toSlug(v))
 	}
 
@@ -76,7 +77,6 @@ export class Scraper {
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
 
-		/** get results with slug and sorts query combinations */
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {
 				index > 0 && (await utils.pRandom(1000))
@@ -94,7 +94,7 @@ export class Scraper {
 
 		results = results.filter(v => filters.results(v, this.item))
 
-		console.warn(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
+		console.log(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
 		return results.map(v => new torrent.Torrent(v))
 	}
 }

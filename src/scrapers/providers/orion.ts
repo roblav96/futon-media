@@ -40,10 +40,7 @@ export class Orion extends scraper.Scraper {
 		let streams = (_.has(response, 'data.streams') && response.data.streams) || []
 		streams = streams.filter(stream => {
 			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
-			if (magnet.xt == 'urn:btih:') {
-				return console.warn(`!magnet.xt ->`, stream)
-			}
-			return true
+			return magnet.xt != 'urn:btih:'
 		})
 		return streams.map(stream => {
 			return {

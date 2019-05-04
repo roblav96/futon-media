@@ -16,6 +16,9 @@ class DB {
 			basepath = path.join(path.dirname(pkgjson.path), 'node_modules/.cache')
 		}
 		let file = path.join(basepath, `leveldb/${name}.db`)
+		if (process.DEVELOPMENT) {
+			fs.removeSync(file)
+		}
 		fs.ensureDirSync(file)
 		return file
 	}

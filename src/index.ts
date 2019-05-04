@@ -9,7 +9,7 @@ import '@/dev/mocks'
 // use dynamic imports to avoid circular null references
 async function start() {
 	await import('@/emby/emby')
-	await import('@/emby/playlists')
+	await import('@/emby/collections')
 	await import('@/emby/search')
 	await import('@/emby/strm')
 }

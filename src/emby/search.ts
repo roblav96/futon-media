@@ -16,17 +16,34 @@ export const rxSearch = emby.rxHttp.pipe(
 	Rx.Op.distinctUntilChanged()
 )
 
-rxSearch.subscribe(async search => {
-	search = utils.toSlug(search, { toName: true, lowercase: true })
-	// console.warn(`rxSearch search ->`, search)
-	let results = await trakt.search(search)
-	let items = results.map(v => new media.Item(v))
-	items = items.filter(v => v.isEnglish && v.isReleased && v.isPopular)
-	// console.log(`rxSearch items ->`, items)
-	if (items.length > 0) {
-		for (let item of items) {
-			await emby.library.add(item)
-		}
-		await emby.library.refresh()
+rxSearch.subscribe(async query => {
+	let slug = utils.toSlug(query, { separator: '-', lowercase: true })
+	query = utils.toSlug(query, { toName: true, lowercase: true })
+	if (utils.toSlug(query).length == 0) return
+
+	let results = (await trakt.client.get(`/search/movie,show,person`, {
+		query: { query, fields: 'title,aliases,name', limit: 100 },
+	})) as trakt.Result[]
+
+	let person = results.find(v => v.person && v.person.ids.slug == slug)
+	if (person) {
+		let movies = (await trakt.client.get(`/people/${slug}/movies`, {
+			query: { limit: 100 },
+		})).cast as trakt.Result[]
+		results.push(...movies.filter(v => !!v.character))
+		let shows = (await trakt.client.get(`/people/${slug}/shows`, {
+			query: { limit: 100 },
+		})).cast as trakt.Result[]
+		results.push(...shows.filter(v => !!v.character))
 	}
+
+	let items = results.filter(v => !v.person).map(v => new media.Item(v))
+	items = items.filter(v => v.isEnglish && v.isReleased && v.main.votes >= 100)
+	items.sort((a, b) => b.main.votes - a.main.votes)
+	console.log(`rxSearch '${query}' ->`, items.map(v => v.title))
+	for (let item of items) {
+		await emby.library.add(item)
+	}
+
+	await emby.library.refresh()
 })

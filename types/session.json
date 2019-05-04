@@ -1,0 +1,564 @@
+{
+	"PlayState": {
+		"CanSeek": false,
+		"IsPaused": false,
+		"IsMuted": false,
+		"RepeatMode": "RepeatNone"
+	},
+	"AdditionalUsers": [],
+	"Capabilities": {
+		"Id": "b0ebc821a4ef8ad17aeb5b41263480e9",
+		"PlayableMediaTypes": ["Audio", "Video", "Photo"],
+		"SupportedCommands": [
+			"MoveUp",
+			"MoveDown",
+			"MoveLeft",
+			"MoveRight",
+			"Select",
+			"Back",
+			"GoHome",
+			"SendString",
+			"GoToSearch",
+			"GoToSettings",
+			"DisplayContent",
+			"DisplayMessage",
+			"SetAudioStreamIndex",
+			"SetSubtitleStreamIndex",
+			"PlayMediaSource"
+		],
+		"SupportsMediaControl": true,
+		"SupportsPersistentIdentifier": true,
+		"SupportsSync": false,
+		"DeviceProfile": {
+			"Name": "Roku SG",
+			"EnableAlbumArtInDidl": false,
+			"EnableSingleAlbumArtLimit": false,
+			"EnableSingleSubtitleLimit": false,
+			"SupportedMediaTypes": "Audio,Photo,Video",
+			"MaxAlbumArtWidth": 0,
+			"MaxAlbumArtHeight": 0,
+			"MaxStreamingBitrate": 110000000,
+			"MaxStaticBitrate": 110000000,
+			"MusicStreamingTranscodingBitrate": 320000,
+			"TimelineOffsetSeconds": 0,
+			"RequiresPlainVideoItems": false,
+			"RequiresPlainFolders": false,
+			"EnableMSMediaReceiverRegistrar": false,
+			"IgnoreTranscodeByteRangeRequests": false,
+			"XmlRootAttributes": [],
+			"DirectPlayProfiles": [
+				{
+					"Container": "raw,wav,mp4,mka,m4a,mp2,mp3,wma,asf,opus,mka,webm,flac,mka,m4a,ogg,mka,webm",
+					"Type": "Audio"
+				},
+				{
+					"Container": "mp4,mov,m4v",
+					"AudioCodec": "lpcm,aac,mp2,mp3,wma,wmav2,wmapro,opus,alac,vorbis,ac3,eac3",
+					"VideoCodec": "h264,mpeg4,hevc,vp9,mpeg1,mpeg1video,mpeg2,mpeg2video",
+					"Type": "Video"
+				},
+				{
+					"Container": "mkv,webm",
+					"AudioCodec": "lpcm,aac,mp2,mp3,wma,wmav2,wmapro,opus,flac,alac,vorbis,ac3,dca,dts,eac3",
+					"VideoCodec": "h264,mpeg4,hevc,vp9,mpeg1,mpeg1video,mpeg2,mpeg2video",
+					"Type": "Video"
+				}
+			],
+			"TranscodingProfiles": [
+				{
+					"Container": "mp3",
+					"Type": "Audio",
+					"AudioCodec": "mp3",
+					"Protocol": "Http",
+					"EstimateContentLength": false,
+					"EnableMpegtsM2TsMode": false,
+					"TranscodeSeekInfo": "Auto",
+					"CopyTimestamps": false,
+					"Context": "Streaming",
+					"MinSegments": 0,
+					"SegmentLength": 0,
+					"BreakOnNonKeyFrames": false
+				},
+				{
+					"Container": "ts",
+					"Type": "Video",
+					"VideoCodec": "h264,mpeg1video,mpeg2video,hevc",
+					"AudioCodec": "ac3,aac,mp2,mp3,eac3,flac,opus,vorbis,lpcm",
+					"Protocol": "Hls",
+					"EstimateContentLength": false,
+					"EnableMpegtsM2TsMode": false,
+					"TranscodeSeekInfo": "Auto",
+					"CopyTimestamps": false,
+					"Context": "Streaming",
+					"MaxAudioChannels": "6",
+					"MinSegments": 1,
+					"SegmentLength": 3,
+					"BreakOnNonKeyFrames": true
+				}
+			],
+			"ContainerProfiles": [
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "Equals",
+							"Property": "NumVideoStreams",
+							"Value": "1",
+							"IsRequired": false
+						}
+					]
+				}
+			],
+			"CodecProfiles": [
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "RefFrames",
+							"Value": "16",
+							"IsRequired": false
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoBitDepth",
+							"Value": "8",
+							"IsRequired": false
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						},
+						{
+							"Condition": "EqualsAny",
+							"Property": "VideoProfile",
+							"Value": "high|main|baseline|constrained baseline",
+							"IsRequired": false
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoLevel",
+							"Value": "51",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "h264"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mpeg2"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mpeg2video"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mpeg1"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mpeg1video"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "RefFrames",
+							"Value": "16",
+							"IsRequired": false
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoBitDepth",
+							"Value": "8",
+							"IsRequired": false
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mpeg4"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "61",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "hevc"
+				},
+				{
+					"Type": "Video",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Width",
+							"Value": "3840",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "Height",
+							"Value": "2160",
+							"IsRequired": true
+						},
+						{
+							"Condition": "LessThanEqual",
+							"Property": "VideoFramerate",
+							"Value": "30",
+							"IsRequired": false
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "vp9"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "aac"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "8",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "eac3"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "ac3"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "7",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "dca"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "7",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "DTS"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "flac"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "alac"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "lpcm"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "wma"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "2",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mp3"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "2",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "mp2"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "vorbis"
+				},
+				{
+					"Type": "VideoAudio",
+					"Conditions": [
+						{
+							"Condition": "LessThanEqual",
+							"Property": "AudioChannels",
+							"Value": "6",
+							"IsRequired": true
+						}
+					],
+					"ApplyConditions": [],
+					"Codec": "opus"
+				}
+			],
+			"ResponseProfiles": [],
+			"SubtitleProfiles": [
+				{ "Format": "srt", "Method": "External" },
+				{ "Format": "srt", "Method": "Embed" },
+				{ "Format": "subrip", "Method": "External" },
+				{ "Format": "subrip", "Method": "Embed" },
+				{ "Format": "ass", "Method": "External" },
+				{ "Format": "ass", "Method": "Embed" },
+				{ "Format": "ssa", "Method": "External" },
+				{ "Format": "ssa", "Method": "Embed" }
+			]
+		},
+		"IconUrl": "https://github.com/MediaBrowser/Emby.Resources/raw/master/images/devices/roku.jpg",
+		"AppId": "44191"
+	},
+	"RemoteEndPoint": "68.0.232.200",
+	"PlayableMediaTypes": ["Audio", "Video", "Photo"],
+	"Id": "b0ebc821a4ef8ad17aeb5b41263480e9",
+	"ServerId": "bae2816854b2435c905745564a55bf2d",
+	"UserId": "33643612be8848fea8dd883c674f6239",
+	"UserName": "Mom",
+	"Client": "Roku SG",
+	"LastActivityDate": "2019-05-04T04:16:13.4596827Z",
+	"DeviceName": "Roku Ultra",
+	"DeviceId": "fd63f3f5-3a62-593c-b886-8db6947550d9",
+	"ApplicationVersion": "3.0.155",
+	"AppIconUrl": "https://github.com/MediaBrowser/Emby.Resources/raw/master/images/devices/roku.jpg",
+	"SupportedCommands": [
+		"MoveUp",
+		"MoveDown",
+		"MoveLeft",
+		"MoveRight",
+		"Select",
+		"Back",
+		"GoHome",
+		"SendString",
+		"GoToSearch",
+		"GoToSettings",
+		"DisplayContent",
+		"DisplayMessage",
+		"SetAudioStreamIndex",
+		"SetSubtitleStreamIndex",
+		"PlayMediaSource"
+	],
+	"SupportsRemoteControl": true
+}

@@ -57,10 +57,11 @@ export class Item {
 	}
 
 	get isEnglish() {
-		let english = [] as boolean[]
-		_.has(this.main, 'country') && english.push((this.main.country || '').includes('us'))
-		_.has(this.main, 'language') && english.push((this.main.language || '').includes('en'))
-		return english.filter(Boolean).length == 2
+		return _.has(this.main, 'language') && (this.main.language || '').includes('en')
+		// let english = [] as boolean[]
+		// _.has(this.main, 'country') && english.push((this.main.country || '').includes('us'))
+		// _.has(this.main, 'language') && english.push((this.main.language || '').includes('en'))
+		// return english.filter(Boolean).length == 2
 	}
 	get isReleased() {
 		let now = Date.now()

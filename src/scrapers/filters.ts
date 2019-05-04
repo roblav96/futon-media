@@ -118,7 +118,7 @@ export const regex = {
 		matches = (matches || []).map(v => v.trim())
 		matches = matches.join(' ').split(' ')
 		// console.log(`[seasons1to2] ${slug} ->`, matches)
-		let ints = matches.map(utils.parseInt).filter(_.isFinite)
+		let ints = matches.map(utils.parseInt).filter(v => _.isInteger(v) && v < 100)
 		let { min, max } = { min: _.min(ints), max: _.max(ints) }
 		if (item.S.n >= min && item.S.n <= max) {
 			return max - min + 1

@@ -1,14 +1,20 @@
 import * as _ from 'lodash'
+import * as ConfigStore from 'configstore'
 import * as dayjs from 'dayjs'
+import * as fastParse from 'fast-json-parse'
+import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
-import * as ConfigStore from 'configstore'
-import * as utils from '@/utils/utils'
-import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
+import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://snowfl.com',
+	headers: {
+		'cookie': '__cfduid=de49cc6edc863df03173cda277139fd141553817924',
+		'referer': 'https://snowfl.com/',
+		'x-requested-with': 'XMLHttpRequest',
+	},
 })
 
 const nonce = (value = Math.random().toString(36)) => value.slice(-8)
@@ -36,14 +42,16 @@ async function syncToken() {
 
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'DATE', 'SEED']
+	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
 		;(!TOKEN || Date.now() > STAMP) && (await syncToken())
 		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
-		let response = ((await client.get(url, {
+		let response = (await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
 			memoize: process.DEVELOPMENT,
-		})) || []) as Result[]
+		})) as Result[]
+		response = JSON.parse((response as any) || '[]')
 		let results = response.filter(v => !!v.magnet)
 		return results.map(v => {
 			return {

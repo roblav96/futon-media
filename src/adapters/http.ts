@@ -4,8 +4,7 @@ import * as errors from 'http-errors'
 import * as fastParse from 'fast-json-parse'
 import * as fs from 'fs-extra'
 import * as http from 'http'
-import * as httpie from 'httpie'
-import * as memoize from 'mem'
+import * as httpie from '@/shims/httpie'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
@@ -113,6 +112,8 @@ export class Http {
 		if (options.debug) {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
+
+		// process.DEVELOPMENT && (options.memoize = false)
 
 		let t = Date.now()
 		let response: httpie.HttpieResponse

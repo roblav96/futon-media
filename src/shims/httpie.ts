@@ -1,0 +1,70 @@
+export * from 'httpie'
+import { HttpieResponse } from 'httpie'
+import { request } from 'https'
+import { globalAgent } from 'http'
+import { parse, resolve } from 'url'
+
+export function send(method, uri, opts = {} as any) {
+	return new Promise<HttpieResponse>((res, rej) => {
+		let out = ''
+		opts.method = method
+		let { redirect = true } = opts
+		if (uri && !!uri.toJSON) uri = uri.toJSON()
+		Object.assign(opts, typeof uri === 'string' ? parse(uri) : uri)
+		opts.agent = opts.protocol === 'http:' ? globalAgent : void 0
+
+		let req = request(opts, r => {
+			r.setEncoding('utf8')
+
+			r.on('data', d => {
+				out += d
+			})
+
+			r.on('end', () => {
+				let type = r.headers['content-type']
+				if (type && out && type.includes('application/json')) {
+					try {
+						out = JSON.parse(out, opts.reviver)
+					} catch (err) {
+						return rej(err)
+					}
+				}
+				;(r as any).data = out
+				if (r.statusCode >= 400) {
+					let err = new Error(r.statusMessage) as any
+					err.statusMessage = r.statusMessage
+					err.statusCode = r.statusCode
+					err.headers = r.headers
+					err.data = (r as any).data
+					rej(err)
+				} else if (r.statusCode > 300 && redirect && r.headers.location) {
+					opts.path = resolve(opts.path, r.headers.location)
+					return send(method, opts.path.startsWith('/') ? opts : opts.path, opts).then(
+						res,
+						rej
+					)
+				} else {
+					res(r as any)
+				}
+			})
+		})
+
+		req.on('error', rej)
+
+		if (opts.body) {
+			let isObj = typeof opts.body === 'object' && !Buffer.isBuffer(opts.body)
+			let str = isObj ? JSON.stringify(opts.body) : opts.body
+			isObj && req.setHeader('content-type', 'application/json')
+			req.setHeader('content-length', Buffer.byteLength(str))
+			req.write(str)
+		}
+
+		req.end()
+	})
+}
+
+export const get = send.bind(null, 'GET')
+export const post = send.bind(null, 'POST')
+export const patch = send.bind(null, 'PATCH')
+export const del = send.bind(null, 'DELETE')
+export const put = send.bind(null, 'PUT')

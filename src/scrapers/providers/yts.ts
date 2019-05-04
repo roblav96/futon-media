@@ -34,7 +34,7 @@ export class Yts extends scraper.Scraper {
 					bytes: v.size_bytes,
 					magnet: `magnet:?xt=urn:btih:${v.hash}&dn=${title}`,
 					name: title,
-					seeders: v.seeds,
+					seeders: v.quality == '1080p' ? v.seeds * 1.5 : v.seeds,
 					stamp: v.date_uploaded_unix * 1000,
 				} as scraper.Result
 			})
@@ -58,14 +58,14 @@ interface Response {
 		server_time: number
 		server_timezone: string
 	}
-	data: {
+	'data': {
 		limit: number
 		movie_count: number
 		movies: Movie[]
 		page_number: number
 	}
-	status: string
-	status_message: string
+	'status': string
+	'status_message': string
 }
 
 interface Movie {

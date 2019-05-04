@@ -42,13 +42,10 @@ export const RESULT_ITEM = {
 
 export async function search(query: string, type = 'movie,show' as media.MainContentType) {
 	let results = (await client.get(`/search/${type}`, {
-		query: { query, countries: 'us', fields: 'title', languages: 'en' },
+		query: { query, fields: 'title,aliases', limit: 100 },
 	})) as Result[]
-	results.sort((a, b) => (b[b.type] as Full).votes - (a[a.type] as Full).votes)
-	return results.filter(v => {
-		let full = v[v.type] as Full
-		return full.votes >= 100
-	})
+	let items = results.map(v => new media.Item(v)).sort((a, b) => b.main.votes - a.main.votes)
+	return items.filter(v => v.isEnglish && v.isReleased && v.isPopular)
 }
 
 export interface IDs {
@@ -176,6 +173,7 @@ export interface Result extends Extras {
 }
 
 export interface Extras {
+	character: string
 	collected_at: string
 	listed_at: string
 	rank: number
