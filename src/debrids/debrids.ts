@@ -5,9 +5,10 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import ffprobe from '@/adapters/ffprobe'
 import { Premiumize } from '@/debrids/premiumize'
+import { Putio } from '@/debrids/putio'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = { premiumize: Premiumize, realdebrid: RealDebrid }
+export const debrids = { premiumize: Premiumize, realdebrid: RealDebrid, putio: Putio }
 
 export async function cached(hashes: string[]) {
 	let entries = Object.entries(debrids)
@@ -34,12 +35,18 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 export async function getStream(
 	torrents: torrent.Torrent[],
 	item: media.Item,
-	codecs: string[],
-	channels: number
+	channels: number,
+	codecs: string[]
 ) {
 	// console.log(`stream torrents ->`, torrents.map(v => v.json))
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json)
+
+		// if (torrent.cached.length == 0) {
+		// 	let debrid = new debrids.realdebrid().use(torrent.magnet)
+		// 	let files = await debrid.getFiles()
+		// 	console.log(`files ->`, files)
+		// }
 
 		for (let cached of torrent.cached) {
 			let debrid = new debrids[cached]().use(torrent.magnet)
@@ -61,7 +68,7 @@ export async function getStream(
 				let probe = await ffprobe(stream, { streams: true })
 				console.log(`stream probe ->`, stream, process.DEVELOPMENT && probe)
 
-				if (channels && !probe.streams.find(v => v.channels <= channels)) {
+				if (_.isFinite(channels) && !probe.streams.find(v => v.channels <= channels)) {
 					console.warn(`stream probe !channels ->`, torrent.name, channels)
 					continue
 				}
@@ -69,7 +76,7 @@ export async function getStream(
 				let video = probe.streams.find(
 					v => v.codec_type && v.codec_type.toLowerCase() == 'video'
 				)
-				if (video && codecs && !codecs.includes(video.codec_name.toLowerCase())) {
+				if (_.size(codecs) > 0 && !codecs.includes(video.codec_name.toLowerCase())) {
 					console.warn(`stream probe !codec ->`, torrent.name, video.codec_name)
 					continue
 				}

@@ -34,13 +34,10 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
-	let { Quality, Channels, Codecs } = (await emby.sessions.get()).find(v => !v.IsStreaming)
+	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
+	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
 	// console.log(`Session ->`, Session)
-
-	// console.log(`Bitrate ->`, `${utils.fromBytes(Session.Bitrate, 0)}/s`)
-	// await utils.pTimeout(10000)
-	// throw new Error(`DEV`)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -74,22 +71,26 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 		)
 	}
 
-	torrents = torrents.filter(v => v.cached.length > 0)
+	torrents = torrents.filter(v => v.cached.length > 0 || v.seeders > 0)
 	if (torrents.length == 0) throw new Error(`!torrents`)
+	console.log(`torrents ->`, torrents.map(v => v.json))
 
-	if (Quality == '1080p') {
-		torrents = torrents.filter(({ name }) => {
-			name = name.toLowerCase()
-			return !(name.includes('4k') || name.includes('2160p'))
-		})
-	}
-	if (Channels <= 2) {
-		torrents.sort((a, b) => b.seeders - a.seeders)
-	}
+	// if (Quality == '1080p') {
+	// 	torrents = torrents.filter(({ name }) => {
+	// 		name = name.toLowerCase()
+	// 		return !(name.includes('4k') || name.includes('2160p'))
+	// 	})
+	// }
+	// if (Channels <= 2) {
+	// 	torrents.sort((a, b) => b.seeders - a.seeders)
+	// }
 
-	let stream = await debrids.getStream(torrents, item, Codecs.video, Channels)
+	let stream = await debrids.getStream(torrents, item, Channels, Codecs.video)
 	if (!stream) throw new Error(`!stream`)
 	console.log(`getDebridStream '${slug}' ->`, stream)
+
+	throw new Error(`DEV`)
+
 	return stream
 }
 

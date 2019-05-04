@@ -16,7 +16,7 @@ export const client = new http.Http({
 export class RealDebrid extends debrid.Debrid<Item> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 40)
+		let chunks = utils.chunks(hashes, 38)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
@@ -66,24 +66,45 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		)) as CacheResponse
 		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFiles[]
 
-		_.remove(rds, rd => {
-			let names = _.toPairs(rd).map(([id, file]) => file.filename)
-			return names.find(v => !utils.isVideo(v))
-		})
-		rds.sort((a, b) => {
-			let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
-			let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
-			return bsize - asize
-		})
+		if (rds.length > 0) {
+			_.remove(rds, rd => {
+				let names = _.toPairs(rd).map(([id, file]) => file.filename)
+				return names.find(v => !utils.isVideo(v))
+			})
+			rds.sort((a, b) => {
+				let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
+				let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
+				return bsize - asize
+			})
 
-		this.files = _.toPairs(rds[0]).map(([id, file]) => {
-			return {
-				bytes: file.filesize,
-				id: _.parseInt(id),
-				name: file.filename.slice(0, file.filename.lastIndexOf('.')),
-				path: `/${file.filename}`,
-			} as debrid.File
-		})
+			this.files = _.toPairs(rds[0]).map(([id, file]) => {
+				return {
+					bytes: file.filesize,
+					id: _.parseInt(id),
+					name: file.filename.slice(0, file.filename.lastIndexOf('.')),
+					path: `/${file.filename}`,
+				} as debrid.File
+			})
+		} else {
+			let download = (await client.post('/torrents/addMagnet', {
+				form: { magnet: this.magnet },
+			})) as Download
+			await utils.pTimeout(1000)
+			let item = (await client.get(`/torrents/info/${download.id}`)) as Item
+			await client.delete(`/torrents/delete/${download.id}`)
+
+			let files = item.files.filter(v => utils.isVideo(v.path))
+			this.files = files.map(file => {
+				let name = path.basename(file.path)
+				return {
+					bytes: file.bytes,
+					id: file.id,
+					name: name.slice(0, name.lastIndexOf('.')),
+					path: file.path,
+				} as debrid.File
+			})
+		}
+
 		this.files.sort((a, b) => a.id - b.id)
 		return this.files
 	}

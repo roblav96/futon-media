@@ -42,8 +42,8 @@ export class Session {
 		video += _.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')
 
 		return {
-			audio: _.uniq(audio.toLowerCase().split(',')).sort(),
-			video: _.uniq(video.toLowerCase().split(',')).sort(),
+			audio: _.uniq(audio.toLowerCase().split(',')).filter(Boolean),
+			video: _.uniq(video.toLowerCase().split(',')).filter(Boolean),
 		}
 	}
 	get Channels() {
@@ -51,9 +51,6 @@ export class Session {
 		let tprofiles = _.get(this, tpath) as TranscodingProfiles[]
 		if (!_.isArray(tprofiles)) return NaN
 		return _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
-	}
-	get Stereo() {
-		return this.Channels == 2
 	}
 	get Quality(): emby.Quality {
 		return this.IsRoku ? '1080p' : '4K'

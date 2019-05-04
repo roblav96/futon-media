@@ -9,11 +9,9 @@ interface Env {
 	ORION_KEY: string
 	PREMIUMIZE_ID: string
 	PREMIUMIZE_PIN: string
+	PUTIO_TOKEN: string
 	REALDEBRID_ID: string
 	REALDEBRID_SECRET: string
-	REDIS_HOST: string
-	REDIS_PASSWORD: string
-	REDIS_PORT: string
 	TMDB_KEY: string
 	TRAKT_KEY: string
 	TRAKT_SECRET: string

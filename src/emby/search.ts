@@ -38,7 +38,7 @@ rxSearch.subscribe(async query => {
 	}
 
 	let items = results.filter(v => !v.person).map(v => new media.Item(v))
-	items = items.filter(v => v.isEnglish && v.isReleased && v.main.votes >= 100)
+	items = items.filter(v => v.isEnglish && v.isReleased && v.main.votes >= 500)
 	items.sort((a, b) => b.main.votes - a.main.votes)
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.title))
 	for (let item of items) {
