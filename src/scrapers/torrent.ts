@@ -56,8 +56,8 @@ export class Torrent {
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
-		_.merge(this, result)
 
-		this.hash = magneturi.decode(this.magnet).infoHash.toLowerCase()
+		_.merge(this, result)
+		this.hash = magneturi.decode(result.magnet).infoHash.toLowerCase()
 	}
 }

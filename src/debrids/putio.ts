@@ -1,11 +1,12 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as http from '@/adapters/http'
-import * as magneturi from 'magnet-uri'
-import * as pAll from 'p-all'
 import * as path from 'path'
+import * as qs from 'query-string'
+import * as rd from '@/debrids/realdebrid'
+import * as schedule from 'node-schedule'
 import * as utils from '@/utils/utils'
-import { RealDebrid } from '@/debrids/realdebrid'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.put.io/v2',
@@ -14,29 +15,91 @@ export const client = new http.Http({
 	},
 })
 
+process.nextTick(() => {
+	if (process.DEVELOPMENT) return
+	schedule.scheduleJob('0 * * * *', async () => {
+		let { transfers } = (await client.get('/transfers/list')) as Response
+		for (let transfer of transfers) {
+			let day = dayjs(transfer.finished_at).add(1, 'day')
+			if (day.isAfter(dayjs())) continue
+			await Promise.all([
+				client.post('/files/delete', { form: { file_ids: transfer.file_id } }),
+				client.post('/transfers/remove', { form: { transfer_ids: transfer.id } }),
+			])
+		}
+	})
+})
+
 export class Putio extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		return hashes.map(v => false)
 	}
 
 	async download() {
-		return false
+		!this.transfers && (this.transfers = (await client.get('/transfers/list')).transfers)
+		let transfer = this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)
+		if (transfer) {
+			console.warn(`exists ->`, this.dn)
+			return transfer.id.toString()
+		}
+		let response = (await client.post('/transfers/add', {
+			form: { url: this.magnet },
+		})) as Response
+		return response.transfer.id.toString()
 	}
 
 	async getFiles() {
-		return []
+		let download = (await rd.client.post('/torrents/addMagnet', {
+			form: { magnet: this.magnet },
+		})) as rd.Download
+		await utils.pTimeout(1000)
+		let item = (await rd.client.get(`/torrents/info/${download.id}`)) as rd.Item
+		await rd.client.delete(`/torrents/delete/${download.id}`)
+
+		let files = item.files.filter(v => utils.isVideo(v.path))
+		this.files = files.map(file => {
+			let name = path.basename(file.path)
+			return {
+				bytes: file.bytes,
+				name: name.slice(0, name.lastIndexOf('.')),
+				path: file.path,
+			} as debrid.File
+		})
+
+		this.files.sort((a, b) => a.id - b.id)
+		return this.files
 	}
 
 	async streamUrl(file: debrid.File) {
-		return ''
+		let id = await this.download()
+		if (!id) return
+		let transfer: Transfer
+		for (let i = 0; i < 3; i++) {
+			await utils.pTimeout(1000)
+			let response = (await client.get(`/transfers/${id}`)) as Response
+			if (response.transfer.status == 'COMPLETED') {
+				transfer = response.transfer
+				break
+			}
+		}
+		if (!transfer) return
+		let { media_links } = (await client.post('/files/get-download-links', {
+			form: { file_ids: transfer.file_id },
+		})) as Response
+		if (_.size(media_links) == 0) return
+		let levens = media_links.map(link => {
+			let base = path.basename(qs.parseUrl(link).url)
+			return { link, leven: utils.leven(base, file.name) }
+		})
+		return levens.sort((a, b) => a.leven - b.leven)[0].link
 	}
 }
 
 interface File {
 	content_type: string
-	crc32: any
+	crc32: string
 	created_at: string
-	extension: any
+	extension: string
 	file_type: string
 	first_accessed_at: any
 	folder_type: string
@@ -46,10 +109,11 @@ interface File {
 	is_mp4_available: boolean
 	is_shared: boolean
 	name: string
-	opensubtitles_hash: any
-	parent_id: any
-	screenshot: any
+	opensubtitles_hash: string
+	parent_id: number
+	screenshot: string
 	size: number
+	start_from: number
 	updated_at: string
 }
 
@@ -62,13 +126,13 @@ interface Transfer {
 	created_torrent: boolean
 	current_ratio: number
 	down_speed: number
-	download_id: any
+	download_id: number
 	downloaded: number
 	error_message: any
 	estimated_time: any
 	extract: boolean
-	file_id: any
-	finished_at: any
+	file_id: number
+	finished_at: string
 	hash: string
 	id: number
 	is_private: boolean
@@ -94,10 +158,15 @@ interface Transfer {
 	uploaded: number
 }
 
-interface FilesResponse {
+interface Response {
 	cursor: any
+	download_links: string[]
 	files: File[]
+	media_links: string[]
+	mp4_links: string[]
 	parent: File
 	status: string
 	total: number
+	transfer: Transfer
+	transfers: Transfer[]
 }

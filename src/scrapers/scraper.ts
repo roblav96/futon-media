@@ -37,9 +37,9 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
-		to.bytes = _.max([to.bytes, from.bytes])
-		to.stamp = _.max([to.stamp, from.stamp])
-		to.seeders = _.max([to.seeders, from.seeders])
+		to.bytes = _.ceil(_.mean([to.bytes, from.bytes]))
+		to.stamp = _.ceil(_.mean([to.stamp, from.stamp]))
+		to.seeders = _.ceil(_.mean([to.seeders, from.seeders]))
 		return true
 	})
 

@@ -34,7 +34,6 @@ export class Magnet4You extends scraper.Scraper {
 				console.error(`${this.constructor.name} -> %O`, error)
 			}
 		})
-		// results.forEach(v => (v.seeders = _.ceil(v.seeders / Math.PI)))
 		return results
 	}
 }

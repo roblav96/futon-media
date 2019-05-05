@@ -42,12 +42,6 @@ export async function getStream(
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json)
 
-		// if (torrent.cached.length == 0) {
-		// 	let debrid = new debrids.realdebrid().use(torrent.magnet)
-		// 	let files = await debrid.getFiles()
-		// 	console.log(`files ->`, files)
-		// }
-
 		for (let cached of torrent.cached) {
 			let debrid = new debrids[cached]().use(torrent.magnet)
 			let files = await debrid.getFiles()
@@ -60,7 +54,7 @@ export async function getStream(
 			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 			levens.sort((a, b) => a.leven - b.leven)
-			console.log(`stream levens ->`, torrent.name, levens)
+			console.log(`stream levens ->`, torrent.name, levens.slice(0, 3))
 
 			let stream = await debrid.streamUrl(levens[0])
 			if (stream) {
@@ -68,7 +62,7 @@ export async function getStream(
 				let probe = await ffprobe(stream, { streams: true })
 				console.log(`stream probe ->`, stream, process.DEVELOPMENT && probe)
 
-				if (_.isFinite(channels) && !probe.streams.find(v => v.channels <= channels)) {
+				if (!probe.streams.find(v => v.channels <= channels)) {
 					console.warn(`stream probe !channels ->`, torrent.name, channels)
 					continue
 				}

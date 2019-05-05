@@ -1,5 +1,4 @@
 import * as _ from 'lodash'
-import * as dayjs from 'dayjs'
 import * as debrids from '@/debrids/debrids'
 import * as emby from '@/emby/emby'
 import * as Fastify from 'fastify'
@@ -36,7 +35,7 @@ const emitter = new Emitter<string, string>()
 async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
 	let { Quality, Channels, Codecs } = Session
-	console.log(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
+	console.warn(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
 	console.log(`Session ->`, Session.json)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
@@ -87,13 +86,17 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	})
 	if (torrents.length == 0) throw new Error(`!torrents`)
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
-	console.log(`torrents ->`, torrents.map(v => v.json))
+	// console.log(`torrents ->`, torrents.map(v => v.json))
 
-	throw new Error(`DEV`)
+	// torrents = torrents.filter(v => v.hash == 'b47aff2f0325b86e149380535e63993621126023')
+	// torrents[0].cached = ['putio']
+	// console.log(`torrents ->`, torrents.map(v => v.json))
 
 	let stream = await debrids.getStream(torrents, item, Channels, Codecs.video)
 	if (!stream) throw new Error(`getDebridStream !stream -> '${slug}'`)
 	console.log(`getDebridStream '${slug}' ->`, stream)
+
+	// throw new Error(`DEV`)
 
 	return stream
 }
@@ -104,7 +107,7 @@ fastify.get('/strm', async (request, reply) => {
 	) as emby.StrmQuery
 	query.traktId = query.traktId.toString()
 	let { e, s, slug, traktId, type } = query
-	console.warn(`fastify strm ->`, slug)
+	console.log(`fastify strm ->`, slug)
 
 	// console.time(`Session`)
 	// let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)

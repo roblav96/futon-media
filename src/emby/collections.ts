@@ -89,7 +89,7 @@ async function syncCollections() {
 	// console.log(`schemas ->`, schemas.map(v => v.name).sort())
 	// throw new Error(`DEV`)
 
-	let traktIds = [] as string[]
+	let slugs = [] as string[]
 	for (let schema of schemas) {
 		await utils.pRandom(100)
 		let results = (await trakt.client
@@ -110,8 +110,9 @@ async function syncCollections() {
 		schema.items = schema.items.filter(v => v.isEnglish && v.isReleased && v.isPopular)
 
 		for (let item of schema.items) {
-			if (!traktIds.includes(item.traktId)) {
-				traktIds.push(item.traktId)
+			let slug = `${item.type}:${item.ids.slug}`
+			if (!slugs.includes(slug)) {
+				slugs.push(slug)
 				await emby.library.add(item)
 			}
 		}
@@ -142,22 +143,13 @@ async function syncCollections() {
 			let CollectionItems = await emby.library.Items({ ParentId: Collection.Id })
 			Ids = _.difference(CollectionItems.map(v => v.Id), Ids)
 			if (Ids.length > 0) {
+				console.log(`Ids difference ->`, Ids)
 				await emby.client.post(`/Collections/${Collection.Id}/Items`, {
 					query: { Ids: Ids.join() },
 				})
 			}
 		}
 	}
-
-	// await emby.library.refresh(true)
-	// Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	// for (let Collection of Collections) {
-	// 	let file = path.join(Collection.Path, 'collection.xml')
-	// 	if (await fs.pathExists(file)) {
-	// 		let xml = (await fs.readFile(file)).toString()
-	// 		await fs.outputFile(file, xml.replace('PremiereDate', 'SortName'))
-	// 	}
-	// }
 
 	await emby.library.refresh()
 	console.warn(`syncCollections -> DONE`)

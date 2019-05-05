@@ -36,9 +36,10 @@ export class RealDebrid extends debrid.Debrid<Item> {
 
 	async download() {
 		!this.transfers && (this.transfers = await client.get('/torrents'))
-		if (this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)) {
+		let transfer = this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)
+		if (transfer) {
 			console.warn(`exists ->`, this.dn)
-			return true
+			return transfer.id
 		}
 
 		let download = (await client.post('/torrents/addMagnet', {
@@ -51,13 +52,13 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		if (files.length == 0) {
 			console.warn(`files.length == 0 ->`, this.dn)
 			await client.delete(`/torrents/delete/${download.id}`)
-			return false
+			return
 		}
 
 		await client.post(`/torrents/selectFiles/${download.id}`, {
 			form: { files: files.map(v => v.id).join() },
 		})
-		return true
+		return download.id
 	}
 
 	async getFiles() {
@@ -66,44 +67,24 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		)) as CacheResponse
 		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFiles[]
 
-		if (rds.length > 0) {
-			_.remove(rds, rd => {
-				let names = _.toPairs(rd).map(([id, file]) => file.filename)
-				return names.find(v => !utils.isVideo(v))
-			})
-			rds.sort((a, b) => {
-				let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
-				let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
-				return bsize - asize
-			})
+		_.remove(rds, rd => {
+			let names = _.toPairs(rd).map(([id, file]) => file.filename)
+			return names.find(v => !utils.isVideo(v))
+		})
+		rds.sort((a, b) => {
+			let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
+			let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
+			return bsize - asize
+		})
 
-			this.files = _.toPairs(rds[0]).map(([id, file]) => {
-				return {
-					bytes: file.filesize,
-					id: _.parseInt(id),
-					name: file.filename.slice(0, file.filename.lastIndexOf('.')),
-					path: `/${file.filename}`,
-				} as debrid.File
-			})
-		} else {
-			let download = (await client.post('/torrents/addMagnet', {
-				form: { magnet: this.magnet },
-			})) as Download
-			await utils.pTimeout(1000)
-			let item = (await client.get(`/torrents/info/${download.id}`)) as Item
-			await client.delete(`/torrents/delete/${download.id}`)
-
-			let files = item.files.filter(v => utils.isVideo(v.path))
-			this.files = files.map(file => {
-				let name = path.basename(file.path)
-				return {
-					bytes: file.bytes,
-					id: file.id,
-					name: name.slice(0, name.lastIndexOf('.')),
-					path: file.path,
-				} as debrid.File
-			})
-		}
+		this.files = _.toPairs(rds[0]).map(([id, file]) => {
+			return {
+				bytes: file.filesize,
+				id: _.parseInt(id),
+				name: file.filename.slice(0, file.filename.lastIndexOf('.')),
+				path: `/${file.filename}`,
+			} as debrid.File
+		})
 
 		this.files.sort((a, b) => a.id - b.id)
 		return this.files
@@ -152,22 +133,22 @@ export class RealDebrid extends debrid.Debrid<Item> {
 	}
 }
 
-type CacheResponse = Record<string, { rd: CacheFiles[] }>
-type CacheFiles = Record<string, { filename: string; filesize: number }>
+export type CacheResponse = Record<string, { rd: CacheFiles[] }>
+export type CacheFiles = Record<string, { filename: string; filesize: number }>
 
-interface Download {
+export interface Download {
 	id: string
 	uri: string
 }
 
-interface File {
+export interface File {
 	bytes: number
 	id: number
 	path: string
 	selected: number
 }
 
-interface Item {
+export interface Item {
 	added: string
 	bytes: number
 	filename: string
@@ -185,7 +166,7 @@ interface Item {
 	status: Status
 }
 
-interface Unrestrict {
+export interface Unrestrict {
 	chunks: number
 	crc: number
 	download: string
@@ -199,12 +180,12 @@ interface Unrestrict {
 	streamable: number
 }
 
-interface ActiveCount {
+export interface ActiveCount {
 	limit: number
 	nb: number
 }
 
-type Status =
+export type Status =
 	| 'magnet_error'
 	| 'magnet_conversion'
 	| 'waiting_files_selection'
