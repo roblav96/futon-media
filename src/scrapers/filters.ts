@@ -31,7 +31,7 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	let title = item.title
 	item.E.t && (title += ` ${item.E.t}`)
-	let skips = ['3d', 'bonus', 'cam', 'camrip', 'hdcam', 'sample', 'sdr', 'trailer']
+	let skips = ['3d', 'bonus', 'cam', 'camrip', 'hdcam', 'sample', 'trailer']
 	skips = utils.accuracy(title, skips.join(' '))
 	let skipped = utils.accuracy(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {
@@ -39,7 +39,7 @@ export function results(result: scraper.Result, item: media.Item) {
 		return // console.log(`❌ skips accuracy ->`, json, result.name)
 	}
 
-	let slug = ` ${utils.toSlug(result.name, { toName: true }).toLowerCase()} `
+	let slug = ` ${utils.toSlug(result.name, { toName: true, lowercase: true })} `
 	if (item.movie) {
 		let years = slug.split(' ').map(v => utils.parseInt(v))
 		years = years.filter(v => _.inRange(v, 1950, new Date().getFullYear() + 1))

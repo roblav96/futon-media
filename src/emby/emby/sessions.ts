@@ -49,11 +49,13 @@ export class Session {
 	get Channels() {
 		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
 		let tprofiles = _.get(this, tpath) as TranscodingProfiles[]
-		if (!_.isArray(tprofiles)) return NaN
+		if (!_.isArray(tprofiles)) return 8
 		return _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
 	}
 	get Quality(): emby.Quality {
-		return this.IsRoku ? '1080p' : '4K'
+		if (this.Channels <= 2) return '1080p'
+		let users = ['admin', 'developer', 'robert']
+		return users.includes(this.UserName.toLowerCase()) ? '2160p' : '1080p'
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
@@ -62,7 +64,10 @@ export class Session {
 		return Date.now() - this.Stamp
 	}
 	get Bitrate() {
-		return _.get(this, 'Capabilities.DeviceProfile.MaxStreamingBitrate', NaN) as number
+		let rate = NaN
+		if ((rate = _.get(this, 'Capabilities.DeviceProfile.MaxStreamingBitrate'))) return rate
+		if ((rate = _.get(this, 'Capabilities.DeviceProfile.MaxStaticBitrate'))) return rate
+		return rate
 	}
 
 	get AudioStreamIndex() {
@@ -81,7 +86,6 @@ export class Session {
 		let finite = _.isFinite(this.AudioStreamIndex) && _.isFinite(this.PositionTicks)
 		return finite && !!this.MediaSourceId && !!this.PlayMethod
 	}
-
 	get Container() {
 		return _.get(this, 'NowPlayingItem.Container') as string
 	}
@@ -97,7 +101,6 @@ export class Session {
 	get IsNowPlaying() {
 		return !!this.Container && !!this.ItemName && !!this.StrmPath && !!this.ItemId
 	}
-
 	get IsStreaming() {
 		return !!this.IsPlayState && !!this.IsNowPlaying
 	}

@@ -87,8 +87,7 @@ export async function getStream(
 							let language = v.tags.language.toLowerCase()
 							return language.startsWith('en') || language.startsWith('un')
 						}
-						let keys = _.keys(v.tags).map(v => v.toLowerCase())
-						return !!keys.find(v => v.endsWith('eng'))
+						return !!_.keys(v.tags).find(v => v.toLowerCase().endsWith('eng'))
 					}
 				})
 				if (!english) {

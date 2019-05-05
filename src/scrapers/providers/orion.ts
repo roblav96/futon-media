@@ -11,7 +11,7 @@ export const client = new http.Http({
 		action: 'retrieve',
 		keyapp: process.env.ORION_APP,
 		keyuser: process.env.ORION_KEY,
-		limitcount: process.DEVELOPMENT ? 10 : 20,
+		limitcount: process.DEVELOPMENT ? 10 : 25,
 		mode: 'stream',
 		protocoltorrent: 'magnet',
 		sortorder: 'descending',
@@ -37,10 +37,10 @@ export class Orion extends scraper.Scraper {
 			query: Object.assign(query, JSON.parse(slug)),
 			memoize: process.DEVELOPMENT,
 		})) as Response
-		let streams = (_.has(response, 'data.streams') && response.data.streams) || []
+		let streams = _.get(response, 'data.streams', []) as Stream[]
 		streams = streams.filter(stream => {
 			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
-			return magnet.xt != 'urn:btih:'
+			return magnet.xt.startsWith('urn:btih:') && magnet.xt.length > 10
 		})
 		return streams.map(stream => {
 			return {

@@ -37,7 +37,7 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
 	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
-	// console.log(`Session ->`, Session)
+	console.log(`Session ->`, Session.json)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -58,38 +58,42 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 			return bsize - asize
 		})
 	}
-	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
+	// console.log(`all torrents ->`, torrents.map(v => v.json))
 
-	if (!process.DEVELOPMENT) {
-		// let index = torrents.findIndex(v => v.cached.length > 0)
-		let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
-		let downloads = torrents.slice(0, _.clamp(index, 0, 5))
-		emitter.once(traktId, () =>
-			debrids.download(downloads, item).catch(error => {
-				console.error(`debrids.download ${item.title} -> %O`, error)
-			})
-		)
-	}
+	// if (!process.DEVELOPMENT) {
+	// 	// let index = torrents.findIndex(v => v.cached.length > 0)
+	// 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
+	// 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
+	// 	emitter.once(traktId, () =>
+	// 		debrids.download(downloads, item).catch(error => {
+	// 			console.error(`debrids.download ${item.title} -> %O`, error)
+	// 		})
+	// 	)
+	// }
 
-	torrents = torrents.filter(v => v.cached.length > 0 || v.seeders > 0)
+	torrents = torrents.filter(v => {
+		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
+		if (split.includes('2160p') || split.includes('4k')) {
+			if (Quality != '2160p') return false
+			if (split.includes('sdr')) {
+				if (split.includes('8bit') || split.includes('10bit')) return false
+			}
+		}
+		if (Channels > 2) {
+			v.cached.length == 0 && v.cached.push('putio')
+			return v.seeders > 0
+		}
+		return v.cached.length > 0
+	})
 	if (torrents.length == 0) throw new Error(`!torrents`)
+	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
 	console.log(`torrents ->`, torrents.map(v => v.json))
 
-	// if (Quality == '1080p') {
-	// 	torrents = torrents.filter(({ name }) => {
-	// 		name = name.toLowerCase()
-	// 		return !(name.includes('4k') || name.includes('2160p'))
-	// 	})
-	// }
-	// if (Channels <= 2) {
-	// 	torrents.sort((a, b) => b.seeders - a.seeders)
-	// }
+	throw new Error(`DEV`)
 
 	let stream = await debrids.getStream(torrents, item, Channels, Codecs.video)
-	if (!stream) throw new Error(`!stream`)
+	if (!stream) throw new Error(`getDebridStream !stream -> '${slug}'`)
 	console.log(`getDebridStream '${slug}' ->`, stream)
-
-	throw new Error(`DEV`)
 
 	return stream
 }
@@ -100,7 +104,7 @@ fastify.get('/strm', async (request, reply) => {
 	) as emby.StrmQuery
 	query.traktId = query.traktId.toString()
 	let { e, s, slug, traktId, type } = query
-	console.warn(`fastify strm '${slug}' ->`, query)
+	console.warn(`fastify strm ->`, slug)
 
 	// console.time(`Session`)
 	// let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)

@@ -4,7 +4,7 @@ import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
 import '@/dev/devtools'
-import '@/dev/mocks'
+import '@/mocks/mocks'
 
 // use dynamic imports to avoid circular null references
 async function start() {

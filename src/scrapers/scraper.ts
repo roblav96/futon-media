@@ -22,7 +22,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		(await import('@/scrapers/providers/orion')).Orion,
 		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
@@ -53,7 +53,7 @@ export interface Scraper {
 	getResults(slug: string, sort: string): Promise<Result[]>
 }
 export class Scraper {
-	sorts = ['']
+	sorts: string[]
 	concurrency = 3
 
 	slugs() {
@@ -93,7 +93,7 @@ export class Scraper {
 
 		results = results.filter(v => filters.results(v, this.item))
 
-		console.log(`${this.constructor.name} -> DONE`, results.length, `${Date.now() - t}ms`)
+		console.log(Date.now() - t, `${this.constructor.name}`, results.length)
 		return results.map(v => new torrent.Torrent(v))
 	}
 }

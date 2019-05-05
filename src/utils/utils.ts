@@ -29,7 +29,7 @@ export function squash(value: string) {
 	return value.replace(/[^\x20-\x7E]/g, '')
 }
 export function clean(value: string) {
-	return squash(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+	return _.trim(squash(stripBom(stripAnsi(_.unescape(_.deburr(value))))))
 }
 
 export function isForeign(value: string) {
@@ -46,8 +46,8 @@ export function minify(value: string) {
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
-	let values = _.uniq(_.split(toSlug(value, { toName: true }).toLowerCase(), ' '))
-	let targets = _.uniq(_.split(toSlug(target, { toName: true }).toLowerCase(), ' '))
+	let values = _.uniq(_.split(toSlug(value, { toName: true, lowercase: true }), ' '))
+	let targets = _.uniq(_.split(toSlug(target, { toName: true, lowercase: true }), ' '))
 	return targets.filter(v => !values.includes(v))
 }
 

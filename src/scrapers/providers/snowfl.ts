@@ -41,8 +41,12 @@ async function syncToken() {
 }
 
 export class Snowfl extends scraper.Scraper {
-	sorts = ['SIZE', 'DATE', 'SEED']
+	sorts = ['SIZE' /** , 'DATE', 'SEED' */]
 	concurrency = 1
+
+	slugs() {
+		return super.slugs().slice(0, 1)
+	}
 
 	async getResults(slug: string, sort: string) {
 		;(!TOKEN || Date.now() > STAMP) && (await syncToken())

@@ -9,6 +9,7 @@ import * as utils from '@/utils/utils'
 
 export interface Torrent extends scraper.Result {}
 export class Torrent {
+	hash: string
 	cached = [] as debrids.Debrids[]
 
 	get age() {
@@ -23,9 +24,6 @@ export class Torrent {
 	get min() {
 		let min = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrids.Debrids, string>
 		return { cached: this.cached.map(v => min[v]).join(' ') }
-	}
-	get hash() {
-		return magneturi.decode(this.magnet).infoHash.toLowerCase()
 	}
 
 	get json() {
@@ -58,7 +56,8 @@ export class Torrent {
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
-
 		_.merge(this, result)
+
+		this.hash = magneturi.decode(this.magnet).infoHash.toLowerCase()
 	}
 }

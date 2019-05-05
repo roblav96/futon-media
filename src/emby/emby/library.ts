@@ -10,7 +10,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 export const library = {
-	qualities: ['1080p', '4K'] as Quality[],
+	qualities: ['2160p', '1080p'] as Quality[],
 
 	async refresh(wait = false) {
 		let proms = [] as Promise<any>[]
@@ -92,7 +92,7 @@ export const library = {
 	},
 }
 
-export type Quality = '1080p' | '4K'
+export type Quality = '2160p' | '1080p'
 
 export interface StrmQuery extends trakt.IDs {
 	e: number

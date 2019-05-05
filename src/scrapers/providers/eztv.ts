@@ -10,6 +10,8 @@ export const client = new http.Http({
 })
 
 export class Eztv extends scraper.Scraper {
+	sorts = ['']
+
 	slugs() {
 		return [this.item.ids.imdb.replace(/\D/g, '')]
 	}
