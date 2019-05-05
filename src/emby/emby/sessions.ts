@@ -2,12 +2,13 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
+import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 
 export const sessions = {
 	async get() {
-		let Sessions = (await emby.client.get('/Sessions')) as Session[]
+		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
 		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new Session(v))
 		return Sessions.sort((a, b) => b.Stamp - a.Stamp)
 	},
@@ -106,7 +107,8 @@ export class Session {
 	}
 
 	get Ids() {
-		let Ids = _.get(this, 'NowPlayingItem.ProviderIds', {})
+		let Ids = _.get(this, 'NowPlayingItem.ProviderIds')
+		if (!Ids) return
 		Ids = _.mapKeys(Ids, (v, k) => k.toLowerCase())
 		return Ids as { imdb: string; tmdb: string; tvdb: string }
 	}
@@ -115,10 +117,11 @@ export class Session {
 		return _.fromPairs(
 			_.toPairs({
 				Age: this.Age,
-				Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
+				// Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
 				Channels: this.Channels,
 				Client: this.Client,
 				DeviceName: this.DeviceName,
+				Ids: this.Ids,
 				IsStreaming: this.IsStreaming,
 				Quality: this.Quality,
 				StrmPath: this.StrmPath,
@@ -167,9 +170,9 @@ export class Session {
 	}
 
 	message(data: string | Error) {
-		let body = { Text: `⚪ ${data}`, TimeoutMs: 5000 }
+		let body = { Text: `✅ ${data}`, TimeoutMs: 5000 }
 		if (_.isError(data)) {
-			body.Text = `🔴 Error: ${data.message}`
+			body.Text = `❌ Error: ${data.message}`
 			body.TimeoutMs *= 2
 		}
 		emby.client.post(`/Sessions/${this.Id}/Message`, { body }).catch(_.noop)

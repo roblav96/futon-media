@@ -16,20 +16,20 @@ process.nextTick(async () => {
 		timeout: 1000,
 		maxAttempts: Infinity,
 		onerror({ error }) {
-			console.error(`socket onerror -> %O`, error)
+			console.error(`emby onerror -> %O`, error)
 		},
 		onclose({ code, reason }) {
-			console.warn(`socket onclose ->`, code, reason)
+			console.warn(`emby onclose ->`, code, reason)
 		},
 		onopen({ target }) {
-			console.info(`socket onopen ->`, new Url(target.url).pathname)
+			console.info(`emby onopen ->`, new Url(target.url).pathname)
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
-			if (err) return console.error(`socket onmessage -> %O`, err)
+			if (err) return console.error(`emby onmessage -> %O`, err)
 			rxSocket.next(value)
 		},
 	})
@@ -43,6 +43,15 @@ export const socket = {
 		)
 	},
 }
+
+// socket.filter<emby.Session[]>('Sessions').subscribe(async () => {})
+
+// export const rxSessions = socket.filter<emby.Session[]>('Sessions').pipe(
+// 	Rx.Op.map(Sessions => {
+// 		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new emby.Session(v))
+// 		return Sessions.sort((a, b) => b.Stamp - a.Stamp)
+// 	})
+// )
 
 export interface EmbyEvent<Data = any> {
 	Data: Data

@@ -18,21 +18,24 @@ export const client = new http.Http({
 export class Premiumize extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 38)
+		let chunks = utils.chunks(hashes, 35)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
 				await utils.pRandom(1000)
-				let response = (await client.post(`/cache/check`, {
-					query: { items: chunk },
-				})) as CacheResponse
+				let response = (await client
+					.post(`/cache/check`, { query: { items: chunk } })
+					.catch(error => {
+						console.error(`Premiumize cache -> %O`, error)
+						return []
+					})) as CacheResponse
 				chunk.forEach((hash, i) => {
 					if (_.get(response, `response[${i}]`) == true) {
 						cached[hashes.findIndex(v => v == hash)] = true
 					}
 				})
 			}),
-			{ concurrency: 3 }
+			{ concurrency: 2 }
 		)
 		return cached
 	}

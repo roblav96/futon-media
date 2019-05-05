@@ -16,20 +16,23 @@ export const client = new http.Http({
 export class RealDebrid extends debrid.Debrid<Item> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 38)
+		let chunks = utils.chunks(hashes, 35)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
 				await utils.pRandom(1000)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
-				let response = (await client.get(url)) as CacheResponse
+				let response = (await client.get(url).catch(error => {
+					console.error(`RealDebrid cache -> %O`, error)
+					return {}
+				})) as CacheResponse
 				chunk.forEach(hash => {
 					if (_.isPlainObject(_.get(response, `${hash}.rd[0]`))) {
 						cached[hashes.findIndex(v => v == hash)] = true
 					}
 				})
 			}),
-			{ concurrency: 3 }
+			{ concurrency: 2 }
 		)
 		return cached
 	}

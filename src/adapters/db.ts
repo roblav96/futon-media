@@ -36,8 +36,12 @@ class DB {
 		return this.level.put(key, value, ttl ? { ttl } : {})
 	}
 
-	del(key: string) {
-		return this.level.del(key)
+	async del(key: string) {
+		try {
+			return await this.level.del(key)
+		} catch (error) {
+			return null
+		}
 	}
 }
 

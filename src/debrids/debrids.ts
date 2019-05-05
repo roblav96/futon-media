@@ -3,12 +3,12 @@ import * as debrid from '@/debrids/debrid'
 import * as media from '@/media/media'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
-import ffprobe from '@/adapters/ffprobe'
+import ffprobe, { FFProbe } from '@/adapters/ffprobe'
 import { Premiumize } from '@/debrids/premiumize'
 import { Putio } from '@/debrids/putio'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = { premiumize: Premiumize, realdebrid: RealDebrid, putio: Putio }
+export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize, putio: Putio }
 
 export async function cached(hashes: string[]) {
 	let entries = Object.entries(debrids)
@@ -39,14 +39,20 @@ export async function getStream(
 	codecs: string[]
 ) {
 	// console.log(`stream torrents ->`, torrents.map(v => v.json))
+	// let ignore = new Set<string>()
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json)
-
+		let next = false
 		for (let cached of torrent.cached) {
+			if (next) continue
 			let debrid = new debrids[cached]().use(torrent.magnet)
-			let files = await debrid.getFiles()
+			let files = (await debrid.getFiles().catch(error => {
+				console.error(`stream ${cached} getFiles -> %O`, error)
+			})) as debrid.File[]
+			if (!files) continue
 			if (files.length == 0) {
 				console.warn(`stream !files ->`, torrent.name)
+				next = true
 				continue
 			}
 
@@ -54,16 +60,25 @@ export async function getStream(
 			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 			levens.sort((a, b) => a.leven - b.leven)
-			console.log(`stream levens ->`, torrent.name, levens.slice(0, 3))
+			console.log(`stream levens ->`, torrent.name, levens)
 
-			let stream = await debrid.streamUrl(levens[0])
+			let stream = await debrid.streamUrl(levens[0]).catch(error => {
+				console.error(`stream ${cached} streamUrl -> %O`, error)
+			})
 			if (stream) {
 				stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
-				let probe = await ffprobe(stream, { streams: true })
+				let probe = (await ffprobe(stream, { streams: true }).catch(error => {
+					console.error(`stream ${cached} ffprobe -> %O`, error)
+				})) as FFProbe
+				if (!probe) {
+					next = true
+					continue
+				}
 				console.log(`stream probe ->`, stream, process.DEVELOPMENT && probe)
 
 				if (!probe.streams.find(v => v.channels <= channels)) {
 					console.warn(`stream probe !channels ->`, torrent.name, channels)
+					next = true
 					continue
 				}
 
@@ -72,6 +87,7 @@ export async function getStream(
 				)
 				if (_.size(codecs) > 0 && !codecs.includes(video.codec_name.toLowerCase())) {
 					console.warn(`stream probe !codec ->`, torrent.name, video.codec_name)
+					next = true
 					continue
 				}
 
@@ -86,6 +102,7 @@ export async function getStream(
 				})
 				if (!english) {
 					console.warn(`stream probe !english ->`, torrent.name)
+					next = true
 					continue
 				}
 

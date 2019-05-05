@@ -1,12 +1,16 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
+import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as qs from 'query-string'
-import * as rd from '@/debrids/realdebrid'
+import * as realdebrid from '@/debrids/realdebrid'
 import * as schedule from 'node-schedule'
+import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+import Emitter from '@/shims/emitter'
+import Sockette from '@/shims/sockette'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.put.io/v2',
@@ -15,17 +19,50 @@ export const client = new http.Http({
 	},
 })
 
+const e = {
+	file: new Emitter<'create' | 'delete' | 'update', File>(),
+	transfer: new Emitter<'create' | 'delete' | 'update', Transfer>(),
+}
+
 process.nextTick(() => {
+	let random = Math.random().toString(36)
+	let nonce = `${_.random(111, 999)}/${random.slice(-8)}`
+	let ws = new Sockette(`wss://socket.put.io/socket/sockjs/${nonce}/websocket`, {
+		timeout: 1000,
+		maxAttempts: Infinity,
+		onerror({ error }) {
+			console.error(`putio onerror -> %O`, error)
+		},
+		onclose({ code, reason }) {
+			console.warn(`putio onclose ->`, code, reason)
+		},
+		onopen({ target }) {
+			console.info(`putio onopen ->`, new Url(target.url).pathname)
+			ws.json([process.env.PUTIO_TOKEN])
+		},
+		onmessage({ data }: { data: string }) {
+			let a = data.slice(0, 1)
+			let { err, value } = fastParse(data.slice(1) || '[]') as { err: Error; value: any[] }
+			if (err) return console.error(`putio onmessage -> %O`, err)
+			let values = value.map(v => fastParse(v).value || v)
+			values.forEach(({ type, value }) => {
+				let split = type.split('_') as string[]
+				console.log(`putio onmessage '${type}' ->`, value)
+				e[split[0]] && e[split[0]].emit(split[1], value)
+			})
+		},
+	})
+
 	if (process.DEVELOPMENT) return
 	schedule.scheduleJob('0 * * * *', async () => {
-		let { transfers } = (await client.get('/transfers/list')) as Response
+		let { transfers } = (await client.get('/transfers/list', { silent: true })) as Response
 		for (let transfer of transfers) {
-			let day = dayjs(transfer.finished_at).add(1, 'day')
-			if (day.isAfter(dayjs())) continue
-			await Promise.all([
-				client.post('/files/delete', { form: { file_ids: transfer.file_id } }),
-				client.post('/transfers/remove', { form: { transfer_ids: transfer.id } }),
-			])
+			let day = dayjs(transfer.created_at).add(1, 'day')
+			if (day.valueOf() > Date.now()) continue
+			if (transfer.file_id) {
+				await client.post('/files/delete', { form: { file_ids: transfer.file_id } })
+			}
+			await client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })
 		}
 	})
 })
@@ -49,12 +86,12 @@ export class Putio extends debrid.Debrid<Transfer> {
 	}
 
 	async getFiles() {
-		let download = (await rd.client.post('/torrents/addMagnet', {
+		let download = (await realdebrid.client.post('/torrents/addMagnet', {
 			form: { magnet: this.magnet },
-		})) as rd.Download
+		})) as realdebrid.Download
 		await utils.pTimeout(1000)
-		let item = (await rd.client.get(`/torrents/info/${download.id}`)) as rd.Item
-		await rd.client.delete(`/torrents/delete/${download.id}`)
+		let item = (await realdebrid.client.get(`/torrents/info/${download.id}`)) as realdebrid.Item
+		await realdebrid.client.delete(`/torrents/delete/${download.id}`)
 
 		let files = item.files.filter(v => utils.isVideo(v.path))
 		this.files = files.map(file => {
@@ -82,7 +119,10 @@ export class Putio extends debrid.Debrid<Transfer> {
 				break
 			}
 		}
-		if (!transfer) return
+		if (!transfer) {
+			await client.post('/transfers/remove', { form: { transfer_ids: id } })
+			return
+		}
 		let { media_links } = (await client.post('/files/get-download-links', {
 			form: { file_ids: transfer.file_id },
 		})) as Response

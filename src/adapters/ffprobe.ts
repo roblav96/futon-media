@@ -15,9 +15,12 @@ export default async function ffprobe(
 	let pairs = Object.entries(options).filter(([k, v]) => v)
 	let flags = ['-print_format', 'json', '-show_error'].concat(pairs.map(([k]) => `-show_${k}`))
 	let { stdout } = await execa(ffpath, flags.concat(streamUrl))
-	let { err, value } = fastParse(stdout)
+	let { err, value } = fastParse(stdout) as { err: Error; value: FFProbe }
 	if (err) throw err
-	return value as FFProbe
+	value.streams.forEach(stream => {
+		stream.tags && (stream.tags = _.mapKeys(stream.tags, (v, k) => k.toLowerCase()) as any)
+	})
+	return value
 }
 
 // ffprobe(
@@ -28,7 +31,7 @@ export default async function ffprobe(
 // 	console.log(`probe ->`, probe)
 // })
 
-interface FFProbe {
+export interface FFProbe {
 	chapters: {
 		end: number
 		end_time: string
