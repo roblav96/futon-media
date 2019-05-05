@@ -40,18 +40,18 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 		return cached
 	}
 
-	async download() {
-		!this.transfers && (this.transfers = (await client.get('/transfer/list')).transfers)
-		let transfer = this.transfers.find(v => utils.leven(v.name, this.dn) == 0)
-		if (transfer) {
-			console.warn(`exists ->`, this.dn)
-			return transfer.id
-		}
-		let response = (await client.post('/transfer/create', {
-			form: { src: this.magnet },
-		})) as TransferCreateResponse
-		return response.id
-	}
+	// async download() {
+	// 	!this.transfers && (this.transfers = (await client.get('/transfer/list')).transfers)
+	// 	let transfer = this.transfers.find(v => utils.leven(v.name, this.dn) == 0)
+	// 	if (transfer) {
+	// 		console.warn(`exists ->`, this.dn)
+	// 		return transfer.id
+	// 	}
+	// 	let response = (await client.post('/transfer/create', {
+	// 		form: { src: this.magnet },
+	// 	})) as TransferCreateResponse
+	// 	return response.id
+	// }
 
 	async getFiles() {
 		let content = (await client.post(`/transfer/directdl`, {

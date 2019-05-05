@@ -25,10 +25,10 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 		if (torrent.cached.includes('realdebrid')) {
 			return
 		}
-		console.log(`download torrent ->`, torrent.json)
-		if (await debrid.use(torrent.magnet).download()) {
-			return
-		}
+		return console.log(`download torrent ->`, torrent.json)
+		// if (await debrid.use(torrent.magnet).download()) {
+		// 	return
+		// }
 	}
 }
 
@@ -42,9 +42,9 @@ export async function getStream(
 	// let ignore = new Set<string>()
 	for (let torrent of torrents) {
 		console.log(`stream torrent ->`, torrent.json)
-		let next = false
+		let done = false
 		for (let cached of torrent.cached) {
-			if (next) continue
+			if (done) continue
 			let debrid = new debrids[cached]().use(torrent.magnet)
 			let files = (await debrid.getFiles().catch(error => {
 				console.error(`stream ${cached} getFiles -> %O`, error)
@@ -52,7 +52,7 @@ export async function getStream(
 			if (!files) continue
 			if (files.length == 0) {
 				console.warn(`stream !files ->`, torrent.name)
-				next = true
+				done = true
 				continue
 			}
 
@@ -71,14 +71,14 @@ export async function getStream(
 					console.error(`stream ${cached} ffprobe -> %O`, error)
 				})) as FFProbe
 				if (!probe) {
-					next = true
+					done = true
 					continue
 				}
 				console.log(`stream probe ->`, stream, process.DEVELOPMENT && probe)
 
 				if (!probe.streams.find(v => v.channels <= channels)) {
 					console.warn(`stream probe !channels ->`, torrent.name, channels)
-					next = true
+					done = true
 					continue
 				}
 
@@ -87,7 +87,7 @@ export async function getStream(
 				)
 				if (_.size(codecs) > 0 && !codecs.includes(video.codec_name.toLowerCase())) {
 					console.warn(`stream probe !codec ->`, torrent.name, video.codec_name)
-					next = true
+					done = true
 					continue
 				}
 
@@ -102,7 +102,7 @@ export async function getStream(
 				})
 				if (!english) {
 					console.warn(`stream probe !english ->`, torrent.name)
-					next = true
+					done = true
 					continue
 				}
 

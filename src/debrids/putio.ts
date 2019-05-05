@@ -19,7 +19,7 @@ export const client = new http.Http({
 	},
 })
 
-const e = {
+const ee = {
 	file: new Emitter<'create' | 'delete' | 'update', File>(),
 	transfer: new Emitter<'create' | 'delete' | 'update', Transfer>(),
 }
@@ -48,7 +48,7 @@ process.nextTick(() => {
 			values.forEach(({ type, value }) => {
 				let split = type.split('_') as string[]
 				console.log(`putio onmessage '${type}' ->`, value)
-				e[split[0]] && e[split[0]].emit(split[1], value)
+				ee[split[0]] && ee[split[0]].emit(split[1], value)
 			})
 		},
 	})
@@ -72,18 +72,18 @@ export class Putio extends debrid.Debrid<Transfer> {
 		return hashes.map(v => false)
 	}
 
-	async download() {
-		!this.transfers && (this.transfers = (await client.get('/transfers/list')).transfers)
-		let transfer = this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)
-		if (transfer) {
-			console.warn(`exists ->`, this.dn)
-			return transfer.id.toString()
-		}
-		let response = (await client.post('/transfers/add', {
-			form: { url: this.magnet },
-		})) as Response
-		return response.transfer.id.toString()
-	}
+	// async download() {
+	// 	!this.transfers && (this.transfers = (await client.get('/transfers/list')).transfers)
+	// 	let transfer = this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)
+	// 	if (transfer) {
+	// 		console.warn(`exists ->`, this.dn)
+	// 		return transfer.id.toString()
+	// 	}
+	// 	let response = (await client.post('/transfers/add', {
+	// 		form: { url: this.magnet },
+	// 	})) as Response
+	// 	return response.transfer.id.toString()
+	// }
 
 	async getFiles() {
 		let download = (await realdebrid.client.post('/torrents/addMagnet', {
@@ -108,21 +108,30 @@ export class Putio extends debrid.Debrid<Transfer> {
 	}
 
 	async streamUrl(file: debrid.File) {
-		let id = await this.download()
-		if (!id) return
-		let transfer: Transfer
-		for (let i = 0; i < 3; i++) {
-			await utils.pTimeout(1000)
-			let response = (await client.get(`/transfers/${id}`)) as Response
-			if (response.transfer.status == 'COMPLETED') {
-				transfer = response.transfer
-				break
-			}
-		}
+		let { transfers } = (await client.get('/transfers/list')) as Response
+		let transfer = transfers.find(v => v.hash.toLowerCase() == this.infoHash)
 		if (!transfer) {
-			await client.post('/transfers/remove', { form: { transfer_ids: id } })
+			let response = (await client.post('/transfers/add', {
+				form: { url: this.magnet },
+			})) as Response
+			transfer = response.transfer
+		}
+
+		let discard = await new Promise<boolean>(resolve => {
+			const onupdate = v => {
+				if (v.id != transfer.id) return
+				if (['COMPLETED', 'DOWNLOADING'].includes(v.status)) {
+					resolve(v.status == 'DOWNLOADING')
+					ee.transfer.off('update', onupdate)
+				}
+			}
+			ee.transfer.on('update', onupdate)
+		})
+		if (discard) {
+			await client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })
 			return
 		}
+
 		let { media_links } = (await client.post('/files/get-download-links', {
 			form: { file_ids: transfer.file_id },
 		})) as Response

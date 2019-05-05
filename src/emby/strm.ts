@@ -47,7 +47,6 @@ const emitter = new Emitter<string, string>()
 
 async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
-	Session.message(`slug -> '${slug}'`)
 	let { Quality, Channels, Codecs } = Session
 	console.warn(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
 	console.log(`Session ->`, Session.json)
@@ -101,12 +100,10 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	if (torrents.length == 0) throw new Error(`!torrents`)
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
 	process.DEVELOPMENT && console.log(`torrents ->`, torrents.map(v => v.json))
-	Session.message(`torrents -> ${torrents.length}`)
 
 	let stream = await debrids.getStream(torrents, item, Channels, Codecs.video)
 	if (!stream) throw new Error(`getDebridStream !stream -> '${slug}'`)
 	console.log(`getDebridStream '${slug}' ->`, stream)
-	Session.message(`stream -> ${stream}`)
 
 	return stream
 }

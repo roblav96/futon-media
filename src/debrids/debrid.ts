@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as utils from '@/utils/utils'
 
 export abstract class Debrid<Transfer = any> {
-	abstract download(): Promise<string>
+	// abstract download(): Promise<string>
 	abstract getFiles(): Promise<File[]>
 	abstract streamUrl(file: File): Promise<string>
 
@@ -11,7 +11,7 @@ export abstract class Debrid<Transfer = any> {
 	protected dn: string
 	protected infoHash: string
 	protected magnet: string
-	protected transfers: Transfer[]
+	// protected transfers: Transfer[]
 
 	use(magnet: string) {
 		this.magnet = magnet
