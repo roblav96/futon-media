@@ -152,23 +152,6 @@ export class Session {
 		return (await emby.client.get(`/Users/${this.UserId}/Views`)) as emby.View[]
 	}
 
-	async Item(ItemId: string) {
-		return (await emby.client.get(`/Users/${this.UserId}/Items/${ItemId}`)) as emby.Item
-	}
-
-	async item(ItemId: string) {
-		let Item = await this.Item(ItemId)
-		let pairs = _.toPairs(Item.ProviderIds).map(pair => pair.map(v => v.toLowerCase()))
-		pairs.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))[0]
-		for (let [provider, id] of pairs) {
-			let results = (await trakt.client.get(`/search/${provider}/${id}`)) as trakt.Result[]
-			let result = results.length == 1 && results[0]
-			!result && (result = results.find(v => v[v.type].ids[provider].toString() == id))
-			if (result) return { Item, item: new media.Item(result) }
-		}
-		throw new Error(`!result`)
-	}
-
 	message(data: string | Error) {
 		let body = { Text: `✅ ${data}`, TimeoutMs: 5000 }
 		if (_.isError(data)) {

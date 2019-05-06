@@ -7,7 +7,46 @@ import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as trakt from '@/adapters/trakt'
+import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+
+process.nextTick(() => {
+	let rxItems = emby.rxHttp.pipe(
+		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
+		Rx.op.map(({ query }) => query.ItemId),
+		Rx.op.groupBy(ItemId => ItemId)
+	)
+	rxItems.subscribe(subs => {
+		subs.pipe(Rx.op.debounceTime(100)).subscribe(async ItemId => {
+			let Item = await library.Item(ItemId)
+			if (!Item) return
+			if (Item.Type == 'Person') {
+				let persons = (await trakt.client.get(`/search/person`, {
+					query: { query: Item.Name, fields: 'name', limit: 100 },
+				})) as trakt.Result[]
+				let levens = persons.map(person => ({
+					...person.person,
+					leven: utils.leven(Item.Name, person.person.ids.slug),
+				}))
+				levens.sort((a, b) => a.leven - b.leven)
+				let slug = levens[0].ids.slug
+				let results = await library.itemsOf(slug)
+				let items = results.map(v => new media.Item(v))
+				items = items.filter(v => !v.isJunk())
+				items.sort((a, b) => b.main.votes - a.main.votes)
+				console.log(`rxItems '${Item.Name}' ->`, items.map(v => v.title).sort())
+				for (let item of items) {
+					await emby.library.add(item)
+				}
+			} else if (['Movie', 'Series'].includes(Item.Type)) {
+				let item = await library.item(ItemId)
+				console.log(`rxItems ->`, item.title)
+				await emby.library.add(item)
+			}
+			await emby.library.refresh()
+		})
+	})
+})
 
 export const library = {
 	qualities: ['2160p', '1080p'] as Quality[],
@@ -25,35 +64,82 @@ export const library = {
 		await Promise.all(proms)
 	},
 
-	async Items(query?: { Fields?: string[]; ParentId?: string; IncludeItemTypes?: string[] }) {
+	async Items(query?: {
+		Fields?: string[]
+		Ids?: string[]
+		IncludeItemTypes?: string[]
+		ParentId?: string
+	}) {
 		query = _.defaults(query || {}, {
 			Fields: [],
-			IncludeItemTypes: ['Movie', 'Series'],
+			IncludeItemTypes: ['Movie', 'Series' /** , 'Episode', 'Person' */],
 			Recursive: 'true',
 		})
 		query.Fields = _.uniq(query.Fields.concat(['Path', 'ProviderIds']))
 		let Items = (await emby.client.get('/Items', {
 			query: _.mapValues(query, v => (_.isArray(v) ? v.join() : v)),
+			silent: true,
 		})).Items as emby.Item[]
 		return Items.filter(v => fs.pathExistsSync(v.Path || ''))
+	},
+
+	async Item(ItemId: string) {
+		return ((await emby.client.get('/Items', {
+			query: { Ids: ItemId, Fields: 'ProviderIds' },
+			silent: true,
+		})).Items as emby.Item[])[0]
+	},
+
+	async item(ItemId: string) {
+		let Item = await library.Item(ItemId)
+		if (!Item) return
+		let pairs = _.toPairs(Item.ProviderIds).map(pair => pair.map(v => v.toLowerCase()))
+		pairs.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))[0]
+		for (let [provider, id] of pairs) {
+			let results = (await trakt.client.get(`/search/${provider}/${id}`)) as trakt.Result[]
+			let result = results.length == 1 && results[0]
+			!result && (result = results.find(v => v[v.type].ids[provider].toString() == id))
+			if (result) return new media.Item(result)
+		}
+	},
+
+	async itemsOf(slug: string) {
+		let movies = (await trakt.client.get(`/people/${slug}/movies`, {
+			query: { limit: 100 },
+		})).cast as trakt.Result[]
+		let shows = (await trakt.client.get(`/people/${slug}/shows`, {
+			query: { limit: 100 },
+		})).cast as trakt.Result[]
+		return movies.concat(shows).filter(v => !!v.character)
 	},
 
 	async toStrm(item: media.Item) {
 		let file = path.normalize(process.env.EMBY_LIBRARY_PATH || process.cwd())
 		file += `/${item.type}s`
 
-		// if (item.movie) file += `/${item.ids.slug}/${item.ids.slug}`
-		// if (item.show) file += `/${item.ids.slug}/s${item.S.z}e${item.E.z}`
-
-		let title = item.main.title
+		file += `/${item.ids.slug}`
+		item.ids.imdb && (file += ` [imdbid=${item.ids.imdb}]`)
+		item.ids.tmdb && (file += ` [tmdbid=${item.ids.tmdb}]`)
 		if (item.movie) {
-			file += `/${title} (${item.year})/${title} (${item.year})`
+			file += `/${item.ids.slug}`
 		}
 		if (item.show) {
-			file += `/${title} (${item.year})`
 			file += `/Season ${item.S.n}`
-			file += `/${title} - S${item.S.z}E${item.E.z}`
+			file += `/S${item.S.z}E${item.E.z}`
 		}
+
+		// let title = item.main.title
+		// if (item.movie) {
+		// 	file += `/${title} (${item.year})/${title} (${item.year})`
+		// }
+		// if (item.show) {
+		// 	file += `/${title} (${item.year})`
+		// 	file += `/Season ${item.S.n}`
+		// 	file += `/${title} - S${item.S.z}E${item.E.z}`
+		// }
+
+		// if (item.movie) file += `/${item.ids.slug}/${item.ids.slug}`
+		// if (item.show) file += `/${item.ids.slug}/s${item.S.z}e${item.E.z}`
 
 		let query = {
 			...item.ids,
@@ -65,14 +151,14 @@ export const library = {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
 
-		// let url = emby.DOMAIN
-		// process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
 		let url = `http://localhost:${emby.STRM_PORT}`
 		url += `/strm?${qs.stringify(query)}`
+		console.log(`file ->`, file)
 		await fs.outputFile(`${file}.strm`, url)
 	},
 
 	async add(item: media.Item) {
+		// if (!item.year) return console.warn(`library add !year ->`, item.main.title)
 		if (item.movie) {
 			await library.toStrm(item)
 		}

@@ -17,7 +17,6 @@ export const rxSearch = emby.rxHttp.pipe(
 )
 
 rxSearch.subscribe(async query => {
-	let slug = utils.toSlug(query, { separator: '-', lowercase: true })
 	query = utils.toSlug(query, { toName: true, lowercase: true })
 	if (utils.toSlug(query).length == 0) return
 
@@ -25,22 +24,14 @@ rxSearch.subscribe(async query => {
 		query: { query, fields: 'title,aliases,name', limit: 100 },
 	})) as trakt.Result[]
 
+	let slug = utils.toSlug(query, { toName: true, separator: '-' })
 	let person = results.find(v => v.person && v.person.ids.slug == slug)
-	if (person) {
-		let movies = (await trakt.client.get(`/people/${slug}/movies`, {
-			query: { limit: 100 },
-		})).cast as trakt.Result[]
-		results.push(...movies.filter(v => !!v.character))
-		let shows = (await trakt.client.get(`/people/${slug}/shows`, {
-			query: { limit: 100 },
-		})).cast as trakt.Result[]
-		results.push(...shows.filter(v => !!v.character))
-	}
+	if (person) results.push(...(await emby.library.itemsOf(person.person.ids.slug)))
 
 	let items = results.filter(v => !v.person).map(v => new media.Item(v))
-	items = items.filter(v => v.isEnglish && v.isReleased && v.main.votes >= 500)
+	items = items.filter(v => !v.isJunk(person ? 1000 : 100))
 	items.sort((a, b) => b.main.votes - a.main.votes)
-	console.log(`rxSearch '${query}' ->`, items.map(v => v.title))
+	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
 	for (let item of items) {
 		await emby.library.add(item)
 	}

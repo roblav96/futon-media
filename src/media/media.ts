@@ -69,9 +69,13 @@ export class Item {
 		if (_.has(this.show, 'first_aired')) return new Date(this.show.first_aired).valueOf() < now
 		return false
 	}
-	get isPopular() {
-		if (_.has(this.main, 'votes')) return this.main.votes >= 1000
+	isPopular(votes = 1000) {
+		if (_.has(this.main, 'votes')) return this.main.votes >= votes
 		return false
+	}
+	isJunk(votes = 1000) {
+		let valid = this.isEnglish && this.isReleased && this.isPopular(votes)
+		return !(valid && !!this.ids.slug && !!this.main.year)
 	}
 
 	/** season */

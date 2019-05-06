@@ -101,13 +101,10 @@ async function syncCollections() {
 				return []
 			})) as trakt.Result[]
 		schema.items = results.map(v => {
-			if (schema.type) {
-				!v[schema.type] && (v = { [schema.type]: v } as any)
-				!v.type && (v.type = schema.type)
-			}
+			!v[schema.type] && schema.type && (v = { [schema.type]: v } as any)
 			return new media.Item(v)
 		})
-		schema.items = schema.items.filter(v => v.isEnglish && v.isReleased && v.isPopular)
+		schema.items = schema.items.filter(v => !v.isJunk())
 
 		for (let item of schema.items) {
 			let slug = `${item.type}:${item.ids.slug}`

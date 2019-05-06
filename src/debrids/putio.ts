@@ -49,8 +49,8 @@ process.nextTick(() => {
 			let values = value.map(v => fastParse(v).value || v)
 			values.forEach(({ type, value }) => {
 				let [target, action] = type.split('_') as string[]
-				console.log(`putio onmessage '${type}' ->`, value)
-				rx[target] && rx[target].next({ action, value } as PutioEvent)
+				if (!rx[target]) return console.log(`putio onmessage '${type}' ->`, value)
+				rx[target].next({ action, value } as PutioEvent)
 			})
 		},
 	})
@@ -73,19 +73,6 @@ export class Putio extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		return hashes.map(v => false)
 	}
-
-	// async download() {
-	// 	!this.transfers && (this.transfers = (await client.get('/transfers/list')).transfers)
-	// 	let transfer = this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)
-	// 	if (transfer) {
-	// 		console.warn(`exists ->`, this.dn)
-	// 		return transfer.id.toString()
-	// 	}
-	// 	let response = (await client.post('/transfers/add', {
-	// 		form: { url: this.magnet },
-	// 	})) as Response
-	// 	return response.transfer.id.toString()
-	// }
 
 	async getFiles() {
 		let download = (await realdebrid.client.post('/torrents/addMagnet', {

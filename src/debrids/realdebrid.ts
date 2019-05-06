@@ -37,33 +37,6 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		return cached
 	}
 
-	// async download() {
-	// 	!this.transfers && (this.transfers = await client.get('/torrents'))
-	// 	let transfer = this.transfers.find(v => v.hash.toLowerCase() == this.infoHash)
-	// 	if (transfer) {
-	// 		console.warn(`exists ->`, this.dn)
-	// 		return transfer.id
-	// 	}
-
-	// 	let download = (await client.post('/torrents/addMagnet', {
-	// 		form: { magnet: this.magnet },
-	// 	})) as Download
-	// 	await utils.pTimeout(1000)
-	// 	let item = (await client.get(`/torrents/info/${download.id}`)) as Item
-
-	// 	let files = item.files.filter(v => utils.isVideo(v.path))
-	// 	if (files.length == 0) {
-	// 		console.warn(`files.length == 0 ->`, this.dn)
-	// 		await client.delete(`/torrents/delete/${download.id}`)
-	// 		return
-	// 	}
-
-	// 	await client.post(`/torrents/selectFiles/${download.id}`, {
-	// 		form: { files: files.map(v => v.id).join() },
-	// 	})
-	// 	return download.id
-	// }
-
 	async getFiles() {
 		let response = (await client.get(
 			`/torrents/instantAvailability/${this.infoHash}`

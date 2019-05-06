@@ -18,41 +18,25 @@ export async function cached(hashes: string[]) {
 	}) as Debrids[][]
 }
 
-export async function download(torrents: torrent.Torrent[], item: media.Item) {
-	// console.log(`download torrents ->`, torrents.map(v => v.json))
-	let debrid = new RealDebrid()
-	for (let torrent of torrents) {
-		if (torrent.cached.includes('realdebrid')) {
-			return
-		}
-		return console.log(`download torrent ->`, torrent.json)
-		// if (await debrid.use(torrent.magnet).download()) {
-		// 	return
-		// }
-	}
-}
-
 export async function getStreamUrl(
 	torrents: torrent.Torrent[],
 	item: media.Item,
 	channels: number,
 	codecs: string[]
 ) {
-	// console.log(`stream torrents ->`, torrents.map(v => v.json))
-	// let ignore = new Set<string>()
 	for (let torrent of torrents) {
-		console.log(`stream torrent ->`, torrent.json)
-		let done = false
+		let next = false
 		for (let cached of torrent.cached) {
-			if (done) continue
+			if (next) continue
+			console.log(`getStreamUrl '${cached}' torrent ->`, torrent.json)
 			let debrid = new debrids[cached]().use(torrent.magnet)
 			let files = (await debrid.getFiles().catch(error => {
-				console.error(`stream ${cached} getFiles -> %O`, error)
+				console.error(`getStreamUrl getFiles -> %O`, error)
 			})) as debrid.File[]
 			if (!files) continue
 			if (files.length == 0) {
-				console.warn(`stream !files ->`, torrent.name)
-				done = true
+				console.warn(`getStreamUrl !files ->`, torrent.name)
+				next = true
 				continue
 			}
 
@@ -60,54 +44,54 @@ export async function getStreamUrl(
 			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 			levens.sort((a, b) => a.leven - b.leven)
-			console.log(`stream levens ->`, torrent.name, levens)
+			console.log(`getStreamUrl levens ->`, torrent.name, levens)
 
 			let stream = await debrid.streamUrl(levens[0]).catch(error => {
-				console.error(`stream ${cached} streamUrl -> %O`, error)
+				console.error(`getStreamUrl streamUrl -> %O`, error)
 			})
-			if (stream) {
-				stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
-				let probe = (await ffprobe(stream, { streams: true }).catch(error => {
-					console.error(`stream ${cached} ffprobe -> %O`, error)
-				})) as FFProbe
-				if (!probe) {
-					done = true
-					continue
-				}
-				console.log(`stream probe ->`, stream, process.DEVELOPMENT && probe)
+			if (!stream) continue
 
-				if (!probe.streams.find(v => v.channels <= channels)) {
-					console.warn(`stream probe !channels ->`, torrent.name, channels)
-					done = true
-					continue
-				}
-
-				let video = probe.streams.find(
-					v => v.codec_type && v.codec_type.toLowerCase() == 'video'
-				)
-				if (_.size(codecs) > 0 && !codecs.includes(video.codec_name.toLowerCase())) {
-					console.warn(`stream probe !codec ->`, torrent.name, video.codec_name)
-					done = true
-					continue
-				}
-
-				let english = probe.streams.find(v => {
-					if (v.codec_type.toLowerCase() == 'audio') {
-						if (v.tags.language) {
-							let language = v.tags.language.toLowerCase()
-							return language.startsWith('en') || language.startsWith('un')
-						}
-						return !!_.keys(v.tags).find(v => v.toLowerCase().endsWith('eng'))
-					}
-				})
-				if (!english) {
-					console.warn(`stream probe !english ->`, torrent.name)
-					done = true
-					continue
-				}
-
-				return stream
+			stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
+			let probe = (await ffprobe(stream, { streams: true }).catch(error => {
+				console.error(`getStreamUrl ffprobe -> %O`, error)
+			})) as FFProbe
+			if (!probe) {
+				next = true
+				continue
 			}
+			console.log(`getStreamUrl probe ->`, stream)
+
+			if (!probe.streams.find(v => v.channels <= channels)) {
+				console.warn(`getStreamUrl probe !channels ->`, torrent.name, channels)
+				next = true
+				continue
+			}
+
+			let video = probe.streams.find(
+				v => v.codec_type && v.codec_type.toLowerCase() == 'video'
+			)
+			if (_.size(codecs) > 0 && !codecs.includes(video.codec_name.toLowerCase())) {
+				console.warn(`getStreamUrl probe !codec ->`, torrent.name, video.codec_name)
+				next = true
+				continue
+			}
+
+			let english = probe.streams.find(v => {
+				if (v.codec_type.toLowerCase() == 'audio') {
+					if (v.tags.language) {
+						let language = v.tags.language.toLowerCase()
+						return language.startsWith('en') || language.startsWith('un')
+					}
+					return !!_.keys(v.tags).find(v => v.toLowerCase().endsWith('eng'))
+				}
+			})
+			if (!english) {
+				console.warn(`getStreamUrl probe !english ->`, torrent.name)
+				next = true
+				continue
+			}
+
+			return stream
 		}
 	}
 }
