@@ -31,7 +31,7 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	let title = item.title
 	item.E.t && (title += ` ${item.E.t}`)
-	let skips = ['3d', 'bonus', 'cam', 'camrip', 'hdcam', 'sample', 'trailer']
+	let skips = ['3d', 'bonus', 'cam', 'camrip', 'enhanced', 'hdcam', 'sample', 'trailer']
 	skips = utils.accuracy(title, skips.join(' '))
 	let skipped = utils.accuracy(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {

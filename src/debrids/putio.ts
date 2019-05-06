@@ -6,6 +6,7 @@ import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as realdebrid from '@/debrids/realdebrid'
+import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
@@ -19,9 +20,11 @@ export const client = new http.Http({
 	},
 })
 
-const ee = {
-	file: new Emitter<'create' | 'delete' | 'update', File>(),
-	transfer: new Emitter<'create' | 'delete' | 'update', Transfer>(),
+type PutioEvent<Data = any> = { action: 'create' | 'delete' | 'update'; value: Data }
+const rx = {
+	file: new Rx.Subject<PutioEvent<File>>(),
+	transfer: new Rx.Subject<PutioEvent<Transfer>>(),
+	user: new Rx.Subject<PutioEvent<User>>(),
 }
 
 process.nextTick(() => {
@@ -41,14 +44,13 @@ process.nextTick(() => {
 			ws.json([process.env.PUTIO_TOKEN])
 		},
 		onmessage({ data }: { data: string }) {
-			let a = data.slice(0, 1)
 			let { err, value } = fastParse(data.slice(1) || '[]') as { err: Error; value: any[] }
 			if (err) return console.error(`putio onmessage -> %O`, err)
 			let values = value.map(v => fastParse(v).value || v)
 			values.forEach(({ type, value }) => {
-				let split = type.split('_') as string[]
+				let [target, action] = type.split('_') as string[]
 				console.log(`putio onmessage '${type}' ->`, value)
-				ee[split[0]] && ee[split[0]].emit(split[1], value)
+				rx[target] && rx[target].next({ action, value } as PutioEvent)
 			})
 		},
 	})
@@ -117,17 +119,14 @@ export class Putio extends debrid.Debrid<Transfer> {
 			transfer = response.transfer
 		}
 
-		let discard = await new Promise<boolean>(resolve => {
-			const onupdate = v => {
-				if (v.id != transfer.id) return
-				if (['COMPLETED', 'DOWNLOADING'].includes(v.status)) {
-					resolve(v.status == 'DOWNLOADING')
-					ee.transfer.off('update', onupdate)
-				}
-			}
-			ee.transfer.on('update', onupdate)
-		})
-		if (discard) {
+		let rxCompleted = rx.transfer.pipe(
+			Rx.Op.filter(({ action, value }) => action == 'update' && value.id == transfer.id),
+			Rx.Op.filter(({ value }) => ['COMPLETED', 'DOWNLOADING'].includes(value.status)),
+			Rx.Op.map(({ value }) => value.status == 'COMPLETED'),
+			Rx.Op.take(1)
+		)
+		let completed = await rxCompleted.toPromise()
+		if (!completed) {
 			await client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })
 			return
 		}
@@ -207,13 +206,63 @@ interface Transfer {
 	uploaded: number
 }
 
+interface User {
+	account_active: boolean
+	avatar_url: string
+	can_create_sub_account: boolean
+	days_until_files_deletion: number
+	disk: {
+		avail: number
+		size: number
+		used: number
+	}
+	download_token: string
+	family_owner: string
+	has_voucher: boolean
+	is_sub_account: boolean
+	mail: string
+	oauth_token_id: number
+	plan_expiration_date: string
+	private_download_host_ip: any
+	settings: Settings
+	simultaneous_download_limit: number
+	subtitle_languages: any[]
+	user_id: number
+	username: string
+}
+
+interface Settings {
+	beta_user: boolean
+	callback_url: any
+	dark_theme: boolean
+	default_download_folder: number
+	fluid_layout: number
+	history_enabled: number
+	is_invisible: boolean
+	locale: any
+	login_mails_enabled: number
+	next_episode: number
+	pushover_token: any
+	sort_by: string
+	start_from: number
+	subtitle_languages: any[]
+	theater_mode: boolean
+	transfer_sort_by: any
+	trash_enabled: number
+	tunnel_route_name: string
+	use_private_download_ip: boolean
+	video_player: any
+}
+
 interface Response {
 	cursor: any
 	download_links: string[]
 	files: File[]
+	info: User
 	media_links: string[]
 	mp4_links: string[]
 	parent: File
+	settings: Settings
 	status: string
 	total: number
 	transfer: Transfer
