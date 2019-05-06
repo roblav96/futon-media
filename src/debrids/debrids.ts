@@ -32,7 +32,7 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 	}
 }
 
-export async function getStream(
+export async function getStreamUrl(
 	torrents: torrent.Torrent[],
 	item: media.Item,
 	channels: number,

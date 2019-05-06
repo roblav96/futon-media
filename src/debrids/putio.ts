@@ -120,10 +120,10 @@ export class Putio extends debrid.Debrid<Transfer> {
 		}
 
 		let rxCompleted = rx.transfer.pipe(
-			Rx.Op.filter(({ action, value }) => action == 'update' && value.id == transfer.id),
-			Rx.Op.filter(({ value }) => ['COMPLETED', 'DOWNLOADING'].includes(value.status)),
-			Rx.Op.map(({ value }) => value.status == 'COMPLETED'),
-			Rx.Op.take(1)
+			Rx.op.filter(({ action, value }) => action == 'update' && value.id == transfer.id),
+			Rx.op.filter(({ value }) => ['COMPLETED', 'DOWNLOADING'].includes(value.status)),
+			Rx.op.map(({ value }) => value.status == 'COMPLETED'),
+			Rx.op.take(1)
 		)
 		let completed = await rxCompleted.toPromise()
 		if (!completed) {

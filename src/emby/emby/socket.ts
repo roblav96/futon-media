@@ -38,8 +38,8 @@ process.nextTick(async () => {
 export const socket = {
 	filter<IData>(MessageType: string) {
 		return rxSocket.pipe(
-			Rx.Op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
-			Rx.Op.map(({ Data }) => Data as IData)
+			Rx.op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
+			Rx.op.map(({ Data }) => Data as IData)
 		)
 	},
 }

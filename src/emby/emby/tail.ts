@@ -74,15 +74,15 @@ const JUNK = [
 	'/web/manifest.json',
 ]
 export const rxHttp = rxTail.pipe(
-	Rx.Op.map(line => {
+	Rx.op.map(line => {
 		if (line.match(/Info HttpServer: HTTP [DGP]/)) {
 			return (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
 		}
 	}),
-	Rx.Op.filter(match => !!match),
-	Rx.Op.map(match => qs.parseUrl(match) as { url: string; query: Record<string, string> }),
-	Rx.Op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
-	Rx.Op.map(({ url, query }) => {
+	Rx.op.filter(match => !!match),
+	Rx.op.map(match => qs.parseUrl(match) as { url: string; query: Record<string, string> }),
+	Rx.op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
+	Rx.op.map(({ url, query }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
 		let parts = new Url(url).pathname.toLowerCase().split('/')
 		for (let i = 0; i < parts.length; i++) {

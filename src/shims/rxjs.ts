@@ -1,3 +1,3 @@
 export * from 'rxjs'
-import * as Op from 'rxjs/operators'
-export { Op }
+import * as op from 'rxjs/operators'
+export { op }

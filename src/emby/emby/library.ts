@@ -16,8 +16,8 @@ export const library = {
 		let proms = [] as Promise<any>[]
 		if (wait == true) {
 			let rxTask = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
-				Rx.Op.filter(Tasks => Tasks.find(v => v.Key == 'RefreshLibrary').State == 'Idle'),
-				Rx.Op.take(1)
+				Rx.op.filter(Tasks => Tasks.find(v => v.Key == 'RefreshLibrary').State == 'Idle'),
+				Rx.op.take(1)
 			)
 			proms.push(rxTask.toPromise())
 		}

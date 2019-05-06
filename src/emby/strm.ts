@@ -17,24 +17,6 @@ import Emitter from '@/shims/emitter'
 
 process.nextTick(() => {
 	fastify.listen(emby.STRM_PORT).catch(error => console.error(`fastify listen -> %O`, error))
-
-	// schedule.scheduleJob('* * * * *', async () => {
-	// 	let Sessions = await emby.sessions.get()
-	// 	for (let Session of Sessions) {
-	// 		let skey = `session:${Session.Id}`
-	// 		let ItemId = await db.get(skey)
-	// 		if (ItemId && (ItemId != Session.ItemId || !Session.IsStreaming)) {
-	// 			let { item } = await Session.item(ItemId)
-	// 			let rkey = `strm:${item.traktId}`
-	// 			item.type == 'show' && (rkey += `:s${item.S.z}e${item.E.z}`)
-	// 			await db.del(rkey)
-	// 			await db.del(skey)
-	// 		}
-	// 		if (!ItemId && Session.IsStreaming) {
-	// 			await db.put(skey, Session.ItemId)
-	// 		}
-	// 	}
-	// })
 })
 
 const fastify = Fastify({ querystringParser: query => qs.parse(query) })
@@ -45,11 +27,16 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
+async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery, rkey: string) {
 	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
 	let { Quality, Channels, Codecs } = Session
-	console.warn(`getDebridStream '${slug}' ->`, Quality, Channels, Codecs.video)
+	console.warn(`getDebridStreamUrl '${slug}' ->`, Quality, Channels, Codecs.video)
 	console.log(`Session ->`, Session.json)
+
+	let skey = `${rkey}:${JSON.stringify([Quality, Channels, Codecs.video])}`
+	console.log(`skey ->`, skey)
+	let streamUrl = await db.get(skey)
+	if (streamUrl) return streamUrl
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -72,17 +59,6 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	}
 	// process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
 
-	// if (!process.DEVELOPMENT) {
-	// 	// let index = torrents.findIndex(v => v.cached.length > 0)
-	// 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
-	// 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
-	// 	emitter.once(traktId, () =>
-	// 		debrids.download(downloads, item).catch(error => {
-	// 			console.error(`debrids.download ${item.title} -> %O`, error)
-	// 		})
-	// 	)
-	// }
-
 	torrents = torrents.filter(v => {
 		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
 		if (split.includes('2160p') || split.includes('4k')) {
@@ -101,11 +77,12 @@ async function getDebridStream({ e, s, slug, traktId, type }: emby.StrmQuery) {
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
 	process.DEVELOPMENT && console.log(`torrents ->`, torrents.map(v => v.json))
 
-	let stream = await debrids.getStream(torrents, item, Channels, Codecs.video)
-	if (!stream) throw new Error(`getDebridStream !stream -> '${slug}'`)
-	console.log(`getDebridStream '${slug}' ->`, stream)
+	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs.video)
+	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
+	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 
-	return stream
+	console.log(`getDebridStreamUrl '${slug}' ->`, streamUrl)
+	return streamUrl
 }
 
 fastify.get('/strm', async (request, reply) => {
@@ -115,7 +92,7 @@ fastify.get('/strm', async (request, reply) => {
 	query.traktId = query.traktId.toString()
 	let { e, s, slug, traktId, type } = query
 	console.log(`fastify strm ->`, slug)
-	
+
 	// return reply.redirect('https://36.download.real-debrid.com/d/OIC6DASBY7QIE/The.Last.Man.on.Earth.S01E01E02.720p.WEB-DL.x265-HETeam.mkv')
 
 	let rkey = `strm:${traktId}`
@@ -123,13 +100,13 @@ fastify.get('/strm', async (request, reply) => {
 	let stream = await db.get(rkey)
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
-			getDebridStream(query).then(
+			getDebridStreamUrl(query, rkey).then(
 				async stream => {
-					await db.put(rkey, stream, utils.duration(1, 'hour'))
+					await db.put(rkey, stream, utils.duration(1, 'minute'))
 					emitter.emit(traktId, stream)
 				},
 				async error => {
-					console.error(`getDebridStream '${slug}' -> %O`, error)
+					console.error(`getDebridStreamUrl '${slug}' -> %O`, error)
 					await db.put(rkey, '/dev/null', utils.duration(1, 'minute'))
 					emitter.emit(traktId, '/dev/null')
 				}
@@ -141,6 +118,35 @@ fastify.get('/strm', async (request, reply) => {
 	// console.warn(`redirect '${slug}' ->`, stream)
 	reply.redirect(stream)
 })
+
+// if (!process.DEVELOPMENT) {
+// 	// let index = torrents.findIndex(v => v.cached.length > 0)
+// 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
+// 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
+// 	emitter.once(traktId, () =>
+// 		debrids.download(downloads, item).catch(error => {
+// 			console.error(`debrids.download ${item.title} -> %O`, error)
+// 		})
+// 	)
+// }
+
+// schedule.scheduleJob('* * * * *', async () => {
+// 	let Sessions = await emby.sessions.get()
+// 	for (let Session of Sessions) {
+// 		let skey = `session:${Session.Id}`
+// 		let ItemId = await db.get(skey)
+// 		if (ItemId && (ItemId != Session.ItemId || !Session.IsStreaming)) {
+// 			let { item } = await Session.item(ItemId)
+// 			let rkey = `strm:${item.traktId}`
+// 			item.type == 'show' && (rkey += `:s${item.S.z}e${item.E.z}`)
+// 			await db.del(rkey)
+// 			await db.del(skey)
+// 		}
+// 		if (!ItemId && Session.IsStreaming) {
+// 			await db.put(skey, Session.ItemId)
+// 		}
+// 	}
+// })
 
 // const rxItem = emby.rxHttp.pipe(
 // 	Rx.Op.filter(({ query }) => !!query.ItemId && !!query.UserId),

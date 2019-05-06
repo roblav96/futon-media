@@ -27,20 +27,20 @@ const PlaybackQuery = {
 const FixPlaybackQuery = _.invert(_.mapValues(PlaybackQuery, (v, k) => k.toLowerCase()))
 
 export const rxPlaybackInfo = emby.rxHttp.pipe(
-	Rx.Op.filter(({ url }) => path.basename(url).toLowerCase() == 'playbackinfo'),
-	// Rx.Op.filter(({ url }) => {
+	Rx.op.filter(({ url }) => path.basename(url).toLowerCase() == 'playbackinfo'),
+	// Rx.op.filter(({ url }) => {
 	// 	let base = path.basename(url).toLowerCase()
 	// 	return !!['playbackinfo', 'stream'].find(v => base.includes(v))
 	// }),
-	Rx.Op.map(({ url, query }) => {
+	Rx.op.map(({ url, query }) => {
 		query = _.mapKeys(query, (v, k) => FixPlaybackQuery[k] || _.upperFirst(k))
 		// query.ItemId = _.reverse(url.split('/')).find(v => utils.isNumeric(v))
 		return { url, query: query as PlaybackQuery }
 	})
-	// Rx.Op.filter(({ url, query }) => !!query.UserId)
-	// Rx.Op.filter(({ url, query }) => !!query.UserId && query.IsPlayback != 'false')
-	// Rx.Op.map(({ query }) => query.UserId)
-	// Rx.Op.distinctUntilChanged()
+	// Rx.op.filter(({ url, query }) => !!query.UserId)
+	// Rx.op.filter(({ url, query }) => !!query.UserId && query.IsPlayback != 'false')
+	// Rx.op.map(({ query }) => query.UserId)
+	// Rx.op.distinctUntilChanged()
 )
 // socket.rxSocket.subscribe(({ MessageType, Data }) => {
 // 	console.log(`rxSocket ->`, MessageType, Data)
@@ -49,10 +49,10 @@ export const rxPlaybackInfo = emby.rxHttp.pipe(
 // 	console.log(`rxHttp ->`, new Url(url).pathname, query)
 // })
 export const rxPlaybackInfoIsFalse = rxPlaybackInfo.pipe(
-	Rx.Op.filter(({ query }) => query.IsPlayback == 'false')
-	// Rx.Op.filter(({ query }) => query.IsPlayback == 'false' || query.Format == 'json')
+	Rx.op.filter(({ query }) => query.IsPlayback == 'false')
+	// Rx.op.filter(({ query }) => query.IsPlayback == 'false' || query.Format == 'json')
 )
 export const rxPlaybackInfoUserId = rxPlaybackInfo.pipe(
-	Rx.Op.filter(({ query }) => !!query.UserId),
-	Rx.Op.map(({ query }) => query.UserId)
+	Rx.op.filter(({ query }) => !!query.UserId),
+	Rx.op.map(({ query }) => query.UserId)
 )

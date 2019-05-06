@@ -8,7 +8,7 @@ import * as xdgBasedir from 'xdg-basedir'
 import { LevelDown } from 'leveldown'
 import { LevelUp } from 'levelup'
 
-class DB {
+class Db {
 	static file(name: string) {
 		let pkgjson = pkgup.sync({ cwd: __dirname })
 		let basepath = path.join(xdgBasedir.config, pkgjson.pkg.name)
@@ -21,7 +21,7 @@ class DB {
 		return file
 	}
 
-	level = ttl(level(DB.file(this.path))) as LevelUp<LevelDown>
+	level = ttl(level(Db.file(this.path))) as LevelUp<LevelDown>
 	constructor(public path: string) {}
 
 	async get(key: string) {
@@ -43,7 +43,16 @@ class DB {
 			return null
 		}
 	}
+
+	keys() {
+		return new Promise<string[]>(resolve => {
+			let keys = [] as string[]
+			let stream = this.level.createKeyStream()
+			stream.on('data', key => keys.push(key))
+			stream.on('end', () => resolve(keys))
+		})
+	}
 }
 
-export const db = new DB(path.basename(__filename))
+export const db = new Db(path.basename(__filename))
 export default db

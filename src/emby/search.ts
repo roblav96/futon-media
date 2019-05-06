@@ -7,13 +7,13 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 export const rxSearch = emby.rxHttp.pipe(
-	Rx.Op.filter(({ url }) => ['items', 'hints'].includes(path.basename(url).toLowerCase())),
-	Rx.Op.map(({ url, query }) => {
+	Rx.op.filter(({ url }) => ['items', 'hints'].includes(path.basename(url).toLowerCase())),
+	Rx.op.map(({ url, query }) => {
 		query = _.mapKeys(query, (v, k) => k.toLowerCase())
 		return query.searchterm
 	}),
-	Rx.Op.filter(search => !!search && search.length >= 3),
-	Rx.Op.distinctUntilChanged()
+	Rx.op.filter(search => !!search && search.length >= 3),
+	Rx.op.distinctUntilChanged()
 )
 
 rxSearch.subscribe(async query => {
