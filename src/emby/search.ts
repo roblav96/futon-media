@@ -29,7 +29,7 @@ rxSearch.subscribe(async query => {
 	if (person) results.push(...(await emby.library.itemsOf(person.person.ids.slug)))
 
 	let items = results.filter(v => !v.person).map(v => new media.Item(v))
-	items = items.filter(v => !v.isJunk(person ? 1000 : 100))
+	items = items.filter(v => !v.isJunk)
 	items.sort((a, b) => b.main.votes - a.main.votes)
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
 	for (let item of items) {

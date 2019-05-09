@@ -45,7 +45,7 @@ export async function search(query: string, type = 'movie,show' as media.MainCon
 		query: { query, fields: 'title,aliases', limit: 100 },
 	})) as Result[]
 	let items = results.map(v => new media.Item(v)).sort((a, b) => b.main.votes - a.main.votes)
-	return items.filter(v => !v.isJunk())
+	return items.filter(v => !v.isJunk)
 }
 
 export interface IDs {

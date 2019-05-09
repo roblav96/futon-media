@@ -30,13 +30,15 @@ const emitter = new Emitter<string, string>()
 async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery, rkey: string) {
 	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
 	let { Quality, Channels, Codecs } = Session
-	console.warn(`getDebridStreamUrl '${slug}' ->`, Quality, Channels, Codecs.video)
-	console.log(`Session ->`, Session.json)
+	// console.warn(`getDebridStreamUrl '${slug}' ->`, Quality, Channels, Codecs.video)
+	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
 	let skey = `${rkey}:${JSON.stringify([Quality, Channels, Codecs.video])}`
-	console.log(`skey ->`, skey)
 	let streamUrl = await db.get(skey)
-	if (streamUrl) return streamUrl
+	if (streamUrl) {
+		console.log(`streamUrl '${slug}' ->`, streamUrl)
+		return streamUrl
+	}
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
@@ -67,10 +69,10 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 				if (split.includes('8bit') || split.includes('10bit')) return false
 			}
 		}
-		if (Quality == '2160p' && Channels > 2) {
-			v.cached.length == 0 && v.cached.push('putio')
-			return v.seeders > 0
-		}
+		// if (Quality == '2160p' && Channels > 2) {
+		// 	v.cached.length == 0 && v.cached.push('putio')
+		// 	return v.seeders > 0
+		// }
 		return v.cached.length > 0
 	})
 	if (torrents.length == 0) throw new Error(`!torrents`)
@@ -81,7 +83,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
 	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 
-	console.log(`getDebridStreamUrl '${slug}' ->`, streamUrl)
+	console.log(`streamUrl '${slug}' ->`, streamUrl)
 	return streamUrl
 }
 

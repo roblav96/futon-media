@@ -18,7 +18,15 @@ export default async function ffprobe(
 	let { err, value } = fastParse(stdout) as { err: Error; value: FFProbe }
 	if (err) throw err
 	value.streams.forEach(stream => {
-		stream.tags && (stream.tags = _.mapKeys(stream.tags, (v, k) => k.toLowerCase()) as any)
+		for (let key in stream) {
+			let value = stream[key]
+			_.isString(value) && (stream[key] = value.toLowerCase())
+		}
+		if (stream.tags) {
+			stream.tags = _.fromPairs(_.toPairs(stream.tags).map(v =>
+				_.isString(v) ? v.toLowerCase() : v
+			) as any) as any
+		}
 	})
 	return value
 }

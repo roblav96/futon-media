@@ -21,27 +21,28 @@ export const sessions = {
 }
 
 export class Session {
+	get is4kUser() {
+		let users = ['admin', 'dev', 'developer', 'mom', 'robert']
+		return users.includes(this.UserName.toLowerCase())
+	}
 	get IsRoku() {
 		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
 	}
 	get Codecs() {
 		let { audio, video } = { audio: '', video: '' }
-
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
 		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
-		audio += _.join(cprofiles.filter(v => v.Type == 'Audio').map(v => v.Codec), ',')
-		video += _.join(cprofiles.filter(v => v.Type == 'Video').map(v => v.Codec), ',')
-
+		audio += `${_.join(cprofiles.filter(v => v.Type == 'Audio').map(v => v.Codec), ',')},`
+		audio += `${_.join(cprofiles.filter(v => v.Type == 'VideoAudio').map(v => v.Codec), ',')},`
+		video += `${_.join(cprofiles.filter(v => v.Type == 'Video').map(v => v.Codec), ',')},`
 		let dpath = 'Capabilities.DeviceProfile.DirectPlayProfiles'
 		let dprofiles = _.get(this, dpath, []) as DirectPlayProfiles[]
-		audio += _.join(dprofiles.map(v => v.AudioCodec).filter(Boolean), ',')
-		video += _.join(dprofiles.map(v => v.VideoCodec).filter(Boolean), ',')
-
+		audio += `${_.join(dprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
+		video += `${_.join(dprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
 		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
 		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
-		audio += _.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')
-		video += _.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')
-
+		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
+		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
 		return {
 			audio: _.uniq(audio.toLowerCase().split(',')).filter(Boolean),
 			video: _.uniq(video.toLowerCase().split(',')).filter(Boolean),
@@ -51,12 +52,12 @@ export class Session {
 		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
 		let tprofiles = _.get(this, tpath) as TranscodingProfiles[]
 		if (!_.isArray(tprofiles)) return 8
-		return _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
+		let Channels = _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
+		return this.is4kUser && Channels == 6 ? 8 : Channels
 	}
 	get Quality(): emby.Quality {
 		if (this.Channels <= 2) return '1080p'
-		let users = ['admin', 'developer', 'robert']
-		return users.includes(this.UserName.toLowerCase()) ? '2160p' : '1080p'
+		return this.is4kUser ? '2160p' : '1080p'
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
@@ -116,8 +117,10 @@ export class Session {
 	get json() {
 		return _.fromPairs(
 			_.toPairs({
-				Age: this.Age,
 				// Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
+				Age: this.Age,
+				Audio: JSON.stringify(this.Codecs.audio),
+				Bitrate: this.Bitrate,
 				Channels: this.Channels,
 				Client: this.Client,
 				DeviceName: this.DeviceName,
@@ -126,6 +129,7 @@ export class Session {
 				Quality: this.Quality,
 				StrmPath: this.StrmPath,
 				UserName: this.UserName,
+				Video: JSON.stringify(this.Codecs.video),
 			}).filter(([k, v]) => !_.isNil(v))
 		)
 	}

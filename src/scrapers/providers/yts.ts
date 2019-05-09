@@ -34,7 +34,7 @@ export class Yts extends scraper.Scraper {
 					bytes: v.size_bytes,
 					magnet: `magnet:?xt=urn:btih:${v.hash}&dn=${title}`,
 					name: title,
-					seeders: v.quality == '1080p' ? v.seeds * 1.5 : v.seeds,
+					seeders: v.quality == '1080p' ? v.seeds * 10 : v.seeds,
 					stamp: v.date_uploaded_unix * 1000,
 				} as scraper.Result
 			})

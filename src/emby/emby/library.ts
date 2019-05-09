@@ -14,37 +14,37 @@ process.nextTick(() => {
 	let rxItems = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => query.ItemId),
-		Rx.op.groupBy(ItemId => ItemId)
+		Rx.op.debounceTime(1000),
+		Rx.op.distinctUntilChanged()
 	)
-	rxItems.subscribe(subs => {
-		subs.pipe(Rx.op.debounceTime(100)).subscribe(async ItemId => {
-			let Item = await library.Item(ItemId)
-			if (!Item) return
-			if (Item.Type == 'Person') {
-				let persons = (await trakt.client.get(`/search/person`, {
-					query: { query: Item.Name, fields: 'name', limit: 100 },
-				})) as trakt.Result[]
-				let levens = persons.map(person => ({
-					...person.person,
-					leven: utils.leven(Item.Name, person.person.ids.slug),
-				}))
-				levens.sort((a, b) => a.leven - b.leven)
-				let slug = levens[0].ids.slug
-				let results = await library.itemsOf(slug)
-				let items = results.map(v => new media.Item(v))
-				items = items.filter(v => !v.isJunk())
-				items.sort((a, b) => b.main.votes - a.main.votes)
-				console.log(`rxItems '${Item.Name}' ->`, items.map(v => v.title).sort())
-				for (let item of items) {
-					await emby.library.add(item)
-				}
-			} else if (['Movie', 'Series'].includes(Item.Type)) {
-				let item = await library.item(ItemId)
-				console.log(`rxItems ->`, item.title)
+	rxItems.subscribe(async ItemId => {
+		let Item = await library.Item(ItemId)
+		if (!Item) return
+		if (Item.Type == 'Person') {
+			let persons = (await trakt.client.get(`/search/person`, {
+				query: { query: Item.Name, fields: 'name', limit: 100 },
+			})) as trakt.Result[]
+			persons = persons.filter(v => v.person.name == Item.Name)
+			let lengths = persons.map(person => ({
+				...person.person,
+				length: person.person.ids.slug.length,
+			}))
+			lengths.sort((a, b) => a.length - b.length)
+			let slug = lengths[0].ids.slug
+			let results = await library.itemsOf(slug)
+			let items = results.map(v => new media.Item(v))
+			items = items.filter(v => !v.isJunk)
+			items.sort((a, b) => b.main.votes - a.main.votes)
+			console.log(`rxItems '${Item.Name}' ->`, items.map(v => v.title).sort())
+			for (let item of items) {
 				await emby.library.add(item)
 			}
-			await emby.library.refresh()
-		})
+		} else if (['Movie', 'Series'].includes(Item.Type)) {
+			let item = await library.item(Item)
+			console.log(`rxItems ->`, item.title)
+			await emby.library.add(item)
+		}
+		await emby.library.refresh()
 	})
 })
 
@@ -85,20 +85,20 @@ export const library = {
 
 	async Item(ItemId: string) {
 		return ((await emby.client.get('/Items', {
-			query: { Ids: ItemId, Fields: 'ProviderIds' },
+			query: { Ids: ItemId, Fields: 'Path,ProviderIds' },
 			silent: true,
 		})).Items as emby.Item[])[0]
 	},
 
-	async item(ItemId: string) {
-		let Item = await library.Item(ItemId)
-		if (!Item) return
-		let pairs = _.toPairs(Item.ProviderIds).map(pair => pair.map(v => v.toLowerCase()))
-		pairs.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))[0]
-		for (let [provider, id] of pairs) {
-			let results = (await trakt.client.get(`/search/${provider}/${id}`)) as trakt.Result[]
-			let result = results.length == 1 && results[0]
-			!result && (result = results.find(v => v[v.type].ids[provider].toString() == id))
+	async item({ Path, Type }: Item) {
+		let type = Type == 'Series' ? 'show' : Type.toLowerCase()
+		let matches = Path.match(/\[\w{4}id=(tt)?\d*\]/g)
+		for (let match of matches) {
+			let [key, value] = match.split('=')
+			let results = (await trakt.client.get(
+				`/search/${key.slice(1, 5)}/${value.slice(0, -1)}`
+			)) as trakt.Result[]
+			let result = results.find(v => !!v[type])
 			if (result) return new media.Item(result)
 		}
 	},
@@ -113,10 +113,9 @@ export const library = {
 		return movies.concat(shows).filter(v => !!v.character)
 	},
 
-	async toStrm(item: media.Item) {
+	toFile(item: media.Item) {
 		let file = path.normalize(process.env.EMBY_LIBRARY_PATH || process.cwd())
 		file += `/${item.type}s`
-
 		file += `/${item.ids.slug}`
 		item.ids.imdb && (file += ` [imdbid=${item.ids.imdb}]`)
 		item.ids.tmdb && (file += ` [tmdbid=${item.ids.tmdb}]`)
@@ -127,20 +126,10 @@ export const library = {
 			file += `/Season ${item.S.n}`
 			file += `/S${item.S.z}E${item.E.z}`
 		}
+		return `${file}.strm`
+	},
 
-		// let title = item.main.title
-		// if (item.movie) {
-		// 	file += `/${title} (${item.year})/${title} (${item.year})`
-		// }
-		// if (item.show) {
-		// 	file += `/${title} (${item.year})`
-		// 	file += `/Season ${item.S.n}`
-		// 	file += `/${title} - S${item.S.z}E${item.E.z}`
-		// }
-
-		// if (item.movie) file += `/${item.ids.slug}/${item.ids.slug}`
-		// if (item.show) file += `/${item.ids.slug}/s${item.S.z}e${item.E.z}`
-
+	async toStrm(item: media.Item) {
 		let query = {
 			...item.ids,
 			traktId: item.traktId,
@@ -150,11 +139,9 @@ export const library = {
 		if (item.episode) {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
-
 		let url = `http://localhost:${emby.STRM_PORT}`
 		url += `/strm?${qs.stringify(query)}`
-		console.log(`file ->`, file)
-		await fs.outputFile(`${file}.strm`, url)
+		await fs.outputFile(library.toFile(item), url)
 	},
 
 	async add(item: media.Item) {
@@ -164,9 +151,9 @@ export const library = {
 		}
 		if (item.show) {
 			await utils.pRandom(100)
-			let seasons = (await trakt.client.get(
-				`/shows/${item.traktId}/seasons`
-			)) as trakt.Season[]
+			let seasons = (await trakt.client.get(`/shows/${item.traktId}/seasons`, {
+				silent: true,
+			})) as trakt.Season[]
 			for (let season of seasons.filter(v => v.number > 0)) {
 				item.use({ season })
 				for (let i = 1; i <= item.S.a; i++) {
