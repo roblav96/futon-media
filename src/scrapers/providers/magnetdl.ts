@@ -5,7 +5,7 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.magnetdl.com',
 })
 
@@ -15,7 +15,7 @@ export class MagnetDl extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'Movie' : 'TV'
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`
-		let $ = cheerio.load(await client.get(url.toLowerCase(), { memoize: process.DEVELOPMENT }))
+		let $ = cheerio.load(await client.get(url.toLowerCase()))
 		let results = [] as scraper.Result[]
 		$(`tr:has(td[class="m"])`).each((i, el) => {
 			try {

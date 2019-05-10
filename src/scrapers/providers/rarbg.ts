@@ -3,7 +3,7 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://torrentapi.org',
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
@@ -64,7 +64,6 @@ export class Rarbg extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(slug)),
-			memoize: process.DEVELOPMENT,
 		})) as Response
 		return (response.torrent_results || []).map(v => {
 			return {

@@ -4,7 +4,7 @@ import * as pForever from 'p-forever'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://eztv.io/api',
 	query: { limit: 100, page: 1 } as Partial<Query>,
 })
@@ -25,7 +25,6 @@ export class Eztv extends scraper.Scraper {
 			page > 1 && (await utils.pRandom(1000))
 			let response = (await client.get('/get-torrents', {
 				query: { imdb_id, page } as Partial<Query>,
-				memoize: process.DEVELOPMENT,
 			})) as Response
 			let torrents = (response.torrents || []).filter(v => {
 				let season = _.parseInt(v.season)

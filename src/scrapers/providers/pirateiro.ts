@@ -5,7 +5,7 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://pirateiro.com',
 })
 
@@ -18,7 +18,6 @@ export class Pirateiro extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get(`/torrents`, {
 				query: { search: slug, orderby: sort, [category]: 1 } as Partial<Query>,
-				memoize: process.DEVELOPMENT,
 			})
 		)
 		let results = [] as scraper.Result[]

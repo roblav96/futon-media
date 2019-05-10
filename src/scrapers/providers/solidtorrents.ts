@@ -3,11 +3,9 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://solidtorrents.net/api/v1',
-	query: {
-		category: 'Video',
-	} as Partial<Query>,
+	query: { category: 'Video' } as Partial<Query>,
 })
 
 export class SolidTorrents extends scraper.Scraper {
@@ -17,7 +15,6 @@ export class SolidTorrents extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/search', {
 			query: { sort, q: slug } as Partial<Query>,
-			memoize: process.DEVELOPMENT,
 		})) as Response
 		return (response.results || []).map(v => {
 			return {

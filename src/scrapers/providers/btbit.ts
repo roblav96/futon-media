@@ -4,7 +4,7 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'http://en.btbit.org',
 })
 
@@ -13,9 +13,7 @@ export class BtBit extends scraper.Scraper {
 	sorts = ['2', '3', '1']
 
 	async getResults(slug: string, sort: string) {
-		let $ = cheerio.load(
-			await client.get(`/list/${slug}/1-${sort}-2.html`, { memoize: process.DEVELOPMENT })
-		)
+		let $ = cheerio.load(await client.get(`/list/${slug}/1-${sort}-2.html`))
 		let results = [] as scraper.Result[]
 		$(`.rs`).each((i, el) => {
 			try {

@@ -57,6 +57,11 @@ export interface Scraper {
 	getResults(slug: string, sort: string): Promise<Result[]>
 }
 export class Scraper {
+	static http(config: http.Config) {
+		_.defaults(config, { memoize: process.DEVELOPMENT, silent: true } as http.Config)
+		return new http.Http(config)
+	}
+
 	sorts: string[]
 	concurrency = 3
 

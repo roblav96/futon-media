@@ -5,11 +5,9 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://extratorrent.si/search',
-	query: {
-		order: 'desc',
-	} as Partial<Query>,
+	query: { order: 'desc' } as Partial<Query>,
 })
 
 export class ExtraTorrent extends scraper.Scraper {
@@ -17,10 +15,7 @@ export class ExtraTorrent extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get('/', {
-				query: { search: slug, srt: sort } as Partial<Query>,
-				memoize: process.DEVELOPMENT,
-			})
+			await client.get('/', { query: { search: slug, srt: sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$(`.tl tr`).each((i, el) => {

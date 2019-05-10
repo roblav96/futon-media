@@ -7,7 +7,7 @@ import * as pkgup from 'read-pkg-up'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
 	headers: {
 		'cookie': '__cfduid=de49cc6edc863df03173cda277139fd141553817924',
@@ -52,7 +52,6 @@ export class Snowfl extends scraper.Scraper {
 		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
 		let response = (await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
-			memoize: process.DEVELOPMENT,
 		})) as Result[]
 		response = JSON.parse((response as any) || '[]')
 		let results = response.filter(v => !!v.magnet)

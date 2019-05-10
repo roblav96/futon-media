@@ -3,11 +3,9 @@ import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://yts.am/api/v2',
-	query: {
-		limit: 50,
-	} as Partial<Query>,
+	query: { limit: 50 } as Partial<Query>,
 })
 
 export class Yts extends scraper.Scraper {
@@ -23,7 +21,6 @@ export class Yts extends scraper.Scraper {
 		}
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
-			memoize: process.DEVELOPMENT,
 		})) as Response
 		let results = ((response.data && response.data.movies) || []).map(m =>
 			m.torrents.map((v, i) => {

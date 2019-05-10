@@ -5,7 +5,7 @@ import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
 
-export const client = new http.Http({
+export const client = scraper.Scraper.http({
 	baseUrl: 'https://api.orionoid.com',
 	query: {
 		action: 'retrieve',
@@ -39,7 +39,6 @@ export class Orion extends scraper.Scraper {
 		let query = { sortvalue: sort } as Query
 		let response = (await client.get(`/`, {
 			query: Object.assign(query, JSON.parse(slug)),
-			memoize: process.DEVELOPMENT,
 		})) as Response
 		let streams = _.get(response, 'data.streams', [])
 		streams = streams.filter(stream => {
