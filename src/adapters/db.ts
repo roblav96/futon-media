@@ -1,10 +1,13 @@
 import * as _ from 'lodash'
+import * as fastParse from 'fast-json-parse'
 import * as fs from 'fs-extra'
 import * as level from 'level'
+import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as ttl from 'level-ttl'
 import * as xdgBasedir from 'xdg-basedir'
+import fastStringify from 'fast-safe-stringify'
 import { LevelDown } from 'leveldown'
 import { LevelUp } from 'levelup'
 
@@ -28,35 +31,57 @@ class Db {
 
 	async get(key: string) {
 		try {
-			return (await this.level.get(key)) as string
-		} catch (error) {
-			return null
-		}
+			let { err, value } = fastParse(await this.level.get(key))
+			if (err) {
+				console.error(`db get '${key}' fastParse err -> %O`, err)
+				throw err
+			}
+			return value
+		} catch {}
 	}
 
-	put(key: string, value: string, ttl?: number) {
-		return this.level.put(key, value, ttl ? { ttl } : {})
+	async put(key: string, value: any, ttl?: number) {
+		try {
+			return await this.level.put(key, fastStringify(value), _.isFinite(ttl) ? { ttl } : {})
+		} catch (error) {
+			console.error(`db put '${key}' -> %O`, error)
+		}
 	}
 
 	async del(key: string) {
 		try {
 			return await this.level.del(key)
 		} catch (error) {
-			return null
+			console.error(`db del '${key}' -> %O`, error)
 		}
 	}
 
-	keys() {
-		return new Promise<string[]>(resolve => {
+	async keys() {
+		return await new Promise<string[]>(resolve => {
 			let keys = [] as string[]
 			let stream = this.level.createKeyStream()
+			stream.once('error', error => console.error(`db keys -> %O`, error))
 			stream.on('data', key => keys.push(key))
-			stream.on('end', () => resolve(keys))
+			stream.on('end', () => {
+				resolve(keys.filter(v => !v.startsWith('!ttl!')))
+				process.nextTick(() => stream.removeAllListeners())
+			})
 		})
+	}
+
+	async flush(pattern: string) {
+		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
+		if (keys.length == 0) return
+		process.DEVELOPMENT && console.warn(`db flush '${pattern}' ->`, keys.sort())
+		await Promise.all(keys.map(key => this.del(key)))
 	}
 }
 
-// process.DEVELOPMENT && !(console.warn(`remove ->`, Db.base) as any) && fs.removeSync(Db.base)
+// process.DEVELOPMENT && !(fs.removeSync(Db.base) as any) && console.warn(`removed ->`, Db.base)
 
 export const db = new Db(path.basename(__filename))
 export default db
+
+if (process.DEVELOPMENT) {
+	process.nextTick(async () => _.defaults(global, await import('@/adapters/db')))
+}

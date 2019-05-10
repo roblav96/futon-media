@@ -44,8 +44,8 @@ export class Session {
 		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
 		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
 		return {
-			audio: _.uniq(audio.toLowerCase().split(',')).filter(Boolean),
-			video: _.uniq(video.toLowerCase().split(',')).filter(Boolean),
+			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)),
+			video: _.sortBy(_.uniq(video.toLowerCase().split(',')).filter(Boolean)),
 		}
 	}
 	get Channels() {

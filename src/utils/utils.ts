@@ -22,8 +22,8 @@ export function duration(amount: number, unit: dayjs.OpUnitType) {
 
 export function hash(value: any) {
 	!_.isString(value) && (value = fastStringify.stable(value))
-	let sha1 = crypto.createHash('sha1').update(value)
-	return sha1.digest('hex')
+	let sha256 = crypto.createHash('sha256').update(value)
+	return sha256.digest('hex')
 }
 
 export function pTimeout<T = void>(ms: number, value?: T): Promise<T> {

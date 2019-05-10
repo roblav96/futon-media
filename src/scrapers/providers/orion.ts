@@ -1,11 +1,9 @@
 import * as _ from 'lodash'
-import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
 import * as qs from 'query-string'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
-import fastStringify from 'fast-safe-stringify'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.orionoid.com',
@@ -41,15 +39,12 @@ export class Orion extends scraper.Scraper {
 		let query = { sortvalue: sort } as Query
 		query = Object.assign(query, JSON.parse(slug))
 
-		let streams: Stream[]
 		let mkey = utils.hash(query)
-		let parsed = fastParse(await db.get(mkey))
-		if (parsed.err) await db.del(mkey)
-		else streams = parsed.value
+		let streams = await db.get(mkey) as Stream[]
 		if (!streams) {
 			let response = (await client.get(`/`, { query: query as any })) as Response
 			streams = _.get(response, 'data.streams', [])
-			await db.put(mkey, fastStringify(streams), utils.duration(1, 'day'))
+			await db.put(mkey, streams, utils.duration(1, 'day'))
 		}
 
 		streams = streams.filter(stream => {

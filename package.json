@@ -58,6 +58,7 @@
 		"levelup": "^4.0.1",
 		"lodash": "^4.17.11",
 		"magnet-uri": "^5.2.4",
+		"matcher": "^2.0.0",
 		"mem": "^4.3.0",
 		"module-alias": "^2.2.0",
 		"node-env-dev": "^1.1.8",

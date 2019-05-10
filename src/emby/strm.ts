@@ -16,6 +16,7 @@ import db from '@/adapters/db'
 import Emitter from '@/shims/emitter'
 
 process.nextTick(() => {
+	process.DEVELOPMENT && db.flush('strm:*')
 	fastify.listen(emby.STRM_PORT).catch(error => console.error(`fastify listen -> %O`, error))
 })
 
