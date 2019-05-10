@@ -37,9 +37,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		}
 		let accuracy = utils.accuracy(to.name, from.name)
 		if (accuracy.length > 0) {
-			// console.warn(`uniqWith ->`, from.name, to.name)
 			to.name += `.${accuracy.join('.')}`
-			// console.log(`accuracy ->`, accuracy, to.name)
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))

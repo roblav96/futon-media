@@ -14,7 +14,7 @@ import * as StackTracey from 'stacktracey'
 import * as util from 'util'
 
 _.merge(util.inspect.defaultOptions, {
-	depth: process.DEVELOPMENT ? 1 : 2,
+	depth: process.DEVELOPMENT ? 2 : 1,
 } as util.InspectOptions)
 
 if (process.DEVELOPMENT) {

@@ -49,11 +49,22 @@ export class Session {
 		}
 	}
 	get Channels() {
+		let Channels = [2]
+		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
+		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
+		cprofiles.forEach(({ Conditions, Type }) => {
+			if (Type != 'VideoAudio' || !_.isArray(Conditions)) return
+			let Condition = Conditions.find(({ Property }) => Property == 'AudioChannels')
+			Condition && Condition.Value && Channels.push(_.parseInt(Condition.Value))
+		})
 		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
-		let tprofiles = _.get(this, tpath) as TranscodingProfiles[]
-		if (!_.isArray(tprofiles)) return 8
-		let Channels = _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
-		return this.Is4kUser && Channels == 6 ? 8 : Channels
+		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
+		tprofiles.forEach(({ MaxAudioChannels }) => {
+			MaxAudioChannels && Channels.push(_.parseInt(MaxAudioChannels))
+		})
+		// if (Channels.length == 1) return 8
+		return _.max(Channels)
+		// return this.Is4kUser && Channels == 6 ? 8 : Channels
 	}
 	get Quality(): emby.Quality {
 		if (this.Channels <= 2) return '1080p'

@@ -48,10 +48,10 @@ export class RealDebrid extends debrid.Debrid<Item> {
 			return names.find(v => !utils.isVideo(v))
 		})
 		rds.sort((a, b) => {
-			return (
-				_.sum(_.toPairs(b).map(([id, file]) => file.filesize)) -
-				_.sum(_.toPairs(a).map(([id, file]) => file.filesize))
+			let [asize, bsize] = [a, b].map(v =>
+				_.sum(_.toPairs(v).map(([id, file]) => file.filesize))
 			)
+			return bsize - asize
 		})
 
 		this.files = _.toPairs(rds[0]).map(([id, file]) => {

@@ -63,6 +63,13 @@ export class Item {
 		_.has(this.episode, 'first_aired') && (released = new Date(this.episode.first_aired))
 		return released.valueOf()
 	}
+	get runtime() {
+		let runtime = Infinity
+		_.has(this.movie, 'runtime') && (runtime = this.movie.runtime)
+		_.has(this.show, 'runtime') && (runtime = this.show.runtime)
+		_.has(this.episode, 'runtime') && (runtime = this.episode.runtime)
+		return runtime
+	}
 
 	get isEnglish() {
 		return _.has(this.main, 'language') && (this.main.language || '').includes('en')
@@ -74,8 +81,11 @@ export class Item {
 		if (_.has(this.main, 'votes')) return this.main.votes >= 100
 		return false
 	}
+	get isRuntime() {
+		return this.runtime >= 10
+	}
 	get isJunk() {
-		let valid = this.isEnglish && this.isReleased && this.isPopular
+		let valid = this.isEnglish && this.isReleased && this.isPopular && this.isRuntime
 		return !(valid && !!this.ids.slug && !!this.main.year)
 	}
 

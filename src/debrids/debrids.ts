@@ -55,16 +55,15 @@ export async function getStreamUrl(
 					`E${item.E.z}`,
 					`${item.E.z}`,
 				]
-				let skips = `${item.title} ${item.year} 720p 1080p 2160p 4k`
+				let skips = `${item.title} ${item.year} ${item.E.t}`
 				for (let test of tests) {
-					if (file) continue
 					file = files.find(v => {
 						let name = _.trim(utils.accuracy(skips, v.name).join(' '))
 						return utils.minify(name).includes(utils.minify(test))
-						// return utils.accuracy(name, test).length == 0
 					})
+					if (file) break
 				}
-				!file && console.warn(`getStreamUrl !file ->`, files.map(v => v.name).sort())
+				!file && console.warn(`getStreamUrl !show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
 				let title = item.title
@@ -87,7 +86,7 @@ export async function getStreamUrl(
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type)
 			)
-			console.log(`getStreamUrl probe ->`, probe)
+			process.DEVELOPMENT && console.log(`getStreamUrl probe ->`, probe)
 
 			let tags = {} as Record<string, string>
 			_.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))

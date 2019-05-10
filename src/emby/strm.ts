@@ -51,6 +51,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 		let episode = await trakt.client.get(`/${type}s/${traktId}/seasons/${s}/episodes/${e}`)
 		item.use({ type: 'episode', episode })
 	}
+	// process.DEVELOPMENT && console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
 	torrents.sort((a, b) => b.bytes - a.bytes)
@@ -66,22 +67,25 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 
 	torrents = torrents.filter(v => {
 		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
-		split.includes('720p') && (v.seeders = _.ceil(v.seeders / 3))
-		split.includes('1080p') && (v.seeders = _.ceil(v.seeders * 3))
+		// split.includes('720p') && (v.seeders = _.ceil(v.seeders / 3))
+		// split.includes('1080p') && (v.seeders = _.ceil(v.seeders * 3))
 		if (split.includes('2160p') || split.includes('4k')) {
 			if (Quality != '2160p') return false
 			if (split.includes('sdr')) {
 				if (split.includes('8bit') || split.includes('10bit')) return false
 			}
 		}
+		return true
 		// if (Quality == '2160p' && Channels > 2) {
 		// 	v.cached.length == 0 && v.cached.push('putio')
 		// 	return v.seeders > 0
 		// }
-		return v.cached.length > 0
+		// return v.cached.length > 0
 	})
-	if (torrents.length == 0) throw new Error(`!torrents`)
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
+	process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
+	torrents = torrents.filter(v => v.cached.length > 0)
+	if (torrents.length == 0) throw new Error(`!torrents`)
 	process.DEVELOPMENT && console.log(`torrents ->`, torrents.map(v => v.json))
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs.video)

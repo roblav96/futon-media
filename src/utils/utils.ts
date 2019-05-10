@@ -100,9 +100,9 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 
 export const VIDEOS = ['m4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
-	file = path.basename(file.toLowerCase())
-	if (file == 'rarbg.com.mp4') return false
-	return VIDEOS.includes(path.extname(file).slice(1))
+	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
+	// file = path.basename(file.toLowerCase())
+	// if (file == 'rarbg.com.mp4') return false
 	// let junk = ['bonus', 'sample', 'trailer']
 	// let valid = accuracy(file, junk.join(' ')).length == junk.length
 }
