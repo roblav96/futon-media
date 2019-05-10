@@ -1,7 +1,6 @@
 import * as _ from 'lodash'
 import * as ConfigStore from 'configstore'
 import * as dayjs from 'dayjs'
-import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
@@ -53,7 +52,6 @@ export class Snowfl extends scraper.Scraper {
 		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
 		let response = (await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
-			memoize: process.DEVELOPMENT,
 		})) as Result[]
 		response = JSON.parse((response as any) || '[]')
 		let results = response.filter(v => !!v.magnet)

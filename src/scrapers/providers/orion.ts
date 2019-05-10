@@ -1,5 +1,4 @@
 import * as _ from 'lodash'
-import * as crypto from 'crypto'
 import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
 import * as qs from 'query-string'
@@ -43,12 +42,10 @@ export class Orion extends scraper.Scraper {
 		query = Object.assign(query, JSON.parse(slug))
 
 		let streams: Stream[]
-		let hash = crypto.createHash('sha256').update(fastStringify(query))
-		let mkey = hash.digest('hex')
+		let mkey = utils.hash(query)
 		let parsed = fastParse(await db.get(mkey))
 		if (parsed.err) await db.del(mkey)
 		else streams = parsed.value
-
 		if (!streams) {
 			let response = (await client.get(`/`, { query: query as any })) as Response
 			streams = _.get(response, 'data.streams', [])

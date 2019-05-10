@@ -1,5 +1,4 @@
 import * as _ from 'lodash'
-import * as dayjs from 'dayjs'
 import * as cheerio from 'cheerio'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
@@ -14,10 +13,7 @@ export class Btdb extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get(`/`, {
-				query: { search: slug, sort } as Partial<Query>,
-				memoize: process.DEVELOPMENT,
-			})
+			await client.get(`/`, { query: { search: slug, sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$(`li[class$="item"]`).each((i, el) => {

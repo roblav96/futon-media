@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
 import * as levenshtein from 'js-levenshtein'
@@ -6,6 +7,7 @@ import * as path from 'path'
 import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
 import * as stripBom from 'strip-bom'
+import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
 import stripAnsi from 'strip-ansi'
@@ -16,6 +18,12 @@ dayjs.extend(customParseFormat)
 export function duration(amount: number, unit: dayjs.OpUnitType) {
 	let day = dayjs(0).add(amount, unit)
 	return day.valueOf()
+}
+
+export function hash(value: any) {
+	!_.isString(value) && (value = fastStringify.stable(value))
+	let sha1 = crypto.createHash('sha1').update(value)
+	return sha1.digest('hex')
 }
 
 export function pTimeout<T = void>(ms: number, value?: T): Promise<T> {

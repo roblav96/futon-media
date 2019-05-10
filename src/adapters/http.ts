@@ -1,14 +1,9 @@
 import * as _ from 'lodash'
-import * as crypto from 'crypto'
 import * as errors from 'http-errors'
-import * as fastParse from 'fast-json-parse'
 import * as http from 'http'
 import * as normalize from 'normalize-url'
 import * as qs from 'query-string'
 import * as Url from 'url-parse'
-import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
-import fastStringify from 'fast-safe-stringify'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 export interface Config extends http.RequestOptions {
@@ -18,7 +13,6 @@ export interface Config extends http.RequestOptions {
 	body?: any
 	debug?: boolean
 	form?: any
-	memoize?: boolean
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'HEAD' | 'DELETE'
 	profile?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
@@ -50,7 +44,6 @@ export class Http {
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
 		},
 		timeout: 10000,
-		silent: false, // !process.DEVELOPMENT,
 	} as Config
 
 	constructor(public config = {} as Config) {
@@ -114,17 +107,7 @@ export class Http {
 		}
 
 		let t = Date.now()
-		let response: HttpieResponse
-		let mkey: string
-		if (options.memoize) {
-			let hash = crypto.createHash('sha256').update(fastStringify(config))
-			mkey = hash.digest('hex')
-			let parsed = fastParse(await db.get(mkey))
-			if (parsed.err) await db.del(mkey)
-			else response = parsed.value
-		}
-		if (!response) {
-		response = await send(options.method, options.url, options).catch(error => {
+		let response = await send(options.method, options.url, options).catch(error => {
 			if (_.isFinite(error.statusCode)) {
 				// console.log(`error ->`, error, options)
 				if (!_.isString(error.statusMessage)) {
@@ -135,11 +118,6 @@ export class Http {
 			}
 			return Promise.reject(error)
 		})
-			if (options.memoize && !_.isError(response)) {
-				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
-				await db.put(mkey, fastStringify(_.omit(response, omits)), utils.duration(1, 'day'))
-			}
-		}
 
 		if (options.profile) {
 			console.log(`${Date.now() - t}ms`, min.url)
