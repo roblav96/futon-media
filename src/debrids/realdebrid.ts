@@ -32,7 +32,7 @@ export class RealDebrid extends debrid.Debrid<Item> {
 					}
 				})
 			}),
-			{ concurrency: 3 }
+			{ concurrency: 5 }
 		)
 		return cached
 	}
@@ -43,13 +43,15 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		)) as CacheResponse
 		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFile[]
 
-		rds = rds.filter(rd => {
-			let names = _.toPairs(rd).map(([id, { filename }]) => filename)
-			return names.find(v => utils.isVideo(v))
+		_.remove(rds, rd => {
+			let names = _.toPairs(rd).map(([id, file]) => file.filename)
+			return names.find(v => !utils.isVideo(v))
 		})
-		rds.sort((...args) => {
-			let sizes = args.map(v => _.sum(_.toPairs(v).map(([id, { filesize }]) => filesize)))
-			return sizes[1] - sizes[0]
+		rds.sort((a, b) => {
+			return (
+				_.sum(_.toPairs(b).map(([id, file]) => file.filesize)) -
+				_.sum(_.toPairs(a).map(([id, file]) => file.filesize))
+			)
 		})
 
 		this.files = _.toPairs(rds[0]).map(([id, file]) => {
@@ -79,7 +81,7 @@ export class RealDebrid extends debrid.Debrid<Item> {
 				form: { files: this.files.map(v => v.id).join() },
 			})
 			item = (await client.get(`/torrents/info/${download.id}`)) as Item
-			await client.delete(`/torrents/delete/${download.id}`)
+			client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
 		}
 		if (item.links.length == 0) {
 			console.warn(`item.links.length == 0 ->`, this.dn)
@@ -92,14 +94,13 @@ export class RealDebrid extends debrid.Debrid<Item> {
 
 		let selected = item.files.filter(v => v.selected == 1)
 		let index = selected.findIndex(v => v.path.includes(file.name))
-		if (index == -1) {
-			console.warn(`index == -1 ->`, this.dn)
+		let link = item.links[index]
+		if (!link) {
+			console.warn(`!link ->`, this.dn, index, item.links, selected)
 			return
 		}
 
-		let { download } = (await client.post(`/unrestrict/link`, {
-			form: { link: item.links[index] },
-		})) as Unrestrict
+		let { download } = (await client.post(`/unrestrict/link`, { form: { link } })) as Unrestrict
 		if (!utils.isVideo(download)) {
 			console.warn(`!utils.isVideo(download) ->`, this.dn)
 			return

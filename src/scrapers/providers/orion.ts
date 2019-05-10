@@ -37,16 +37,11 @@ export class Orion extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let query = { sortvalue: sort } as Query
-		query = Object.assign(query, JSON.parse(slug))
-
-		let mkey = utils.hash(query)
-		let streams = (await db.get(mkey)) as Stream[]
-		if (!streams) {
-			let response = (await client.get(`/`, { query: query as any })) as Response
-			streams = _.get(response, 'data.streams', [])
-			await db.put(mkey, streams, utils.duration(1, 'day'))
-		}
-
+		let response = (await client.get(`/`, {
+			query: Object.assign(query, JSON.parse(slug)),
+			memoize: process.DEVELOPMENT,
+		})) as Response
+		let streams = _.get(response, 'data.streams', [])
 		streams = streams.filter(stream => {
 			stream.magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
 			if (!stream.magnet.xt) return false

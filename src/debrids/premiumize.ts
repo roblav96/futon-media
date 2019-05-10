@@ -35,7 +35,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 					}
 				})
 			}),
-			{ concurrency: 3 }
+			{ concurrency: 5 }
 		)
 		return cached
 	}

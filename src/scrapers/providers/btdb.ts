@@ -13,7 +13,10 @@ export class Btdb extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get(`/`, { query: { search: slug, sort } as Partial<Query> })
+			await client.get(`/`, {
+				query: { search: slug, sort } as Partial<Query>,
+				memoize: process.DEVELOPMENT,
+			})
 		)
 		let results = [] as scraper.Result[]
 		$(`li[class$="item"]`).each((i, el) => {

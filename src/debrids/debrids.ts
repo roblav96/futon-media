@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as media from '@/media/media'
 import * as torrent from '@/scrapers/torrent'
@@ -54,17 +55,16 @@ export async function getStreamUrl(
 					`E${item.E.z}`,
 					`${item.E.z}`,
 				]
-				console.log(`tests ->`, JSON.stringify(tests))
+				let skips = `${item.title} ${item.year} 720p 1080p 2160p 4k`
 				for (let test of tests) {
 					if (file) continue
 					file = files.find(v => {
-						console.warn(`v.name ->`, v.name)
-						let name = utils.accuracy(`${item.title} ${item.year}`, v.name).join(' ')
-						console.log(`name ->`, name)
-						console.log(`accuracy ->`, utils.accuracy(name, test))
-						return utils.accuracy(name, test).length == 0
+						let name = _.trim(utils.accuracy(skips, v.name).join(' '))
+						return utils.minify(name).includes(utils.minify(test))
+						// return utils.accuracy(name, test).length == 0
 					})
 				}
+				!file && console.warn(`getStreamUrl !file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
 				let title = item.title
@@ -72,7 +72,6 @@ export async function getStreamUrl(
 				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 				file = levens.sort((a, b) => a.leven - b.leven)[0]
 			}
-			console.log(`file ->`, file)
 
 			let stream = (await debrid.streamUrl(file).catch(error => {
 				console.error(`getStreamUrl streamUrl -> %O`, error)
@@ -81,10 +80,28 @@ export async function getStreamUrl(
 			stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
 
 			console.log(`getStreamUrl probe ->`, stream)
-			let probe = (await ffprobe(stream, { streams: true }).catch(error => {
+			let probe = (await ffprobe(stream, { format: true, streams: true }).catch(error => {
 				console.error(`getStreamUrl ffprobe -> %O`, error)
 			})) as FFProbe
 			if (!probe) continue
+			probe.streams = probe.streams.filter(({ codec_type }) =>
+				['video', 'audio'].includes(codec_type)
+			)
+			console.log(`getStreamUrl probe ->`, probe)
+
+			let tags = {} as Record<string, string>
+			_.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))
+			tags = _.pick(tags, _.keys(tags).filter(v => v.includes('date') || v.includes('time')))
+			let creation = _.size(tags) > 0 && dayjs(_.values(tags)[0])
+			if (creation && creation.subtract(1, 'day').valueOf() < item.released) {
+				console.warn(
+					`getStreamUrl probe !creation ->`,
+					creation.toLocaleString(),
+					dayjs(item.released).toLocaleString()
+				)
+				next = true
+				continue
+			}
 
 			let videos = probe.streams.filter(({ codec_type, tags }) => {
 				if (codec_type != 'video') return false
@@ -104,7 +121,9 @@ export async function getStreamUrl(
 
 			let audios = probe.streams.filter(({ codec_type, tags }) => {
 				if (codec_type != 'audio') return false
-				if (!tags || !tags.language) return true
+				if (!tags) return true
+				if (tags.title && tags.title.includes('commentary')) return false
+				if (!tags.language) return true
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (audios.length == 0) {

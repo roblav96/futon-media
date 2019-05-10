@@ -66,6 +66,8 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 
 	torrents = torrents.filter(v => {
 		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
+		split.includes('720p') && (v.seeders = _.ceil(v.seeders / 3))
+		split.includes('1080p') && (v.seeders = _.ceil(v.seeders * 3))
 		if (split.includes('2160p') || split.includes('4k')) {
 			if (Quality != '2160p') return false
 			if (split.includes('sdr')) {
@@ -86,7 +88,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
 	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 
-	console.log(`streamUrl '${slug}' ->`, streamUrl)
+	console.warn(`streamUrl '${slug}' ->`, streamUrl)
 	return streamUrl
 }
 

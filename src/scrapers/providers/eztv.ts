@@ -25,6 +25,7 @@ export class Eztv extends scraper.Scraper {
 			page > 1 && (await utils.pRandom(1000))
 			let response = (await client.get('/get-torrents', {
 				query: { imdb_id, page } as Partial<Query>,
+				memoize: process.DEVELOPMENT,
 			})) as Response
 			let torrents = (response.torrents || []).filter(v => {
 				let season = _.parseInt(v.season)

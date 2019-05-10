@@ -4,6 +4,8 @@ import * as http from 'http'
 import * as normalize from 'normalize-url'
 import * as qs from 'query-string'
 import * as Url from 'url-parse'
+import * as utils from '@/utils/utils'
+import db from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 export interface Config extends http.RequestOptions {
@@ -13,6 +15,7 @@ export interface Config extends http.RequestOptions {
 	body?: any
 	debug?: boolean
 	form?: any
+	memoize?: boolean
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'HEAD' | 'DELETE'
 	profile?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
@@ -75,7 +78,13 @@ export class Http {
 				{ length: 100 }
 			),
 			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
-				length: 200,
+				length: 100,
+			}),
+			form: _.truncate(_.size(config.form) > 0 ? JSON.stringify(config.form) : '', {
+				length: 100,
+			}),
+			body: _.truncate(_.size(config.body) > 0 ? JSON.stringify(config.body) : '', {
+				length: 100,
 			}),
 		}
 
@@ -100,24 +109,48 @@ export class Http {
 		}
 
 		if (!options.silent) {
-			console.log(`[${options.method}]`, min.url, min.query)
+			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 
 		let t = Date.now()
-		let response = await send(options.method, options.url, options).catch(error => {
-			if (_.isFinite(error.statusCode)) {
-				// console.log(`error ->`, error, options)
-				if (!_.isString(error.statusMessage)) {
-					let message = errors[error.statusCode]
-					error.statusMessage = message ? message.name : 'ok'
+		let response: HttpieResponse
+		let mkey: string
+		if (options.memoize) {
+			mkey = `http:memoize:${utils.hash(config)}`
+			response = await db.get(mkey)
+		}
+		if (!response) {
+			response = await send(options.method, options.url, options).catch(error => {
+				if (_.isFinite(error.statusCode)) {
+					if (!_.isString(error.statusMessage)) {
+						let message = errors[error.statusCode]
+						error.statusMessage = message ? message.name : 'ok'
+					}
+					error = new HTTPError(options, error)
 				}
-				error = new HTTPError(options, error)
+				return Promise.reject(error)
+			})
+			if (options.memoize && !_.isError(response)) {
+				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
+				await db.put(mkey, _.omit(response, omits), utils.duration(1, 'day'))
 			}
-			return Promise.reject(error)
-		})
+		}
+
+		// let t = Date.now()
+		// let response = await send(options.method, options.url, options).catch(error => {
+		// 	if (_.isFinite(error.statusCode)) {
+		// 		// console.log(`error ->`, error, options)
+		// 		if (!_.isString(error.statusMessage)) {
+		// 			let message = errors[error.statusCode]
+		// 			error.statusMessage = message ? message.name : 'ok'
+		// 		}
+		// 		error = new HTTPError(options, error)
+		// 	}
+		// 	return Promise.reject(error)
+		// })
 
 		if (options.profile) {
 			console.log(`${Date.now() - t}ms`, min.url)

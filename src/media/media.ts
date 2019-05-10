@@ -55,19 +55,20 @@ export class Item {
 		this.movie && this.year && (title += ` ${this.year}`)
 		return title
 	}
+	get released() {
+		let released = new Date(new Date().setFullYear(this.year))
+		_.has(this.movie, 'released') && (released = new Date(this.movie.released))
+		_.has(this.show, 'first_aired') && (released = new Date(this.show.first_aired))
+		_.has(this.season, 'first_aired') && (released = new Date(this.season.first_aired))
+		_.has(this.episode, 'first_aired') && (released = new Date(this.episode.first_aired))
+		return released.valueOf()
+	}
 
 	get isEnglish() {
 		return _.has(this.main, 'language') && (this.main.language || '').includes('en')
-		// let english = [] as boolean[]
-		// _.has(this.main, 'country') && english.push((this.main.country || '').includes('us'))
-		// _.has(this.main, 'language') && english.push((this.main.language || '').includes('en'))
-		// return english.filter(Boolean).length == 2
 	}
 	get isReleased() {
-		let now = Date.now()
-		if (_.has(this.movie, 'released')) return new Date(this.movie.released).valueOf() < now
-		if (_.has(this.show, 'first_aired')) return new Date(this.show.first_aired).valueOf() < now
-		return false
+		return this.released < Date.now()
 	}
 	get isPopular() {
 		if (_.has(this.main, 'votes')) return this.main.votes >= 100

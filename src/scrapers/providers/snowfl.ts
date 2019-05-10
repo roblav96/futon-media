@@ -40,7 +40,7 @@ async function syncToken() {
 }
 
 export class Snowfl extends scraper.Scraper {
-	sorts = ['SIZE' /** , 'DATE', 'SEED' */]
+	sorts = process.DEVELOPMENT ? ['SIZE'] : ['SIZE', 'DATE', 'SEED']
 	concurrency = 1
 
 	slugs() {
@@ -52,6 +52,7 @@ export class Snowfl extends scraper.Scraper {
 		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
 		let response = (await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
+			memoize: process.DEVELOPMENT,
 		})) as Result[]
 		response = JSON.parse((response as any) || '[]')
 		let results = response.filter(v => !!v.magnet)

@@ -17,17 +17,21 @@ export default async function ffprobe(
 	let { stdout } = await execa(ffpath, flags.concat(streamUrl))
 	let { err, value } = fastParse(stdout) as { err: Error; value: FFProbe }
 	if (err) throw err
-	value.streams.forEach(stream => {
-		for (let key in stream) {
-			let value = stream[key]
-			_.isString(value) && (stream[key] = value.toLowerCase())
-		}
-		if (stream.tags) {
-			stream.tags = _.fromPairs(_.toPairs(stream.tags).map(v =>
-				_.isString(v) ? v.toLowerCase() : v
-			) as any) as any
-		}
-	})
+	if (value.format && value.format.tags) {
+		value.format.tags = _.mapKeys(value.format.tags, (v, k) => k.toLowerCase()) as any
+	}
+	if (_.isArray(value.streams)) {
+		value.streams = value.streams.map(stream => {
+			stream = _.mapKeys(stream, (v, k) => k.toLowerCase()) as any
+			stream = _.mapValues(stream, (v, k) => (_.isString(v) ? v.toLowerCase() : v)) as any
+			if (stream.tags) {
+				stream.tags = _.fromPairs(_.toPairs(stream.tags).map(v =>
+					v.map(vv => (_.isString(vv) ? vv.toLowerCase() : vv))
+				) as any) as any
+			}
+			return stream
+		})
+	}
 	return value
 }
 
@@ -64,9 +68,11 @@ export interface FFProbe {
 		start_time: string
 		tags: {
 			compatible_brands: string
+			creation_time: string
 			encoder: string
 			major_brand: string
 			minor_version: string
+			title: string
 		}
 	}
 	streams: {
@@ -133,6 +139,7 @@ export interface FFProbe {
 		tags: {
 			handler_name: string
 			language: string
+			title: string
 		}
 	}[]
 }

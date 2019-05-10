@@ -14,17 +14,17 @@ import * as utils from '@/utils/utils'
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	let providers = [
 		// // // (await import('@/scrapers/providers/btbit')).BtBit,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
+		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
 		// // (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
@@ -34,6 +34,12 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) {
 			return false
+		}
+		let accuracy = utils.accuracy(to.name, from.name)
+		if (accuracy.length > 0) {
+			// console.warn(`uniqWith ->`, from.name, to.name)
+			to.name += `.${accuracy.join('.')}`
+			// console.log(`accuracy ->`, accuracy, to.name)
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
