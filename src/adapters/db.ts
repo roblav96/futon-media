@@ -71,8 +71,8 @@ class Db {
 
 	async flush(pattern: string) {
 		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
-		if (keys.length == 0) return
 		process.DEVELOPMENT && console.warn(`db flush '${pattern}' ->`, keys.sort())
+		if (keys.length == 0) return
 		await Promise.all(keys.map(key => this.del(key)))
 	}
 }

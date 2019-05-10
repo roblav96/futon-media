@@ -40,7 +40,7 @@ export class Orion extends scraper.Scraper {
 		query = Object.assign(query, JSON.parse(slug))
 
 		let mkey = utils.hash(query)
-		let streams = await db.get(mkey) as Stream[]
+		let streams = (await db.get(mkey)) as Stream[]
 		if (!streams) {
 			let response = (await client.get(`/`, { query: query as any })) as Response
 			streams = _.get(response, 'data.streams', [])

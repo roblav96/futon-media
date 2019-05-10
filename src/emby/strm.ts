@@ -34,7 +34,8 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	// console.warn(`getDebridStreamUrl '${slug}' ->`, Quality, Channels, Codecs.video)
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
-	let skey = `${rkey}:${JSON.stringify([Quality, Channels, Codecs.video])}`
+	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.video])}`
+	console.log(`skey ->`, skey)
 	let streamUrl = await db.get(skey)
 	if (streamUrl) {
 		console.log(`streamUrl '${slug}' ->`, streamUrl)
