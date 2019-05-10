@@ -24,7 +24,7 @@ process.nextTick(() => {
 			let persons = (await trakt.client.get(`/search/person`, {
 				query: { query: Item.Name, fields: 'name', limit: 100 },
 			})) as trakt.Result[]
-			persons = persons.filter(v => v.person.name == Item.Name)
+			persons = persons.filter(v => _.deburr(v.person.name) == _.deburr(Item.Name))
 			let lengths = persons.map(person => ({
 				...person.person,
 				length: person.person.ids.slug.length,
@@ -35,15 +35,15 @@ process.nextTick(() => {
 			let items = results.map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
 			items.sort((a, b) => b.main.votes - a.main.votes)
-			console.log(`rxItems '${Item.Name}' ->`, items.map(v => v.title).sort())
+			console.log(`rxItems '${Item.Name}' ->`, items.map(v => v.main.title).sort())
 			for (let item of items) {
 				await emby.library.add(item)
 			}
 		} else if (['Movie', 'Series'].includes(Item.Type)) {
 			let item = await library.item(Item)
-			console.log(`rxItems ->`, item.title)
+			console.log(`rxItems ->`, item.main.title)
 			await emby.library.add(item)
-		}
+		} else return
 		await emby.library.refresh()
 	})
 })
@@ -145,7 +145,7 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
-		// if (!item.year) return console.warn(`library add !year ->`, item.main.title)
+		let exists = await fs.pathExists(library.toFile(item))
 		if (item.movie) {
 			await library.toStrm(item)
 		}
@@ -162,6 +162,7 @@ export const library = {
 				}
 			}
 		}
+		return exists
 	},
 }
 

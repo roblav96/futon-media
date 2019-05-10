@@ -68,26 +68,30 @@ export async function getStreamUrl(
 					continue
 				}
 			}
-			if (_.size(codecs) > 0) {
-				let codec = codecs.find(v => v.includes(video.codec_name))
-				if (!codec) {
-					console.warn(`getStreamUrl probe !codecs ->`, torrent.name, video.codec_name)
-					next = true
-					continue
-				}
+			if (_.size(codecs) > 0 && !codecs.find(v => v.includes(video.codec_name))) {
+				console.warn(`getStreamUrl probe !codecs ->`, torrent.name, video.codec_name)
+				next = true
+				continue
 			}
 
-			let audio = probe.streams.find(v => v.codec_type == 'audio')
-			if (audio.tags.language) {
-				let language = audio.tags.language
-				if (!(language.startsWith('en') || language.startsWith('un'))) {
-					console.warn(`getStreamUrl probe !audio english ->`, torrent.name)
-					next = true
-					continue
-				}
+			let audios = probe.streams.filter(({ codec_type, tags }) => {
+				if (codec_type != 'audio') return false
+				if (!tags.language) return true
+				return tags.language.startsWith('en') || tags.language.startsWith('un')
+			})
+			if (!audios.find(v => v.channels <= channels)) {
+				console.warn(`getStreamUrl probe !channels ->`, torrent.name, audios[0].channels)
+				next = true
+				continue
 			}
-			if (audio.channels > channels) {
-				console.warn(`getStreamUrl probe !channels ->`, torrent.name, audio.channels)
+
+			audios = audios.filter(v => v.tags && v.tags.language)
+			let foreign = audios.find(({ tags }) => {
+				if (tags.language.startsWith('en') || tags.language.startsWith('un')) return false
+				return true
+			})
+			if (foreign) {
+				console.warn(`getStreamUrl probe !audio english ->`, torrent.name)
 				next = true
 				continue
 			}

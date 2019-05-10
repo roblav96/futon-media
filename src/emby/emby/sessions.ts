@@ -138,24 +138,6 @@ export class Session {
 		_.merge(this, Session)
 	}
 
-	async Device() {
-		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
-	}
-
-	async User() {
-		return await emby.users.byUserId(this.UserId)
-	}
-
-	async Latest() {
-		return (await emby.client.get(`/Users/${this.UserId}/Items/Latest`, {
-			query: { Limit: 5 },
-		})) as emby.Item[]
-	}
-
-	async Views() {
-		return (await emby.client.get(`/Users/${this.UserId}/Views`)) as emby.View[]
-	}
-
 	message(data: string | Error) {
 		let body = { Text: `✅ ${data}`, TimeoutMs: 5000 }
 		if (_.isError(data)) {
