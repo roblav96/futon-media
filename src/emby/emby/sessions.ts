@@ -21,7 +21,7 @@ export const sessions = {
 }
 
 export class Session {
-	get is4kUser() {
+	get Is4kUser() {
 		let users = ['admin', 'dev', 'developer', 'mom', 'robert']
 		return users.includes(this.UserName.toLowerCase())
 	}
@@ -53,11 +53,11 @@ export class Session {
 		let tprofiles = _.get(this, tpath) as TranscodingProfiles[]
 		if (!_.isArray(tprofiles)) return 8
 		let Channels = _.max([2].concat(tprofiles.map(v => _.parseInt(v.MaxAudioChannels))))
-		return this.is4kUser && Channels == 6 ? 8 : Channels
+		return this.Is4kUser && Channels == 6 ? 8 : Channels
 	}
 	get Quality(): emby.Quality {
 		if (this.Channels <= 2) return '1080p'
-		return this.is4kUser ? '2160p' : '1080p'
+		return this.Is4kUser ? '2160p' : '1080p'
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
@@ -107,13 +107,6 @@ export class Session {
 		return !!this.IsPlayState && !!this.IsNowPlaying
 	}
 
-	get Ids() {
-		let Ids = _.get(this, 'NowPlayingItem.ProviderIds')
-		if (!Ids) return
-		Ids = _.mapKeys(Ids, (v, k) => k.toLowerCase())
-		return Ids as { imdb: string; tmdb: string; tvdb: string }
-	}
-
 	get json() {
 		return _.fromPairs(
 			_.toPairs({
@@ -124,7 +117,6 @@ export class Session {
 				Channels: this.Channels,
 				Client: this.Client,
 				DeviceName: this.DeviceName,
-				Ids: this.Ids,
 				IsStreaming: this.IsStreaming,
 				Quality: this.Quality,
 				StrmPath: this.StrmPath,
@@ -136,6 +128,14 @@ export class Session {
 
 	constructor(Session: Session) {
 		_.merge(this, Session)
+	}
+
+	async User() {
+		return await emby.users.byUserId(this.UserId)
+	}
+
+	async Device() {
+		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
 	}
 
 	message(data: string | Error) {

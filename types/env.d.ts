@@ -1,5 +1,6 @@
 interface Env {
-	EMBY_API_ADMIN: string
+	EMBY_API_ADMIN_ID: string
+	EMBY_API_ADMIN_KEY: string
 	EMBY_API_HOST: string
 	EMBY_API_KEY: string
 	EMBY_API_PORT: string

@@ -44,7 +44,7 @@ export async function search(query: string, type = 'movie,show' as media.MainCon
 	let results = (await client.get(`/search/${type}`, {
 		query: { query, fields: 'title,aliases', limit: 100 },
 	})) as Result[]
-	let items = results.map(v => new media.Item(v)).sort((a, b) => b.main.votes - a.main.votes)
+	let items = results.map(v => new media.Item(v))
 	return items.filter(v => !v.isJunk)
 }
 

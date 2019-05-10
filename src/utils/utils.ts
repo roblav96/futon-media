@@ -25,6 +25,11 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(_.random(ms / Math.PI, ms)), { value })
 }
 
+export function same(...args: string[]) {
+	args = args.map(v => _.trim(_.toLower(_.deburr(v))))
+	return new Set(args).size == 1
+}
+
 export function squash(value: string) {
 	return value.replace(/[^\x20-\x7E]/g, '')
 }

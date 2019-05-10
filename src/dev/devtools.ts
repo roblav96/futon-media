@@ -11,12 +11,12 @@ import * as similarity from 'string-similarity'
 import * as StackTracey from 'stacktracey'
 import * as util from 'util'
 
+_.merge(util.inspect.defaultOptions, {
+	depth: 1,
+} as util.InspectOptions)
+
 if (process.DEVELOPMENT) {
 	setInterval(Function, 1 << 30)
-
-	_.merge(util.inspect.defaultOptions, {
-		depth: 1,
-	} as util.InspectOptions)
 
 	let previous = Date.now()
 	let colors = { log: 'blue', info: 'green', warn: 'yellow', error: 'red' }

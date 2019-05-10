@@ -42,8 +42,7 @@ export async function search(query: string, type = 'multi' as media.MainContentT
 	})
 	let results = await pAll(fulls.map(result => () => toTrakt(result)), { concurrency: 1 })
 	let items = results.filter(Boolean).map(v => new media.Item(v))
-	items = items.filter(v => !v.isJunk)
-	return items.sort((a, b) => b.main.votes - a.main.votes)
+	return items.filter(v => !v.isJunk)
 }
 
 export async function toTrakt({ id, media_type }: Full) {

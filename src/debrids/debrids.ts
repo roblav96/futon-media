@@ -59,17 +59,18 @@ export async function getStreamUrl(
 			})) as FFProbe
 			if (!probe) continue
 
-			let video = probe.streams.find(v => v.codec_type == 'video')
-			if (video.tags.language) {
-				let language = video.tags.language
-				if (!(language.startsWith('en') || language.startsWith('un'))) {
-					console.warn(`getStreamUrl probe !video english ->`, torrent.name)
-					next = true
-					continue
-				}
+			let videos = probe.streams.filter(({ codec_type, tags }) => {
+				if (codec_type != 'video') return false
+				if (!tags.language) return true
+				return tags.language.startsWith('en') || tags.language.startsWith('un')
+			})
+			if (videos.length == 0) {
+				console.warn(`getStreamUrl probe !videos ->`, torrent.name)
+				next = true
+				continue
 			}
-			if (_.size(codecs) > 0 && !codecs.find(v => v.includes(video.codec_name))) {
-				console.warn(`getStreamUrl probe !codecs ->`, torrent.name, video.codec_name)
+			if (_.size(codecs) > 0 && !codecs.find(v => v.includes(videos[0].codec_name))) {
+				console.warn(`getStreamUrl probe !codecs ->`, torrent.name, videos[0].codec_name)
 				next = true
 				continue
 			}
@@ -79,19 +80,13 @@ export async function getStreamUrl(
 				if (!tags.language) return true
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
-			if (!audios.find(v => v.channels <= channels)) {
-				console.warn(`getStreamUrl probe !channels ->`, torrent.name, audios[0].channels)
+			if (audios.length == 0) {
+				console.warn(`getStreamUrl probe !audios ->`, torrent.name)
 				next = true
 				continue
 			}
-
-			audios = audios.filter(v => v.tags && v.tags.language)
-			let foreign = audios.find(({ tags }) => {
-				if (tags.language.startsWith('en') || tags.language.startsWith('un')) return false
-				return true
-			})
-			if (foreign) {
-				console.warn(`getStreamUrl probe !audio english ->`, torrent.name)
+			if (!audios.find(v => v.channels <= channels)) {
+				console.warn(`getStreamUrl probe !channels ->`, torrent.name, audios[0].channels)
 				next = true
 				continue
 			}
