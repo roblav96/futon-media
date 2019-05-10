@@ -16,7 +16,7 @@ export const client = new http.Http({
 export class RealDebrid extends debrid.Debrid<Item> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 35)
+		let chunks = utils.chunks(hashes, 40)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
@@ -32,7 +32,7 @@ export class RealDebrid extends debrid.Debrid<Item> {
 					}
 				})
 			}),
-			{ concurrency: 2 }
+			{ concurrency: 3 }
 		)
 		return cached
 	}

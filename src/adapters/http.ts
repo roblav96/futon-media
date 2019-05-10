@@ -2,18 +2,17 @@ import * as _ from 'lodash'
 import * as crypto from 'crypto'
 import * as errors from 'http-errors'
 import * as fastParse from 'fast-json-parse'
-import * as fs from 'fs-extra'
 import * as http from 'http'
-import * as httpie from '@/shims/httpie'
 import * as normalize from 'normalize-url'
-import * as path from 'path'
-import * as pkgup from 'read-pkg-up'
 import * as qs from 'query-string'
 import * as Url from 'url-parse'
+import * as utils from '@/utils/utils'
+import db from '@/adapters/db'
 import fastStringify from 'fast-safe-stringify'
+import { send, HttpieResponse } from '@/shims/httpie'
 
 export interface Config extends http.RequestOptions {
-	afterResponse?: Hooks<(options: Config, response: httpie.HttpieResponse) => Promise<void>>
+	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
 	body?: any
@@ -24,6 +23,7 @@ export interface Config extends http.RequestOptions {
 	profile?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
 	query?: Record<string, string | number | string[] | number[]>
+	redirect?: boolean
 	silent?: boolean
 	url?: string
 }
@@ -31,10 +31,10 @@ type Hooks<T> = { append?: T[]; prepend?: T[] }
 
 export interface HTTPError
 	extends Pick<Config, 'method' | 'url'>,
-		Pick<httpie.HttpieResponse, 'data' | 'headers' | 'statusCode' | 'statusMessage'> {}
+		Pick<HttpieResponse, 'data' | 'headers' | 'statusCode' | 'statusMessage'> {}
 export class HTTPError extends Error {
 	name = 'HTTPError'
-	constructor(options: Config, response: httpie.HttpieResponse) {
+	constructor(options: Config, response: HttpieResponse) {
 		super(`${response.statusCode} ${response.statusMessage}`)
 		Error.captureStackTrace(this, this.constructor)
 		_.merge(this, _.pick(options, 'method', 'url'))
@@ -113,34 +113,31 @@ export class Http {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 
-		// process.DEVELOPMENT && (options.memoize = false)
-
 		let t = Date.now()
-		let response: httpie.HttpieResponse
-		let mpath = options.memoize && Http.mpath(config)
-		if (options.memoize && (await fs.pathExists(mpath))) {
-			let parsed = fastParse(await fs.readFile(mpath))
-			if (parsed.err) await fs.remove(mpath)
+		let response: HttpieResponse
+		let mkey: string
+		if (options.memoize) {
+			let hash = crypto.createHash('sha256').update(fastStringify(config))
+			mkey = hash.digest('hex')
+			let parsed = fastParse(await db.get(mkey))
+			if (parsed.err) await db.del(mkey)
 			else response = parsed.value
 		}
 		if (!response) {
-			// options.memoize && console.warn(`!memoized ->`, min.url)
-			response = await httpie
-				.send(options.method, options.url, options as any)
-				.catch(error => {
-					if (_.isFinite(error.statusCode)) {
-						// console.log(`error ->`, error, options)
-						if (!_.isString(error.statusMessage)) {
-							let message = errors[error.statusCode]
-							error.statusMessage = message ? message.name : 'ok'
-						}
-						error = new HTTPError(options, error)
-					}
-					return Promise.reject(error)
-				})
+		response = await send(options.method, options.url, options).catch(error => {
+			if (_.isFinite(error.statusCode)) {
+				// console.log(`error ->`, error, options)
+				if (!_.isString(error.statusMessage)) {
+					let message = errors[error.statusCode]
+					error.statusMessage = message ? message.name : 'ok'
+				}
+				error = new HTTPError(options, error)
+			}
+			return Promise.reject(error)
+		})
 			if (options.memoize && !_.isError(response)) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
-				await fs.outputFile(mpath, fastStringify(_.omit(response, omits)))
+				await db.put(mkey, fastStringify(_.omit(response, omits)), utils.duration(1, 'day'))
 			}
 		}
 
@@ -172,12 +169,6 @@ export class Http {
 	}
 	delete(url: string, config = {} as Config) {
 		return this.request({ method: 'DELETE', ...config, url }).then(({ data }) => data)
-	}
-
-	private static mbase = path.dirname(pkgup.sync({ cwd: __dirname }).path)
-	private static mpath(config: Config) {
-		let hash = crypto.createHash('sha256').update(fastStringify(config))
-		return path.join(Http.mbase, `node_modules/.cache/memoize/http/${hash.digest('hex')}`)
 	}
 
 	private static merge(...configs: Config[]) {

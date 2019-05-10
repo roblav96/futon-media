@@ -1,8 +1,12 @@
 import * as _ from 'lodash'
+import * as crypto from 'crypto'
+import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
 import * as qs from 'query-string'
 import * as scraper from '@/scrapers/scraper'
+import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
+import fastStringify from 'fast-safe-stringify'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.orionoid.com',
@@ -36,21 +40,31 @@ export class Orion extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let query = { sortvalue: sort } as Query
-		let response = (await client.get(`/`, {
-			query: Object.assign(query, JSON.parse(slug)),
-			memoize: process.DEVELOPMENT,
-		})) as Response
-		let streams = _.get(response, 'data.streams', []) as Stream[]
+		query = Object.assign(query, JSON.parse(slug))
+
+		let streams: Stream[]
+		let hash = crypto.createHash('sha256').update(fastStringify(query))
+		let mkey = hash.digest('hex')
+		let parsed = fastParse(await db.get(mkey))
+		if (parsed.err) await db.del(mkey)
+		else streams = parsed.value
+
+		if (!streams) {
+			let response = (await client.get(`/`, { query: query as any })) as Response
+			streams = _.get(response, 'data.streams', [])
+			await db.put(mkey, fastStringify(streams), utils.duration(1, 'day'))
+		}
+
 		streams = streams.filter(stream => {
-			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
-			return magnet.xt.startsWith('urn:btih:') && magnet.xt.length > 10
+			stream.magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
+			if (!stream.magnet.xt) return false
+			return stream.magnet.xt.startsWith('urn:btih:') && stream.magnet.xt.length > 10
 		})
 		return streams.map(stream => {
-			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
 			return {
 				bytes: stream.file.size,
 				magnet: stream.stream.link,
-				name: magnet.dn || stream.file.name,
+				name: stream.magnet.dn || stream.file.name,
 				seeders: stream.stream.seeds,
 				stamp: new Date((stream.time.added || stream.time.updated) * 1000).valueOf(),
 				slugs: _.compact(_.values(_.pick(JSON.parse(slug), 'idimdb', 'query'))),
@@ -58,14 +72,6 @@ export class Orion extends scraper.Scraper {
 		})
 	}
 }
-
-// if (this.item.movie) {
-// 	return [JSON.stringify({ ...query, type: this.item.category } as Query)]
-// }
-// if (this.item.category == 'show') {
-// 	query.numberseason = this.item.S.n || 1
-// 	query.numberepisode = this.item.E.n || 1
-// }
 
 interface Query {
 	action: string
@@ -85,6 +91,7 @@ interface Query {
 }
 
 interface Stream {
+	magnet: scraper.MagnetQuery
 	access: {
 		direct: boolean
 		offcloud: boolean

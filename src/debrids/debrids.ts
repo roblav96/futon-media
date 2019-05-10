@@ -49,6 +49,7 @@ export async function getStreamUrl(
 					`${item.S.n}x${item.E.z}`,
 					`${item.S.n}x${item.E.n}`,
 					`${item.S.n}${item.E.z}`,
+					`Episode${item.E.z}`,
 					`Ep${item.E.z}`,
 					`E${item.E.z}`,
 					`${item.E.z}`,
@@ -56,12 +57,18 @@ export async function getStreamUrl(
 				console.log(`tests ->`, JSON.stringify(tests))
 				for (let test of tests) {
 					if (file) continue
-					file = files.find(v => utils.accuracy(v.name, test).length == 0)
+					file = files.find(v => {
+						console.warn(`v.name ->`, v.name)
+						let name = utils.accuracy(`${item.title} ${item.year}`, v.name).join(' ')
+						console.log(`name ->`, name)
+						console.log(`accuracy ->`, utils.accuracy(name, test))
+						return utils.accuracy(name, test).length == 0
+					})
 				}
 			}
 			if (!file) {
 				let title = item.title
-				item.show && (title = `${item.main.title} S${item.S.z}E${item.E.z} ${item.E.t}`)
+				item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
 				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 				file = levens.sort((a, b) => a.leven - b.leven)[0]
 			}

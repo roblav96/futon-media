@@ -5,6 +5,7 @@ import * as deepdiff from 'deep-diff'
 import * as deepmerge from 'deepmerge'
 import * as dts from 'dts-generate'
 import * as ms from 'pretty-ms'
+import * as path from 'path'
 import * as qs from 'query-string'
 import * as shimmer from 'shimmer'
 import * as similarity from 'string-similarity'
@@ -53,7 +54,7 @@ if (process.DEVELOPMENT) {
 		`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
 	)
 
-	Object.assign(global, { _, dayjs, deepdiff, deepmerge, dts, qs, similarity })
+	Object.assign(global, { _, dayjs, deepdiff, deepmerge, dts, path, qs, similarity })
 }
 
 declare global {

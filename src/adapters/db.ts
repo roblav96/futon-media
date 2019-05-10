@@ -9,14 +9,16 @@ import { LevelDown } from 'leveldown'
 import { LevelUp } from 'levelup'
 
 class Db {
-	static file(name: string) {
+	static get base() {
 		let pkgjson = pkgup.sync({ cwd: __dirname })
-		let basepath = path.join(xdgBasedir.config, pkgjson.pkg.name)
+		let base = path.join(xdgBasedir.config, pkgjson.pkg.name)
 		if (process.DEVELOPMENT) {
-			basepath = path.join(path.dirname(pkgjson.path), 'node_modules/.cache')
+			base = path.join(path.dirname(pkgjson.path), 'node_modules/.cache')
 		}
-		let file = path.join(basepath, `leveldb/${name}.db`)
-		process.DEVELOPMENT && fs.removeSync(file)
+		return path.join(base, 'leveldb')
+	}
+	static file(name: string) {
+		let file = path.join(Db.base, `${name}.db`)
 		fs.ensureDirSync(file)
 		return file
 	}
@@ -53,6 +55,8 @@ class Db {
 		})
 	}
 }
+
+// process.DEVELOPMENT && !(console.warn(`remove ->`, Db.base) as any) && fs.removeSync(Db.base)
 
 export const db = new Db(path.basename(__filename))
 export default db
