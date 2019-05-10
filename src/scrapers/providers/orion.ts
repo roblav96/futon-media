@@ -1,9 +1,8 @@
 import * as _ from 'lodash'
-import * as qs from 'query-string'
-import * as magneturi from 'magnet-uri'
-import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
+import * as qs from 'query-string'
 import * as scraper from '@/scrapers/scraper'
+import db from '@/adapters/db'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.orionoid.com',
@@ -23,7 +22,11 @@ export class Orion extends scraper.Scraper {
 	sorts = ['filesize', 'streamage', 'streamseeds']
 
 	slugs() {
-		let query = {} as Query
+		let query = { type: this.item.type } as Query
+		if (this.item.show) {
+			query.numberseason = this.item.S.n
+			query.numberepisode = this.item.E.n
+		}
 		if (this.item.ids.imdb) query.idimdb = this.item.ids.imdb
 		else if (this.item.ids.tmdb) query.idtmdb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.idtvdb = this.item.ids.tvdb
@@ -43,13 +46,14 @@ export class Orion extends scraper.Scraper {
 			return magnet.xt.startsWith('urn:btih:') && magnet.xt.length > 10
 		})
 		return streams.map(stream => {
+			let magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
 			return {
 				bytes: stream.file.size,
 				magnet: stream.stream.link,
-				name: stream.file.name,
+				name: magnet.dn || stream.file.name,
 				seeders: stream.stream.seeds,
 				stamp: new Date((stream.time.added || stream.time.updated) * 1000).valueOf(),
-				slugs: _.compact(_.values(JSON.parse(slug))),
+				slugs: _.compact(_.values(_.pick(JSON.parse(slug), 'idimdb', 'query'))),
 			} as scraper.Result
 		})
 	}

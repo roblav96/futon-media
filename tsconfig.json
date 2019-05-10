@@ -4,6 +4,7 @@
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"importHelpers": true,
+		"inlineSourceMap": true,
 		"lib": ["esnext"],
 		"module": "commonjs",
 		"noEmitHelpers": true,
@@ -11,7 +12,6 @@
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"skipLibCheck": false,
-		"inlineSourceMap": true,
 		"target": "es5",
 		"paths": {
 			"@/*": ["src/*"]

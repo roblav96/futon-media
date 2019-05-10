@@ -58,6 +58,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 			let bsize = b.packs ? b.bytes / (item.S.e * b.packs) : b.bytes
 			return bsize - asize
 		})
+		// torrents.forEach(v => v.packs && (v.seeders *= v.packs + 1))
 	}
 	// process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
 

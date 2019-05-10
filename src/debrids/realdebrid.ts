@@ -41,16 +41,15 @@ export class RealDebrid extends debrid.Debrid<Item> {
 		let response = (await client.get(
 			`/torrents/instantAvailability/${this.infoHash}`
 		)) as CacheResponse
-		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFiles[]
+		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFile[]
 
-		_.remove(rds, rd => {
-			let names = _.toPairs(rd).map(([id, file]) => file.filename)
-			return names.find(v => !utils.isVideo(v))
+		rds = rds.filter(rd => {
+			let names = _.toPairs(rd).map(([id, { filename }]) => filename)
+			return names.find(v => utils.isVideo(v))
 		})
-		rds.sort((a, b) => {
-			let asize = _.sum(_.toPairs(a).map(([id, file]) => file.filesize))
-			let bsize = _.sum(_.toPairs(b).map(([id, file]) => file.filesize))
-			return bsize - asize
+		rds.sort((...args) => {
+			let sizes = args.map(v => _.sum(_.toPairs(v).map(([id, { filesize }]) => filesize)))
+			return sizes[1] - sizes[0]
 		})
 
 		this.files = _.toPairs(rds[0]).map(([id, file]) => {
@@ -109,8 +108,8 @@ export class RealDebrid extends debrid.Debrid<Item> {
 	}
 }
 
-export type CacheResponse = Record<string, { rd: CacheFiles[] }>
-export type CacheFiles = Record<string, { filename: string; filesize: number }>
+export type CacheResponse = Record<string, { rd: CacheFile[] }>
+export type CacheFile = Record<string, { filename: string; filesize: number }>
 
 export interface Download {
 	id: string

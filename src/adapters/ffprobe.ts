@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as execa from 'execa'
 import * as fastParse from 'fast-json-parse'
-import { path as ffpath } from 'ffprobe-static'
+import { path as ffpath } from 'ffprobe-static-next'
 
 const defaults = {
 	chapters: false,

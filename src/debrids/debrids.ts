@@ -41,13 +41,33 @@ export async function getStreamUrl(
 				continue
 			}
 
-			let title = item.title
-			item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
-			let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
-			levens.sort((a, b) => a.leven - b.leven)
-			console.log(`getStreamUrl levens ->`, torrent.name, levens)
+			let file: debrid.File
+			if (item.type == 'show') {
+				let tests = [
+					`S${item.S.z}E${item.E.z}`,
+					`S${item.S.z}xE${item.E.z}`,
+					`${item.S.n}x${item.E.z}`,
+					`${item.S.n}x${item.E.n}`,
+					`${item.S.n}${item.E.z}`,
+					`Ep${item.E.z}`,
+					`E${item.E.z}`,
+					`${item.E.z}`,
+				]
+				console.log(`tests ->`, JSON.stringify(tests))
+				for (let test of tests) {
+					if (file) continue
+					file = files.find(v => utils.accuracy(v.name, test).length == 0)
+				}
+			}
+			if (!file) {
+				let title = item.title
+				item.show && (title = `${item.main.title} S${item.S.z}E${item.E.z} ${item.E.t}`)
+				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
+				file = levens.sort((a, b) => a.leven - b.leven)[0]
+			}
+			console.log(`file ->`, file)
 
-			let stream = (await debrid.streamUrl(levens[0]).catch(error => {
+			let stream = (await debrid.streamUrl(file).catch(error => {
 				console.error(`getStreamUrl streamUrl -> %O`, error)
 			})) as string
 			if (!stream) continue
@@ -61,7 +81,7 @@ export async function getStreamUrl(
 
 			let videos = probe.streams.filter(({ codec_type, tags }) => {
 				if (codec_type != 'video') return false
-				if (!tags.language) return true
+				if (!tags || !tags.language) return true
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (videos.length == 0) {
@@ -77,7 +97,7 @@ export async function getStreamUrl(
 
 			let audios = probe.streams.filter(({ codec_type, tags }) => {
 				if (codec_type != 'audio') return false
-				if (!tags.language) return true
+				if (!tags || !tags.language) return true
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (audios.length == 0) {

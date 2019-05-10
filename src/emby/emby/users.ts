@@ -3,9 +3,7 @@ import * as emby from '@/emby/emby'
 import * as schedule from 'node-schedule'
 import * as utils from '@/utils/utils'
 
-process.nextTick(async () => {
-	// await users.syncAll()
-})
+// process.nextTick(() => users.syncAll())
 
 export const users = {
 	async get() {
@@ -52,7 +50,7 @@ export class User {
 
 	async getDisplayPreferences(client = 'emby' as 'emby' | 'ATV') {
 		return (await emby.client.get(`/DisplayPreferences/usersettings`, {
-			query: { client: 'emby', userId: this.Id, api_key: process.env.EMBY_API_ADMIN_KEY },
+			query: { client, userId: this.Id },
 		})) as DisplayPreferences
 	}
 	async setDisplayPreferences(DisplayPreferences: DisplayPreferences) {

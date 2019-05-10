@@ -90,7 +90,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 	return split.join(options.separator)
 }
 
-export const VIDEO_EXTS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
+export const VIDEO_EXTS = [/** 'avi', */ 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
 	file = file.toLowerCase()
 	return VIDEO_EXTS.includes(path.extname(file).slice(1)) && !file.endsWith('rarbg.com.mp4')
