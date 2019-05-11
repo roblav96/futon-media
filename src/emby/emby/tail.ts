@@ -34,9 +34,11 @@ class Tail {
 	constructor(logfile: string) {
 		console.log(`Tail ->`, path.basename(logfile), logfile)
 
-		this.watcher = fs.watch(logfile)
-		this.watcher.once('change', () => this.destroy())
-		this.watcher.once('error', () => this.destroy())
+		if (process.platform == 'darwin') {
+			this.watcher = fs.watch(logfile)
+			this.watcher.once('change', () => this.destroy())
+			this.watcher.once('error', () => this.destroy())
+		}
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
@@ -57,7 +59,7 @@ class Tail {
 	destroy() {
 		this.child.kill('SIGTERM')
 		this.child.stdout.removeAllListeners()
-		this.watcher.close()
+		this.watcher && this.watcher.close()
 	}
 }
 
