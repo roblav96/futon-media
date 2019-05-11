@@ -1,2 +1,2 @@
-# futon-media-cli
-Interactive CLI tool used to create .strm files for Emby Media
+# futon-media
+Emby Media meets instant movies and tv shows on-demand streaming
