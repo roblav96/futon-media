@@ -82,7 +82,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 		// return v.cached.length > 0
 	})
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
-	process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
+	// process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
 	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`!torrents`)
 	process.DEVELOPMENT && console.log(`torrents ->`, torrents.map(v => v.json))

@@ -1,6 +1,6 @@
 {
 	"name": "futon-media-cli",
-	"version": "0.9.7",
+	"version": "0.9.8",
 	"description": "Interactive CLI tool used to create .strm files for Emby Media",
 	"main": "dist/index.js",
 	"files": [

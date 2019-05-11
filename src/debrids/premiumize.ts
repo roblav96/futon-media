@@ -24,7 +24,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 			chunks.map(chunk => async () => {
 				await utils.pRandom(1000)
 				let response = (await client
-					.post(`/cache/check`, { query: { items: chunk } })
+					.post(`/cache/check`, { query: { items: chunk }, silent: true })
 					.catch(error => {
 						console.error(`Premiumize cache -> %O`, error)
 						return []
