@@ -8,14 +8,14 @@ import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import exit = require('exit-hook')
+import exithook = require('exit-hook')
 
 export const rxTail = new Rx.Subject<string>()
 
 process.nextTick(async () => {
 	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
 	Tail.logfile = path.join(LogPath, 'embyserver.txt')
-	exit(() => Tail.tail && Tail.tail.destroy())
+	exithook(() => Tail.tail && Tail.tail.destroy())
 	schedule.scheduleJob('*/5 * * * * *', () => Tail.check()).invoke()
 })
 
@@ -32,13 +32,11 @@ class Tail {
 	watcher: fs.FSWatcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
-		console.log(`Tail ->`, path.basename(logfile))
+		console.log(`Tail ->`, path.basename(logfile), logfile)
 
-		if (process.platform == 'darwin') {
-			this.watcher = fs.watch(logfile)
-			this.watcher.once('change', () => this.destroy())
-			this.watcher.once('error', () => this.destroy())
-		}
+		this.watcher = fs.watch(logfile)
+		this.watcher.once('change', () => this.destroy())
+		this.watcher.once('error', () => this.destroy())
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
@@ -57,9 +55,9 @@ class Tail {
 	}
 
 	destroy() {
-		this.child.stdout.removeAllListeners()
 		this.child.kill('SIGTERM')
-		this.watcher && this.watcher.close()
+		this.child.stdout.removeAllListeners()
+		this.watcher.close()
 	}
 }
 
