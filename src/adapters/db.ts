@@ -6,14 +6,22 @@ import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as ttl from 'level-ttl'
+import * as xdgBasedir from 'xdg-basedir'
 import fastStringify from 'fast-safe-stringify'
 import { LevelDown } from 'leveldown'
 import { LevelUp } from 'levelup'
 
 class Db {
 	static get base() {
+		console.log(`xdgBasedir ->`, xdgBasedir)
 		let pkgjson = pkgup.sync({ cwd: __dirname })
-		return path.join(path.dirname(pkgjson.path), 'node_modules/.cache/leveldb')
+		let base = path.join(xdgBasedir.config, pkgjson.pkg.name)
+		if (process.DEVELOPMENT) {
+			base = path.join(path.dirname(pkgjson.path), 'node_modules/.cache')
+		}
+		return path.join(base, 'leveldb')
+		// let pkgjson = pkgup.sync({ cwd: __dirname })
+		// return path.join(path.dirname(pkgjson.path), 'node_modules/.cache/leveldb')
 	}
 	static file(name: string) {
 		let file = path.join(Db.base, `${name}.db`)
