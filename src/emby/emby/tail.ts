@@ -32,7 +32,7 @@ class Tail {
 	watcher: fs.FSWatcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
-		console.log(`Tail ->`, path.basename(logfile), logfile)
+		console.log(`Tail ->`, path.basename(logfile))
 
 		if (process.platform == 'darwin') {
 			this.watcher = fs.watch(logfile)
