@@ -32,14 +32,14 @@ export class Torrent {
 		return {
 			age: this.age,
 			cached: this.cached.join(', '),
-			hash: this.hash,
+			// hash: this.hash,
 			magnet: `magnet:?${minify}`,
 			name: this.name,
-			packs: this.packs,
+			// packs: this.packs,
 			providers: this.providers.join(', '),
 			seeders: this.seeders,
 			size: this.size,
-			slugs: this.slugs.join(', '),
+			// slugs: this.slugs.join(', '),
 		}
 	}
 

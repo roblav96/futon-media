@@ -89,7 +89,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
 	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 
-	console.warn(`streamUrl '${slug}' ->`, streamUrl)
+	console.log(`👍 streamUrl '${slug}' ->`, streamUrl)
 	return streamUrl
 }
 
