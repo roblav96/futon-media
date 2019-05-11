@@ -73,18 +73,17 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 				if (split.includes('8bit') || split.includes('10bit')) return false
 			}
 		}
-		return true
+		return v.cached.length > 0
 		// if (Quality == '2160p' && Channels > 2) {
 		// 	v.cached.length == 0 && v.cached.push('putio')
 		// 	return v.seeders > 0
 		// }
-		// return v.cached.length > 0
 	})
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
-	// process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
-	torrents = torrents.filter(v => v.cached.length > 0)
+
 	if (torrents.length == 0) throw new Error(`!torrents`)
-	process.DEVELOPMENT && console.log(`torrents ->`, torrents.map(v => v.json))
+	if (process.DEVELOPMENT) console.log(`torrents ->`, torrents.map(v => v.json))
+	else console.log(`torrents ->`, torrents.length)
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs.video)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)

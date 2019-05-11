@@ -1,6 +1,6 @@
 {
 	"name": "futon-media",
-	"version": "0.9.10",
+	"version": "0.9.11",
 	"description": "Emby Media meets instant movies and tv shows on-demand streaming",
 	"main": "dist/index.js",
 	"files": [

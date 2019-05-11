@@ -14,14 +14,14 @@ import * as utils from '@/utils/utils'
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	let providers = [
-		(await import('@/scrapers/providers/btbit')).BtBit,
+		// (await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
-		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
@@ -107,14 +107,6 @@ export class Scraper {
 
 		console.log(Date.now() - t, `${this.constructor.name}`, results.length)
 		return results.map(v => new torrent.Torrent(v))
-	}
-}
-
-export function json(result: Result) {
-	return {
-		..._.omit(result, 'magnet', 'hash'),
-		bytes: utils.fromBytes(result.bytes),
-		stamp: dayjs(result.stamp).fromNow() + ', ' + dayjs(result.stamp).format('MMM DD YYYY'),
 	}
 }
 
