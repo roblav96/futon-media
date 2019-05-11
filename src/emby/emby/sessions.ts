@@ -121,10 +121,10 @@ export class Session {
 	get json() {
 		return _.fromPairs(
 			_.toPairs({
+				// Age: this.Age,
 				// Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
-				Age: this.Age,
+				// Bitrate: this.Bitrate,
 				Audio: JSON.stringify(this.Codecs.audio),
-				Bitrate: this.Bitrate,
 				Channels: this.Channels,
 				Client: this.Client,
 				DeviceName: this.DeviceName,

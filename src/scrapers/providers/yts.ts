@@ -16,9 +16,7 @@ export class Yts extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
-		if (!this.item.movie) {
-			return []
-		}
+		if (!this.item.movie) return []
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 		})) as Response

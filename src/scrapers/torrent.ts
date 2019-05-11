@@ -48,12 +48,12 @@ export class Torrent {
 		magnet.xt = magnet.xt.toLowerCase()
 		magnet.dn = result.name
 
-		magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
-		magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
-		magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD)).sort()
+		// magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
+		// magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
+		// magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD)).sort()
 
 		result.magnet = `magnet:?${qs.stringify(
-			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
+			{ xt: magnet.xt, dn: magnet.dn, tr: trackers.GOOD },
 			{ encode: false, sort: false }
 		)}`
 

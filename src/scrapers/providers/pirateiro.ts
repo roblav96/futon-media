@@ -12,19 +12,18 @@ export const client = scraper.Scraper.http({
 export class Pirateiro extends scraper.Scraper {
 	/** size, date, seeds */
 	sorts = ['tamanho', 'enviado', 'seeders']
+	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'c300' : 'c700'
 		let $ = cheerio.load(
 			await client.get(`/torrents`, {
-				query: { search: slug, orderby: sort, [category]: 1 } as Partial<Query>,
+				query: { search: slug, orderby: sort, [category]: '1' } as Partial<Query>,
 			})
 		)
 		let results = [] as scraper.Result[]
 		$(`table.torrenttable tr`).each((i, el) => {
-			if (i == 0) {
-				return
-			}
+			if (i == 0) return
 			try {
 				let $el = $(el)
 				results.push({

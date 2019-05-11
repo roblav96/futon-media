@@ -17,9 +17,7 @@ export class Eztv extends scraper.Scraper {
 	}
 
 	async getResults(imdb_id: string) {
-		if (!this.item.show) {
-			return []
-		}
+		if (!this.item.show) return []
 		let results = [] as Result[]
 		await pForever(async page => {
 			page > 1 && (await utils.pRandom(1000))
