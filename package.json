@@ -10,9 +10,10 @@
 		"fm": "dist/index.js"
 	},
 	"scripts": {
+		"emby:restart": "sc-restart emby-server.service; sleep 1; tail -f /var/lib/emby/logs/embyserver.txt | bat -l=ruby",
 		"deploy": "redrun -q -s pm2:deploy pm2:restart",
 		"pm2:deploy": "git pull; tsc || true",
-		"pm2:restart": "pm2 startOrRestart futon-media; pm2 logs futon-media --raw --lines=0",
+		"pm2:restart": "pm2 restart ecosystem.config.js; pm2 logs futon-media --raw --lines=0",
 		"pm2:logs": "pm2 logs futon-media --raw --lines=100",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist && tsc",
