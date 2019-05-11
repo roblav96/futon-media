@@ -1,6 +1,6 @@
 {
 	"name": "futon-media",
-	"version": "0.9.11",
+	"version": "1.0.0",
 	"description": "Emby Media meets instant movies and tv shows on-demand streaming",
 	"main": "dist/index.js",
 	"files": [
@@ -19,7 +19,7 @@
 		"prepublishOnly": "del dist; tsc",
 		"start": "del dist; redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; forever -w -c 'node --inspect' forever.config.json",
+		"start:node": "just-wait -s -p dist; forever -c 'node --inspect' -w --watchDirectory=dist forever.config.json",
 		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {

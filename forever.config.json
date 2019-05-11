@@ -2,7 +2,5 @@
 	"append": true,
 	"killTree": true,
 	"script": "dist/index.js",
-	"uid": "futon-media",
-	"watch": false,
-	"watchDirectory": "dist"
+	"uid": "futon-media"
 }
