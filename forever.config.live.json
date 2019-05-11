@@ -1,7 +1,0 @@
-{
-	"append": true,
-	"killTree": true,
-	"script": "dist/index.js",
-	"uid": "futon-media.live",
-	"watch": false
-}

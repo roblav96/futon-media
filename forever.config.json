@@ -1,9 +1,8 @@
 {
 	"append": true,
-	"command": "node --inspect",
 	"killTree": true,
 	"script": "dist/index.js",
-	"uid": "futon-media.dev",
-	"watch": true,
+	"uid": "futon-media",
+	"watch": false,
 	"watchDirectory": "dist"
 }
