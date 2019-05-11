@@ -19,7 +19,7 @@
 		"prepublishOnly": "del dist; tsc",
 		"start": "del dist; redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; forever forever-development.json",
+		"start:node": "just-wait -s -p dist; forever forever-dev.json",
 		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {
@@ -29,7 +29,6 @@
 		"ansi-escapes": "^4.1.0",
 		"cheerio": "^0.22.0",
 		"cli-table3": "^0.5.1",
-		"configstore": "^4.0.0",
 		"dayjs": "^1.8.13",
 		"deep-diff": "^1.0.2",
 		"deepmerge": "^3.2.0",
@@ -86,7 +85,6 @@
 		"@types/ansi-colors": "^3.2.0",
 		"@types/ansi-escapes": "^4.0.0",
 		"@types/cheerio": "^0.22.11",
-		"@types/configstore": "^4.0.0",
 		"@types/deep-diff": "^1.0.0",
 		"@types/dotenv": "^6.1.1",
 		"@types/execa": "^0.9.0",

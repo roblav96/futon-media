@@ -134,6 +134,10 @@ export function chunks<T = any>(values: T[], max: number) {
 export function fillRandom(size = 32) {
 	return Array.from(Array(size), v => Math.random().toString())
 }
+export function nonce() {
+	let random = Math.random().toString(36)
+	return random.slice(-8)
+}
 
 export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]) {
 	Object.defineProperty(target, key, { value })

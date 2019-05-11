@@ -12,25 +12,15 @@ import { LevelDown } from 'leveldown'
 import { LevelUp } from 'levelup'
 
 class Db {
-	static get base() {
-		console.log(`xdgBasedir ->`, xdgBasedir)
-		let pkgjson = pkgup.sync({ cwd: __dirname })
-		let base = path.join(xdgBasedir.config, pkgjson.pkg.name)
-		if (process.DEVELOPMENT) {
-			base = path.join(path.dirname(pkgjson.path), 'node_modules/.cache')
-		}
-		return path.join(base, 'leveldb')
-		// let pkgjson = pkgup.sync({ cwd: __dirname })
-		// return path.join(path.dirname(pkgjson.path), 'node_modules/.cache/leveldb')
-	}
-	static file(name: string) {
-		let file = path.join(Db.base, `${name}.db`)
-		fs.ensureDirSync(file)
-		return file
+	static dbfile(dbname: string) {
+		let { pkg } = pkgup.sync({ cwd: __dirname })
+		let dbpath = path.join(xdgBasedir.cache, pkg.name, `${dbname}.db`)
+		fs.ensureDirSync(dbpath)
+		return dbpath
 	}
 
-	level = ttl(level(Db.file(this.path))) as LevelUp<LevelDown>
-	constructor(public path: string) {}
+	level = ttl(level(Db.dbfile(this.dbname))) as LevelUp<LevelDown>
+	constructor(public dbname: string) {}
 
 	async get(key: string) {
 		try {
@@ -75,8 +65,7 @@ class Db {
 	async flush(pattern: string) {
 		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
 		process.DEVELOPMENT && console.warn(`db flush '${pattern}' ->`, keys.sort())
-		if (keys.length == 0) return
-		await Promise.all(keys.map(key => this.del(key)))
+		keys.length > 0 && (await Promise.all(keys.map(key => this.del(key))))
 	}
 }
 

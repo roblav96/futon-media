@@ -1,11 +1,11 @@
 import * as _ from 'lodash'
-import * as ConfigStore from 'configstore'
 import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
+import db from '@/adapters/db'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
@@ -16,27 +16,17 @@ export const client = scraper.Scraper.http({
 	},
 })
 
-const nonce = (value = Math.random().toString(36)) => value.slice(-8)
-const storage = new ConfigStore(
-	`${pkgup.sync({ cwd: __dirname }).pkg.name}/${path.basename(__filename)}`
-)
-let TOKEN = (storage.get('TOKEN') || '') as string
-let STAMP = (storage.get('STAMP') || 0) as number
-
-async function syncToken() {
+async function getToken() {
+	let token = (await db.get('snowfl:token')) as string
+	if (token) return token
 	let html = (await client.get('/b.min.js', {
-		query: { v: nonce() } as Partial<Query>,
+		query: { v: utils.nonce() } as Partial<Query>,
 	})) as string
 	let index = html.search(/\"\w{35}\"/i)
-	let token = html.slice(index + 1, index + 36)
-	if (!token) {
-		throw new Error('snowfl token not found')
-	}
-	TOKEN = token
-	storage.set('TOKEN', TOKEN)
-	let future = dayjs().add(1, 'hour')
-	STAMP = future.valueOf()
-	storage.set('STAMP', STAMP)
+	token = html.slice(index + 1, index + 36)
+	if (!token) throw new Error('snowfl token not found')
+	await db.put('snowfl:token', token, utils.duration(1, 'day'))
+	return token
 }
 
 export class Snowfl extends scraper.Scraper {
@@ -48,8 +38,8 @@ export class Snowfl extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
-		;(!TOKEN || Date.now() > STAMP) && (await syncToken())
-		let url = `/${TOKEN}/${slug}/${nonce()}/0/${sort}/NONE/0`
+		let token = await getToken()
+		let url = `/${token}/${slug}/${utils.nonce()}/0/${sort}/NONE/0`
 		let response = (await client.get(url, {
 			query: { _: Date.now() } as Partial<Query>,
 		})) as Result[]
