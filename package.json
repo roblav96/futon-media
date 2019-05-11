@@ -10,10 +10,10 @@
 		"@": "dist"
 	},
 	"scripts": {
-		"deploy": "redrun -s pull build restart logs",
+		"deploy": "redrun -s pull build restart",
 		"pull": "git pull",
 		"build": "tsc || true",
-		"restart": "forever stop futon-media || true; forever start forever.config.json",
+		"restart": "forever stop futon-media || true; forever start forever.config.json; tail -n 0 -f ~/.forever/futon-media.log",
 		"logs": "tail -n 100 -f ~/.forever/futon-media.log",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist; tsc",
