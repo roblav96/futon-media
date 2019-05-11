@@ -86,21 +86,21 @@ export async function getStreamUrl(
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type)
 			)
-			process.DEVELOPMENT && console.log(`getStreamUrl probe ->`, probe)
+			console.log(`getStreamUrl probe format ->`, probe.format)
 
-			let tags = {} as Record<string, string>
-			_.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))
-			tags = _.pick(tags, _.keys(tags).filter(v => v.includes('date') || v.includes('time')))
-			let creation = _.size(tags) > 0 && dayjs(_.values(tags)[0])
-			if (creation && creation.subtract(1, 'day').valueOf() < item.released) {
-				console.warn(
-					`getStreamUrl probe !creation ->`,
-					creation.toLocaleString(),
-					dayjs(item.released).toLocaleString()
-				)
-				next = true
-				continue
-			}
+			// let tags = {} as Record<string, string>
+			// _.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))
+			// tags = _.pick(tags, _.keys(tags).filter(v => v.includes('date') || v.includes('time')))
+			// let creation = _.size(tags) > 0 && dayjs(_.values(tags)[0])
+			// if (creation && creation.subtract(1, 'day').valueOf() < item.released) {
+			// 	console.warn(
+			// 		`getStreamUrl probe !creation ->`,
+			// 		creation.toLocaleString(),
+			// 		dayjs(item.released).toLocaleString()
+			// 	)
+			// 	next = true
+			// 	continue
+			// }
 
 			let videos = probe.streams.filter(({ codec_type, tags }) => {
 				if (codec_type != 'video') return false
@@ -108,11 +108,12 @@ export async function getStreamUrl(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (videos.length == 0) {
-				console.warn(`getStreamUrl probe !videos ->`, torrent.name)
+				console.warn(`getStreamUrl probe videos.length == 0 ->`, torrent.name)
 				next = true
 				continue
 			}
-			if (_.size(codecs) > 0 && !codecs.find(v => v.includes(videos[0].codec_name))) {
+			console.log(`getStreamUrl probe videos ->`, videos)
+			if (_.size(codecs) > 0 && !codecs.includes(videos[0].codec_name)) {
 				console.warn(`getStreamUrl probe !codecs ->`, torrent.name, videos[0].codec_name)
 				next = true
 				continue
@@ -126,12 +127,14 @@ export async function getStreamUrl(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (audios.length == 0) {
-				console.warn(`getStreamUrl probe !audios ->`, torrent.name)
+				console.warn(`getStreamUrl probe audios.length == 0 ->`, torrent.name)
 				next = true
 				continue
 			}
-			if (!audios.find(v => v.channels <= channels)) {
-				console.warn(`getStreamUrl probe !channels ->`, torrent.name, audios[0].channels)
+			console.log(`getStreamUrl probe audios ->`, audios)
+			if (audios.filter(v => v.channels <= channels)) {
+				let chans = JSON.stringify(audios.map(v => v.channels))
+				console.warn(`getStreamUrl probe !channels ->`, torrent.name, chans)
 				next = true
 				continue
 			}

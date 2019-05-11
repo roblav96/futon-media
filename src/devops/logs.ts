@@ -7,7 +7,7 @@ import * as StackTracey from 'stacktracey'
 import * as util from 'util'
 
 _.merge(util.inspect.defaultOptions, {
-	depth: process.DEVELOPMENT ? 2 : 1,
+	depth: 2,
 } as util.InspectOptions)
 
 process.stdout.write(`
