@@ -10,10 +10,11 @@ import Sockette from '@/shims/sockette'
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
+	console.log(`process.env ->`, process.env)
 	let url = `${emby.DOMAIN}:${emby.PORT}`.replace('http', 'ws')
 	let query = { api_key: process.env.EMBY_API_KEY }
 	let ws = new Sockette(`${url}/embywebsocket?${qs.stringify(query)}`, {
-		timeout: 1000,
+		timeout: 3000,
 		maxAttempts: Infinity,
 		onerror({ error }) {
 			console.error(`emby onerror -> %O`, error)

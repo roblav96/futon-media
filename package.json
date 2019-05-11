@@ -88,8 +88,7 @@
 		"strip-bom": "^3.0.0",
 		"tslib": "^1.9.3",
 		"url-parse": "^1.4.7",
-		"ws": "^6.2.1",
-		"xdg-basedir": "^3.0.0"
+		"ws": "^6.2.1"
 	},
 	"devDependencies": {
 		"@types/ansi-colors": "^3.2.0",
@@ -118,7 +117,6 @@
 		"@types/string-similarity": "^3.0.0",
 		"@types/url-parse": "^1.4.3",
 		"@types/ws": "^6.0.1",
-		"@types/xdg-basedir": "^2.0.0",
 		"del-cli": "^1.1.0",
 		"dts-generate": "^1.1.1",
 		"just-wait": "^1.0.11",
