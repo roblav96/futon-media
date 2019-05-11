@@ -11,6 +11,7 @@ import * as qs from 'query-string'
 import * as shimmer from 'shimmer'
 import * as similarity from 'string-similarity'
 import * as StackTracey from 'stacktracey'
+import * as Url from 'url-parse'
 import * as util from 'util'
 
 _.merge(util.inspect.defaultOptions, {
@@ -55,7 +56,7 @@ if (process.DEVELOPMENT) {
 		`\n\n${ansi.blackBright(`██`)}  ${ansi.bold(date)}  ${ansi.blackBright(bar)}\n\n`
 	)
 
-	Object.assign(global, { _, crypto, dayjs, deepdiff, deepmerge, dts, path, qs, similarity })
+	Object.assign(global, { _, crypto, dayjs, deepdiff, deepmerge, dts, path, qs, similarity, Url })
 }
 
 declare global {

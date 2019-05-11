@@ -1,3 +1,4 @@
+export { HttpieOptions, HttpieResponse } from '@/shims/httpie'
 import * as _ from 'lodash'
 import * as errors from 'http-errors'
 import * as http from 'http'
