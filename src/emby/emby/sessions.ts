@@ -62,8 +62,9 @@ export class Session {
 		tprofiles.forEach(({ MaxAudioChannels }) => {
 			MaxAudioChannels && Channels.push(_.parseInt(MaxAudioChannels))
 		})
-		// if (Channels.length == 1) return 8
-		return _.max(Channels)
+		if (Channels.length == 1) return 8
+		return 2
+		// return _.max(Channels)
 		// return this.Is4kUser && Channels == 6 ? 8 : Channels
 	}
 	get Quality(): emby.Quality {
