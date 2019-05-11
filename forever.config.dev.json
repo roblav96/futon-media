@@ -1,7 +1,6 @@
 {
 	"append": true,
-	"command": "node --inspect --no-warnings --max-old-space-size=8192",
-	"killSignal": "SIGKILL",
+	"command": "node --inspect",
 	"killTree": true,
 	"script": "dist/index.js",
 	"uid": "futon-media.dev",

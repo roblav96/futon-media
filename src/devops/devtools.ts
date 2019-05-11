@@ -12,15 +12,17 @@ import * as Url from 'url-parse'
 import exithook = require('exit-hook')
 
 exithook(() => inspector.close())
-let stdout = (console as any)._stdout
-if (stdout.isTTY) {
-	stdout.isTTY = false
-	process.nextTick(() => (stdout.isTTY = true))
-}
-console.clear()
 
 if (process.DEVELOPMENT) {
 	setInterval(Function, 1 << 30)
+
+	let stdout = (console as any)._stdout
+	if (stdout.isTTY) {
+		stdout.isTTY = false
+		process.nextTick(() => (stdout.isTTY = true))
+	}
+	console.clear()
+
 	Object.assign(global, { _, crypto, dayjs, deepdiff, deepmerge, dts, path, qs, similarity, Url })
 }
 
