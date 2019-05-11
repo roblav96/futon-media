@@ -1,12 +1,10 @@
 {
 	"append": true,
 	"command": "node --inspect --no-warnings --max-old-space-size=8192",
-	// "errFile": "/dev/null",
+	"killSignal": "SIGKILL",
 	"killTree": true,
-	// "logFile": "/dev/null",
-	// "outFile": "/dev/null",
 	"script": "dist/index.js",
-	"uid": "futon-media-dev",
+	"uid": "futon-media.dev",
 	"watch": true,
 	"watchDirectory": "dist"
 }

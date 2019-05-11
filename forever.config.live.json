@@ -1,9 +1,9 @@
 {
 	"append": true,
 	"command": "node --no-warnings --max-old-space-size=8192",
-	"killSignal": "SIGTERM",
+	"killSignal": "SIGKILL",
 	"killTree": true,
 	"script": "dist/index.js",
-	"uid": "futon-media-live",
+	"uid": "futon-media.live",
 	"watch": false
 }

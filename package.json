@@ -13,13 +13,13 @@
 		"deploy": "redrun -s pull build restart",
 		"pull": "git pull",
 		"build": "tsc || true",
-		"restart": "pm2 restart ecosystem.config.js; sleep 1; pm2 save",
+		"restart": "pm2 restart pm2.config.js; sleep 1; pm2 save",
 		"logs": "pm2 logs futon-media --raw --lines=100",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist; tsc",
 		"start": "del dist; redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; forever forever-dev.json",
+		"start:node": "just-wait -s -p dist; forever forever.config.dev.json",
 		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {
