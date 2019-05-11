@@ -11,10 +11,9 @@
 	},
 	"scripts": {
 		"deploy": "redrun -q -s pm2:deploy pm2:restart",
-		"pm2:deploy": "git pull && tsc || true",
-		"pm2:restart": "pm2 restart futon-media && pm2 logs futon-media --raw --lines=0",
+		"pm2:deploy": "git pull; tsc || true",
+		"pm2:restart": "pm2 startOrRestart futon-media; pm2 logs futon-media --raw --lines=0",
 		"pm2:logs": "pm2 logs futon-media --raw --lines=100",
-		
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist && tsc",
 		"start": "del dist && redrun -q -p start:*",
