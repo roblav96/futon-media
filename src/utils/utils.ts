@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as advancedFormat from 'dayjs/plugin/advancedFormat'
 import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
@@ -12,8 +13,9 @@ import numbro, { INumbro } from '@/shims/numbro'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
 import stripAnsi from 'strip-ansi'
 
-dayjs.extend(relativeTime)
+dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
+dayjs.extend(relativeTime)
 
 export function duration(amount: number, unit: dayjs.OpUnitType) {
 	let day = dayjs(0).add(amount, unit)

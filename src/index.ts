@@ -3,6 +3,7 @@
 import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
+import '@/adapters/logs'
 import '@/dev/devtools'
 import '@/mocks/mocks'
 
