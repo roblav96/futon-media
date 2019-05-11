@@ -10,9 +10,10 @@
 		"fm": "dist/index.js"
 	},
 	"scripts": {
-		"deploy": "redrun -q -s pull restart",
-		"pull": "git pull; tsc || true",
-		"restart": "pm2 restart ecosystem.config.js; pm2 logs futon-media --raw --lines=0",
+		"deploy": "redrun -q -s pull build restart logs",
+		"pull": "git pull",
+		"build": "tsc || true",
+		"restart": "pm2 restart ecosystem.config.js",
 		"logs": "pm2 logs futon-media --raw --lines=100",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist && tsc",
