@@ -5,6 +5,7 @@ interface Env {
 	EMBY_API_KEY: string
 	EMBY_API_PORT: string
 	EMBY_LIBRARY_PATH: string
+	NODE_ENV: string
 	OMDB_KEY: string
 	ORION_APP: string
 	ORION_KEY: string

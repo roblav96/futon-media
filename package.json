@@ -6,8 +6,8 @@
 	"files": [
 		"dist"
 	],
-	"bin": {
-		"fm": "dist/index.js"
+	"_moduleAliases": {
+		"@": "dist"
 	},
 	"scripts": {
 		"deploy": "redrun -s pull build restart",
@@ -16,20 +16,11 @@
 		"restart": "pm2 restart ecosystem.config.js; sleep 1; pm2 save",
 		"logs": "pm2 logs futon-media --raw --lines=100",
 		"reset": "del dist node_modules",
-		"prepublishOnly": "del dist && tsc",
-		"start": "del dist && redrun -q -p start:*",
+		"prepublishOnly": "del dist; tsc",
+		"start": "del dist; redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist && nodemon -q",
-		"test": "del dist && tsc || true && node dist/index.js"
-	},
-	"nodemonConfig": {
-		"exec": "NODE_ENV=development node --inspect dist/index.js",
-		"ext": "js",
-		"restartable": false,
-		"watch": "dist"
-	},
-	"_moduleAliases": {
-		"@": "dist"
+		"start:node": "just-wait -s -p dist; forever forever-development.json",
+		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {
 		"@sindresorhus/slugify": "^0.9.1",
@@ -119,9 +110,9 @@
 		"@types/ws": "^6.0.1",
 		"del-cli": "^1.1.0",
 		"dts-generate": "^1.1.1",
+		"forever": "^1.0.0",
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
-		"nodemon": "^1.19.0",
 		"redrun": "^7.1.5",
 		"typescript": "^3.4.5"
 	},
