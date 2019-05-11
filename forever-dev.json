@@ -2,7 +2,6 @@
 	"append": true,
 	"args": ["--inspect"],
 	"errFile": "/dev/null",
-	// "fifo": true,
 	"killSignal": "SIGTERM",
 	"killTree": true,
 	"logFile": "/dev/null",
@@ -10,6 +9,5 @@
 	"script": "dist/index.js",
 	"uid": "futon-media-dev",
 	"watch": true,
-	"watchDirectory": "dist",
-	"watchIgnore": ["node_modules", "src"]
+	"watchDirectory": "dist"
 }
