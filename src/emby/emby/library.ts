@@ -25,12 +25,12 @@ process.nextTick(() => {
 				query: { query: Item.Name, fields: 'name', limit: 100 },
 			})) as trakt.Result[]
 			persons = persons.filter(v => utils.same(v.person.name, Item.Name))
-			let lengths = persons.map(person => ({
+			let sizes = persons.map(person => ({
 				...person.person,
-				length: person.person.ids.slug.length,
+				size: _.values(person.person).filter(Boolean).length,
 			}))
-			lengths.sort((a, b) => a.length - b.length)
-			let slug = lengths[0].ids.slug
+			sizes.sort((a, b) => b.size - a.size)
+			let slug = sizes[0].ids.slug
 			let results = await library.itemsOf(slug)
 			let items = results.map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
