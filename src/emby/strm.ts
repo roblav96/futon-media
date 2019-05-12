@@ -29,7 +29,7 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery, rkey: string) {
-	let Session = (await emby.sessions.get()).find(v => !v.IsStreaming)
+	let Session = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)[0] //.find(v => !v.IsStreaming)
 	let { Quality, Channels, Codecs } = Session
 	// console.warn(`getDebridStreamUrl '${slug}' ->`, Quality, Channels, Codecs.video)
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
