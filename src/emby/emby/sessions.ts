@@ -5,6 +5,7 @@ import * as media from '@/media/media'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
+import * as utils from '@/utils/utils'
 
 export const sessions = {
 	async get() {
@@ -44,8 +45,12 @@ export class Session {
 		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
 		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
 		return {
-			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)),
-			video: _.sortBy(_.uniq(video.toLowerCase().split(',')).filter(Boolean)),
+			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)).map(v =>
+				v.startsWith('-') ? utils.minify(v) : v
+			),
+			video: _.sortBy(_.uniq(video.toLowerCase().split(',')).filter(Boolean)).map(v =>
+				v.startsWith('-') ? utils.minify(v) : v
+			),
 		}
 	}
 	get Channels() {
