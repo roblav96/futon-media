@@ -48,9 +48,15 @@ process.nextTick(() => {
 			if (err) return console.error(`putio onmessage -> %O`, err)
 			let values = value.map(v => fastParse(v).value || v)
 			values.forEach(({ type, value }) => {
-				if (!type) return console.log(`putio !type '${type}' ->`, value)
+				if (!type) {
+					process.DEVELOPMENT && console.log(`putio !type '${type}' ->`, value)
+					return
+				}
 				let [target, action] = type.split('_') as string[]
-				if (!rx[target]) return console.log(`putio !rx[${target}] '${type}' ->`, value)
+				if (!rx[target]) {
+					process.DEVELOPMENT && console.log(`putio !rx[${target}] '${type}' ->`, value)
+					return
+				}
 				rx[target].next({ action, value } as PutioEvent)
 			})
 		},
