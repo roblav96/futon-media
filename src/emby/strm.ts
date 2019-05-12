@@ -60,9 +60,9 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 			let bsize = b.packs ? b.bytes / (item.S.e * b.packs) : b.bytes
 			return bsize - asize
 		})
-		// torrents.forEach(v => v.packs && (v.seeders *= v.packs + 1))
 	}
-	// process.DEVELOPMENT && console.log(`all torrents ->`, torrents.map(v => v.json))
+	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
+	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
 
 	torrents = torrents.filter(v => {
 		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
@@ -82,8 +82,8 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
 
 	if (torrents.length == 0) throw new Error(`!torrents`)
-	if (process.DEVELOPMENT) console.log(`torrents ->`, torrents.length, torrents.map(v => v.json))
-	else console.log(`torrents ->`, torrents.length)
+	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
+	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.json))
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs.video)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
