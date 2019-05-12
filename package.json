@@ -14,7 +14,7 @@
 		"pull": "git pull",
 		"build": "tsc || true",
 		"restart": "forever stop futon-media || true; forever start forever.config.json; tail -n 0 -f ~/.forever/futon-media.log",
-		"logs": "tail -n 100 -f ~/.forever/futon-media.log",
+		"logs": "tail -n 1000 -f ~/.forever/futon-media.log",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist; tsc",
 		"start": "del dist; redrun -q -p start:*",
