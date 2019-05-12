@@ -113,7 +113,7 @@ export async function getStreamUrl(
 				next = true
 				continue
 			}
-			let vkeys = ['codec_long_name', 'codec_name', 'profile', 'tags']
+			let vkeys = ['codec_long_name', 'codec_name', 'profile']
 			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
 			if (_.size(codecs) > 0 && !codecs.includes(videos[0].codec_name)) {
 				console.warn(`probe !codecs ->`, torrent.name, videos[0].codec_name)
