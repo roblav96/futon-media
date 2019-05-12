@@ -34,14 +34,14 @@ process.nextTick(() => {
 			let results = await library.itemsOf(slug)
 			let items = results.map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
-			console.log(`rxItems ${Item.Type} ${Item.Name} ->`, items.map(v => v.main.title).sort())
+			console.log(`rxItems ${Item.Type} ${Item.Name} ->`, items.map(v => v.title).sort())
 			for (let item of items) {
 				await emby.library.add(item)
 			}
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
-			console.log(`rxItems ${Item.Type} ->`, item.main.title)
+			console.log(`rxItems ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
 		}
 		await emby.library.refresh()

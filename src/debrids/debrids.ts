@@ -33,11 +33,11 @@ export async function getStreamUrl(
 			let debrid = new debrids[cached]().use(torrent.magnet)
 
 			let files = (await debrid.getFiles().catch(error => {
-				console.error(`getStreamUrl getFiles -> %O`, error)
+				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
 			if (!files) continue
 			if (files.length == 0) {
-				console.warn(`getStreamUrl !files ->`, torrent.name)
+				console.warn(`!files ->`, torrent.name)
 				next = true
 				continue
 			}
@@ -63,7 +63,7 @@ export async function getStreamUrl(
 					})
 					if (file) break
 				}
-				!file && console.warn(`getStreamUrl !show file ->`, files.map(v => v.name).sort())
+				!file && console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
 				let title = item.title
@@ -73,20 +73,20 @@ export async function getStreamUrl(
 			}
 
 			let stream = (await debrid.streamUrl(file).catch(error => {
-				console.error(`getStreamUrl streamUrl -> %O`, error)
+				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) continue
 			stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
 
-			console.log(`getStreamUrl probe ->`, stream)
+			console.log(`probe ->`, stream)
 			let probe = (await ffprobe(stream, { format: true, streams: true }).catch(error => {
-				console.error(`getStreamUrl ffprobe -> %O`, error)
+				console.error(`ffprobe -> %O`, error)
 			})) as FFProbe
 			if (!probe) continue
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type)
 			)
-			console.log(`getStreamUrl probe format ->`, probe.format)
+			// console.log(`probe format ->`, probe.format)
 
 			// let tags = {} as Record<string, string>
 			// _.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))
@@ -94,7 +94,7 @@ export async function getStreamUrl(
 			// let creation = _.size(tags) > 0 && dayjs(_.values(tags)[0])
 			// if (creation && creation.subtract(1, 'day').valueOf() < item.released) {
 			// 	console.warn(
-			// 		`getStreamUrl probe !creation ->`,
+			// 		`probe !creation ->`,
 			// 		creation.toLocaleString(),
 			// 		dayjs(item.released).toLocaleString()
 			// 	)
@@ -102,19 +102,21 @@ export async function getStreamUrl(
 			// 	continue
 			// }
 
-			let videos = probe.streams.filter(({ codec_type, tags }) => {
+			let videos = probe.streams.filter(({ codec_name, codec_type, tags }) => {
 				if (codec_type != 'video') return false
+				if (codec_name == 'mjpeg') return false
 				if (!tags || !tags.language) return true
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (videos.length == 0) {
-				console.warn(`getStreamUrl probe videos.length == 0 ->`, torrent.name)
+				console.warn(`probe videos.length == 0 ->`, torrent.name)
 				next = true
 				continue
 			}
-			console.log(`getStreamUrl probe videos ->`, videos)
+			let vkeys = ['codec_long_name', 'codec_name', 'profile', 'tags']
+			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
 			if (_.size(codecs) > 0 && !codecs.includes(videos[0].codec_name)) {
-				console.warn(`getStreamUrl probe !codecs ->`, torrent.name, videos[0].codec_name)
+				console.warn(`probe !codecs ->`, torrent.name, videos[0].codec_name)
 				next = true
 				continue
 			}
@@ -127,15 +129,15 @@ export async function getStreamUrl(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (audios.length == 0) {
-				console.warn(`getStreamUrl probe audios.length == 0 ->`, torrent.name)
+				console.warn(`probe audios.length == 0 ->`, torrent.name)
 				next = true
 				continue
 			}
-			console.log(`getStreamUrl probe audios ->`, audios)
-			// if (audios.filter(v => v.channels <= channels).length == 0) {
-			if (audios[0].channels > channels) {
-				let chans = JSON.stringify(audios.map(v => v.channels))
-				console.warn(`getStreamUrl probe !channels ->`, torrent.name, chans)
+			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
+			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
+			if (audios.filter(v => v.channels <= channels).length == 0) {
+				// if (audios[0].channels > channels) {
+				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
 				next = true
 				continue
 			}
