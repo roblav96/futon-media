@@ -30,7 +30,7 @@ async function getToken() {
 }
 
 export class Snowfl extends scraper.Scraper {
-	sorts = process.DEVELOPMENT ? ['SIZE'] : ['SIZE', 'DATE', 'SEED']
+	sorts = ['SIZE' /** , 'DATE', 'SEED' */]
 	concurrency = 1
 
 	slugs() {

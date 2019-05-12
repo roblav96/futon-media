@@ -14,7 +14,7 @@ import * as utils from '@/utils/utils'
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	let providers = [
-		// (await import('@/scrapers/providers/btbit')).BtBit,
+		(await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
 		(await import('@/scrapers/providers/eztv')).Eztv,
