@@ -202,11 +202,11 @@ export interface Item {
 	ExternalUrls: {
 		Name: string
 		Url: string
-	},[]
+	}[]
 	GenreItems: {
 		Id: number
 		Name: string
-	},[]
+	}[]
 	Genres: string[]
 	HasSubtitles: boolean
 	Id: string
@@ -242,7 +242,7 @@ export interface Item {
 			Path: any
 			SupportsExternalStream: any
 			Type: any
-		},[]
+		}[]
 		Name: string
 		Path: string
 		Protocol: string
@@ -257,7 +257,7 @@ export interface Item {
 		SupportsProbing: boolean
 		SupportsTranscoding: boolean
 		Type: string
-	},[]
+	}[]
 	MediaStreams: {
 		Codec: string
 		DisplayLanguage: string
@@ -272,7 +272,7 @@ export interface Item {
 		Path: string
 		SupportsExternalStream: boolean
 		Type: string
-	},[]
+	}[]
 	MediaType: string
 	Name: string
 	OfficialRating: string
@@ -286,7 +286,7 @@ export interface Item {
 		PrimaryImageTag: string
 		Role: string
 		Type: string
-	},[]
+	}[]
 	PlayAccess: string
 	PremiereDate: string
 	PrimaryImageAspectRatio: number
@@ -303,13 +303,13 @@ export interface Item {
 	RemoteTrailers: {
 		Name: string
 		Url: string
-	},[]
+	}[]
 	ServerId: string
 	SortName: string
 	Studios: {
 		Id: number
 		Name: string
-	},[]
+	}[]
 	Taglines: string[]
 	Tags: any[]
 	Type: string
@@ -375,7 +375,7 @@ export interface ScheduledTasksInfo {
 	Triggers: {
 		IntervalTicks: number
 		Type: string
-	},[]
+	}[]
 }
 
 export interface ScheduledTaskEnded {
