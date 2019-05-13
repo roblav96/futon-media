@@ -28,7 +28,7 @@ class Tail {
 	static check() {
 		if (!Tail.logfile) return console.warn(`Tail !Tail.logfile`)
 		if (!fs.pathExistsSync(Tail.logfile)) return console.warn(`Tail !fs.pathExistsSync`)
-		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail !child.killed`)
+		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail tailing...`)
 		Tail.tail = new Tail(Tail.logfile)
 	}
 
