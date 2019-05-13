@@ -19,7 +19,7 @@
 		"prepublishOnly": "del dist; tsc",
 		"start": "del dist; redrun -q -p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; forever -c 'node --inspect' -w --watchDirectory=dist forever.config.json",
+		"start:node": "just-wait -s -p dist; NODE_ENV=development forever -c 'node --inspect' -w --watchDirectory=dist forever.config.json",
 		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {

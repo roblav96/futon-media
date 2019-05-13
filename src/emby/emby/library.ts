@@ -54,13 +54,21 @@ process.nextTick(() => {
 })
 
 export const library = {
-	folders: { movie: '', show: '' },
 	qualities: ['2160p', '1080p'] as Quality[],
 
+	folders: { movie: '', show: '' },
 	async setFolders() {
-		let Folders = (await emby.client.get('/Library/VirtualFolders')) as VirtualFolder[]
+		let Folders = (await emby.client.get('/Library/VirtualFolders', {
+			silent: true,
+		})) as VirtualFolder[]
 		library.folders.movie = Folders.find(v => v.CollectionType == 'movies').Locations[0]
 		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
+	},
+
+	strmUrl: '',
+	async setStrmUrl() {
+		let { LocalAddress, WanAddress } = await emby.getSystemInfo()
+		let url = (process.DEVELOPMENT ? LocalAddress : WanAddress).replace('http', 'ws')
 	},
 
 	async refresh(wait = false) {
@@ -148,8 +156,10 @@ export const library = {
 		if (item.episode) {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
-		let url = emby.DOMAIN
-		process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
+		if (!library.strmUrl) await library.setStrmUrl()
+		// let url = emby.DOMAIN
+		// process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
+		let url = process.env.EMBY_HOST
 		url += `/strm?${qs.stringify(query)}`
 		await fs.outputFile(await library.toFile(item), url)
 	},

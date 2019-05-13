@@ -1,14 +1,4 @@
-import * as _ from 'lodash'
-import * as crypto from 'crypto'
-import * as dayjs from 'dayjs'
-import * as deepdiff from 'deep-diff'
-import * as deepmerge from 'deepmerge'
 import * as dts from 'dts-generate'
-import * as httperrors from 'http-errors'
-import * as path from 'path'
-import * as qs from 'query-string'
-import * as similarity from 'string-similarity'
-import * as Url from 'url-parse'
 
 if (process.DEVELOPMENT) {
 	setInterval(Function, 1 << 30)
@@ -20,18 +10,20 @@ if (process.DEVELOPMENT) {
 	}
 	console.clear()
 
-	Object.assign(global, {
-		_,
-		crypto,
-		dayjs,
-		deepdiff,
-		deepmerge,
-		dts,
-		httperrors,
-		path,
-		qs,
-		similarity,
-		Url,
+	process.nextTick(async () => {
+		Object.assign(global, {
+			_: await import('lodash'),
+			crypto: await import('crypto'),
+			dayjs: await import('dayjs'),
+			deepdiff: await import('deep-diff'),
+			deepmerge: await import('deepmerge'),
+			dts: await import('dts-generate'),
+			httperrors: await import('http-errors'),
+			path: await import('path'),
+			qs: await import('query-string'),
+			similarity: await import('string-similarity'),
+			Url: await import('url-parse'),
+		})
 	})
 }
 

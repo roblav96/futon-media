@@ -11,7 +11,8 @@ import Sockette from '@/shims/sockette'
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
-	let url = `${emby.DOMAIN}:${emby.PORT}`.replace('http', 'ws')
+	let { LocalAddress, WanAddress } = await emby.getSystemInfo()
+	let url = (process.DEVELOPMENT ? LocalAddress : WanAddress).replace('http', 'ws')
 	let query = { api_key: process.env.EMBY_API_ADMIN_KEY }
 	let ws = new Sockette(`${url}/embywebsocket?${qs.stringify(query)}`, {
 		timeout: 3000,
@@ -24,7 +25,8 @@ process.nextTick(async () => {
 			emby.Tail.destroy()
 		},
 		onopen({ target }) {
-			console.info(`emby onopen ->`, new Url(target.url).pathname)
+			let url = target.url as string
+			console.info(`emby onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })

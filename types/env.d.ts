@@ -1,9 +1,11 @@
 interface Env {
-	EMBY_API_ADMIN_ID: string
-	EMBY_API_ADMIN_KEY: string
-	EMBY_API_HOST: string
-	EMBY_API_KEY: string
-	EMBY_API_PORT: string
+	EMBY_ADMIN_ID: string
+	EMBY_ADMIN_KEY: string
+	EMBY_HOST: string
+	EMBY_KEY: string
+	EMBY_PORT: string
+	EMBY_PROTO: string
+	EMBY_STRM_PORT: string
 	NODE_ENV: string
 	OMDB_KEY: string
 	ORION_APP: string

@@ -41,7 +41,7 @@ process.nextTick(() => {
 			console.warn(`putio onclose ->`, code, reason)
 		},
 		onopen({ target }) {
-			console.info(`putio onopen ->`, new Url(target.url).pathname)
+			console.info(`putio onopen ->`, target.url)
 			ws.json([process.env.PUTIO_TOKEN])
 		},
 		onmessage({ data }: { data: string }) {

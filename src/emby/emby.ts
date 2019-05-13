@@ -11,6 +11,10 @@ export const client = new http.Http({
 	query: { api_key: process.env.EMBY_API_KEY },
 })
 
+export async function getSystemInfo() {
+	return (await client.get('/System/Info', { silent: true })) as SystemInfo
+}
+
 export * from '@/emby/emby/defaults'
 export * from '@/emby/emby/library'
 export * from '@/emby/emby/sessions'
