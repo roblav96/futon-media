@@ -33,11 +33,10 @@ class Tail {
 		Tail.tail = new Tail(Tail.logfile)
 	}
 
-	// watcher: fs.FSWatcher
 	watcher: sane.Watcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
-		console.log(`new Tail ->`, path.basename(logfile))
+		console.log(`new Tail ->`, logfile)
 
 		this.watcher = sane(logfile, {})
 		this.watcher.once('ready', () => {
@@ -59,16 +58,6 @@ class Tail {
 			console.error(`Tail watcher error -> %O`, error)
 			this.destroy()
 		})
-
-		// this.watcher = fs.watch(logfile)
-		// this.watcher.once('change', (type: string, file: string) => {
-		// 	console.warn(`Tail watcher change ->`, type, file)
-		// 	this.destroy()
-		// })
-		// this.watcher.once('error', error => {
-		// 	console.error(`Tail watcher -> %O`, error)
-		// 	this.destroy()
-		// })
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
