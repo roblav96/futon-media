@@ -20,12 +20,14 @@ process.nextTick(async () => {
 		},
 		onclose({ code, reason }) {
 			console.warn(`emby onclose ->`, code, reason)
+			emby.Tail.tail && emby.Tail.tail.destroy()
 		},
 		onopen({ target }) {
 			console.info(`emby onopen ->`, new Url(target.url).pathname)
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
+			emby.Tail.connect()
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)

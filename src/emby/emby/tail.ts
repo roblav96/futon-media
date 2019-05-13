@@ -23,7 +23,7 @@ process.nextTick(async () => {
 	Tail.connect()
 })
 
-class Tail {
+export class Tail {
 	static tail: Tail
 	static logfile: string
 
@@ -41,7 +41,10 @@ class Tail {
 	constructor(logfile: string) {
 		console.log(`new Tail ->`, logfile)
 
-		this.watcher = sane(path.dirname(logfile), { glob: path.basename(logfile) })
+		this.watcher = sane(path.dirname(logfile), {
+			glob: path.basename(logfile),
+			watchexec: true,
+		})
 		this.watcher.once('ready', () => {
 			console.log(`Tail watcher ready`)
 		})
@@ -71,9 +74,20 @@ class Tail {
 				line && rxTail.next(line)
 			}
 		})
+		this.child.stdout.once('error', error => {
+			console.error(`Tail child stdout error -> %O`, error)
+			this.destroy()
+		})
+		this.child.stderr.once('error', error => {
+			console.error(`Tail child stderr error -> %O`, error)
+			this.destroy()
+		})
 		this.child.stderr.once('data', (chunk: string) => {
 			console.error(`Tail child stderr -> %O`, _.trim((chunk || '').toString()))
 			this.destroy()
+		})
+		this.child.once('message', message => {
+			console.log(`Tail child message ->`, message)
 		})
 		this.child.once('error', error => {
 			console.error(`Tail child error -> %O`, error)
@@ -81,6 +95,10 @@ class Tail {
 		})
 		this.child.once('close', (code, signal) => {
 			console.warn(`Tail child close ->`, code, signal)
+			this.destroy()
+		})
+		this.child.once('end', (code, signal) => {
+			console.warn(`Tail child end ->`, code, signal)
 			this.destroy()
 		})
 		this.child.once('disconnect', () => {
@@ -141,6 +159,10 @@ export const rxHttp = rxTail.pipe(
 	})
 )
 
+rxHttp.subscribe(({ url, query }) => {
+	console.log(`rxHttp ->`, url)
+})
+
 export interface SystemInfo {
 	CachePath: string
 	CanLaunchWebBrowser: boolean
@@ -177,4 +199,10 @@ export interface SystemLog {
 	DateModified: string
 	Name: string
 	Size: number
+}
+
+declare module 'sane' {
+	interface Options {
+		watchexec: boolean
+	}
 }
