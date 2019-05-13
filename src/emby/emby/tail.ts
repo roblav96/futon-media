@@ -32,6 +32,7 @@ export class Tail {
 	}
 	static destroy() {
 		Tail.tail && Tail.tail.destroy()
+		Tail.reconnect()
 	}
 
 	child: execa.ExecaChildProcess
