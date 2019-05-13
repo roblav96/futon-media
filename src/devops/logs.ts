@@ -13,7 +13,8 @@ _.merge(util.inspect.defaultOptions, {
 console.log(`
 ${ansi.dim('■■■■■■■■■■■■■■■■■■■■■■■')}
       ${ansi.cyan.bold(dayjs().format('hh:mm:ss A'))}
-${ansi.dim('■■■■■■■■■■■■■■■■■■■■■■■')}\n\n`)
+${ansi.dim('■■■■■■■■■■■■■■■■■■■■■■■')}
+`)
 
 let before = Date.now()
 let colors = { log: 'blue', info: 'green', warn: 'yellow', error: 'red' }
