@@ -11,16 +11,11 @@ export const env = {
 	STRM_PORT: process.env.EMBY_STRM_PORT,
 	URL: `${process.env.EMBY_PROTO}//${process.env.EMBY_HOST}:${process.env.EMBY_PORT}`,
 }
-console.log(`emby.env ->`, env)
 
 export const client = new http.Http({
 	baseUrl: `${env.URL}/emby`,
 	query: { api_key: env.KEY },
 })
-
-export async function getSystemInfo() {
-	return (await client.get('/System/Info', { silent: true })) as SystemInfo
-}
 
 export * from '@/emby/emby/defaults'
 export * from '@/emby/emby/library'
@@ -58,6 +53,58 @@ export interface SystemInfo {
 	Version: string
 	WanAddress: string
 	WebSocketPortNumber: number
+}
+
+export interface SystemXml {
+	AutoRunWebApp: string
+	CachePath: string
+	CertificatePath: string
+	CollapseVideoFolders: string
+	DisplaySpecialsWithinSeasons: string
+	EnableAutomaticRestart: string
+	EnableAutoUpdate: string
+	EnableCaseSensitiveItemIds: string
+	EnableDashboardResponseCaching: string
+	EnableDebugLevelLogging: string
+	EnableExternalContentInSuggestions: string
+	EnableHttps: string
+	EnableOriginalTrackTitles: string
+	EnableRemoteAccess: string
+	EnableUPnP: string
+	HttpServerPortNumber: string
+	HttpsPortNumber: string
+	ImageExtractionTimeoutMs: string
+	ImageSavingConvention: string
+	IsBehindProxy: string
+	IsPortAuthorized: string
+	IsRemoteIPFilterBlacklist: string
+	IsStartupWizardCompleted: string
+	LibraryMonitorDelay: string
+	LocalNetworkAddresses: string
+	LocalNetworkSubnets: string
+	LogAllQueryTimes: string
+	LogFileRetentionDays: string
+	MetadataCountryCode: string
+	MetadataNetworkPath: string
+	MetadataPath: string
+	PathSubstitutions: string
+	PreferredMetadataLanguage: string
+	PublicHttpsPort: string
+	PublicPort: string
+	RemoteClientBitrateLimit: string
+	RemoteIPFilter: string
+	RequireHttps: string
+	RunAtStartup: string
+	SaveMetadataHidden: string
+	SchemaVersion: string
+	ServerName: string
+	SkipDeserializationForBasicTypes: string
+	SortRemoveCharacters: string
+	SortRemoveWords: string
+	SortReplaceCharacters: string
+	UICulture: string
+	UninstalledPlugins: string
+	WanDdns: string
 }
 
 export interface SystemLog {

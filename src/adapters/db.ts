@@ -12,15 +12,14 @@ import { LevelDown } from 'leveldown'
 import { LevelUp } from 'levelup'
 
 class Db {
-	static dbfile(dbname: string) {
-		let { pkg } = pkgup.sync({ cwd: __dirname })
-		let dbpath = path.join(xdgBasedir.cache, pkg.name, `${dbname}.db`)
-		fs.ensureDirSync(dbpath)
-		return dbpath
-	}
+	level: LevelUp<LevelDown>
 
-	level = ttl(level(Db.dbfile(this.dbname))) as LevelUp<LevelDown>
-	constructor(public dbname: string) {}
+	constructor(name: string) {
+		let { pkg } = pkgup.sync({ cwd: __dirname })
+		let location = path.join(xdgBasedir.cache, pkg.name, `${name}.db`)
+		fs.ensureDirSync(location)
+		this.level = ttl(level(location)) as LevelUp<LevelDown>
+	}
 
 	async get(key: string) {
 		try {

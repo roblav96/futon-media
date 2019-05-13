@@ -1,6 +1,7 @@
 interface Env {
 	EMBY_ADMIN_ID: string
 	EMBY_ADMIN_KEY: string
+	EMBY_DATA: string
 	EMBY_HOST: string
 	EMBY_KEY: string
 	EMBY_PORT: string

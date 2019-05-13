@@ -81,14 +81,16 @@ export class Tail {
 		})
 	}
 
-	destroy() {
+	destroy = _.once(() => {
 		console.warn(`Tail destroy`)
 		this.child.kill('SIGTERM')
-		this.child.removeAllListeners()
-		this.child.stdout.removeAllListeners()
-		this.child.stderr.removeAllListeners()
+		process.nextTick(() => {
+			this.child.removeAllListeners()
+			this.child.stdout.removeAllListeners()
+			this.child.stderr.removeAllListeners()
+		})
 		Tail.reconnect()
-	}
+	})
 }
 
 exithook(() => Tail.destroy())

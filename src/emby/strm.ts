@@ -39,11 +39,15 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
 	let UserId = await db.get(`UserId:${traktId}`)
-	if (UserId) Session = Sessions.find(v => v.UserId == UserId)
+	if (UserId) {
+		console.warn(`db.get UserId ->`, UserId)
+		Session = Sessions.find(v => v.UserId == UserId)
+	}
 	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
 	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.video])}`
+	console.log(`skey ->`, skey)
 	let streamUrl = await db.get(skey)
 	if (streamUrl) {
 		console.log(`streamUrl '${slug}' ->`, streamUrl)
@@ -104,14 +108,14 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 
 fastify.get('/strm', async (request, reply) => {
 	if (_.size(request.query) == 0) return reply.redirect('/dev/null')
-	let query = _.mapValues(request.query, (v, k) =>
-		utils.isNumeric(v) ? _.parseInt(v) : v
+	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
+		utils.isNumeric(v) && k != 'traktId' ? _.parseInt(v) : v
 	) as emby.StrmQuery
-	query.traktId = query.traktId.toString()
 	let { e, s, slug, traktId, type } = query
 	console.log(`fastify strm ->`, slug)
 
 	let rkey = `stream:${traktId}`
+	console.log(`rkey ->`, rkey)
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
 	let stream = await db.get(rkey)
 	if (!stream) {
