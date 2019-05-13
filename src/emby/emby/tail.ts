@@ -3,6 +3,7 @@ import * as emby from '@/emby/emby'
 import * as execa from 'execa'
 import * as fs from 'fs-extra'
 import * as path from 'path'
+import * as sane from 'sane'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
@@ -32,20 +33,42 @@ class Tail {
 		Tail.tail = new Tail(Tail.logfile)
 	}
 
-	watcher: fs.FSWatcher
+	// watcher: fs.FSWatcher
+	watcher: sane.Watcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
 		console.log(`new Tail ->`, path.basename(logfile))
 
-		this.watcher = fs.watch(logfile)
-		this.watcher.once('change', (type: string, file: string) => {
-			console.warn(`Tail watcher change ->`, type, file)
+		this.watcher = sane(logfile, {})
+		this.watcher.once('ready', () => {
+			console.log(`Tail watcher ready`)
+		})
+		this.watcher.once('add', (path, root) => {
+			console.warn(`Tail watcher add ->`, path, root)
+			this.destroy()
+		})
+		this.watcher.once('change', (path, root) => {
+			console.warn(`Tail watcher change ->`, path, root)
+			this.destroy()
+		})
+		this.watcher.once('delete', (path, root) => {
+			console.warn(`Tail watcher delete ->`, path, root)
 			this.destroy()
 		})
 		this.watcher.once('error', error => {
-			console.error(`Tail watcher -> %O`, error)
+			console.error(`Tail watcher error -> %O`, error)
 			this.destroy()
 		})
+
+		// this.watcher = fs.watch(logfile)
+		// this.watcher.once('change', (type: string, file: string) => {
+		// 	console.warn(`Tail watcher change ->`, type, file)
+		// 	this.destroy()
+		// })
+		// this.watcher.once('error', error => {
+		// 	console.error(`Tail watcher -> %O`, error)
+		// 	this.destroy()
+		// })
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
@@ -69,7 +92,7 @@ class Tail {
 			this.destroy()
 		})
 		this.child.once('disconnect', () => {
-			console.warn(`Tail child disconnect ->`)
+			console.warn(`Tail child disconnect`)
 			this.destroy()
 		})
 		this.child.once('exit', (code, signal) => {
@@ -78,11 +101,17 @@ class Tail {
 		})
 	}
 
-	destroy() {
+	destroy = _.once(() => {
+		console.warn(`Tail destroy`)
 		this.child.kill('SIGTERM')
-		this.child.stdout.removeAllListeners()
 		this.watcher.close()
-	}
+		process.nextTick(() => {
+			this.child.removeAllListeners()
+			this.child.stdout.removeAllListeners()
+			this.child.stderr.removeAllListeners()
+			this.watcher.removeAllListeners()
+		})
+	})
 }
 
 const JUNK = [
