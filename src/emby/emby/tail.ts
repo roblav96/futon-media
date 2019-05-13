@@ -13,11 +13,6 @@ import exithook = require('exit-hook')
 export const rxTail = new Rx.Subject<string>()
 
 process.nextTick(async () => {
-	let [{ LogPath }, [{ Name }]] = (await Promise.all([
-		emby.client.get('/System/Info', { silent: true }),
-		emby.client.get('/System/Logs', { silent: true }),
-	])) as [SystemInfo, SystemLog[]]
-	Tail.logfile = path.join(LogPath, Name)
 	exithook(() => Tail.destroy())
 	Tail.connect()
 })
@@ -26,10 +21,16 @@ export class Tail {
 	static tail: Tail
 	static logfile: string
 
-	static reconnect = _.debounce(Tail.connect, utils.duration(5, 'second'))
-	static connect() {
+	static reconnect = _.debounce(Tail.connect, utils.duration(10, 'second'))
+	static async connect() {
 		Tail.reconnect()
-		if (!Tail.logfile) return console.warn(`Tail !Tail.logfile`)
+		if (!Tail.logfile) {
+			let [{ LogPath }, [{ Name }]] = (await Promise.all([
+				emby.client.get('/System/Info', { silent: true }),
+				emby.client.get('/System/Logs', { silent: true }),
+			])) as [SystemInfo, SystemLog[]]
+			Tail.logfile = path.join(LogPath, Name)
+		}
 		if (!fs.pathExistsSync(Tail.logfile)) return console.warn(`Tail !fs.pathExistsSync`)
 		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail tailing...`)
 		Tail.tail = new Tail(Tail.logfile)
@@ -89,6 +90,7 @@ export class Tail {
 	}
 
 	destroy = _.once(() => {
+		console.warn(`Tail destroy`)
 		this.child.kill('SIGTERM')
 		this.child.removeAllListeners()
 		this.child.stdout.removeAllListeners()
