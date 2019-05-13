@@ -12,7 +12,7 @@ import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
 
 process.nextTick(() => {
-	process.DEVELOPMENT && db.flush('rxItem:*')
+	process.DEVELOPMENT && db.flush('UserId:*')
 	let rxItems = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
@@ -45,7 +45,7 @@ process.nextTick(() => {
 			let item = await library.item(Item)
 			let [key, value] = (await db.entries()).find(([key, value]) => value == UserId)
 			if (key) await db.del(key)
-			await db.put(`rxItem:${item.traktId}`, UserId, utils.duration(1, 'day'))
+			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
 			console.log(`rxItems ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
 		}
