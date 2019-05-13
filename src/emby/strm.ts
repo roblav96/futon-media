@@ -103,6 +103,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 }
 
 fastify.get('/strm', async (request, reply) => {
+	if (_.size(request.query) == 0) return reply.redirect('/dev/null')
 	let query = _.mapValues(request.query, (v, k) =>
 		utils.isNumeric(v) ? _.parseInt(v) : v
 	) as emby.StrmQuery
