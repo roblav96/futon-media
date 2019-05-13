@@ -20,13 +20,16 @@ process.nextTick(async () => {
 	])) as [SystemInfo, SystemLog[]]
 	Tail.logfile = path.join(LogPath, Name)
 	exithook(() => Tail.tail && Tail.tail.destroy())
-	schedule.scheduleJob('*/5 * * * * *', () => Tail.check()).invoke()
+	Tail.connect()
 })
 
 class Tail {
 	static tail: Tail
 	static logfile: string
-	static check() {
+
+	static reconnect = _.debounce(Tail.connect, utils.duration(5, 'second'))
+	static connect() {
+		Tail.reconnect()
 		if (!Tail.logfile) return console.warn(`Tail !Tail.logfile`)
 		if (!fs.pathExistsSync(Tail.logfile)) return console.warn(`Tail !fs.pathExistsSync`)
 		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail tailing...`)
@@ -38,7 +41,7 @@ class Tail {
 	constructor(logfile: string) {
 		console.log(`new Tail ->`, logfile)
 
-		this.watcher = sane(logfile, {})
+		this.watcher = sane(path.dirname(logfile), { glob: path.basename(logfile) })
 		this.watcher.once('ready', () => {
 			console.log(`Tail watcher ready`)
 		})
@@ -91,7 +94,6 @@ class Tail {
 	}
 
 	destroy = _.once(() => {
-		console.warn(`Tail destroy`)
 		this.child.kill('SIGTERM')
 		this.watcher.close()
 		process.nextTick(() => {
@@ -100,6 +102,7 @@ class Tail {
 			this.child.stderr.removeAllListeners()
 			this.watcher.removeAllListeners()
 		})
+		Tail.reconnect()
 	})
 }
 
