@@ -27,7 +27,7 @@ export class Tail {
 			Tail.logfile = path.join(LogPath, Name)
 		}
 		if (!fs.pathExistsSync(Tail.logfile)) return console.warn(`Tail !fs.pathExistsSync`)
-		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail tailing...`)
+		if (Tail.tail && !Tail.tail.child.killed) return
 		Tail.tail = new Tail(Tail.logfile)
 	}
 	static destroy() {
@@ -37,7 +37,7 @@ export class Tail {
 
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
-		console.log(`new Tail ->`, logfile)
+		console.info(`new Tail ->`, logfile)
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
