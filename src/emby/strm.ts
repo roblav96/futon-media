@@ -34,7 +34,6 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	let UserId = await db.get(`rxItems:${traktId}`)
 	UserId && (Session = Sessions.find(v => v.UserId == UserId))
 	let { Quality, Channels, Codecs } = Session
-	// console.warn(`getDebridStreamUrl '${slug}' ->`, Quality, Channels, Codecs.video)
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
 	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.video])}`
@@ -104,8 +103,6 @@ fastify.get('/strm', async (request, reply) => {
 	let { e, s, slug, traktId, type } = query
 	console.log(`fastify strm ->`, slug)
 
-	// return reply.redirect('https://36.download.real-debrid.com/d/OIC6DASBY7QIE/The.Last.Man.on.Earth.S01E01E02.720p.WEB-DL.x265-HETeam.mkv')
-
 	let rkey = `strm:${traktId}`
 	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
 	let stream = await db.get(rkey)
@@ -126,7 +123,6 @@ fastify.get('/strm', async (request, reply) => {
 		stream = await emitter.toPromise(traktId)
 	}
 
-	// console.warn(`redirect '${slug}' ->`, stream)
 	reply.redirect(stream)
 })
 
