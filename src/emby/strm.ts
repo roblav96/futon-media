@@ -16,10 +16,7 @@ import db from '@/adapters/db'
 import Emitter from '@/shims/emitter'
 
 process.nextTick(() => {
-	if (process.DEVELOPMENT) {
-		db.flush('strm:*')
-		db.flush('rxItems:*')
-	}
+	process.DEVELOPMENT && db.flush('strm:*') && db.flush('rxItems:*')
 	let listen = fastify.listen(emby.STRM_PORT)
 	listen.then(
 		address => console.info(`fastify address ->`, address),

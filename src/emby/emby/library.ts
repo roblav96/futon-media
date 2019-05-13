@@ -56,8 +56,8 @@ export const library = {
 	async refresh(wait = false) {
 		let proms = [] as Promise<any>[]
 		if (wait == true) {
-			let rxTask = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
-				Rx.op.filter(Tasks => Tasks.find(v => v.Key == 'RefreshLibrary').State == 'Idle'),
+			let rxTask = emby.socket.filter<ScheduledTaskEnded>('ScheduledTaskEnded').pipe(
+				Rx.op.filter(({ Key, Status }) => Key == 'RefreshLibrary' && Status == 'Completed'),
 				Rx.op.take(1)
 			)
 			proms.push(rxTask.toPromise())

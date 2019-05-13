@@ -5,13 +5,14 @@ import * as fastParse from 'fast-json-parse'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
+import exithook = require('exit-hook')
 import Sockette from '@/shims/sockette'
 
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
 	let url = `${emby.DOMAIN}:${emby.PORT}`.replace('http', 'ws')
-	let query = { api_key: process.env.EMBY_API_KEY }
+	let query = { api_key: process.env.EMBY_API_ADMIN_KEY }
 	let ws = new Sockette(`${url}/embywebsocket?${qs.stringify(query)}`, {
 		timeout: 3000,
 		maxAttempts: Infinity,
@@ -35,6 +36,7 @@ process.nextTick(async () => {
 			rxSocket.next(value)
 		},
 	})
+	exithook(() => ws.close())
 })
 
 export const socket = {
@@ -46,6 +48,16 @@ export const socket = {
 	},
 }
 
+// rxSocket.subscribe(({ MessageType, Data }) => {
+// 	console.log(`rxSocket ->`, MessageType, Data)
+// })
+
+export interface EmbyEvent<Data = any> {
+	Data: Data
+	MessageId: string
+	MessageType: string
+}
+
 // socket.filter<emby.Session[]>('Sessions').subscribe(async () => {})
 
 // export const rxSessions = socket.filter<emby.Session[]>('Sessions').pipe(
@@ -54,12 +66,6 @@ export const socket = {
 // 		return Sessions.sort((a, b) => b.Stamp - a.Stamp)
 // 	})
 // )
-
-export interface EmbyEvent<Data = any> {
-	Data: Data
-	MessageId: string
-	MessageType: string
-}
 
 // rxSocket.subscribe(({ MessageType, Data }) => {
 // 	if (MessageType == 'Sessions') {
