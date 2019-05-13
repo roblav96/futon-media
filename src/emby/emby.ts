@@ -17,3 +17,41 @@ export * from '@/emby/emby/sessions'
 export * from '@/emby/emby/socket'
 export * from '@/emby/emby/tail'
 export * from '@/emby/emby/users'
+
+export interface SystemInfo {
+	CachePath: string
+	CanLaunchWebBrowser: boolean
+	CanSelfRestart: boolean
+	CanSelfUpdate: boolean
+	CompletedInstallations: any[]
+	HardwareAccelerationRequiresPremiere: boolean
+	HasPendingRestart: boolean
+	HasUpdateAvailable: boolean
+	HttpServerPortNumber: number
+	HttpsPortNumber: number
+	Id: string
+	InternalMetadataPath: string
+	IsShuttingDown: boolean
+	ItemsByNamePath: string
+	LocalAddress: string
+	LogPath: string
+	OperatingSystem: string
+	OperatingSystemDisplayName: string
+	ProgramDataPath: string
+	ServerName: string
+	SupportsAutoRunAtStartup: boolean
+	SupportsHttps: boolean
+	SupportsLibraryMonitor: boolean
+	SystemUpdateLevel: string
+	TranscodingTempPath: string
+	Version: string
+	WanAddress: string
+	WebSocketPortNumber: number
+}
+
+export interface SystemLog {
+	DateCreated: string
+	DateModified: string
+	Name: string
+	Size: number
+}

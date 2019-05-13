@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as http from '@/adapters/http'
@@ -10,7 +11,8 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// process.DEVELOPMENT && syncCollections()
+	process.DEVELOPMENT && syncCollections()
+	
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob('0 0 * * *', () => syncCollections())
 	}
@@ -40,17 +42,17 @@ const STATIC_SCHEMAS = [
 async function buildSchemas() {
 	let schemas = [] as CollectionSchema[]
 
-	let staticSchemas = STATIC_SCHEMAS.map(schema =>
+	let sschemas = STATIC_SCHEMAS.map(schema =>
 		media.MAIN_TYPESS.map((type, i) => {
 			return {
 				limit: schema[2],
-				name: `${['Mov', 'TV'][i]} ${schema[0]}`,
+				name: `${['M', 'TV'][i]} ${schema[0]}`,
 				type: media.MAIN_TYPES[i],
 				url: _.template(schema[1])({ type }),
 			} as CollectionSchema
 		})
 	).flat()
-	schemas.push(...staticSchemas)
+	schemas.push(...sschemas)
 
 	let lists = [] as trakt.List[]
 	for (let type of ['popular', 'trending']) {
@@ -67,27 +69,46 @@ async function buildSchemas() {
 	})) as trakt.ResponseList[]
 	lists.push(...liked.map(v => v.list))
 
-	let listSchemas = _.uniqWith(lists, (a, b) => a.ids.trakt == b.ids.trakt).map(list => {
+	lists.sort((a, b) => b.likes - a.likes)
+	lists = _.uniqWith(lists, (a, b) => {
+		if (a.ids.slug == b.ids.slug) return true
+		if (a.ids.trakt == b.ids.trakt) return true
+		if (utils.minify(a.name) == utils.minify(b.name)) return true
+	})
+
+	let lschemas = lists.map(list => {
 		return {
 			name: utils.toSlug(list.name, { toName: true }),
-			url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
+			url: `/users/${list.user.ids.slug}/lists/${list.ids.slug || list.ids.trakt}/items`,
 		} as CollectionSchema
 	})
-	schemas.push(...listSchemas)
+	schemas.push(...lschemas)
 
-	return schemas.map(schema => ({
-		...schema,
-		name: _.trim(schema.name),
-	}))
+	schemas.forEach(schema => {
+		schema.name = _.trim(schema.name)
+		if (schema.name.startsWith('The ')) schema.name = schema.name.slice(4)
+	})
+
+	return schemas
 }
 
 async function syncCollections() {
 	let schemas = await buildSchemas()
 	console.log(`syncCollections ->`, schemas.length)
-
-	if (process.DEVELOPMENT) schemas.splice(2)
 	console.log(`schemas ->`, schemas.map(v => v.name))
-	// throw new Error(`DEV`)
+
+	if (process.DEVELOPMENT) {
+		let names = [
+			'007',
+			'MARVEL Cinematic Universe',
+			'Pixar Collection',
+			'TV Watchlist',
+			'Worlds of DC',
+		]
+		schemas = schemas.filter(v => names.includes(v.name))
+	}
+	console.log(`schemas ->`, schemas)
+	console.log(`schemas.length ->`, schemas.length)
 
 	let slugs = [] as string[]
 	for (let schema of schemas) {
@@ -115,24 +136,17 @@ async function syncCollections() {
 		}
 	}
 
+	throw new Error(`DEV`)
+
 	await emby.library.refresh(true)
 
 	let Items = await emby.library.Items()
 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 
-	// schemas = _.uniqWith(schemas, (from, to) => {
-	// 	if (to.name != from.name) return false
-	// 	to.items = _.uniqBy(to.items.concat(from.items), 'traktId')
-	// 	return true
-	// })
-
 	for (let schema of schemas) {
 		let Ids = [] as string[]
 		for (let item of schema.items) {
-			let file = emby.library.toFile(item)
-			// if (item.show) {
-			// 	let split = file.split('/').slice(-2)
-			// }
+			let file = await emby.library.toFile(item)
 			let Item = Items.find(({ Path }) => file.includes(Path))
 			Item ? Ids.push(Item.Id) : console.warn(`!Item '${item.main.title}' ->`, file)
 		}

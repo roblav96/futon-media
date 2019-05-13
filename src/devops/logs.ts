@@ -10,7 +10,7 @@ _.merge(util.inspect.defaultOptions, {
 	depth: 2,
 } as util.InspectOptions)
 
-process.stdout.write(`
+console.log(`
 ${ansi.dim('■■■■■■■■■■■■■■■■■■■■■■■')}
       ${ansi.cyan.bold(dayjs().format('hh:mm:ss A'))}
 ${ansi.dim('■■■■■■■■■■■■■■■■■■■■■■■')}\n\n`)
@@ -33,7 +33,9 @@ for (let [method, color] of Object.entries(colors)) {
 					let stack = site.beforeParse.replace(site.file, site.fileShort)
 					ending = `+${ms(delta)} ${stack}`
 				}
-				process.stdout.write(`\n${ansi[color](indicator)} ${ansi.dim(`${ending}`)}\n`)
+				let heading = `\n${ansi[color](indicator)} ${ansi.dim(`${ending}`)}\n`
+				if (!process.DEVELOPMENT) args[0] = `${heading}${args[0]}`
+				else (console as any)._stdout.write(heading)
 			}
 			return fn.apply(console, args)
 		}

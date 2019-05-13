@@ -110,8 +110,8 @@ export function isVideo(file: string) {
 }
 
 export function alphabetically(a: string, b: string) {
-	a = _.trim(a.toLowerCase()).slice(0, 1)
-	b = _.trim(b.toLowerCase()).slice(0, 1)
+	a = minify(a)
+	b = minify(b)
 	return a < b ? -1 : a > b ? 1 : (0 as number)
 }
 

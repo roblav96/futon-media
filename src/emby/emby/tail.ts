@@ -23,7 +23,7 @@ export class Tail {
 			let [{ LogPath }, [{ Name }]] = (await Promise.all([
 				emby.client.get('/System/Info', { silent: true }),
 				emby.client.get('/System/Logs', { silent: true }),
-			])) as [SystemInfo, SystemLog[]]
+			])) as [emby.SystemInfo, emby.SystemLog[]]
 			Tail.logfile = path.join(LogPath, Name)
 		}
 		if (!fs.pathExistsSync(Tail.logfile)) return console.warn(`Tail !fs.pathExistsSync`)
@@ -131,41 +131,3 @@ export const rxHttp = rxTail.pipe(
 // rxHttp.subscribe(({ url, query }) => {
 // 	console.log(`rxHttp ->`, url)
 // })
-
-export interface SystemInfo {
-	CachePath: string
-	CanLaunchWebBrowser: boolean
-	CanSelfRestart: boolean
-	CanSelfUpdate: boolean
-	CompletedInstallations: any[]
-	HardwareAccelerationRequiresPremiere: boolean
-	HasPendingRestart: boolean
-	HasUpdateAvailable: boolean
-	HttpServerPortNumber: number
-	HttpsPortNumber: number
-	Id: string
-	InternalMetadataPath: string
-	IsShuttingDown: boolean
-	ItemsByNamePath: string
-	LocalAddress: string
-	LogPath: string
-	OperatingSystem: string
-	OperatingSystemDisplayName: string
-	ProgramDataPath: string
-	ServerName: string
-	SupportsAutoRunAtStartup: boolean
-	SupportsHttps: boolean
-	SupportsLibraryMonitor: boolean
-	SystemUpdateLevel: string
-	TranscodingTempPath: string
-	Version: string
-	WanAddress: string
-	WebSocketPortNumber: number
-}
-
-export interface SystemLog {
-	DateCreated: string
-	DateModified: string
-	Name: string
-	Size: number
-}

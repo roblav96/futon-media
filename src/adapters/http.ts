@@ -132,6 +132,7 @@ export class Http {
 						error.statusMessage = message ? message.name : 'ok'
 					}
 					error = new HTTPError(options, error)
+					if (!options.debug) error = _.omit(error, 'data', 'headers')
 				}
 				return Promise.reject(error)
 			})

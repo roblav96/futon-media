@@ -54,7 +54,14 @@ process.nextTick(() => {
 })
 
 export const library = {
+	folders: { movie: '', show: '' },
 	qualities: ['2160p', '1080p'] as Quality[],
+
+	async setFolders() {
+		let Folders = (await emby.client.get('/Library/VirtualFolders')) as VirtualFolder[]
+		library.folders.movie = Folders.find(v => v.CollectionType == 'movies').Locations[0]
+		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
+	},
 
 	async refresh(wait = false) {
 		let proms = [] as Promise<any>[]
@@ -118,19 +125,16 @@ export const library = {
 		return movies.concat(shows).filter(v => !!v.character)
 	},
 
-	toFile(item: media.Item) {
-		let file = path.normalize(process.env.EMBY_LIBRARY_PATH || process.cwd())
-		file += `/${item.type}s`
+	async toFile(item: media.Item) {
+		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
+			await library.setFolders()
+		}
+		let file = library.folders[item.type]
 		file += `/${item.ids.slug}`
 		item.ids.imdb && (file += ` [imdbid=${item.ids.imdb}]`)
 		item.ids.tmdb && (file += ` [tmdbid=${item.ids.tmdb}]`)
-		if (item.movie) {
-			file += `/${item.ids.slug}`
-		}
-		if (item.show) {
-			file += `/Season ${item.S.n}`
-			file += `/S${item.S.z}E${item.E.z}`
-		}
+		if (item.movie) file += `/${item.ids.slug}`
+		if (item.show) file += `/s${item.S.z}e${item.E.z}`
 		return `${file}.strm`
 	},
 
@@ -147,11 +151,11 @@ export const library = {
 		let url = emby.DOMAIN
 		process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
 		url += `/strm?${qs.stringify(query)}`
-		await fs.outputFile(library.toFile(item), url)
+		await fs.outputFile(await library.toFile(item), url)
 	},
 
 	async add(item: media.Item) {
-		let exists = await fs.pathExists(library.toFile(item))
+		let exists = await fs.pathExists(await library.toFile(item))
 		if (item.movie) {
 			await library.toStrm(item)
 		}
@@ -327,6 +331,12 @@ export interface Item {
 	SeriesId: string
 	SeriesName: string
 	SeriesPrimaryImageTag: string
+}
+
+export interface VirtualFolder {
+	CollectionType: string
+	Locations: string[]
+	Name: string
 }
 
 export interface View {
