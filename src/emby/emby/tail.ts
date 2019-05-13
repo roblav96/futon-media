@@ -13,8 +13,11 @@ import exithook = require('exit-hook')
 export const rxTail = new Rx.Subject<string>()
 
 process.nextTick(async () => {
-	let { LogPath } = await emby.client.get('/System/Info', { silent: true })
-	Tail.logfile = path.join(LogPath, 'embyserver.txt')
+	let [{ LogPath }, [{ Name }]] = (await Promise.all([
+		emby.client.get('/System/Info', { silent: true }),
+		emby.client.get('/System/Logs', { silent: true }),
+	])) as [SystemInfo, SystemLog[]]
+	Tail.logfile = path.join(LogPath, Name)
 	exithook(() => Tail.tail && Tail.tail.destroy())
 	schedule.scheduleJob('*/5 * * * * *', () => Tail.check()).invoke()
 })
@@ -23,22 +26,26 @@ class Tail {
 	static tail: Tail
 	static logfile: string
 	static check() {
-		if (!Tail.logfile) return
-		if (!fs.pathExistsSync(Tail.logfile)) return
-		if (Tail.tail && !Tail.tail.child.killed) return
+		if (!Tail.logfile) return console.warn(`Tail !Tail.logfile`)
+		if (!fs.pathExistsSync(Tail.logfile)) return console.warn(`Tail !fs.pathExistsSync`)
+		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail !child.killed`)
 		Tail.tail = new Tail(Tail.logfile)
 	}
 
 	watcher: fs.FSWatcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
-		console.log(`Tail ->`, path.basename(logfile))
+		console.log(`new Tail ->`, path.basename(logfile))
 
-		if (process.platform == 'darwin') {
-			this.watcher = fs.watch(logfile)
-			this.watcher.once('change', () => this.destroy())
-			this.watcher.once('error', () => this.destroy())
-		}
+		this.watcher = fs.watch(logfile)
+		this.watcher.once('change', (type: string, file: string) => {
+			console.warn(`Tail watcher change ->`, type, file)
+			this.destroy()
+		})
+		this.watcher.once('error', error => {
+			console.error(`Tail watcher -> %O`, error)
+			this.destroy()
+		})
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
@@ -49,17 +56,32 @@ class Tail {
 				line && rxTail.next(line)
 			}
 		})
-		this.child.stderr.once('data', () => this.destroy())
-		this.child.once('error', () => this.destroy())
-		this.child.once('close', () => this.destroy())
-		this.child.once('disconnect', () => this.destroy())
-		this.child.once('exit', () => this.destroy())
+		this.child.stderr.once('data', (chunk: string) => {
+			console.error(`Tail child stderr -> %O`, chunk)
+			this.destroy()
+		})
+		this.child.once('error', error => {
+			console.error(`Tail child error -> %O`, error)
+			this.destroy()
+		})
+		this.child.once('close', (code, signal) => {
+			console.warn(`Tail child close ->`, code, signal)
+			this.destroy()
+		})
+		this.child.once('disconnect', () => {
+			console.warn(`Tail child disconnect ->`)
+			this.destroy()
+		})
+		this.child.once('exit', (code, signal) => {
+			console.error(`Tail child exit ->`, code, signal)
+			this.destroy()
+		})
 	}
 
 	destroy() {
 		this.child.kill('SIGTERM')
 		this.child.stdout.removeAllListeners()
-		this.watcher && this.watcher.close()
+		this.watcher.close()
 	}
 }
 
@@ -97,3 +119,41 @@ export const rxHttp = rxTail.pipe(
 		return { url, query }
 	})
 )
+
+export interface SystemInfo {
+	CachePath: string
+	CanLaunchWebBrowser: boolean
+	CanSelfRestart: boolean
+	CanSelfUpdate: boolean
+	CompletedInstallations: any[]
+	HardwareAccelerationRequiresPremiere: boolean
+	HasPendingRestart: boolean
+	HasUpdateAvailable: boolean
+	HttpServerPortNumber: number
+	HttpsPortNumber: number
+	Id: string
+	InternalMetadataPath: string
+	IsShuttingDown: boolean
+	ItemsByNamePath: string
+	LocalAddress: string
+	LogPath: string
+	OperatingSystem: string
+	OperatingSystemDisplayName: string
+	ProgramDataPath: string
+	ServerName: string
+	SupportsAutoRunAtStartup: boolean
+	SupportsHttps: boolean
+	SupportsLibraryMonitor: boolean
+	SystemUpdateLevel: string
+	TranscodingTempPath: string
+	Version: string
+	WanAddress: string
+	WebSocketPortNumber: number
+}
+
+export interface SystemLog {
+	DateCreated: string
+	DateModified: string
+	Name: string
+	Size: number
+}

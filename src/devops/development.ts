@@ -4,14 +4,10 @@ import * as dayjs from 'dayjs'
 import * as deepdiff from 'deep-diff'
 import * as deepmerge from 'deepmerge'
 import * as dts from 'dts-generate'
-import * as inspector from 'inspector'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as similarity from 'string-similarity'
 import * as Url from 'url-parse'
-import exithook = require('exit-hook')
-
-exithook(() => inspector.close())
 
 if (process.DEVELOPMENT) {
 	setInterval(Function, 1 << 30)

@@ -2,7 +2,7 @@ import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
 import '@/devops/logs'
-import '@/devops/devtools'
+import '@/devops/development'
 import '@/mocks/mocks'
 
 // use dynamic imports to avoid circular null references
@@ -16,3 +16,7 @@ setTimeout(
 	() => start().catch(error => console.error(`start -> %O`, error)),
 	process.DEVELOPMENT ? 1000 : 1 // wait for Debugger attached
 )
+
+import * as inspector from 'inspector'
+import exithook = require('exit-hook')
+exithook(() => inspector.close())

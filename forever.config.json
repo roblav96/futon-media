@@ -1,5 +1,6 @@
 {
 	"append": true,
+	"killSignal": "SIGTERM",
 	"killTree": true,
 	"script": "dist/index.js",
 	"uid": "futon-media"
