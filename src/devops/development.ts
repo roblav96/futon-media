@@ -4,6 +4,7 @@ import * as dayjs from 'dayjs'
 import * as deepdiff from 'deep-diff'
 import * as deepmerge from 'deepmerge'
 import * as dts from 'dts-generate'
+import * as httperrors from 'http-errors'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as similarity from 'string-similarity'
@@ -19,7 +20,19 @@ if (process.DEVELOPMENT) {
 	}
 	console.clear()
 
-	Object.assign(global, { _, crypto, dayjs, deepdiff, deepmerge, dts, path, qs, similarity, Url })
+	Object.assign(global, {
+		_,
+		crypto,
+		dayjs,
+		deepdiff,
+		deepmerge,
+		dts,
+		httperrors,
+		path,
+		qs,
+		similarity,
+		Url,
+	})
 }
 
 declare global {

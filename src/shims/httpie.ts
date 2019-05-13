@@ -4,6 +4,15 @@ import { request } from 'https'
 import { globalAgent } from 'http'
 import { parse, resolve } from 'url'
 
+function toError(rej, res: Partial<HttpieResponse>, err?) {
+	err = err || new Error(res.statusMessage)
+	err.statusMessage = res.statusMessage
+	err.statusCode = res.statusCode
+	err.headers = res.headers
+	err.data = res.data
+	rej(err)
+}
+
 export function send(method, uri, opts = {} as any) {
 	return new Promise<HttpieResponse>((res, rej) => {
 		let out = ''
@@ -13,7 +22,7 @@ export function send(method, uri, opts = {} as any) {
 		Object.assign(opts, typeof uri === 'string' ? parse(uri) : uri)
 		opts.agent = opts.protocol === 'http:' ? globalAgent : void 0
 
-		let req = request(opts, r => {
+		let req = request(opts, (r: HttpieResponse) => {
 			r.setEncoding('utf8')
 
 			r.on('data', d => {
@@ -26,17 +35,12 @@ export function send(method, uri, opts = {} as any) {
 					try {
 						out = JSON.parse(out, opts.reviver)
 					} catch (err) {
-						return rej(err)
+						return toError(rej, r, err)
 					}
 				}
 				;(r as any).data = out
 				if (r.statusCode >= 400) {
-					let err = new Error(r.statusMessage) as any
-					err.statusMessage = r.statusMessage
-					err.statusCode = r.statusCode
-					err.headers = r.headers
-					err.data = (r as any).data
-					rej(err)
+					toError(rej, r)
 				} else if (r.statusCode > 300 && redirect && r.headers.location) {
 					opts.path = resolve(opts.path, r.headers.location)
 					return send(method, opts.path.startsWith('/') ? opts : opts.path, opts).then(
@@ -47,6 +51,11 @@ export function send(method, uri, opts = {} as any) {
 					res(r as any)
 				}
 			})
+		})
+
+		req.on('timeout', () => {
+			req.abort()
+			toError(rej, { statusCode: 408, statusMessage: 'RequestTimeoutError' })
 		})
 
 		req.on('error', rej)

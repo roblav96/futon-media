@@ -14,12 +14,15 @@ import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
 import Emitter from '@/shims/emitter'
+import exithook = require('exit-hook')
 
 process.nextTick(() => {
-	process.DEVELOPMENT && db.flush('strm:*') && db.flush('rxItems:*')
-	let listen = fastify.listen(emby.STRM_PORT)
-	listen.then(
-		address => console.info(`fastify address ->`, address),
+	process.DEVELOPMENT && db.flush('strm:*')
+	fastify.listen(emby.STRM_PORT).then(
+		address => {
+			console.info(`fastify address ->`, address)
+			exithook(() => fastify.close())
+		},
 		error => console.error(`fastify listen -> %O`, error)
 	)
 })
@@ -35,7 +38,7 @@ const emitter = new Emitter<string, string>()
 async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery, rkey: string) {
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
-	let UserId = await db.get(`rxItems:${traktId}`)
+	let UserId = await db.get(`rxItem:${traktId}`)
 	UserId && (Session = Sessions.find(v => v.UserId == UserId))
 	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)

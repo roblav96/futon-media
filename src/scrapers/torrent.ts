@@ -51,9 +51,10 @@ export class Torrent {
 		// magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
 		// magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
 		// magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD)).sort()
+		magnet.tr = trackers.GOOD
 
 		result.magnet = `magnet:?${qs.stringify(
-			{ xt: magnet.xt, dn: magnet.dn, tr: trackers.GOOD },
+			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
 

@@ -3,10 +3,10 @@ import 'dotenv/config'
 import 'node-env-dev'
 import '@/devops/logs'
 import '@/devops/development'
-import '@/mocks/mocks'
 
 // use dynamic imports to avoid circular null references
 async function start() {
+	await import('@/mocks/mocks')
 	await import('@/emby/emby')
 	await import('@/emby/collections')
 	await import('@/emby/search')

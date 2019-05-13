@@ -5,6 +5,7 @@ import * as level from 'level'
 import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
+import * as rocksdb from 'level-rocksdb'
 import * as ttl from 'level-ttl'
 import * as xdgBasedir from 'xdg-basedir'
 import fastStringify from 'fast-safe-stringify'
@@ -49,27 +50,32 @@ class Db {
 		}
 	}
 
-	async keys() {
-		return await new Promise<string[]>(resolve => {
-			let keys = [] as string[]
-			let stream = this.level.createKeyStream()
-			stream.once('error', error => console.error(`db keys -> %O`, error))
-			stream.on('data', key => keys.push(key))
+	async entries() {
+		return await new Promise<string[][]>(resolve => {
+			let entries = [] as string[][]
+			let stream = this.level.createReadStream()
+			stream.once('error', error => console.error(`db entries -> %O`, error))
+			stream.on('data', ({ key, value }) => entries.push([key, value]))
 			stream.on('end', () => {
-				resolve(keys.filter(v => !v.startsWith('!ttl!')))
+				resolve(entries.filter(([key]) => !key.startsWith('!ttl!')))
 				process.nextTick(() => stream.removeAllListeners())
 			})
 		})
 	}
+	async keys() {
+		return (await this.entries()).map(([key, value]) => key)
+	}
+	async values() {
+		return (await this.entries()).map(([key, value]) => value)
+	}
 
 	async flush(pattern: string) {
 		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
-		process.DEVELOPMENT && console.warn(`db flush '${pattern}' ->`, keys.sort())
-		keys.length > 0 && (await Promise.all(keys.map(key => this.del(key))))
+		if (keys.length == 0) return
+		console.warn(`db flush '${pattern}' ->`, keys.sort())
+		await Promise.all(keys.map(key => this.del(key)))
 	}
 }
-
-// process.DEVELOPMENT && !(fs.removeSync(Db.base) as any) && console.warn(`removed ->`, Db.base)
 
 export const db = new Db(path.basename(__filename))
 export default db

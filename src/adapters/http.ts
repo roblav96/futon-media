@@ -1,8 +1,9 @@
 export { HttpieOptions, HttpieResponse } from '@/shims/httpie'
 import * as _ from 'lodash'
-import * as errors from 'http-errors'
 import * as http from 'http'
+import * as httperrors from 'http-errors'
 import * as normalize from 'normalize-url'
+import * as pDelay from 'delay'
 import * as qs from 'query-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
@@ -33,7 +34,7 @@ export interface HTTPError
 export class HTTPError extends Error {
 	name = 'HTTPError'
 	constructor(options: Config, response: HttpieResponse) {
-		super(`${response.statusCode} ${response.statusMessage}`)
+		super(`(${response.statusCode}) ${_.startCase(response.statusMessage)}`)
 		Error.captureStackTrace(this, this.constructor)
 		_.merge(this, _.pick(options, 'method', 'url'))
 		_.merge(this, _.pick(response, 'data', 'headers', 'statusCode', 'statusMessage'))
@@ -127,7 +128,7 @@ export class Http {
 			response = await send(options.method, options.url, options).catch(error => {
 				if (_.isFinite(error.statusCode)) {
 					if (!_.isString(error.statusMessage)) {
-						let message = errors[error.statusCode]
+						let message = httperrors[error.statusCode]
 						error.statusMessage = message ? message.name : 'ok'
 					}
 					error = new HTTPError(options, error)

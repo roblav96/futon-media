@@ -37,7 +37,7 @@ export class Tail {
 
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
-		console.info(`new Tail ->`, logfile)
+		console.info(`new Tail ->`, path.basename(logfile))
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {

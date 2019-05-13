@@ -11,6 +11,7 @@ import * as schedule from 'node-schedule'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import Emitter from '@/shims/emitter'
+import exithook = require('exit-hook')
 import Sockette from '@/shims/sockette'
 
 export const client = new http.Http({
@@ -31,7 +32,7 @@ process.nextTick(() => {
 	let random = Math.random().toString(36)
 	let nonce = `${_.random(111, 999)}/${random.slice(-8)}`
 	let ws = new Sockette(`wss://socket.put.io/socket/sockjs/${nonce}/websocket`, {
-		timeout: 1000,
+		timeout: 3000,
 		maxAttempts: Infinity,
 		onerror({ error }) {
 			console.error(`putio onerror -> %O`, error)
@@ -61,6 +62,7 @@ process.nextTick(() => {
 			})
 		},
 	})
+	exithook(() => ws.close())
 
 	if (process.DEVELOPMENT) return
 	schedule.scheduleJob('0 * * * *', async () => {
