@@ -20,7 +20,7 @@ process.nextTick(async () => {
 		},
 		onclose({ code, reason }) {
 			console.warn(`emby onclose ->`, code, reason)
-			emby.Tail.tail && emby.Tail.tail.destroy()
+			emby.Tail.destroy()
 		},
 		onopen({ target }) {
 			console.info(`emby onopen ->`, new Url(target.url).pathname)

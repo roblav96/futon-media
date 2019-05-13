@@ -3,7 +3,6 @@ import * as emby from '@/emby/emby'
 import * as execa from 'execa'
 import * as fs from 'fs-extra'
 import * as path from 'path'
-import * as sane from 'sane'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
@@ -19,7 +18,7 @@ process.nextTick(async () => {
 		emby.client.get('/System/Logs', { silent: true }),
 	])) as [SystemInfo, SystemLog[]]
 	Tail.logfile = path.join(LogPath, Name)
-	exithook(() => Tail.tail && Tail.tail.destroy())
+	exithook(() => Tail.destroy())
 	Tail.connect()
 })
 
@@ -35,35 +34,13 @@ export class Tail {
 		if (Tail.tail && !Tail.tail.child.killed) return console.log(`Tail tailing...`)
 		Tail.tail = new Tail(Tail.logfile)
 	}
+	static destroy() {
+		Tail.tail && Tail.tail.destroy()
+	}
 
-	watcher: sane.Watcher
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
 		console.log(`new Tail ->`, logfile)
-
-		this.watcher = sane(path.dirname(logfile), {
-			glob: path.basename(logfile),
-			watchexec: true,
-		})
-		this.watcher.once('ready', () => {
-			console.log(`Tail watcher ready`)
-		})
-		this.watcher.once('add', (path, root) => {
-			console.warn(`Tail watcher add ->`, path, root)
-			this.destroy()
-		})
-		this.watcher.once('change', (path, root) => {
-			console.warn(`Tail watcher change ->`, path, root)
-			this.destroy()
-		})
-		this.watcher.once('delete', (path, root) => {
-			console.warn(`Tail watcher delete ->`, path, root)
-			this.destroy()
-		})
-		this.watcher.once('error', error => {
-			console.error(`Tail watcher error -> %O`, error)
-			this.destroy()
-		})
 
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
 		this.child.stdout.on('data', (chunk: string) => {
@@ -113,13 +90,9 @@ export class Tail {
 
 	destroy = _.once(() => {
 		this.child.kill('SIGTERM')
-		this.watcher.close()
-		process.nextTick(() => {
-			this.child.removeAllListeners()
-			this.child.stdout.removeAllListeners()
-			this.child.stderr.removeAllListeners()
-			this.watcher.removeAllListeners()
-		})
+		this.child.removeAllListeners()
+		this.child.stdout.removeAllListeners()
+		this.child.stderr.removeAllListeners()
 		Tail.reconnect()
 	})
 }
@@ -199,10 +172,4 @@ export interface SystemLog {
 	DateModified: string
 	Name: string
 	Size: number
-}
-
-declare module 'sane' {
-	interface Options {
-		watchexec: boolean
-	}
 }
