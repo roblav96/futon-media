@@ -102,7 +102,7 @@ export class Http {
 				options.query,
 				options.qsArrayFormat && { arrayFormat: options.qsArrayFormat }
 			)
-			options.url += `?${stringify}`
+			if (stringify.length > 0) options.url += `?${stringify}`
 		}
 
 		if (_.size(options.form)) {

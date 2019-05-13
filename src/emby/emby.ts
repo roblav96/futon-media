@@ -1,19 +1,26 @@
 import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 
-export const HOST = process.env.EMBY_API_HOST || '127.0.0.1'
-export const DOMAIN = `${process.DEVELOPMENT ? 'http' : 'https'}://${HOST}`
-export const PORT = _.parseInt(process.env.EMBY_API_PORT) || 8096
-export const STRM_PORT = PORT + 3
+// export const env = {
+// 	ADMIN_ID: process.env.ADMIN_ID,
+// 	ADMIN_KEY: process.env.ADMIN_KEY,
+// 	HOST: process.env.HOST,
+// 	KEY: process.env.KEY,
+// 	PORT: process.env.PORT,
+// 	PROTO: process.env.PROTO,
+// 	STRM_PORT: process.env.STRM_PORT,
+// }
+
+export const URL = `${process.env.EMBY_PROTO}//${process.env.EMBY_HOST}:${process.env.EMBY_PORT}`
 
 export const client = new http.Http({
-	baseUrl: `${DOMAIN}:${PORT}/emby`,
-	query: { api_key: process.env.EMBY_API_KEY },
+	baseUrl: `${URL}/emby`,
+	query: { api_key: process.env.EMBY_KEY },
 })
 
-export async function getSystemInfo() {
-	return (await client.get('/System/Info', { silent: true })) as SystemInfo
-}
+// export async function getSystemInfo() {
+// 	return (await client.get('/System/Info', { silent: true })) as SystemInfo
+// }
 
 export * from '@/emby/emby/defaults'
 export * from '@/emby/emby/library'

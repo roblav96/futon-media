@@ -12,7 +12,8 @@ import { SystemInfo } from '@/emby/emby'
 async function start() {
 	if (!process.env.EMBY_HOST) {
 		let { LocalAddress, WanAddress } = (await http.client.get(
-			`http://127.0.0.1:${process.env.EMBY_PORT || 8096}/emby/System/Info/Public`
+			`http://127.0.0.1:${process.env.EMBY_PORT || 8096}/emby/System/Info/Public`,
+			{ silent: true }
 		)) as SystemInfo
 		console.log(`LocalAddress ->`, new Url(LocalAddress))
 		console.log(`WanAddress ->`, new Url(WanAddress))
