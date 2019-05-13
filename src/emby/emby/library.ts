@@ -9,15 +9,16 @@ import * as Rx from '@/shims/rxjs'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+import db from '@/adapters/db'
 
 process.nextTick(() => {
 	let rxItems = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
-		Rx.op.map(({ query }) => query.ItemId),
+		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(1000),
-		Rx.op.distinctUntilChanged()
+		Rx.op.distinctUntilKeyChanged('UserId')
 	)
-	rxItems.subscribe(async ItemId => {
+	rxItems.subscribe(async ({ ItemId, UserId }) => {
 		let Item = await library.Item(ItemId)
 		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
 		if (Item.Type == 'Person') {
@@ -41,6 +42,7 @@ process.nextTick(() => {
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
+			await db.put(`rxItems:${item.traktId}`, UserId, utils.duration(1, 'minute'))
 			console.log(`rxItems ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
 		}
