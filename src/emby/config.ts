@@ -16,8 +16,18 @@ const REQUIRED: (keyof Env)[] = [
 	'EMBY_STRM_PORT',
 ]
 
-function defaults(env: Partial<Env>) {
-	_.defaults(process.env, _.pick(env, _.keys(env).filter(k => _.size(env[k]))))
+export async function setup() {
+	if (process.env.EMBY_DATA) await withEmbyData()
+	await withEmbySystemInfo()
+
+	if (!process.env.EMBY_STRM_PORT) {
+		process.env.EMBY_STRM_PORT = (_.parseInt(process.env.EMBY_PORT) + 3) as any
+	}
+
+	let env = _.pick(process.env, REQUIRED) as Env
+	if (_.values(env).filter(Boolean).length != REQUIRED.length) {
+		throw new Error(`Invalid environment configuration:\n${JSON.stringify(env, null, 4)}`)
+	}
 }
 
 async function withEmbyData() {
@@ -34,7 +44,7 @@ async function withEmbyData() {
 		EMBY_PORT: RequireHttps == 'true' ? HttpsPortNumber : HttpServerPortNumber,
 		EMBY_PROTO: RequireHttps == 'true' ? 'https:' : 'http:',
 	})
-	console.log(`withEmbyData ->`, _.pick(process.env, REQUIRED))
+	// console.log(`withEmbyData ->`, _.pick(process.env, REQUIRED))
 }
 
 async function withEmbySystemInfo() {
@@ -46,19 +56,9 @@ async function withEmbySystemInfo() {
 	})) as SystemInfo
 	let { hostname, port, protocol } = new Url(process.DEVELOPMENT ? LocalAddress : WanAddress)
 	defaults({ EMBY_HOST: hostname, EMBY_PORT: port, EMBY_PROTO: protocol })
-	console.log(`withEmbySystemInfo ->`, _.pick(process.env, REQUIRED))
+	// console.log(`withEmbySystemInfo ->`, _.pick(process.env, REQUIRED))
 }
 
-export async function setup() {
-	if (process.env.EMBY_DATA) await withEmbyData()
-	await withEmbySystemInfo()
-
-	if (!process.env.EMBY_STRM_PORT) {
-		process.env.EMBY_STRM_PORT = (_.parseInt(process.env.EMBY_PORT) + 3) as any
-	}
-
-	let env = _.pick(process.env, REQUIRED) as Env
-	if (_.values(env).filter(Boolean).length != REQUIRED.length) {
-		throw new Error(`Invalid environment configuration:\n${JSON.stringify(env, null, 4)}`)
-	}
+function defaults(env: Partial<Env>) {
+	_.defaults(process.env, _.pick(env, _.keys(env).filter(k => _.size(env[k]))))
 }
