@@ -57,7 +57,7 @@ class Tail {
 			}
 		})
 		this.child.stderr.once('data', (chunk: string) => {
-			console.error(`Tail child stderr -> %O`, chunk)
+			console.error(`Tail child stderr -> %O`, _.trim((chunk || '').toString()))
 			this.destroy()
 		})
 		this.child.once('error', error => {
