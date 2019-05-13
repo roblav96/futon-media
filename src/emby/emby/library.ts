@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
+import * as isIp from 'is-ip'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
@@ -152,7 +153,8 @@ export const library = {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
 		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
-		let url = `${emby.env.PROTO}//${host}:${emby.env.STRM_PORT}`
+		let url = `${emby.env.PROTO}//${host}`
+		if (isIp(host)) url += `:${emby.env.STRM_PORT}`
 		url += `/strm?${qs.stringify(query)}`
 		await fs.outputFile(await library.toFile(item), url)
 	},
