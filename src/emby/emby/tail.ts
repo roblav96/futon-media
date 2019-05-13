@@ -12,16 +12,11 @@ import exithook = require('exit-hook')
 
 export const rxTail = new Rx.Subject<string>()
 
-process.nextTick(async () => {
-	exithook(() => Tail.destroy())
-	Tail.connect()
-})
-
 export class Tail {
 	static tail: Tail
 	static logfile: string
 
-	static reconnect = _.debounce(Tail.connect, utils.duration(10, 'second'))
+	static reconnect = _.debounce(Tail.connect, utils.duration(5, 'second'))
 	static async connect() {
 		Tail.reconnect()
 		if (!Tail.logfile) {
@@ -75,10 +70,6 @@ export class Tail {
 			console.warn(`Tail child close ->`, code, signal)
 			this.destroy()
 		})
-		this.child.once('end', (code, signal) => {
-			console.warn(`Tail child end ->`, code, signal)
-			this.destroy()
-		})
 		this.child.once('disconnect', () => {
 			console.warn(`Tail child disconnect`)
 			this.destroy()
@@ -89,15 +80,17 @@ export class Tail {
 		})
 	}
 
-	destroy = _.once(() => {
+	destroy() {
 		console.warn(`Tail destroy`)
 		this.child.kill('SIGTERM')
 		this.child.removeAllListeners()
 		this.child.stdout.removeAllListeners()
 		this.child.stderr.removeAllListeners()
 		Tail.reconnect()
-	})
+	}
 }
+
+exithook(() => Tail.destroy())
 
 const JUNK = [
 	'.png',
@@ -134,9 +127,9 @@ export const rxHttp = rxTail.pipe(
 	})
 )
 
-rxHttp.subscribe(({ url, query }) => {
-	console.log(`rxHttp ->`, url)
-})
+// rxHttp.subscribe(({ url, query }) => {
+// 	console.log(`rxHttp ->`, url)
+// })
 
 export interface SystemInfo {
 	CachePath: string
