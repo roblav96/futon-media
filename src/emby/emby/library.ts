@@ -17,19 +17,19 @@ process.nextTick(() => {
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(1000),
-		Rx.op.distinctUntilKeyChanged('UserId')
+		Rx.op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
 	)
 	rxItems.subscribe(async ({ ItemId, UserId }) => {
 		let Item = await library.Item(ItemId)
 		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
 		if (Item.Type == 'Person') {
 			let persons = (await trakt.client.get(`/search/person`, {
-				query: { query: Item.Name, fields: 'name', limit: 100 },
+				query: { query: Item.Name, fields: 'name', limit: 100 }
 			})) as trakt.Result[]
 			persons = persons.filter(v => utils.same(v.person.name, Item.Name))
 			let sizes = persons.map(person => ({
 				...person.person,
-				size: _.values(person.person).filter(Boolean).length,
+				size: _.values(person.person).filter(Boolean).length
 			}))
 			sizes.sort((a, b) => b.size - a.size)
 			let slug = sizes[0].ids.slug
@@ -46,7 +46,7 @@ process.nextTick(() => {
 			let [key, value] = (await db.entries()).find(([key, value]) => value == UserId)
 			if (key) await db.del(key)
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
-			console.log(`rxItems ${Item.Type} ->`, item.title)
+			console.log(`rxItems ${Item.Type} ${Item.Name} ->`, item.title)
 			await emby.library.add(item)
 		}
 		await emby.library.refresh()
@@ -59,16 +59,10 @@ export const library = {
 	folders: { movie: '', show: '' },
 	async setFolders() {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
-			silent: true,
+			silent: true
 		})) as VirtualFolder[]
 		library.folders.movie = Folders.find(v => v.CollectionType == 'movies').Locations[0]
 		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
-	},
-
-	strmUrl: '',
-	async setStrmUrl() {
-		let { LocalAddress, WanAddress } = await emby.getSystemInfo()
-		let url = (process.DEVELOPMENT ? LocalAddress : WanAddress).replace('http', 'ws')
 	},
 
 	async refresh(wait = false) {
@@ -93,12 +87,12 @@ export const library = {
 		query = _.defaults(query || {}, {
 			Fields: [],
 			IncludeItemTypes: ['Movie', 'Series' /** , 'Episode', 'Person' */],
-			Recursive: 'true',
+			Recursive: 'true'
 		})
 		query.Fields = _.uniq(query.Fields.concat(['Path', 'ProviderIds']))
 		let Items = (await emby.client.get('/Items', {
 			query: _.mapValues(query, v => (_.isArray(v) ? v.join() : v)),
-			silent: true,
+			silent: true
 		})).Items as emby.Item[]
 		return Items.filter(v => fs.pathExistsSync(v.Path || ''))
 	},
@@ -106,7 +100,7 @@ export const library = {
 	async Item(ItemId: string) {
 		return ((await emby.client.get('/Items', {
 			query: { Ids: ItemId, Fields: 'Path,ProviderIds' },
-			silent: true,
+			silent: true
 		})).Items as emby.Item[])[0]
 	},
 
@@ -125,10 +119,10 @@ export const library = {
 
 	async itemsOf(slug: string) {
 		let movies = (await trakt.client.get(`/people/${slug}/movies`, {
-			query: { limit: 100 },
+			query: { limit: 100 }
 		})).cast as trakt.Result[]
 		let shows = (await trakt.client.get(`/people/${slug}/shows`, {
-			query: { limit: 100 },
+			query: { limit: 100 }
 		})).cast as trakt.Result[]
 		return movies.concat(shows).filter(v => !!v.character)
 	},
@@ -151,15 +145,13 @@ export const library = {
 			...item.ids,
 			traktId: item.traktId,
 			type: item.type,
-			year: item.year,
+			year: item.year
 		} as StrmQuery
 		if (item.episode) {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
-		if (!library.strmUrl) await library.setStrmUrl()
-		// let url = emby.DOMAIN
-		// process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
-		let url = process.env.EMBY_HOST
+		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
+		let url = `${emby.env.PROTO},//${host}:${emby.env.STRM_PORT}`
 		url += `/strm?${qs.stringify(query)}`
 		await fs.outputFile(await library.toFile(item), url)
 	},
@@ -172,7 +164,7 @@ export const library = {
 		if (item.show) {
 			await utils.pRandom(100)
 			let seasons = (await trakt.client.get(`/shows/${item.traktId}/seasons`, {
-				silent: true,
+				silent: true
 			})) as trakt.Season[]
 			for (let season of seasons.filter(v => v.number > 0)) {
 				item.use({ season })
@@ -183,7 +175,7 @@ export const library = {
 			}
 		}
 		return exists
-	},
+	}
 }
 
 export type Quality = '2160p' | '1080p'
@@ -210,11 +202,11 @@ export interface Item {
 	ExternalUrls: {
 		Name: string
 		Url: string
-	}[]
+	},[]
 	GenreItems: {
 		Id: number
 		Name: string
-	}[]
+	},[]
 	Genres: string[]
 	HasSubtitles: boolean
 	Id: string
@@ -250,7 +242,7 @@ export interface Item {
 			Path: any
 			SupportsExternalStream: any
 			Type: any
-		}[]
+		},[]
 		Name: string
 		Path: string
 		Protocol: string
@@ -265,7 +257,7 @@ export interface Item {
 		SupportsProbing: boolean
 		SupportsTranscoding: boolean
 		Type: string
-	}[]
+	},[]
 	MediaStreams: {
 		Codec: string
 		DisplayLanguage: string
@@ -280,7 +272,7 @@ export interface Item {
 		Path: string
 		SupportsExternalStream: boolean
 		Type: string
-	}[]
+	},[]
 	MediaType: string
 	Name: string
 	OfficialRating: string
@@ -294,7 +286,7 @@ export interface Item {
 		PrimaryImageTag: string
 		Role: string
 		Type: string
-	}[]
+	},[]
 	PlayAccess: string
 	PremiereDate: string
 	PrimaryImageAspectRatio: number
@@ -311,13 +303,13 @@ export interface Item {
 	RemoteTrailers: {
 		Name: string
 		Url: string
-	}[]
+	},[]
 	ServerId: string
 	SortName: string
 	Studios: {
 		Id: number
 		Name: string
-	}[]
+	},[]
 	Taglines: string[]
 	Tags: any[]
 	Type: string
@@ -383,7 +375,7 @@ export interface ScheduledTasksInfo {
 	Triggers: {
 		IntervalTicks: number
 		Type: string
-	}[]
+	},[]
 }
 
 export interface ScheduledTaskEnded {

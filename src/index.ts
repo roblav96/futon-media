@@ -8,17 +8,16 @@ import * as http from '@/adapters/http'
 import * as Url from 'url-parse'
 import { SystemInfo } from '@/emby/emby'
 
-// use dynamic imports to avoid circular null references
 async function start() {
 	if (!process.env.EMBY_HOST) {
 		let { LocalAddress, WanAddress } = (await http.client.get(
 			`http://127.0.0.1:${process.env.EMBY_PORT || 8096}/emby/System/Info/Public`,
 			{ silent: true }
 		)) as SystemInfo
-		console.log(`LocalAddress ->`, new Url(LocalAddress))
-		console.log(`WanAddress ->`, new Url(WanAddress))
+		// console.log(`LocalAddress ->`, new Url(LocalAddress))
+		// console.log(`WanAddress ->`, new Url(WanAddress))
 		let url = new Url(process.DEVELOPMENT ? LocalAddress : WanAddress)
-		console.log(`url ->`, url)
+		// console.log(`url ->`, url)
 		process.env.EMBY_HOST = url.hostname
 		if (!process.env.EMBY_PROTO) process.env.EMBY_PROTO = url.protocol
 		if (!process.env.EMBY_PORT) process.env.EMBY_PORT = url.port
@@ -41,6 +40,7 @@ async function start() {
 		throw new Error(`Invalid environment configuration:\n${JSON.stringify(env, null, 4)}`)
 	}
 
+	// use dynamic imports to avoid circular null references
 	await import('@/mocks/mocks')
 	await import('@/emby/emby')
 	await import('@/emby/collections')

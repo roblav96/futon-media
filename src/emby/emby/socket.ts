@@ -11,10 +11,9 @@ import Sockette from '@/shims/sockette'
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
-	// let { LocalAddress, WanAddress } = await emby.getSystemInfo()
-	// let url = (process.DEVELOPMENT ? LocalAddress : WanAddress).replace('http', 'ws')
-	let query = { api_key: process.env.EMBY_ADMIN_KEY }
-	let ws = new Sockette(`${emby.URL}/embywebsocket?${qs.stringify(query)}`, {
+	let query = { api_key: emby.env.ADMIN_KEY }
+	
+	let ws = new Sockette(`${emby.env.URL}/embywebsocket?${qs.stringify(query)}`, {
 		timeout: 3000,
 		maxAttempts: Infinity,
 		onerror({ error }) {
