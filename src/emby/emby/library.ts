@@ -141,7 +141,8 @@ export const library = {
 		if (item.episode) {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
-		let url = `http://localhost:${emby.STRM_PORT}`
+		let url = emby.DOMAIN
+		process.DEVELOPMENT && (url += `:${emby.STRM_PORT}`)
 		url += `/strm?${qs.stringify(query)}`
 		await fs.outputFile(library.toFile(item), url)
 	},

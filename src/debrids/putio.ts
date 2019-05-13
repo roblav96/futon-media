@@ -111,18 +111,18 @@ export class Putio extends debrid.Debrid<Transfer> {
 				form: { url: this.magnet },
 			})) as Response
 			transfer = response.transfer
-		}
 
-		let rxCompleted = rx.transfer.pipe(
-			Rx.op.filter(({ action, value }) => action == 'update' && value.id == transfer.id),
-			Rx.op.filter(({ value }) => ['COMPLETED', 'DOWNLOADING'].includes(value.status)),
-			Rx.op.map(({ value }) => value.status == 'COMPLETED'),
-			Rx.op.take(1)
-		)
-		let completed = await rxCompleted.toPromise()
-		if (!completed) {
-			await client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })
-			return
+			let rxCompleted = rx.transfer.pipe(
+				Rx.op.filter(({ action, value }) => action == 'update' && value.id == transfer.id),
+				Rx.op.filter(({ value }) => ['COMPLETED', 'DOWNLOADING'].includes(value.status)),
+				Rx.op.map(({ value }) => value.status == 'COMPLETED'),
+				Rx.op.take(1)
+			)
+			let completed = await rxCompleted.toPromise()
+			if (!completed) {
+				await client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })
+				return
+			}
 		}
 
 		let { media_links } = (await client.post('/files/get-download-links', {

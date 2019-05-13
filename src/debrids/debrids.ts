@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as pAll from 'p-all'
 import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as media from '@/media/media'
@@ -18,6 +19,23 @@ export async function cached(hashes: string[]) {
 		return entries.map(([key], i) => resolved[i][index] && key).filter(Boolean)
 	}) as Debrids[][]
 }
+
+// async function eachStreamUrl(
+// 	torrent: torrent.Torrent,
+// 	item: media.Item,
+// 	channels: number,
+// 	codecs: string[]
+// ) {
+// 	let putios = torrents.filter(v => v.cached.includes('putio'))
+// 	if (putios.length > 0) {
+// 		let results = await pAll(
+// 			putios.map(torrent => async () => {
+// 				await utils.pRandom(1000)
+// 				let debrid = new debrids.putio().use(torrent.magnet)
+// 			})
+// 		)
+// 	}
+// }
 
 export async function getStreamUrl(
 	torrents: torrent.Torrent[],

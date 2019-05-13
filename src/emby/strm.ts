@@ -17,7 +17,11 @@ import Emitter from '@/shims/emitter'
 
 process.nextTick(() => {
 	process.DEVELOPMENT && db.flush('strm:*')
-	fastify.listen(emby.STRM_PORT).catch(error => console.error(`fastify listen -> %O`, error))
+	let listen = fastify.listen(emby.STRM_PORT)
+	listen.then(
+		address => console.log(`fastify listen address ->`, address),
+		error => console.error(`fastify listen -> %O`, error)
+	)
 })
 
 const fastify = Fastify({ querystringParser: query => qs.parse(query) })
