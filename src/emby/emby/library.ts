@@ -24,12 +24,12 @@ process.nextTick(() => {
 		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
 		if (Item.Type == 'Person') {
 			let persons = (await trakt.client.get(`/search/person`, {
-				query: { query: Item.Name, fields: 'name', limit: 100 }
+				query: { query: Item.Name, fields: 'name', limit: 100 },
 			})) as trakt.Result[]
 			persons = persons.filter(v => utils.same(v.person.name, Item.Name))
 			let sizes = persons.map(person => ({
 				...person.person,
-				size: _.values(person.person).filter(Boolean).length
+				size: _.values(person.person).filter(Boolean).length,
 			}))
 			sizes.sort((a, b) => b.size - a.size)
 			let slug = sizes[0].ids.slug
@@ -59,7 +59,7 @@ export const library = {
 	folders: { movie: '', show: '' },
 	async setFolders() {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
-			silent: true
+			silent: true,
 		})) as VirtualFolder[]
 		library.folders.movie = Folders.find(v => v.CollectionType == 'movies').Locations[0]
 		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
@@ -87,12 +87,12 @@ export const library = {
 		query = _.defaults(query || {}, {
 			Fields: [],
 			IncludeItemTypes: ['Movie', 'Series' /** , 'Episode', 'Person' */],
-			Recursive: 'true'
+			Recursive: 'true',
 		})
 		query.Fields = _.uniq(query.Fields.concat(['Path', 'ProviderIds']))
 		let Items = (await emby.client.get('/Items', {
 			query: _.mapValues(query, v => (_.isArray(v) ? v.join() : v)),
-			silent: true
+			silent: true,
 		})).Items as emby.Item[]
 		return Items.filter(v => fs.pathExistsSync(v.Path || ''))
 	},
@@ -100,7 +100,7 @@ export const library = {
 	async Item(ItemId: string) {
 		return ((await emby.client.get('/Items', {
 			query: { Ids: ItemId, Fields: 'Path,ProviderIds' },
-			silent: true
+			silent: true,
 		})).Items as emby.Item[])[0]
 	},
 
@@ -119,10 +119,10 @@ export const library = {
 
 	async itemsOf(slug: string) {
 		let movies = (await trakt.client.get(`/people/${slug}/movies`, {
-			query: { limit: 100 }
+			query: { limit: 100 },
 		})).cast as trakt.Result[]
 		let shows = (await trakt.client.get(`/people/${slug}/shows`, {
-			query: { limit: 100 }
+			query: { limit: 100 },
 		})).cast as trakt.Result[]
 		return movies.concat(shows).filter(v => !!v.character)
 	},
@@ -145,13 +145,13 @@ export const library = {
 			...item.ids,
 			traktId: item.traktId,
 			type: item.type,
-			year: item.year
+			year: item.year,
 		} as StrmQuery
 		if (item.episode) {
 			query = { ...query, s: item.S.n, e: item.E.n }
 		}
 		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
-		let url = `${emby.env.PROTO},//${host}:${emby.env.STRM_PORT}`
+		let url = `${emby.env.PROTO}//${host}:${emby.env.STRM_PORT}`
 		url += `/strm?${qs.stringify(query)}`
 		await fs.outputFile(await library.toFile(item), url)
 	},
@@ -164,7 +164,7 @@ export const library = {
 		if (item.show) {
 			await utils.pRandom(100)
 			let seasons = (await trakt.client.get(`/shows/${item.traktId}/seasons`, {
-				silent: true
+				silent: true,
 			})) as trakt.Season[]
 			for (let season of seasons.filter(v => v.number > 0)) {
 				item.use({ season })
@@ -175,7 +175,7 @@ export const library = {
 			}
 		}
 		return exists
-	}
+	},
 }
 
 export type Quality = '2160p' | '1080p'
