@@ -13,11 +13,11 @@ import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
 
 process.nextTick(() => {
-	process.DEVELOPMENT && db.flush('UserId:*')
+	// process.DEVELOPMENT && db.flush('UserId:*')
 	let rxItems = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
-		Rx.op.debounceTime(1000),
+		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
 	)
 	rxItems.subscribe(async ({ ItemId, UserId }) => {
@@ -44,8 +44,11 @@ process.nextTick(() => {
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
-			let [key, value] = (await db.entries()).find(([key, value]) => value == UserId)
-			if (key) await db.del(key)
+			let entries = await db.entries()
+			console.log(`entries ->`, entries)
+			let entry = entries.find(([key, value]) => value == UserId)
+			console.log(`entry ->`, entry)
+			if (_.isArray(entry)) await db.del(entry[0])
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
 			console.log(`rxItems ${Item.Type} ${Item.Name} ->`, item.title)
 			await emby.library.add(item)

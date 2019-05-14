@@ -88,6 +88,7 @@
 		"@types/cheerio": "^0.22.11",
 		"@types/deep-diff": "^1.0.0",
 		"@types/dotenv": "^6.1.1",
+		"@types/encoding-down": "^5.0.0",
 		"@types/execa": "^0.9.0",
 		"@types/fs-extra": "^5.0.5",
 		"@types/http-errors": "^1.6.1",

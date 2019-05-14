@@ -10,6 +10,10 @@ import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
+process.nextTick(() => {
+	// process.DEVELOPMENT && db.flush('http:memoize:*')
+})
+
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	baseUrl?: string
