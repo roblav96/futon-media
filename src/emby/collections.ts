@@ -11,7 +11,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// process.DEVELOPMENT && syncCollections()
+	process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob('0 0 * * *', () => syncCollections())
 	}
@@ -97,14 +97,14 @@ async function syncCollections() {
 
 	if (process.DEVELOPMENT) {
 		console.log(`schemas ->`, schemas.map(v => v.name))
-		let names = [
+		let lists = [
 			'007',
 			'MARVEL Cinematic Universe',
 			'Pixar Collection',
 			'TV Watchlist',
 			'Worlds of DC',
 		]
-		schemas = schemas.filter(v => names.includes(v.name))
+		schemas = schemas.filter(v => lists.includes(v.name))
 		console.log(`schemas ->`, schemas)
 		console.log(`schemas.length ->`, schemas.length)
 	}
@@ -113,9 +113,7 @@ async function syncCollections() {
 	for (let schema of schemas) {
 		await utils.pRandom(100)
 		let results = (await trakt.client
-			.get(schema.url, {
-				query: schema.limit ? { limit: schema.limit } : {},
-			})
+			.get(schema.url, schema.limit ? { query: { limit: schema.limit } } : {})
 			.catch(error => {
 				console.error(`trakt get ${schema.url} -> %O`, error)
 				return []
@@ -135,9 +133,9 @@ async function syncCollections() {
 		}
 	}
 
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
-	await emby.library.refresh(true)
+	// await emby.library.refresh(true)
 
 	// let Items = await emby.library.Items()
 	// let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
