@@ -13,7 +13,7 @@ import * as utils from '@/utils/utils'
 process.nextTick(() => {
 	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
-		schedule.scheduleJob(`0 */6 * * *`, () => syncCollections())
+		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
 	}
 })
 
