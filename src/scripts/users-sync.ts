@@ -14,5 +14,4 @@ export default async () => {
 			await User.setPolicy(User.Policy)
 		}
 	}
-	console.warn(`sync-users -> DONE`)
 }

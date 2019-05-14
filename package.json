@@ -20,8 +20,7 @@
 		"start": "del dist; run-p start:*",
 		"start:tsc": "tsc --watch",
 		"start:node": "just-wait -s -p dist; forever -w -c 'node --inspect' forever.config.json",
-		"test": "del dist; tsc || true; node dist/index.js",
-		"run": "del dist; tsc || true; node dist/index.js"
+		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {
 		"@sindresorhus/slugify": "^0.9.1",

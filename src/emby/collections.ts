@@ -13,7 +13,7 @@ import * as utils from '@/utils/utils'
 process.nextTick(() => {
 	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
-		schedule.scheduleJob('0 0 * * *', () => syncCollections())
+		schedule.scheduleJob(`0 */6 * * *`, () => syncCollections())
 	}
 })
 
@@ -21,7 +21,6 @@ const STATIC_SCHEMAS = [
 	['Watchlist', '/sync/watchlist/<%= type %>', 999],
 	['Collection', '/sync/collection/<%= type %>', 999],
 	['Recommendations', '/recommendations/<%= type %>', 100],
-	// ['Anticipated', '/<%= type %>/anticipated', 100],
 	['Popular', '/<%= type %>/popular', 100],
 	['Trending', '/<%= type %>/trending', 100],
 	['Most Played Weekly', '/<%= type %>/played/weekly', 100],
@@ -46,7 +45,7 @@ async function buildSchemas() {
 			media.MAIN_TYPESS.map((type, i) => {
 				return {
 					limit: schema[2],
-					name: `${['M', 'TV'][i]} ${schema[0]}`,
+					name: `${['Movie', 'TV'][i]} ${schema[0]}`,
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
 				} as CollectionSchema
@@ -59,6 +58,7 @@ async function buildSchemas() {
 		await utils.pRandom(100)
 		let response = (await trakt.client.get(`/lists/${type}`, {
 			query: { limit: 100, extended: '' },
+			// memoize: process.DEVELOPMENT,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map(v => v.list))
 	}
@@ -66,6 +66,7 @@ async function buildSchemas() {
 	await utils.pRandom(100)
 	let liked = (await trakt.client.get('/users/likes/lists', {
 		query: { limit: 999, extended: '' },
+		// memoize: process.DEVELOPMENT,
 	})) as trakt.ResponseList[]
 	lists.push(...liked.map(v => v.list))
 
@@ -97,19 +98,35 @@ async function syncCollections() {
 	let schemas = await buildSchemas()
 	console.log(`syncCollections ->`, schemas.length)
 
-	// if (process.DEVELOPMENT) {
-	// 	// console.log(`schemas ->`, schemas.map(v => v.name))
-	// 	let lists = [
-	// 		'007',
-	// 		'MARVEL Cinematic Universe',
-	// 		'Pixar Collection',
-	// 		'TV Watchlist',
-	// 		'Worlds of DC',
-	// 	]
-	// 	schemas = schemas.filter(v => lists.includes(v.name))
-	// 	// console.log(`schemas ->`, schemas)
-	// 	console.log(`schemas.length ->`, schemas.length)
+	// async function syncCollections(chunked = false) {
+	// if (chunked) {
+	// 	let chunks = utils.chunks(schemas, _.ceil(schemas.length / 12)) //[hour]
+	// 	schemas = chunks[_.parseInt(dayjs().format('h'))]
 	// }
+	// console.log(`syncCollections chunked ->`, chunked, schemas.length)
+
+	if (process.DEVELOPMENT) {
+		// console.log(`schemas ->`, schemas.map(v => v.name))
+		let lists = [
+			'007',
+			'100 Greatest Sci Fi Movies',
+			'Based on a TRUE STORY',
+			'Best Mindfucks',
+			'Disney',
+			'James Bond',
+			'Latest 4K Releases',
+			'MARVEL Cinematic Universe',
+			'Movie Watchlist',
+			'Pixar Collection',
+			'Star Wars Timeline',
+			'TV Watchlist',
+			'Walt Disney Animated feature films',
+			'Worlds of DC',
+		]
+		schemas = schemas.filter(v => lists.includes(v.name))
+		// console.log(`schemas ->`, schemas)
+		// console.log(`schemas.length ->`, schemas.length)
+	}
 
 	let slugs = [] as string[]
 	for (let schema of schemas) {
@@ -135,8 +152,8 @@ async function syncCollections() {
 		}
 	}
 
-	await emby.library.refresh(true)
-
+	let hits = [] as string[]
+	let misses = [] as string[]
 	let Items = await emby.library.Items()
 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 	for (let schema of schemas) {
@@ -146,26 +163,32 @@ async function syncCollections() {
 				if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
 				if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
 			})
-			Item ? Ids.push(Item.Id) : console.warn(`!Item '${schema.name}' ->`, item.main.title)
+			if (Item) {
+				hits.push(item.ids.slug)
+				Ids.push(Item.Id)
+			} else misses.push(item.ids.slug)
 		}
-		if (Ids.length == 0) {
-			console.warn(`Ids.length == 0 '${schema.name}' length ->`, schema.items.length)
-			continue
-		}
+		if (Ids.length == 0) continue
 		let Collection = Collections.find(v => v.Name == schema.name)
-		if (!Collection) {
+		if (Collection) {
+			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
+				query: { Ids: Ids.join() },
+			})
+		} else {
 			await emby.client.post('/Collections', {
 				query: { Ids: Ids.join(), Name: schema.name },
 			})
-			continue
 		}
-		await emby.client.post(`/Collections/${Collection.Id}/Items`, {
-			query: { Ids: Ids.join() },
-		})
 	}
+
 	await emby.library.refresh()
 
-	console.log(`syncCollections`, schemas.length, slugs.length, `-> DONE`)
+	console.log(`syncCollections DONE ->`, {
+		hits: hits.length,
+		misses: misses.length,
+		schemas: schemas.length,
+		slugs: slugs.length,
+	})
 }
 
 interface CollectionSchema {
