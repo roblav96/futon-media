@@ -94,9 +94,9 @@ async function buildSchemas() {
 async function syncCollections() {
 	let schemas = await buildSchemas()
 	console.log(`syncCollections ->`, schemas.length)
-	console.log(`schemas ->`, schemas.map(v => v.name))
 
 	if (process.DEVELOPMENT) {
+		console.log(`schemas ->`, schemas.map(v => v.name))
 		let names = [
 			'007',
 			'MARVEL Cinematic Universe',
@@ -105,9 +105,9 @@ async function syncCollections() {
 			'Worlds of DC',
 		]
 		schemas = schemas.filter(v => names.includes(v.name))
+		console.log(`schemas ->`, schemas)
+		console.log(`schemas.length ->`, schemas.length)
 	}
-	console.log(`schemas ->`, schemas)
-	console.log(`schemas.length ->`, schemas.length)
 
 	let slugs = [] as string[]
 	for (let schema of schemas) {
@@ -135,39 +135,38 @@ async function syncCollections() {
 		}
 	}
 
-	throw new Error(`DEV`)
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	await emby.library.refresh(true)
 
-	let Items = await emby.library.Items()
-	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	// let Items = await emby.library.Items()
+	// let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	// for (let schema of schemas) {
+	// 	let Ids = [] as string[]
+	// 	for (let item of schema.items) {
+	// 		let file = await emby.library.toFile(item)
+	// 		let Item = Items.find(({ Path }) => file.includes(Path))
+	// 		Item ? Ids.push(Item.Id) : console.warn(`!Item '${item.main.title}' ->`, file)
+	// 	}
+	// 	let Collection = Collections.find(v => v.Name == schema.name)
+	// 	if (!Collection) {
+	// 		if (Ids.length == 0) continue
+	// 		await emby.client.post('/Collections', {
+	// 			query: { Ids: Ids.join(), Name: schema.name },
+	// 		})
+	// 	} else {
+	// 		let CollectionItems = await emby.library.Items({ ParentId: Collection.Id })
+	// 		Ids = _.difference(CollectionItems.map(v => v.Id), Ids)
+	// 		if (Ids.length > 0) {
+	// 			console.log(`Ids difference '${Collection.Name}' ->`, JSON.stringify(Ids))
+	// 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
+	// 				query: { Ids: Ids.join() },
+	// 			})
+	// 		}
+	// 	}
+	// }
+	// await emby.library.refresh()
 
-	for (let schema of schemas) {
-		let Ids = [] as string[]
-		for (let item of schema.items) {
-			let file = await emby.library.toFile(item)
-			let Item = Items.find(({ Path }) => file.includes(Path))
-			Item ? Ids.push(Item.Id) : console.warn(`!Item '${item.main.title}' ->`, file)
-		}
-		let Collection = Collections.find(v => v.Name == schema.name)
-		if (!Collection) {
-			if (Ids.length == 0) continue
-			await emby.client.post('/Collections', {
-				query: { Ids: Ids.join(), Name: schema.name },
-			})
-		} else {
-			let CollectionItems = await emby.library.Items({ ParentId: Collection.Id })
-			Ids = _.difference(CollectionItems.map(v => v.Id), Ids)
-			if (Ids.length > 0) {
-				console.log(`Ids difference '${Collection.Name}' ->`, JSON.stringify(Ids))
-				await emby.client.post(`/Collections/${Collection.Id}/Items`, {
-					query: { Ids: Ids.join() },
-				})
-			}
-		}
-	}
-
-	await emby.library.refresh()
 	console.log(`syncCollections -> DONE`)
 }
 
