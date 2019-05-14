@@ -78,7 +78,7 @@ export class Item {
 		return this.released < Date.now()
 	}
 	get isPopular() {
-		if (_.has(this.main, 'votes')) return this.main.votes >= 100
+		if (_.has(this.main, 'votes')) return this.main.votes >= 250
 		return false
 	}
 	get isRuntime() {
