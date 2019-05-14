@@ -78,7 +78,7 @@ export class Db {
 	}
 }
 
-const db = new Db(__filename)
+export const db = new Db(__filename)
 export default db
 
 process.nextTick(async () => {

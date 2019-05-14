@@ -11,10 +11,7 @@ import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
-
-process.nextTick(() => {
-	// process.DEVELOPMENT && db.flush('memoize:*')
-})
+// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
 
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
@@ -127,7 +124,7 @@ export class Http {
 		let response: HttpieResponse
 		let mkey: string
 		if (options.memoize) {
-			mkey = `memoize:${utils.hash(config)}`
+			mkey = utils.hash(config)
 			response = await db.get(mkey)
 		}
 		if (!response) {
@@ -147,8 +144,7 @@ export class Http {
 			})
 			if (options.memoize && !_.isError(response)) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
-				let duration = utils.duration(1, process.DEVELOPMENT ? 'day' : 'hour')
-				await db.put(mkey, _.omit(response, omits), duration)
+				await db.put(mkey, _.omit(response, omits), utils.duration(1, 'hour'))
 			}
 		}
 

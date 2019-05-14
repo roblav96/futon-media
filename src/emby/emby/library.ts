@@ -44,14 +44,14 @@ process.nextTick(() => {
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
-			console.time(`db.entries`)
-			let entry = (await db.entries()).find(([key, value]) => value == UserId)
-			console.timeEnd(`db.entries`)
-			console.log(`entry ->`, entry)
-			if (_.isArray(entry)) await db.del(entry[0])
-			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
 			console.log(`rxItems ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
+			// console.log(`before entries ->`, await db.entries())
+			let entry = (await db.entries<string>()).find(([k, v]) => v == UserId)
+			// console.warn(`entry ->`, entry)
+			if (_.isArray(entry)) await db.del(entry[0])
+			await db.put(`UserId:${item.ids.slug}`, UserId, utils.duration(1, 'day'))
+			// console.log(`after entries ->`, await db.entries())
 		}
 		await emby.library.refresh()
 	})

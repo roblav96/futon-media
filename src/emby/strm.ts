@@ -38,7 +38,7 @@ const emitter = new Emitter<string, string>()
 async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery, rkey: string) {
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
-	let UserId = await db.get(`UserId:${traktId}`)
+	let UserId = await db.get(`UserId:${slug}`)
 	if (UserId) {
 		console.warn(`db.get UserId ->`, UserId)
 		Session = Sessions.find(v => v.UserId == UserId)
@@ -137,62 +137,3 @@ fastify.get('/strm', async (request, reply) => {
 
 	reply.redirect(stream)
 })
-
-// if (!process.DEVELOPMENT) {
-// 	// let index = torrents.findIndex(v => v.cached.length > 0)
-// 	let index = torrents.findIndex(v => v.cached.includes('realdebrid'))
-// 	let downloads = torrents.slice(0, _.clamp(index, 0, 5))
-// 	emitter.once(traktId, () =>
-// 		debrids.download(downloads, item).catch(error => {
-// 			console.error(`debrids.download ${item.title} -> %O`, error)
-// 		})
-// 	)
-// }
-
-// schedule.scheduleJob('* * * * *', async () => {
-// 	let Sessions = await emby.sessions.get()
-// 	for (let Session of Sessions) {
-// 		let skey = `session:${Session.Id}`
-// 		let ItemId = await db.get(skey)
-// 		if (ItemId && (ItemId != Session.ItemId || !Session.IsStreaming)) {
-// 			let { item } = await Session.item(ItemId)
-// 			let rkey = `strm:${item.traktId}`
-// 			item.type == 'show' && (rkey += `:s${item.S.z}e${item.E.z}`)
-// 			await db.del(rkey)
-// 			await db.del(skey)
-// 		}
-// 		if (!ItemId && Session.IsStreaming) {
-// 			await db.put(skey, Session.ItemId)
-// 		}
-// 	}
-// })
-
-// const rxItem = emby.rxHttp.pipe(
-// 	Rx.Op.filter(({ query }) => !!query.ItemId && !!query.UserId),
-// 	Rx.Op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
-// 	Rx.Op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
-// )
-// rxItem.subscribe(({ ItemId, UserId }) => {
-// 	console.log(`rxItem ->`, ItemId, UserId)
-// })
-
-// async function getDebridSession() {
-// 	let UserId = await emby.rxPlaybackUserId.pipe(Rx.Op.take(1)).toPromise()
-// 	console.log(`getSession rxPlaybackUserId ->`, UserId)
-// 	let Session = await emby.sessions.fromUserId(UserId)
-// 	console.log(`Session ->`, Session)
-// 	return Session
-// }
-
-// emby.rxPlaybackIsFalse.subscribe(async ({ query }) => {
-// 	let Session = await emby.sessions.admin()
-// 	let { Item, item } = await Session.item(query.ItemId)
-// 	console.log(`Item ->`, Item)
-// 	let rkey = `strm:${item.traktId}`
-// 	if (_.isFinite(Item.ParentIndexNumber) && _.isFinite(Item.IndexNumber)) {
-// 		rkey += `:s${utils.zeroSlug(Item.ParentIndexNumber)}`
-// 		rkey += `e${utils.zeroSlug(Item.IndexNumber)}`
-// 	}
-// 	console.warn(`redis.del ->`, rkey)
-// 	await redis.del(rkey)
-// })

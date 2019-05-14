@@ -5,10 +5,11 @@ import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as schedule from 'node-schedule'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
+import { Db } from '@/adapters/db'
 
+const db = new Db(__filename)
 process.nextTick(() => {
-	// process.DEVELOPMENT && db.flush('trackers:*')
+	// process.DEVELOPMENT && db.flush('*')
 	let job = schedule.scheduleJob('0 * * * *', () =>
 		sync().catch(error => console.error(`trackers sync -> %O`, error))
 	)
@@ -19,8 +20,8 @@ export let GOOD = [] as string[]
 export let BAD = [] as string[]
 
 async function sync() {
-	GOOD = (await db.get('trackers:good')) || []
-	BAD = (await db.get('trackers:bad')) || []
+	GOOD = (await db.get('good')) || []
+	BAD = (await db.get('bad')) || []
 
 	if (GOOD.length == 0 || BAD.length == 0) {
 		let resolved = (await Promise.all([
@@ -40,6 +41,6 @@ async function sync() {
 		_.remove(GOOD, v => BAD.includes(v))
 	}
 	let duration = utils.duration(1, 'day')
-	await db.put('trackers:good', GOOD, duration)
-	await db.put('trackers:bad', BAD, duration)
+	await db.put('good', GOOD, duration)
+	await db.put('bad', BAD, duration)
 }
