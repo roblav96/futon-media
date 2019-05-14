@@ -11,7 +11,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// process.DEVELOPMENT && syncCollections()
+	process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob('0 0 * * *', () => syncCollections())
 	}
@@ -41,17 +41,18 @@ const STATIC_SCHEMAS = [
 async function buildSchemas() {
 	let schemas = [] as CollectionSchema[]
 
-	let sschemas = STATIC_SCHEMAS.map(schema =>
-		media.MAIN_TYPESS.map((type, i) => {
-			return {
-				limit: schema[2],
-				name: `${['M', 'TV'][i]} ${schema[0]}`,
-				type: media.MAIN_TYPES[i],
-				url: _.template(schema[1])({ type }),
-			} as CollectionSchema
-		})
-	).flat()
-	schemas.push(...sschemas)
+	schemas.push(
+		...STATIC_SCHEMAS.map(schema =>
+			media.MAIN_TYPESS.map((type, i) => {
+				return {
+					limit: schema[2],
+					name: `${['M', 'TV'][i]} ${schema[0]}`,
+					type: media.MAIN_TYPES[i],
+					url: _.template(schema[1])({ type }),
+				} as CollectionSchema
+			})
+		).flat()
+	)
 
 	let lists = [] as trakt.List[]
 	for (let type of ['popular', 'trending']) {
@@ -75,13 +76,14 @@ async function buildSchemas() {
 		if (utils.minify(a.name) == utils.minify(b.name)) return true
 	})
 
-	let lschemas = lists.map(list => {
-		return {
-			name: utils.toSlug(list.name, { toName: true }),
-			url: `/users/${list.user.ids.slug}/lists/${list.ids.slug || list.ids.trakt}/items`,
-		} as CollectionSchema
-	})
-	schemas.push(...lschemas)
+	schemas.push(
+		...lists.map(list => {
+			return {
+				name: utils.toSlug(list.name, { toName: true }),
+				url: `/users/${list.user.ids.slug}/lists/${list.ids.slug || list.ids.trakt}/items`,
+			} as CollectionSchema
+		})
+	)
 
 	schemas.forEach(schema => {
 		schema.name = _.trim(schema.name)
@@ -95,19 +97,19 @@ async function syncCollections() {
 	let schemas = await buildSchemas()
 	console.log(`syncCollections ->`, schemas.length)
 
-	if (process.DEVELOPMENT) {
-		console.log(`schemas ->`, schemas.map(v => v.name))
-		let lists = [
-			'007',
-			'MARVEL Cinematic Universe',
-			'Pixar Collection',
-			'TV Watchlist',
-			'Worlds of DC',
-		]
-		schemas = schemas.filter(v => lists.includes(v.name))
-		console.log(`schemas ->`, schemas)
-		console.log(`schemas.length ->`, schemas.length)
-	}
+	// if (process.DEVELOPMENT) {
+	// 	// console.log(`schemas ->`, schemas.map(v => v.name))
+	// 	let lists = [
+	// 		'007',
+	// 		'MARVEL Cinematic Universe',
+	// 		'Pixar Collection',
+	// 		'TV Watchlist',
+	// 		'Worlds of DC',
+	// 	]
+	// 	schemas = schemas.filter(v => lists.includes(v.name))
+	// 	// console.log(`schemas ->`, schemas)
+	// 	console.log(`schemas.length ->`, schemas.length)
+	// }
 
 	let slugs = [] as string[]
 	for (let schema of schemas) {
@@ -133,39 +135,37 @@ async function syncCollections() {
 		}
 	}
 
-	// if (process.DEVELOPMENT) throw new Error(`DEV`)
+	await emby.library.refresh(true)
 
-	// await emby.library.refresh(true)
+	let Items = await emby.library.Items()
+	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	for (let schema of schemas) {
+		let Ids = [] as string[]
+		for (let item of schema.items) {
+			let Item = Items.find(({ Path }) => {
+				if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
+				if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
+			})
+			Item ? Ids.push(Item.Id) : console.warn(`!Item '${schema.name}' ->`, item.main.title)
+		}
+		if (Ids.length == 0) {
+			console.warn(`Ids.length == 0 '${schema.name}' length ->`, schema.items.length)
+			continue
+		}
+		let Collection = Collections.find(v => v.Name == schema.name)
+		if (!Collection) {
+			await emby.client.post('/Collections', {
+				query: { Ids: Ids.join(), Name: schema.name },
+			})
+			continue
+		}
+		await emby.client.post(`/Collections/${Collection.Id}/Items`, {
+			query: { Ids: Ids.join() },
+		})
+	}
+	await emby.library.refresh()
 
-	// let Items = await emby.library.Items()
-	// let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	// for (let schema of schemas) {
-	// 	let Ids = [] as string[]
-	// 	for (let item of schema.items) {
-	// 		let file = await emby.library.toFile(item)
-	// 		let Item = Items.find(({ Path }) => file.includes(Path))
-	// 		Item ? Ids.push(Item.Id) : console.warn(`!Item '${item.main.title}' ->`, file)
-	// 	}
-	// 	let Collection = Collections.find(v => v.Name == schema.name)
-	// 	if (!Collection) {
-	// 		if (Ids.length == 0) continue
-	// 		await emby.client.post('/Collections', {
-	// 			query: { Ids: Ids.join(), Name: schema.name },
-	// 		})
-	// 	} else {
-	// 		let CollectionItems = await emby.library.Items({ ParentId: Collection.Id })
-	// 		Ids = _.difference(CollectionItems.map(v => v.Id), Ids)
-	// 		if (Ids.length > 0) {
-	// 			console.log(`Ids difference '${Collection.Name}' ->`, JSON.stringify(Ids))
-	// 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
-	// 				query: { Ids: Ids.join() },
-	// 			})
-	// 		}
-	// 	}
-	// }
-	// await emby.library.refresh()
-
-	console.log(`syncCollections -> DONE`)
+	console.log(`syncCollections`, schemas.length, slugs.length, `-> DONE`)
 }
 
 interface CollectionSchema {

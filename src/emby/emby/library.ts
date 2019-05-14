@@ -107,12 +107,10 @@ export const library = {
 
 	async item({ Path, Type }: Item) {
 		let type = Type == 'Series' ? 'show' : Type.toLowerCase()
-		let matches = Path.match(/\[\w{4}id=(tt)?\d*\]/g)
-		for (let match of matches) {
-			let [key, value] = match.split('=')
-			let results = (await trakt.client.get(
-				`/search/${key.slice(1, 5)}/${value.slice(0, -1)}`
-			)) as trakt.Result[]
+		let ids = library.pathIds(Path)
+		for (let key in ids) {
+			let value = ids[key] as string
+			let results = (await trakt.client.get(`/search/${key}/${value}`)) as trakt.Result[]
 			let result = results.find(v => !!v[type])
 			if (result) return new media.Item(result)
 		}
@@ -126,6 +124,16 @@ export const library = {
 			query: { limit: 100 },
 		})).cast as trakt.Result[]
 		return movies.concat(shows).filter(v => !!v.character)
+	},
+
+	pathIds(Path: string) {
+		let matches = Path.match(/\[\w{4}id=(tt)?\d*\]/g)
+		let pairs = matches.map(match => {
+			let [key, value] = match.split('=').map(utils.minify)
+			if (key.endsWith('id')) key = key.slice(0, -2)
+			return [key, value]
+		})
+		return _.fromPairs(pairs) as Partial<{ imdb: string; tmdb: string }>
 	},
 
 	async toFile(item: media.Item) {

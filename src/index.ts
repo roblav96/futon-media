@@ -12,7 +12,7 @@ async function start() {
 	if (process.DEVELOPMENT) await pDelay(1000) // wait for 'Debugger attached'
 
 	let argv = mri(process.argv.slice(2))
-	console.log(`argv ->`, argv)
+	// console.log(`argv ->`, argv)
 
 	await emby()
 }

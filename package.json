@@ -17,7 +17,7 @@
 		"logs": "tail -n 1000 -f ~/.forever/futon-media.log",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist; tsc",
-		"start": "del dist; run-p start:tsc \"start:node -- {@}\" -- wait wut",
+		"start": "del dist; run-p start:*",
 		"start:tsc": "tsc --watch",
 		"start:node": "just-wait -s -p dist; forever -w -c 'node --inspect' forever.config.json",
 		"test": "del dist; tsc || true; node dist/index.js"

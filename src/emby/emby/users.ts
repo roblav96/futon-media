@@ -3,8 +3,6 @@ import * as emby from '@/emby/emby'
 import * as schedule from 'node-schedule'
 import * as utils from '@/utils/utils'
 
-// process.nextTick(() => users.syncAll())
-
 export const users = {
 	async get() {
 		let Users = (await emby.client.get('/Users')) as User[]
@@ -13,20 +11,6 @@ export const users = {
 	},
 	async byUserId(UserId: string) {
 		return new User(await emby.client.get(`/Users/${UserId}`))
-	},
-	async syncAll() {
-		let Users = await users.get()
-		for (let User of Users) {
-			let DisplayPreferences = await User.getDisplayPreferences()
-			_.merge(DisplayPreferences, emby.defaults.DisplayPreferences)
-			await User.setDisplayPreferences(DisplayPreferences)
-			_.merge(User.Configuration, emby.defaults.Configuration)
-			await User.setConfiguration(User.Configuration)
-			if (User.Name.toLowerCase() != 'admin') {
-				_.merge(User.Policy, emby.defaults.Policy)
-				await User.setPolicy(User.Policy)
-			}
-		}
 	},
 }
 

@@ -1,10 +1,12 @@
 import * as _ from 'lodash'
 import * as ansi from 'ansi-colors'
 import * as dayjs from 'dayjs'
+import * as inspector from 'inspector'
 import * as ms from 'pretty-ms'
 import * as shimmer from 'shimmer'
 import * as StackTracey from 'stacktracey'
 import * as util from 'util'
+import exithook = require('exit-hook')
 
 _.merge(util.inspect.defaultOptions, {
 	depth: 2,
@@ -42,3 +44,5 @@ for (let [method, color] of Object.entries(colors)) {
 		}
 	})
 }
+
+exithook(() => inspector.close()) // inspector must close for process to exit
