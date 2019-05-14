@@ -12,11 +12,11 @@ async function start() {
 	await config.setup()
 	if (process.DEVELOPMENT) await pDelay(1000) // wait for 'Debugger attached'
 
-	let argv = mri(process.argv.slice(2))
-	if (argv) {
-		console.log(`argvsds ->`, argv)
-		return
-	}
+	// let argv = mri(process.argv.slice(2))
+	// if (argv) {
+	// 	console.log(`argvsds ->`, argv)
+	// 	return
+	// }
 	// let script = argv._[0]
 	// if (script) {
 	// 	let fn = await import(`@/scripts/${script}`)
