@@ -1,4 +1,4 @@
-export { HttpieOptions, HttpieResponse } from 'httpie'
+export { HttpieOptions, HttpieResponse } from '@/shims/httpie'
 import * as _ from 'lodash'
 import * as http from 'http'
 import * as httperrors from 'http-errors'
@@ -8,7 +8,7 @@ import * as qs from 'query-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
-import { send, HttpieResponse } from 'httpie'
+import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
 // process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
@@ -129,12 +129,20 @@ export class Http {
 			response = await db.get(mkey)
 		}
 		if (!response) {
-			response = await Promise.race([
-				send(options.method, options.url, options as any).catch((error: HTTPError) => {
+			response = await send(options.method, options.url, options).catch(
+				(error: HTTPError) => {
 					if (_.isFinite(error.statusCode)) {
 						if (!_.isString(error.statusMessage)) {
 							let message = httperrors[error.statusCode]
 							error.statusMessage = message ? message.name : 'ok'
+						}
+						if (error.statusCode == 408) {
+							let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
+							if (Http.timeouts.includes(timeout)) {
+								Object.assign(config, { timeout })
+								console.warn(`[RETRY]`, min.url, config.timeout, 'ms')
+								return this.request(config)
+							}
 						}
 						error = new HTTPError(options, error as any)
 						if (!options.debug) {
@@ -143,44 +151,13 @@ export class Http {
 						}
 					}
 					return Promise.reject(error)
-				}),
-				pDelay(options.timeout).then(() =>
-					Promise.reject(
-						new HTTPError(options, {
-							statusCode: 408,
-							statusMessage: 'RequestTimeoutError',
-						})
-					)
-				),
-			]).catch((error: HTTPError) => {
-				if (error.statusCode == 408) {
-					let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
-					if (Http.timeouts.includes(timeout)) {
-						Object.assign(config, { timeout })
-						console.warn(`[RETRY]`, min.url, config.timeout, 'ms')
-						return this.request(config)
-					}
 				}
-				return Promise.reject(error)
-			})
-			if (options.memoize && !_.isError(response)) {
+			)
+			if (options.memoize) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
 				await db.put(mkey, _.omit(response, omits), utils.duration(1, 'hour'))
 			}
 		}
-
-		// let t = Date.now()
-		// let response = await send(options.method, options.url, options).catch(error => {
-		// 	if (_.isFinite(error.statusCode)) {
-		// 		// console.log(`error ->`, error, options)
-		// 		if (!_.isString(error.statusMessage)) {
-		// 			let message = errors[error.statusCode]
-		// 			error.statusMessage = message ? message.name : 'ok'
-		// 		}
-		// 		error = new HTTPError(options, error)
-		// 	}
-		// 	return Promise.reject(error)
-		// })
 
 		if (options.profile) {
 			console.log(`${Date.now() - t}ms`, min.url)
