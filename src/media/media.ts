@@ -36,9 +36,9 @@ export class Item {
 	}
 	get traktId() {
 		let traktId = ''
-		if (_.has(this.ids, 'slug')) return this.ids.slug
 		if (_.has(this.ids, 'trakt')) return this.ids.trakt.toString()
 		if (_.has(this.ids, 'imdb')) return this.ids.imdb
+		if (_.has(this.ids, 'slug')) return this.ids.slug
 		return traktId
 	}
 

@@ -1,7 +1,6 @@
 import * as _ from 'lodash'
 import * as fs from 'fs-extra'
 import * as http from '@/adapters/http'
-import * as isIp from 'is-ip'
 import * as path from 'path'
 import * as Url from 'url-parse'
 import { SystemInfo, SystemXml } from '@/emby/emby'

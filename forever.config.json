@@ -3,5 +3,6 @@
 	"killSignal": "SIGTERM",
 	"killTree": true,
 	"script": "dist/index.js",
-	"uid": "futon-media"
+	"uid": "futon-media",
+	"watchDirectory": "dist"
 }

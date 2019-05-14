@@ -1,7 +1,10 @@
 import * as dts from 'dts-generate'
+import * as inspector from 'inspector'
+import exithook = require('exit-hook')
 
 if (process.DEVELOPMENT) {
-	setInterval(Function, 1 << 30)
+	inspector.open(process.debugPort)
+	exithook(() => inspector.close()) // inspector must close for process to exit
 
 	let stdout = (console as any)._stdout
 	if (stdout.isTTY) {

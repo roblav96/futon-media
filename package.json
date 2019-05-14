@@ -10,16 +10,16 @@
 		"@": "dist"
 	},
 	"scripts": {
-		"deploy": "redrun -s pull build restart",
+		"deploy": "run-s pull build restart",
 		"pull": "git pull",
 		"build": "tsc || true",
 		"restart": "forever stop futon-media || true; forever start forever.config.json; tail -n 0 -f ~/.forever/futon-media.log",
 		"logs": "tail -n 1000 -f ~/.forever/futon-media.log",
 		"reset": "del dist node_modules",
 		"prepublishOnly": "del dist; tsc",
-		"start": "del dist; redrun -q -p start:*",
+		"start": "del dist; run-p start:tsc \"start:node -- {@}\" -- wait wut",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; forever -c 'node --inspect' -w --watchDirectory=dist forever.config.json",
+		"start:node": "just-wait -s -p dist; forever -w -c 'node --inspect' forever.config.json",
 		"test": "del dist; tsc || true; node dist/index.js"
 	},
 	"dependencies": {
@@ -55,6 +55,7 @@
 		"matcher": "^2.0.0",
 		"mem": "^4.3.0",
 		"module-alias": "^2.2.0",
+		"mri": "^1.1.4",
 		"node-env-dev": "^1.1.9",
 		"node-schedule": "^1.3.2",
 		"normalize-url": "^4.3.0",
@@ -96,6 +97,7 @@
 		"@types/levelup": "^3.1.0",
 		"@types/lodash": "^4.14.123",
 		"@types/magnet-uri": "^5.1.2",
+		"@types/mri": "^1.1.0",
 		"@types/node": "^11.13.8",
 		"@types/node-schedule": "^1.2.3",
 		"@types/p-all": "^2.0.0",
@@ -115,7 +117,7 @@
 		"forever": "^1.0.0",
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
-		"redrun": "^7.1.5",
+		"npm-run-all": "^4.1.5",
 		"typescript": "^3.4.5"
 	},
 	"keywords": [

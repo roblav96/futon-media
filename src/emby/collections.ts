@@ -11,7 +11,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	process.DEVELOPMENT && syncCollections()
+	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob('0 0 * * *', () => syncCollections())
 	}
@@ -70,8 +70,8 @@ async function buildSchemas() {
 
 	lists.sort((a, b) => b.likes - a.likes)
 	lists = _.uniqWith(lists, (a, b) => {
-		if (a.ids.slug == b.ids.slug) return true
 		if (a.ids.trakt == b.ids.trakt) return true
+		if (a.ids.slug == b.ids.slug) return true
 		if (utils.minify(a.name) == utils.minify(b.name)) return true
 	})
 
@@ -125,7 +125,7 @@ async function syncCollections() {
 		schema.items = schema.items.filter(v => !v.isJunk)
 
 		for (let item of schema.items) {
-			let slug = `${item.type}:${item.ids.slug}`
+			let slug = `${item.type}:${item.traktId}`
 			if (!slugs.includes(slug)) {
 				slugs.push(slug)
 				await emby.library.add(item)

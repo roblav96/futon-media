@@ -136,7 +136,6 @@ export const library = {
 		file += `/${item.ids.slug}`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
-		// if (item.ids.trakt) file += ` [traktid=${item.ids.trakt}]`
 		if (item.movie) file += `/${item.ids.slug}`
 		if (item.show) file += `/s${item.S.z}e${item.E.z}`
 		return `${file}.strm`
