@@ -166,9 +166,14 @@ export const library = {
 		}
 		if (item.show) {
 			await utils.pRandom(100)
-			let seasons = (await trakt.client.get(`/shows/${item.traktId}/seasons`, {
-				silent: true,
-			})) as trakt.Season[]
+			let seasons = (await trakt.client
+				.get(`/shows/${item.traktId}/seasons`, {
+					silent: true,
+				})
+				.catch(error => {
+					console.error(`library add '${item.title}' -> %O`, error)
+					return []
+				})) as trakt.Season[]
 			for (let season of seasons.filter(v => v.number > 0)) {
 				item.use({ season })
 				for (let i = 1; i <= item.S.a; i++) {
