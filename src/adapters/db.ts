@@ -12,26 +12,28 @@ import * as ttl from 'level-ttl'
 import * as xdgBasedir from 'xdg-basedir'
 import fastStringify from 'fast-safe-stringify'
 
-class Db {
+export class Db {
 	level: levelup.LevelUp<leveldown.LevelDown>
 
 	constructor(name: string) {
+		name = path.basename(name)
 		let { pkg } = pkgup.sync({ cwd: __dirname })
 		let location = path.join(xdgBasedir.cache, pkg.name, name)
 		this.level = level(`${location}.db`, {
 			sub: level(`${location}.ttl.db`),
-			valueEncoding: {
-				buffer: false,
-				decode(data) {
-					let { err, value } = fastParse(data)
-					if (err) console.error(`[DB] decode -> %O`, err)
-					return err ? data : value
-				},
-				encode(data) {
-					return fastStringify(data)
-				},
-				type: 'fast-json',
-			},
+			valueEncoding: 'json',
+			// valueEncoding: {
+			// 	buffer: false,
+			// 	decode(data) {
+			// 		let { err, value } = fastParse(data)
+			// 		if (err) console.error(`[DB] decode -> %O`, err)
+			// 		return err ? data : value
+			// 	},
+			// 	encode(data) {
+			// 		return fastStringify(data)
+			// 	},
+			// 	type: 'fast-json',
+			// },
 		} as Partial<leveldown.LevelDownOpenOptions & levelcodec.CodecOptions & { sub: any }>)
 	}
 
@@ -52,7 +54,6 @@ class Db {
 		})
 	}
 
-	// entries<T = any>({ keys, values } = {} as leveldown.LevelDownIteratorOptions) {
 	entries<T = any>() {
 		return new Promise<[string, T][]>((resolve, reject) => {
 			let entries = [] as [string, T][]
@@ -77,16 +78,18 @@ class Db {
 	}
 }
 
-export const db = new Db(path.basename(__filename))
+const db = new Db(__filename)
 export default db
 
-import * as mocks from '@/mocks/mocks'
 process.nextTick(async () => {
+	process.DEVELOPMENT && _.defaults(global, await import('@/adapters/db'))
+	// process.DEVELOPMENT && devops().catch(error => console.error(`db devops -> %O`, error))
+})
+
+async function devops() {
+	let mocks = await import('@/mocks/mocks')
 	await db.put(`UserId:${Math.random().toString()}`, Math.random().toString())
 	await db.put('mocks:ant-man-and-the-wasp-2018', mocks.MOVIES['ant-man-and-the-wasp-2018'])
 	let entries = await db.entries()
-	console.log(`entriess ->`, entries)
-
-	process.DEVELOPMENT && db.flush('*ttl*')
-	process.DEVELOPMENT && _.defaults(global, await import('@/adapters/db'))
-})
+	console.log(`db entriess ->`, entries)
+}

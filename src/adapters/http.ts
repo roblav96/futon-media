@@ -7,11 +7,13 @@ import * as pDelay from 'delay'
 import * as qs from 'query-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
+import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
+const db = new Db(__filename)
+
 process.nextTick(() => {
-	// process.DEVELOPMENT && db.flush('http:memoize:*')
+	// process.DEVELOPMENT && db.flush('memoize:*')
 })
 
 export interface Config extends http.RequestOptions {
@@ -125,7 +127,7 @@ export class Http {
 		let response: HttpieResponse
 		let mkey: string
 		if (options.memoize) {
-			mkey = `http:memoize:${utils.hash(config)}`
+			mkey = `memoize:${utils.hash(config)}`
 			response = await db.get(mkey)
 		}
 		if (!response) {

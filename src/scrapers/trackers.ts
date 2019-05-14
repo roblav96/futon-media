@@ -9,7 +9,6 @@ import db from '@/adapters/db'
 
 process.nextTick(() => {
 	// process.DEVELOPMENT && db.flush('trackers:*')
-	// console.warn(`[DEV] trackers -> return`)
 	let job = schedule.scheduleJob('0 * * * *', () =>
 		sync().catch(error => console.error(`trackers sync -> %O`, error))
 	)

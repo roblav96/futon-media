@@ -37,20 +37,20 @@ process.nextTick(() => {
 			let results = await library.itemsOf(slug)
 			let items = results.map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
-			console.log(`rxItems ${Item.Type} ${Item.Name} ->`, items.map(v => v.title).sort())
+			console.log(`rxItems ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
 			for (let item of items) {
 				await emby.library.add(item)
 			}
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
-			let entries = await db.entries()
-			console.log(`entries ->`, entries)
-			let entry = entries.find(([key, value]) => value == UserId)
+			console.time(`db.entries`)
+			let entry = (await db.entries()).find(([key, value]) => value == UserId)
+			console.timeEnd(`db.entries`)
 			console.log(`entry ->`, entry)
 			if (_.isArray(entry)) await db.del(entry[0])
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
-			console.log(`rxItems ${Item.Type} ${Item.Name} ->`, item.title)
+			console.log(`rxItems ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
 		}
 		await emby.library.refresh()
