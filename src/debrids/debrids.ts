@@ -96,15 +96,17 @@ export async function getStreamUrl(
 			if (!stream) continue
 			stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
 
-			console.log(`probe ->`, stream)
 			let probe = (await ffprobe(stream, { format: true, streams: true }).catch(error => {
-				console.error(`ffprobe -> %O`, error)
+				console.error(`ffprobe '${stream}' -> %O`, error)
 			})) as FFProbe
 			if (!probe) continue
+
+			let fkeys = ['bit_rate', 'duration', 'filename', 'format_long_name', 'size']
+			console.log(`probe format ->`, _.pick(probe.format, fkeys))
+
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type)
 			)
-			// console.log(`probe format ->`, probe.format)
 
 			// let tags = {} as Record<string, string>
 			// _.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))
