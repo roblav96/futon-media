@@ -46,9 +46,11 @@ process.nextTick(() => {
 			let item = await library.item(Item)
 			console.log(`rxItems ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
-			let entry = (await db.entries()).find(([k, v]) => v == UserId)
-			if (_.isArray(entry)) await db.del(entry[0])
-			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+			if (UserId) {
+				let entry = (await db.entries()).find(([k, v]) => v == UserId)
+				if (_.isArray(entry)) await db.del(entry[0])
+				await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+			}
 		}
 		await emby.library.refresh()
 	})
