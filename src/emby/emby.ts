@@ -55,55 +55,56 @@ export interface SystemInfo {
 	WebSocketPortNumber: number
 }
 
-export interface SystemXml {
-	AutoRunWebApp: string
+export interface SystemConfiguration {
+	AutoRunWebApp: boolean
 	CachePath: string
 	CertificatePath: string
-	CollapseVideoFolders: string
-	DisplaySpecialsWithinSeasons: string
-	EnableAutomaticRestart: string
-	EnableAutoUpdate: string
-	EnableCaseSensitiveItemIds: string
-	EnableDashboardResponseCaching: string
-	EnableDebugLevelLogging: string
-	EnableExternalContentInSuggestions: string
-	EnableHttps: string
-	EnableOriginalTrackTitles: string
-	EnableRemoteAccess: string
-	EnableUPnP: string
-	HttpServerPortNumber: string
-	HttpsPortNumber: string
-	ImageExtractionTimeoutMs: string
+	CollapseVideoFolders: boolean
+	DisplaySpecialsWithinSeasons: boolean
+	EnableAutomaticRestart: boolean
+	EnableAutoUpdate: boolean
+	EnableCaseSensitiveItemIds: boolean
+	EnableDashboardResponseCaching: boolean
+	EnableDebugLevelLogging: boolean
+	EnableExternalContentInSuggestions: boolean
+	EnableHttps: boolean
+	EnableOriginalTrackTitles: boolean
+	EnableRemoteAccess: boolean
+	EnableUPnP: boolean
+	HttpServerPortNumber: number
+	HttpsPortNumber: number
+	ImageExtractionTimeoutMs: number
 	ImageSavingConvention: string
-	IsBehindProxy: string
-	IsPortAuthorized: string
-	IsRemoteIPFilterBlacklist: string
-	IsStartupWizardCompleted: string
-	LibraryMonitorDelay: string
-	LocalNetworkAddresses: string
-	LocalNetworkSubnets: string
-	LogAllQueryTimes: string
-	LogFileRetentionDays: string
+	IsBehindProxy: boolean
+	IsPortAuthorized: boolean
+	IsRemoteIPFilterBlacklist: boolean
+	IsStartupWizardCompleted: boolean
+	LibraryMonitorDelay: number
+	LocalNetworkAddresses: any[]
+	LocalNetworkSubnets: any[]
+	LogAllQueryTimes: boolean
+	LogFileRetentionDays: number
 	MetadataCountryCode: string
 	MetadataNetworkPath: string
 	MetadataPath: string
-	PathSubstitutions: string
+	PathSubstitutions: any[]
 	PreferredMetadataLanguage: string
-	PublicHttpsPort: string
-	PublicPort: string
-	RemoteClientBitrateLimit: string
-	RemoteIPFilter: string
-	RequireHttps: string
-	RunAtStartup: string
-	SaveMetadataHidden: string
-	SchemaVersion: string
+	PublicHttpsPort: number
+	PublicPort: number
+	RemoteClientBitrateLimit: number
+	RemoteIPFilter: any[]
+	RequireHttps: boolean
+	RunAtStartup: boolean
+	SaveMetadataHidden: boolean
+	SchemaVersion: number
 	ServerName: string
-	SkipDeserializationForBasicTypes: string
-	SortRemoveCharacters: string
-	SortRemoveWords: string
-	SortReplaceCharacters: string
+	SkipDeserializationForBasicTypes: boolean
+	SortRemoveCharacters: string[]
+	SortRemoveWords: string[]
+	SortReplaceCharacters: string[]
+	SubtitlePermissionsUpgraded: boolean
 	UICulture: string
-	UninstalledPlugins: string
+	UninstalledPlugins: any[]
 	WanDdns: string
 }
 

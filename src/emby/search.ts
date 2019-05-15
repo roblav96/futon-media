@@ -47,7 +47,9 @@ rxSearch.subscribe(async query => {
 		)
 	})
 	fulls.sort((a, b) => b.popularity - a.popularity)
-	process.DEVELOPMENT && console.log(`rxSearch tmdb ->`, fulls.map(v => v.title || v.name).sort())
+	if (process.DEVELOPMENT && fulls.length > 0) {
+		console.log(`rxSearch tmdb ->`, fulls.map(v => v.title || v.name).sort())
+	}
 
 	let { id } = fulls.find(v => v.media_type == 'person') || ({} as tmdb.Full)
 	if (!isPerson && id && id != (person && person.ids.tmdb)) {
@@ -61,25 +63,30 @@ rxSearch.subscribe(async query => {
 		}
 	} else {
 		fulls = fulls.filter(v => ['movie', 'tv'].includes(v.media_type))
-		let results = await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
-		items.push(...results.filter(v => !v.person).map(v => new media.Item(v)))
+		if (fulls.length > 0) {
+			let results = await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
+			items.push(...results.filter(v => !v.person).map(v => new media.Item(v)))
+		}
 	}
 
 	items = _.uniqBy(items.filter(v => !v.isJunk), 'traktId')
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
-	for (let item of items) {
-		await emby.library.add(item)
-	}
-	await emby.library.refresh()
 
-	// let Updates = [] as { Path: string; UpdateType: string }[]
 	// for (let item of items) {
-	// 	let exists = await emby.library.add(item)
-	// 	Updates.push({
-	// 		Path: await emby.library.toFile(item),
-	// 		UpdateType: exists ? 'Modified' : 'Created',
-	// 	})
+	// 	await emby.library.add(item)
 	// }
-	// console.log(`Updates ->`, Updates)
-	// await emby.client.post('/Library/Media/Updated', { body: { Updates } })
+	// await emby.library.refresh()
+
+	let Updates = [] as { Path: string; UpdateType: string }[]
+	for (let item of items) {
+		let exists = await emby.library.add(item)
+		let Path = await emby.library.toFile(item)
+		Updates.push({
+			Path: item.show ? path.dirname(Path) : Path,
+			UpdateType: exists ? 'Modified' : 'Created',
+		})
+	}
+	console.log(`Updates ->`, Updates)
+	await emby.client.post('/Library/Media/Updated', { body: { Updates } })
+	// await emby.library.refresh()
 })

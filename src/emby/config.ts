@@ -3,7 +3,7 @@ import * as fs from 'fs-extra'
 import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as Url from 'url-parse'
-import { SystemInfo, SystemXml } from '@/emby/emby'
+import { SystemInfo, SystemConfiguration } from '@/emby/emby'
 
 const REQUIRED: (keyof Env)[] = [
 	'EMBY_ADMIN_ID',
@@ -30,18 +30,21 @@ export async function setup() {
 }
 
 async function withEmbyData() {
-	let skeys: (keyof SystemXml)[] = []
+	let skeys: (keyof SystemConfiguration)[] = []
 	skeys = skeys.concat(['HttpServerPortNumber', 'HttpsPortNumber', 'RequireHttps', 'WanDdns'])
 	let xmlfile = path.join(process.env.EMBY_DATA, 'config/system.xml')
 	if (!(await fs.pathExists(xmlfile))) return
 	let data = await fs.readFile(xmlfile, 'utf-8')
-	let system = {} as SystemXml
+	let system = {} as SystemConfiguration
 	skeys.forEach(k => (system[k] = (new RegExp(`<${k}>(.*)<\/${k}>`).exec(data) || [])[1]))
 	let { HttpServerPortNumber, HttpsPortNumber, RequireHttps, WanDdns } = system
 	defaults({
 		EMBY_HOST: WanDdns,
-		EMBY_PORT: RequireHttps == 'true' ? HttpsPortNumber : HttpServerPortNumber,
-		EMBY_PROTO: RequireHttps == 'true' ? 'https:' : 'http:',
+		EMBY_PORT: (RequireHttps.toString() == 'true'
+			? HttpsPortNumber
+			: HttpServerPortNumber
+		).toString(),
+		EMBY_PROTO: RequireHttps.toString() == 'true' ? 'https:' : 'http:',
 	})
 	// console.log(`withEmbyData ->`, _.pick(process.env, REQUIRED))
 }

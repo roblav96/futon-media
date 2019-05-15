@@ -12,7 +12,7 @@ export const defaults = {
 		RememberSubtitleSelections: true,
 		SubtitleLanguagePreference: 'eng',
 		SubtitleMode: 'OnlyForced',
-	} as Partial<emby.Configuration>,
+	} as Partial<emby.UserConfiguration>,
 
 	DisplayPreferences: {
 		CustomPrefs: {

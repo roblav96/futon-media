@@ -3,18 +3,18 @@ import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as isIp from 'is-ip'
 import * as media from '@/media/media'
-import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
-import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
 
-process.nextTick(() => {
-	// process.DEVELOPMENT && db.flush('UserId:*')
+process.nextTick(async () => {
+	// process.DEVELOPMENT && (await db.flush('UserId:*'))
+
+	await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
@@ -56,23 +56,30 @@ process.nextTick(() => {
 		await emby.library.refresh()
 	})
 
-	let rxRefreshingLibrary = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
-		Rx.op.map(tasks => tasks.find(v => v.Key == 'RefreshLibrary')),
-		Rx.op.filter(({ State }) => State == 'Running')
-	)
-	rxRefreshingLibrary.subscribe(task => {
-		library.isRefreshing = true
-	})
-	let rxRefreshedLibrary = emby.socket
-		.filter<ScheduledTaskEnded>('ScheduledTaskEnded')
-		.pipe(Rx.op.filter(({ Key, Status }) => Key == 'RefreshLibrary'))
-	rxRefreshedLibrary.subscribe(task => {
-		library.isRefreshing = false
-		if (library.needsRefresh) {
-			library.needsRefresh = false
-			library.refresh()
-		}
-	})
+	// let rxRefreshingLibrary = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
+	// 	Rx.op.map(tasks => tasks.find(v => v.Key == 'RefreshLibrary')),
+	// 	Rx.op.filter(Boolean)
+	// )
+	// rxRefreshingLibrary.subscribe(({ State }) => {
+	// 	if (State == 'Running') library.isRefreshing = true
+	// 	if (State == 'Idle') {
+	// 		library.isRefreshing = false
+	// 		if (library.needsRefresh) {
+	// 			library.needsRefresh = false
+	// 			library.refresh()
+	// 		}
+	// 	}
+	// })
+	// let rxRefreshedLibrary = emby.socket
+	// 	.filter<ScheduledTaskEnded>('ScheduledTaskEnded')
+	// 	.pipe(Rx.op.filter(({ Key, Status }) => Key == 'RefreshLibrary'))
+	// rxRefreshedLibrary.subscribe(task => {
+	// 	library.isRefreshing = false
+	// 	if (library.needsRefresh) {
+	// 		library.needsRefresh = false
+	// 		library.refresh()
+	// 	}
+	// })
 })
 
 export const library = {
@@ -87,31 +94,28 @@ export const library = {
 		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
 	},
 
-	isRefreshing: false,
-	needsRefresh: false,
+	// isRefreshing: false,
+	// needsRefresh: false,
 	async refresh() {
-		if (library.isRefreshing) {
-			library.needsRefresh = true
-			return
-		}
+		// library.needsRefresh = library.isRefreshing
+		// if (library.isRefreshing) return
+		// console.warn(`await emby.client.post('/Library/Refresh')`)
 		await emby.client.post('/Library/Refresh')
-		// let id: string
-		// let rxTask = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
-		// 	Rx.op.filter(tasks => {
-		// 		let { CurrentProgressPercentage, Id, State } = tasks.find(
-		// 			v => v.Key == 'RefreshLibrary'
-		// 		)
-		// 		if (State != 'Running' || !_.isFinite(CurrentProgressPercentage)) return false
-		// 		if (!id) id = Id
-		// 		return CurrentProgressPercentage > 90
-		// 	}),
-		// 	Rx.op.take(1)
-		// )
-		// await Promise.all([rxTask.toPromise(), emby.client.post('/Library/Refresh')])
-		// console.warn(`library refresh -> DONE`)
-		// if (!full) {
-		// 	await emby.client.delete(`/ScheduledTasks/Running/${id}`)
-		// }
+	},
+
+	async setLibraryMonitorDelay() {
+		let Configuration = (await emby.client.get('/System/Configuration', {
+			query: { api_key: emby.env.ADMIN_KEY },
+			silent: true,
+		})) as emby.SystemConfiguration
+		if (Configuration.LibraryMonitorDelay != 1) {
+			Configuration.LibraryMonitorDelay = 1
+			console.warn(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
+			await emby.client.post('/System/Configuration', {
+				query: { api_key: emby.env.ADMIN_KEY },
+				body: Configuration,
+			})
+		}
 	},
 
 	async Items(query?: {

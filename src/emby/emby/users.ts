@@ -19,7 +19,7 @@ export class User {
 		_.merge(this, User)
 	}
 
-	async setConfiguration(Configuration: Configuration) {
+	async setConfiguration(Configuration: UserConfiguration) {
 		await emby.client.post(`/Users/${this.Id}/Configuration`, {
 			query: { api_key: emby.env.ADMIN_KEY },
 			body: Configuration,
@@ -56,7 +56,7 @@ export class User {
 }
 
 export interface User {
-	Configuration: Configuration
+	Configuration: UserConfiguration
 	HasConfiguredEasyPassword: boolean
 	HasConfiguredPassword: boolean
 	HasPassword: boolean
@@ -70,7 +70,7 @@ export interface User {
 	ServerId: string
 }
 
-export interface Configuration {
+export interface UserConfiguration {
 	AudioLanguagePreference: string
 	DisplayCollectionsView: boolean
 	DisplayMissingEpisodes: boolean

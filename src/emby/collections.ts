@@ -15,6 +15,7 @@ process.nextTick(() => {
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
 		schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
+		schedule.scheduleJob('0 2-23 * * *', () => emby.library.refresh())
 	}
 })
 
