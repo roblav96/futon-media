@@ -65,7 +65,7 @@ rxSearch.subscribe(async query => {
 		items.push(...results.filter(v => !v.person).map(v => new media.Item(v)))
 	}
 
-	items = items.filter(v => !v.isJunk)
+	items = _.uniqBy(items.filter(v => !v.isJunk), 'traktId')
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
 	for (let item of items) {
 		await emby.library.add(item)
