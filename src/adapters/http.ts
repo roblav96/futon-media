@@ -137,7 +137,7 @@ export class Http {
 							let message = httperrors[error.statusCode]
 							error.statusMessage = message ? message.name : 'ok'
 						}
-						if (error.statusCode == 408 && options.retries == true) {
+						if (error.statusCode == 408 && options.retries != false) {
 							let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
 							if (Http.timeouts.includes(timeout)) {
 								Object.assign(config, { timeout })
