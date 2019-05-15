@@ -15,6 +15,7 @@ import db from '@/adapters/db'
 
 process.nextTick(() => {
 	// process.DEVELOPMENT && db.flush('UserId:*')
+
 	let rxItem = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
@@ -54,6 +55,24 @@ process.nextTick(() => {
 		}
 		await emby.library.refresh()
 	})
+
+	let rxRefreshingLibrary = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
+		Rx.op.map(tasks => tasks.find(v => v.Key == 'RefreshLibrary')),
+		Rx.op.filter(({ State }) => State == 'Running')
+	)
+	rxRefreshingLibrary.subscribe(task => {
+		library.isRefreshing = true
+	})
+	let rxRefreshedLibrary = emby.socket
+		.filter<ScheduledTaskEnded>('ScheduledTaskEnded')
+		.pipe(Rx.op.filter(({ Key, Status }) => Key == 'RefreshLibrary'))
+	rxRefreshedLibrary.subscribe(task => {
+		library.isRefreshing = false
+		if (library.needsRefresh) {
+			library.needsRefresh = false
+			library.refresh()
+		}
+	})
 })
 
 export const library = {
@@ -68,17 +87,31 @@ export const library = {
 		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
 	},
 
-	async refresh(wait = false) {
-		let proms = [] as Promise<any>[]
-		if (wait == true) {
-			let rxTask = emby.socket.filter<ScheduledTaskEnded>('ScheduledTaskEnded').pipe(
-				Rx.op.filter(({ Key, Status }) => Key == 'RefreshLibrary' && Status == 'Completed'),
-				Rx.op.take(1)
-			)
-			proms.push(rxTask.toPromise())
+	isRefreshing: false,
+	needsRefresh: false,
+	async refresh() {
+		if (library.isRefreshing) {
+			library.needsRefresh = true
+			return
 		}
-		proms.push(emby.client.post('/Library/Refresh'))
-		await Promise.all(proms)
+		await emby.client.post('/Library/Refresh')
+		// let id: string
+		// let rxTask = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
+		// 	Rx.op.filter(tasks => {
+		// 		let { CurrentProgressPercentage, Id, State } = tasks.find(
+		// 			v => v.Key == 'RefreshLibrary'
+		// 		)
+		// 		if (State != 'Running' || !_.isFinite(CurrentProgressPercentage)) return false
+		// 		if (!id) id = Id
+		// 		return CurrentProgressPercentage > 90
+		// 	}),
+		// 	Rx.op.take(1)
+		// )
+		// await Promise.all([rxTask.toPromise(), emby.client.post('/Library/Refresh')])
+		// console.warn(`library refresh -> DONE`)
+		// if (!full) {
+		// 	await emby.client.delete(`/ScheduledTasks/Running/${id}`)
+		// }
 	},
 
 	async Items(query?: {
@@ -150,6 +183,7 @@ export const library = {
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			await library.setFolders()
 		}
+		let dir = library.folders[item.type]
 		let file = `/${item.main.title} (${item.year})`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
@@ -159,7 +193,7 @@ export const library = {
 		if (item.show) {
 			file += `/${item.main.title} S${item.S.z}E${item.E.z}`
 		}
-		return `${library.folders[item.type]}${file}.strm`
+		return `${dir}${file}.strm`
 	},
 
 	async toStrm(item: media.Item) {
@@ -180,15 +214,17 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
+		let exists = false
 		if (!item) {
 			console.warn(`library add !item`)
-			return false
+			return exists
 		}
-		let exists = await fs.pathExists(await library.toFile(item))
 		if (item.movie) {
+			exists = await fs.pathExists(await library.toFile(item))
 			await library.toStrm(item)
 		}
 		if (item.show) {
+			exists = await fs.pathExists(path.dirname(await library.toFile(item)))
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
 				.get(`/shows/${item.traktId}/seasons`, {
@@ -379,17 +415,18 @@ export interface View {
 }
 
 export interface LibraryChanged {
-	CollectionFolders: any[]
-	FoldersAddedTo: any[]
-	FoldersRemovedFrom: any[]
+	CollectionFolders: string[]
+	FoldersAddedTo: string[]
+	FoldersRemovedFrom: string[]
 	IsEmpty: boolean
-	ItemsAdded: any[]
-	ItemsRemoved: any[]
+	ItemsAdded: string[]
+	ItemsRemoved: string[]
 	ItemsUpdated: string[]
 }
 
 export interface ScheduledTasksInfo {
 	Category: string
+	CurrentProgressPercentage: number
 	Description: string
 	Id: string
 	IsHidden: boolean

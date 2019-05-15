@@ -12,7 +12,7 @@ export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
 	let query = { api_key: emby.env.ADMIN_KEY }
-	
+
 	let ws = new Sockette(`${emby.env.URL}/embywebsocket?${qs.stringify(query)}`, {
 		timeout: 3000,
 		maxAttempts: Infinity,
@@ -49,9 +49,15 @@ export const socket = {
 	},
 }
 
-// rxSocket.subscribe(({ MessageType, Data }) => {
-// 	console.log(`rxSocket ->`, MessageType, Data)
-// })
+rxSocket.subscribe(({ MessageType, Data }) => {
+	if (MessageType == 'Sessions') return
+	if (MessageType == 'ScheduledTasksInfo') {
+		let tasks = Data as emby.ScheduledTasksInfo[]
+		let task = tasks.find(v => v.Key == 'RefreshLibrary')
+		return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
+	}
+	console.log(`rxSocket ->`, MessageType, Data)
+})
 
 export interface EmbyEvent<Data = any> {
 	Data: Data

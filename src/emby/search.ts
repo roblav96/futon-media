@@ -70,6 +70,16 @@ rxSearch.subscribe(async query => {
 	for (let item of items) {
 		await emby.library.add(item)
 	}
-
 	await emby.library.refresh()
+
+	// let Updates = [] as { Path: string; UpdateType: string }[]
+	// for (let item of items) {
+	// 	let exists = await emby.library.add(item)
+	// 	Updates.push({
+	// 		Path: await emby.library.toFile(item),
+	// 		UpdateType: exists ? 'Modified' : 'Created',
+	// 	})
+	// }
+	// console.log(`Updates ->`, Updates)
+	// await emby.client.post('/Library/Media/Updated', { body: { Updates } })
 })
