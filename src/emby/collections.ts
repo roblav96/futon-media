@@ -59,6 +59,7 @@ async function buildSchemas() {
 		await utils.pRandom(100)
 		let response = (await trakt.client.get(`/lists/${type}`, {
 			query: { limit: 100, extended: '' },
+			silent: true,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map(v => v.list))
 	}
@@ -66,6 +67,7 @@ async function buildSchemas() {
 	await utils.pRandom(100)
 	let liked = (await trakt.client.get('/users/likes/lists', {
 		query: { limit: 999, extended: '' },
+		silent: true,
 	})) as trakt.ResponseList[]
 	lists.push(...liked.map(v => v.list))
 
@@ -132,7 +134,7 @@ async function syncCollections() {
 	for (let schema of schemas) {
 		await utils.pRandom(100)
 		let results = (await trakt.client
-			.get(schema.url, schema.limit ? { query: { limit: schema.limit } } : {})
+			.get(schema.url, schema.limit ? { query: { limit: schema.limit }, silent: true } : {})
 			.catch(error => {
 				console.error(`trakt get ${schema.url} -> %O`, error)
 				return []
