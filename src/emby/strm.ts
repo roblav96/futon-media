@@ -30,7 +30,7 @@ process.nextTick(() => {
 const fastify = Fastify({ querystringParser: query => qs.parse(query) })
 
 fastify.server.headersTimeout = 30000
-fastify.server.keepAliveTimeout = 15000
+fastify.server.keepAliveTimeout = 25000
 fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
