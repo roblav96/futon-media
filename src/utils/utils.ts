@@ -36,8 +36,8 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 }
 
 export function same(...args: string[]) {
-	args = args.map(v => _.trim(_.toLower(_.deburr(v))))
-	return new Set(args).size == 1
+	if (args.length == 1) return false
+	return new Set(args.map(v => _.trim(_.deburr(v).toLowerCase()))).size == 1
 }
 
 export function squash(value: string) {
@@ -68,8 +68,8 @@ export function accuracy(value: string, target: string) {
 
 /** `leven == 0` when all of `target` is included in `value` */
 export function leven(value: string, target: string) {
-	value = minify(value)
-	target = minify(target)
+	value = minify(_.deburr(value))
+	target = minify(_.deburr(target))
 	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
 export { levenshtein }

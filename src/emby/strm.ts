@@ -47,7 +47,6 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
 	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.video])}`
-	console.log(`skey ->`, skey)
 	let streamUrl = await db.get(skey)
 	if (streamUrl) {
 		console.log(`streamUrl '${slug}' ->`, streamUrl)
@@ -116,7 +115,6 @@ fastify.get('/strm', async (request, reply) => {
 
 	let rkey = `stream:${traktId}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	console.log(`rkey ->`, rkey)
 	let stream = await db.get(rkey)
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {

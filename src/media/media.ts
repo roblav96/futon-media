@@ -23,10 +23,9 @@ export class Item {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
 	}
 	get main() {
-		let main = this.full
-		this.movie && (main = this.movie as any)
-		this.show && (main = this.show as any)
-		return main
+		if (this.movie) return this.movie
+		if (this.show) return this.show
+		return this.full
 	}
 	get type() {
 		return MAIN_TYPES.find(type => !!this[type])

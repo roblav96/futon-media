@@ -50,7 +50,7 @@ export async function toTrakt({ id, media_type }: Full) {
 	let results = (await trakt.client.get(`/search/tmdb/${id}`, {
 		query: { type },
 	})) as trakt.Result[]
-	return results.find(v => v[type].ids.tmdb == id)
+	return results.find(v => trakt.toFull(v).ids.tmdb == id)
 }
 
 export function toType(media_type: string) {

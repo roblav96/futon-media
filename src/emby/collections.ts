@@ -14,6 +14,7 @@ process.nextTick(() => {
 	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
+		schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
 	}
 })
 
@@ -164,25 +165,28 @@ async function syncCollections() {
 				if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
 			})
 			if (Item) {
-				hits.push(item.ids.slug)
+				hits.push(item.title)
 				Ids.push(Item.Id)
-			} else misses.push(item.ids.slug)
+			} else misses.push(item.title)
 		}
 		if (Ids.length == 0) continue
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
 				query: { Ids: Ids.join() },
+				silent: true,
 			})
 		} else {
 			await emby.client.post('/Collections', {
 				query: { Ids: Ids.join(), Name: schema.name },
+				silent: true,
 			})
 		}
 	}
 
 	await emby.library.refresh()
 
+	console.log(`misses ->`, misses.sort())
 	console.log(`syncCollections DONE ->`, {
 		hits: hits.length,
 		misses: misses.length,

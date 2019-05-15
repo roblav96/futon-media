@@ -26,6 +26,7 @@ export interface Config extends http.RequestOptions {
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
 	query?: Record<string, string | number | string[] | number[]>
 	redirect?: boolean
+	retries?: boolean
 	silent?: boolean
 	url?: string
 }
@@ -136,7 +137,7 @@ export class Http {
 							let message = httperrors[error.statusCode]
 							error.statusMessage = message ? message.name : 'ok'
 						}
-						if (error.statusCode == 408) {
+						if (error.statusCode == 408 && options.retries == true) {
 							let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
 							if (Http.timeouts.includes(timeout)) {
 								Object.assign(config, { timeout })

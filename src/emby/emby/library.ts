@@ -18,23 +18,22 @@ process.nextTick(() => {
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(100),
-		Rx.op.distinctUntilChanged((a, b) => JSON.stringify(a) == JSON.stringify(b))
+		Rx.op.distinctUntilChanged((a, b) => utils.hash(a) == utils.hash(b))
 	)
 	rxItems.subscribe(async ({ ItemId, UserId }) => {
 		let Item = await library.Item(ItemId)
 		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
 		if (Item.Type == 'Person') {
+			/**
+				TODO:
+				- use tmdb for searching person
+			**/
 			let persons = (await trakt.client.get(`/search/person`, {
 				query: { query: Item.Name, fields: 'name', limit: 100 },
 			})) as trakt.Result[]
-			persons = persons.filter(v => utils.same(v.person.name, Item.Name))
-			let sizes = persons.map(person => ({
-				...person.person,
-				size: _.values(person.person).filter(Boolean).length,
-			}))
-			sizes.sort((a, b) => b.size - a.size)
-			let slug = sizes[0].ids.slug
-			let results = await library.itemsOf(slug)
+			let person = trakt.person(persons, Item.Name)
+			if (!person) return
+			let results = await library.itemsOf(person)
 			let items = results.map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
 			console.log(`rxItems ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
@@ -112,17 +111,20 @@ export const library = {
 		let ids = library.pathIds(Path)
 		for (let key in ids) {
 			let value = ids[key] as string
-			let results = (await trakt.client.get(`/search/${key}/${value}`)) as trakt.Result[]
-			let result = results.find(v => !!v[type])
+			let results = (await trakt.client.get(`/search/${key}/${value}`, {
+				query: { type },
+			})) as trakt.Result[]
+			let result = results.find(v => trakt.toFull(v).ids[key] == value)
 			if (result) return new media.Item(result)
 		}
 	},
 
-	async itemsOf(slug: string) {
-		let movies = (await trakt.client.get(`/people/${slug}/movies`, {
+	async itemsOf(person: trakt.Person) {
+		if (!person) return []
+		let movies = (await trakt.client.get(`/people/${person.ids.slug}/movies`, {
 			query: { limit: 100 },
 		})).cast as trakt.Result[]
-		let shows = (await trakt.client.get(`/people/${slug}/shows`, {
+		let shows = (await trakt.client.get(`/people/${person.ids.slug}/shows`, {
 			query: { limit: 100 },
 		})).cast as trakt.Result[]
 		return movies.concat(shows).filter(v => !!v.character)
@@ -169,6 +171,7 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
+		if (!item) throw new Error(`!item`)
 		let exists = await fs.pathExists(await library.toFile(item))
 		if (item.movie) {
 			await library.toStrm(item)

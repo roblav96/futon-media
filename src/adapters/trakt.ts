@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 import * as media from '@/media/media'
+import * as utils from '@/utils/utils'
 import { Http } from '@/adapters/http'
 
 export const client = new Http({
@@ -46,6 +47,21 @@ export async function search(query: string, type = 'movie,show' as media.MainCon
 	})) as Result[]
 	let items = results.map(v => new media.Item(v))
 	return items.filter(v => !v.isJunk)
+}
+
+export function person(results: Result[], name: string) {
+	results = results.filter(v => v.person && utils.same(v.person.name, name))
+	if (results.length == 0) return
+	let sizes = results.map(({ person }) => ({
+		person,
+		size: _.values({ ...person, ...person.ids }).filter(Boolean).length,
+	}))
+	return sizes.sort((a, b) => b.size - a.size)[0].person
+}
+
+export function toFull(result: Result) {
+	let type = media.TYPES.find(type => !!result[type])
+	return result[type] as Full
 }
 
 export interface IDs {

@@ -61,7 +61,7 @@ export interface Scraper {
 }
 export class Scraper {
 	static http(config: http.Config) {
-		_.defaults(config, { memoize: true, silent: true } as http.Config)
+		_.defaults(config, { memoize: true, retries: false, silent: true } as http.Config)
 		return new http.Http(config)
 	}
 
