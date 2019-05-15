@@ -116,7 +116,6 @@ export async function getStreamUrl(
 			// 		creation.toLocaleString(),
 			// 		dayjs(item.released).toLocaleString()
 			// 	)
-			// 	next = true
 			// 	continue
 			// }
 
@@ -128,14 +127,12 @@ export async function getStreamUrl(
 			})
 			if (videos.length == 0) {
 				console.warn(`probe videos.length == 0 ->`, torrent.name)
-				next = true
 				continue
 			}
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
 			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
 			if (_.size(codecs) > 0 && !codecs.includes(videos[0].codec_name)) {
 				console.warn(`probe !codecs ->`, torrent.name, videos[0].codec_name)
-				next = true
 				continue
 			}
 
@@ -148,7 +145,6 @@ export async function getStreamUrl(
 			})
 			if (audios.length == 0) {
 				console.warn(`probe audios.length == 0 ->`, torrent.name)
-				next = true
 				continue
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
@@ -156,7 +152,6 @@ export async function getStreamUrl(
 			if (audios.filter(v => v.channels <= channels).length == 0) {
 				// if (audios[0].channels > channels) {
 				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
-				next = true
 				continue
 			}
 

@@ -39,12 +39,18 @@ export async function probe(
 }
 
 export function json(format: Format) {
-	let fkeys = ['bit_rate', 'duration', 'format_long_name', 'size']
+	let fkeys = ['bit_rate', 'duration', 'format_long_name', 'format_name', 'size']
 	format = _.pick(format, fkeys) as any
-	format.bit_rate = `${utils.fromBytes(_.parseInt(format.bit_rate))}/s`
-	let duration = utils.duration(_.parseInt(format.duration), 'second')
-	format.duration = ms(duration, { unitCount: 2 })
-	format.size = utils.fromBytes(_.parseInt(format.size))
+	if (format.bit_rate) {
+		format.bit_rate = `${utils.fromBytes(_.parseInt(format.bit_rate))}/s`
+	}
+	if (format.duration) {
+		let duration = utils.duration(_.parseInt(format.duration), 'second')
+		format.duration = ms(duration, { unitCount: 2 })
+	}
+	if (format.size) {
+		format.size = utils.fromBytes(_.parseInt(format.size))
+	}
 	return format
 }
 
