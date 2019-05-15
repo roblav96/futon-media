@@ -122,13 +122,18 @@ export const library = {
 
 	async itemsOf(person: trakt.Person) {
 		if (!person) return []
-		let movies = (await trakt.client.get(`/people/${person.ids.slug}/movies`, {
-			query: { limit: 100 },
-		})).cast as trakt.Result[]
-		let shows = (await trakt.client.get(`/people/${person.ids.slug}/shows`, {
-			query: { limit: 100 },
-		})).cast as trakt.Result[]
-		return movies.concat(shows).filter(v => !!v.character)
+		let results = [] as trakt.Result[]
+		for (let type of media.MAIN_TYPESS) {
+			let credits = (await trakt.client.get(`/people/${person.ids.slug}/${type}`, {
+				query: { limit: 100 },
+			})) as trakt.Credits
+			let { cast, crew } = { cast: [], crew: [], ...credits }
+			results.push(...cast.filter(v => !!v.character))
+			for (let job in crew) {
+				results.push(...crew[job].filter(v => !!v.job))
+			}
+		}
+		return _.uniqWith(results, (a, b) => trakt.toFull(a).ids.slug == trakt.toFull(b).ids.slug)
 	},
 
 	pathIds(Path: string) {

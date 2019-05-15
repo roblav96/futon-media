@@ -191,9 +191,15 @@ export interface Result extends Extras {
 export interface Extras {
 	character: string
 	collected_at: string
+	job: string
 	listed_at: string
 	rank: number
 	score: number
+}
+
+export interface Credits {
+	cast: Result[]
+	crew: Record<string, Result[]>
 }
 
 export interface Progress extends Result {
