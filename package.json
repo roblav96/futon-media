@@ -19,8 +19,9 @@
 		"prepublishOnly": "del dist; tsc",
 		"start": "del dist; run-p start:*",
 		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; forever -w -c 'node --inspect' forever.config.json",
-		"test": "del dist; tsc || true; node dist/index.js"
+		"start:node": "just-wait -s -p dist; sleep 1; forever -w -c 'node --inspect' forever.config.json",
+		"test": "del dist; tsc || true; node dist/index.js",
+		"emby:reset": "echo data/library.db* data/collections/* data/playlists/* metadata/library/* root/default/*/poster.png"
 	},
 	"dependencies": {
 		"@sindresorhus/slugify": "^0.9.1",

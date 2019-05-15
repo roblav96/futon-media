@@ -7,6 +7,7 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
+import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
@@ -24,17 +25,17 @@ process.nextTick(() => {
 		let Item = await library.Item(ItemId)
 		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
 		if (Item.Type == 'Person') {
-			/**
-				TODO:
-				- use tmdb for searching person
-			**/
-			let persons = (await trakt.client.get(`/search/person`, {
-				query: { query: Item.Name, fields: 'name', limit: 100 },
+			let fulls = ((await tmdb.client.get('/search/person', {
+				query: { query: Item.Name },
+			})) as tmdb.Paginated<tmdb.Full>).results
+			fulls.sort((a, b) => b.popularity - a.popularity)
+			if (fulls.length == 0) return
+			let id = fulls[0].id
+			let results = (await trakt.client.get(`/search/tmdb/${id}`, {
+				query: { type: 'person' },
 			})) as trakt.Result[]
-			let person = trakt.person(persons, Item.Name)
-			if (!person) return
-			let results = await library.itemsOf(person)
-			let items = results.map(v => new media.Item(v))
+			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
+			let items = (await library.itemsOf(result.person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
 			for (let item of items) {
@@ -144,13 +145,16 @@ export const library = {
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			await library.setFolders()
 		}
-		let file = library.folders[item.type]
-		file += `/${item.ids.slug}`
+		let file = `/${item.main.title} (${item.year})`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
-		if (item.movie) file += `/${item.ids.slug}`
-		if (item.show) file += `/s${item.S.z}e${item.E.z}`
-		return `${file}.strm`
+		if (item.movie) {
+			file += `/${item.main.title} (${item.year})`
+		}
+		if (item.show) {
+			file += `/${item.main.title} S${item.S.z}E${item.E.z}`
+		}
+		return `${library.folders[item.type]}/${file}.strm`
 	},
 
 	async toStrm(item: media.Item) {

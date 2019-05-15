@@ -97,7 +97,6 @@ async function buildSchemas() {
 
 async function syncCollections() {
 	let schemas = await buildSchemas()
-	console.log(`syncCollections ->`, schemas.length)
 
 	// async function syncCollections(chunked = false) {
 	// if (chunked) {
@@ -109,25 +108,27 @@ async function syncCollections() {
 	if (process.DEVELOPMENT) {
 		// console.log(`schemas ->`, schemas.map(v => v.name))
 		let lists = [
-			'007',
-			'100 Greatest Sci Fi Movies',
-			'Based on a TRUE STORY',
-			'Best Mindfucks',
+			// '007',
+			// '100 Greatest Sci Fi Movies',
+			// 'Based on a TRUE STORY',
+			// 'Best Mindfucks',
 			'Disney',
 			'James Bond',
-			'Latest 4K Releases',
-			'MARVEL Cinematic Universe',
+			// 'Latest 4K Releases',
+			// 'MARVEL Cinematic Universe',
 			'Movie Watchlist',
 			'Pixar Collection',
 			'Star Wars Timeline',
 			'TV Watchlist',
-			'Walt Disney Animated feature films',
-			'Worlds of DC',
+			// 'Walt Disney Animated feature films',
+			// 'Worlds of DC',
 		]
 		schemas = schemas.filter(v => lists.includes(v.name))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
+
+	console.log(`syncCollections ->`, schemas.length)
 
 	let slugs = [] as string[]
 	for (let schema of schemas) {
@@ -153,32 +154,32 @@ async function syncCollections() {
 		}
 	}
 
-	let hits = [] as string[]
-	let misses = [] as string[]
+	let hits = new Set<string>()
+	let misses = new Set<string>()
 	let Items = await emby.library.Items()
 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 	for (let schema of schemas) {
-		let Ids = [] as string[]
+		let Ids = new Set<string>()
 		for (let item of schema.items) {
 			let Item = Items.find(({ Path }) => {
 				if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
 				if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
 			})
 			if (Item) {
-				hits.push(item.title)
-				Ids.push(Item.Id)
-			} else misses.push(item.title)
+				hits.add(item.title)
+				Ids.add(Item.Id)
+			} else misses.add(item.title)
 		}
-		if (Ids.length == 0) continue
+		if (Ids.size == 0) continue
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
-				query: { Ids: Ids.join() },
+				query: { Ids: Array.from(Ids).join() },
 				silent: true,
 			})
 		} else {
 			await emby.client.post('/Collections', {
-				query: { Ids: Ids.join(), Name: schema.name },
+				query: { Ids: Array.from(Ids).join(), Name: schema.name },
 				silent: true,
 			})
 		}
@@ -186,10 +187,10 @@ async function syncCollections() {
 
 	await emby.library.refresh()
 
-	console.log(`misses ->`, misses.sort())
+	if (hits.size > 0) console.log(`misses ->`, Array.from(misses).sort())
 	console.log(`syncCollections DONE ->`, {
-		hits: hits.length,
-		misses: misses.length,
+		hits: hits.size,
+		misses: misses.size,
 		schemas: schemas.length,
 		slugs: slugs.length,
 	})

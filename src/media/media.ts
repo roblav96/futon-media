@@ -34,24 +34,22 @@ export class Item {
 		return this.main.ids
 	}
 	get traktId() {
-		let traktId = ''
 		if (_.has(this.ids, 'trakt')) return this.ids.trakt.toString()
 		if (_.has(this.ids, 'imdb')) return this.ids.imdb
 		if (_.has(this.ids, 'slug')) return this.ids.slug
-		return traktId
+		return ''
 	}
 
 	get year() {
-		let year = NaN
 		if (_.isFinite(this.main.year)) return this.main.year
 		if (_.has(this.movie, 'released')) return dayjs(this.movie.released).year()
 		if (_.has(this.show, 'first_aired')) return dayjs(this.show.first_aired).year()
 		if (_.has(this.season, 'first_aired')) return dayjs(this.season.first_aired).year()
-		return year
+		return NaN
 	}
 	get title() {
 		let title = this.main.title
-		this.movie && this.year && (title += ` ${this.year}`)
+		if (this.movie && this.year) title += ` ${this.year}`
 		return title
 	}
 	get released() {

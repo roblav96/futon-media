@@ -81,11 +81,11 @@ export async function getStreamUrl(
 					})
 					if (file) break
 				}
-				!file && console.warn(`!show file ->`, files.map(v => v.name).sort())
+				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
 				let title = item.title
-				item.show && (title += ` S${item.S.z}E${item.E.z} ${item.E.t}`)
+				if (item.show) title += ` S${item.S.z}E${item.E.z} ${item.E.t}`
 				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 				file = levens.sort((a, b) => a.leven - b.leven)[0]
 			}
@@ -94,7 +94,7 @@ export async function getStreamUrl(
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) continue
-			stream.startsWith('http:') && (stream = stream.replace('http:', 'https:'))
+			if (stream.startsWith('http:')) stream = stream.replace('http:', 'https:')
 
 			let probe = (await ffprobe(stream, { format: true, streams: true }).catch(error => {
 				console.error(`ffprobe '${stream}' -> %O`, error)
