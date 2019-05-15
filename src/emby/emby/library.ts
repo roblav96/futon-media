@@ -126,14 +126,15 @@ export const library = {
 			query: _.mapValues(query, v => (_.isArray(v) ? v.join() : v)),
 			silent: true,
 		})).Items as emby.Item[]
-		return Items.filter(v => fs.pathExistsSync(v.Path || ''))
+		return (Items || []).filter(v => fs.pathExistsSync(v.Path || ''))
 	},
 
 	async Item(ItemId: string) {
-		return ((await emby.client.get('/Items', {
+		let Items = (await emby.client.get('/Items', {
 			query: { Ids: ItemId, Fields: 'Path,ProviderIds' },
 			silent: true,
-		})).Items as emby.Item[])[0]
+		})).Items as emby.Item[]
+		return (Items || [])[0]
 	},
 
 	async item({ Path, Type }: Item) {
@@ -162,7 +163,7 @@ export const library = {
 				results.push(...crew[job].filter(v => !!v.job))
 			}
 		}
-		return _.uniqWith(results, (a, b) => trakt.toFull(a).ids.slug == trakt.toFull(b).ids.slug)
+		return trakt.uniq(results.filter(v => !v.person))
 	},
 
 	pathIds(Path: string) {
@@ -182,7 +183,8 @@ export const library = {
 		}
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${item.main.title} (${item.year})`
-		if (!item.ids.imdb || !item.ids.tmdb) {
+		if (!item.ids.imdb && !item.ids.tmdb) {
+			throw new Error(`library toStrmPath !imdb && !tmdb`)
 		}
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
@@ -194,6 +196,7 @@ export const library = {
 		}
 		return `${dir}${file}.strm`
 	},
+
 	toStrmUrl(item: media.Item) {
 		if (!item) throw new Error(`library toStrmUrl !item`)
 		let query = {
@@ -211,22 +214,20 @@ export const library = {
 
 	async toStrmFile(item: media.Item) {
 		if (!item) throw new Error(`library toStrmFile !item`)
-		await fs.outputFile(await library.toStrmPath(item), library.toStrmUrl(item))
+		let StrmPath = await library.toStrmPath(item)
+		let Path = item.show ? path.dirname(StrmPath) : StrmPath
+		let exists = await fs.pathExists(Path)
+		await fs.outputFile(StrmPath, library.toStrmUrl(item))
+		return { Path, UpdateType: exists ? 'Modified' : 'Created' } as MediaUpdated
 	},
 
 	async add(item: media.Item) {
 		if (!item) throw new Error(`library add !item`)
-		let exists: boolean
-		if (!item) {
-			console.error(`library add -> %O`, new Error(`!item`))
-			return exists
-		}
+		let Updated: MediaUpdated
 		if (item.movie) {
-			exists = await fs.pathExists(await library.toStrmPath(item))
-			await library.toStrmFile(item)
+			Updated = await library.toStrmFile(item)
 		}
 		if (item.show) {
-			exists = await fs.pathExists(path.dirname(await library.toStrmPath(item)))
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
 				.get(`/shows/${item.traktId}/seasons`, {
@@ -240,24 +241,21 @@ export const library = {
 				item.use({ season })
 				for (let i = 1; i <= item.S.a; i++) {
 					item.use({ episode: { number: i, season: season.number } })
-					await library.toStrmFile(item)
+					let updated = await library.toStrmFile(item)
+					if (!Updated) Updated = updated
 				}
 			}
 		}
-		return exists
+		return Updated
 	},
 
 	async addAll(items: media.Item[]) {
 		if (items.length == 0) return []
-		let Updates = [] as { Path: string; UpdateType: string }[]
+		let Updates = [] as MediaUpdated[]
 		for (let item of items) {
-			let exists = await library.add(item)
-			let Path = await library.toStrmPath(item)
-			Updates.push({
-				Path: item.show ? path.dirname(Path) : Path,
-				UpdateType: exists ? 'Modified' : 'Created',
-			})
+			Updates.push(await library.add(item))
 		}
+		console.log(`library addAll Updates ->`, Updates)
 		await emby.client.post('/Library/Media/Updated', { body: { Updates } })
 
 		let t = Date.now()
@@ -295,6 +293,11 @@ export interface StrmQuery extends trakt.IDs {
 	traktId: string
 	type: media.MainContentType
 	year: number
+}
+
+export interface MediaUpdated {
+	Path: string
+	UpdateType: 'Created' | 'Deleted' | 'Modified'
 }
 
 export interface Item {

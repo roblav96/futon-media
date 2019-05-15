@@ -97,14 +97,7 @@ async function buildSchemas() {
 }
 
 async function syncCollections() {
-	let schemas = await buildSchemas()
-
-	// async function syncCollections(chunked = false) {
-	// if (chunked) {
-	// 	let chunks = utils.chunks(schemas, _.ceil(schemas.length / 12)) //[hour]
-	// 	schemas = chunks[_.parseInt(dayjs().format('h'))]
-	// }
-	// console.log(`syncCollections chunked ->`, chunked, schemas.length)
+	/** 	let schemas = await buildSchemas()
 
 	if (process.DEVELOPMENT) {
 		// console.log(`schemas ->`, schemas.map(v => v.name))
@@ -194,7 +187,7 @@ async function syncCollections() {
 		misses: misses.size,
 		schemas: schemas.length,
 		slugs: slugs.length,
-	})
+	}) */
 }
 
 interface CollectionSchema {

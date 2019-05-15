@@ -56,12 +56,17 @@ export function person(results: Result[], name: string) {
 		person,
 		size: _.values({ ...person, ...person.ids }).filter(Boolean).length,
 	}))
-	return sizes.sort((a, b) => b.size - a.size)[0].person
+	sizes.sort((a, b) => b.size - a.size)
+	return sizes[0] && sizes[0].person
 }
 
 export function toFull(result: Result) {
 	let type = media.TYPES.find(type => !!result[type])
 	return result[type] as Full
+}
+
+export function uniq(results: Result[]) {
+	return _.uniqWith(results, (a, b) => toFull(a).ids.slug == toFull(b).ids.slug)
 }
 
 export interface IDs {
