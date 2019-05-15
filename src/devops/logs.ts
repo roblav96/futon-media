@@ -29,12 +29,14 @@ for (let [method, color] of Object.entries(colors)) {
 				let delta = now - before
 				before = now
 				let indicator = '◼︎'
-				let ending = dayjs().format('ddd, MMM DD YYYY hh:mm:ss A')
+				let ending = `+${ms(delta)}`
 				if (process.DEVELOPMENT) {
 					indicator += '▶'
 					let site = new StackTracey()[1]
 					let stack = site.beforeParse.replace(site.file, site.fileShort)
-					ending = `+${ms(delta)} ${stack}`
+					ending += ` ${stack}`
+				} else {
+					ending += ` ${dayjs().format('ddd, MMM DD YYYY hh:mm:ss A')}`
 				}
 				let heading = `\n${ansi[color](indicator)} ${ansi.dim(`${ending}`)}\n`
 				if (!process.DEVELOPMENT) args[0] = `${heading}${args[0]}`

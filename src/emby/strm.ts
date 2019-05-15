@@ -115,8 +115,8 @@ fastify.get('/strm', async (request, reply) => {
 	console.log(`fastify strm ->`, slug)
 
 	let rkey = `stream:${traktId}`
+	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 	console.log(`rkey ->`, rkey)
-	type == 'show' && (rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
 	let stream = await db.get(rkey)
 	if (!stream) {
 		if (!emitter.eventNames().includes(traktId)) {
