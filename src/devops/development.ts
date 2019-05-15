@@ -17,6 +17,7 @@ if (process.DEVELOPMENT) {
 			deepmerge: await import('deepmerge'),
 			dts: await import('dts-generate'),
 			httperrors: await import('http-errors'),
+			ms: await import('pretty-ms'),
 			path: await import('path'),
 			qs: await import('query-string'),
 			similarity: await import('string-similarity'),

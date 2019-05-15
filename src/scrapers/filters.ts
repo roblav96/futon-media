@@ -38,13 +38,18 @@ export function results(result: scraper.Result, item: media.Item) {
 		return // console.log(`❌ isForeign name ->`, result.name)
 	}
 	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
-	let naccuracy = utils.accuracy(result.name, item.title)
-	if (naccuracy.length > 0) {
-		return // console.log(`❌ name accuracy ->`, result.name, JSON.stringify(naccuracy))
+
+	let nleven = utils.leven(result.name, item.title)
+	if (nleven > 0) {
+		return // console.log(`❌ name leven ->`, result.name, JSON.stringify(nleven))
 	}
+	// let naccuracy = utils.accuracy(result.name, item.title)
+	// if (naccuracy.length > 0) {
+	// 	return // console.log(`❌ name accuracy ->`, result.name, JSON.stringify(naccuracy))
+	// }
 
 	let title = item.title
-	item.E.t && (title += ` ${item.E.t}`)
+	if (item.E.t) title += ` ${item.E.t}`
 	let skips = utils.accuracy(title, SKIPS.join(' '))
 	let skipped = utils.accuracy(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {

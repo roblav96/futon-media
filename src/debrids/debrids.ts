@@ -5,7 +5,7 @@ import * as debrid from '@/debrids/debrid'
 import * as media from '@/media/media'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
-import ffprobe, { FFProbe } from '@/adapters/ffprobe'
+import * as ffprobe from '@/adapters/ffprobe'
 import { Premiumize } from '@/debrids/premiumize'
 import { Putio } from '@/debrids/putio'
 import { RealDebrid } from '@/debrids/realdebrid'
@@ -96,14 +96,12 @@ export async function getStreamUrl(
 			if (!stream) continue
 			if (stream.startsWith('http:')) stream = stream.replace('http:', 'https:')
 
-			let probe = (await ffprobe(stream, { format: true, streams: true }).catch(error => {
-				console.error(`ffprobe '${stream}' -> %O`, error)
-			})) as FFProbe
+			console.log(`probe stream ->`, stream)
+			let probe = (await ffprobe
+				.probe(stream, { format: true, streams: true })
+				.catch(error => console.error(`ffprobe '${stream}' -> %O`, error))) as ffprobe.Probe
 			if (!probe) continue
-
-			let fkeys = ['bit_rate', 'duration', 'filename', 'format_long_name', 'size']
-			console.log(`probe format ->`, _.pick(probe.format, fkeys))
-
+			console.log(`probe format ->`, ffprobe.json(probe.format))
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type)
 			)

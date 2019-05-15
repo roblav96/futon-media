@@ -59,7 +59,6 @@ async function buildSchemas() {
 		await utils.pRandom(100)
 		let response = (await trakt.client.get(`/lists/${type}`, {
 			query: { limit: 100, extended: '' },
-			// memoize: process.DEVELOPMENT,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map(v => v.list))
 	}
@@ -67,7 +66,6 @@ async function buildSchemas() {
 	await utils.pRandom(100)
 	let liked = (await trakt.client.get('/users/likes/lists', {
 		query: { limit: 999, extended: '' },
-		// memoize: process.DEVELOPMENT,
 	})) as trakt.ResponseList[]
 	lists.push(...liked.map(v => v.list))
 
