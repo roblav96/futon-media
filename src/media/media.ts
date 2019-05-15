@@ -78,11 +78,11 @@ export class Item {
 		if (_.has(this.main, 'votes')) return this.main.votes >= 250
 		return false
 	}
-	get isRuntime() {
+	get hasRuntime() {
 		return this.runtime >= 10
 	}
 	get isJunk() {
-		let valid = this.isEnglish && this.isReleased && this.isPopular && this.isRuntime
+		let valid = this.isEnglish && this.isReleased && this.isPopular && this.hasRuntime
 		return !(valid && !!this.ids.slug && !!this.main.year)
 	}
 

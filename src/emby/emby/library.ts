@@ -39,21 +39,18 @@ process.nextTick(async () => {
 			let items = (await library.itemsOf(result.person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
-			for (let item of items) {
-				await emby.library.add(item)
-			}
+			await library.addAll(items)
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
 			console.log(`rxItem ${Item.Type} ->`, item.title)
-			await emby.library.add(item)
+			await library.addAll([item])
 			if (UserId) {
 				let entry = (await db.entries()).find(([k, v]) => v == UserId)
 				if (_.isArray(entry)) await db.del(entry[0])
 				await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
 			}
 		}
-		await emby.library.refresh()
 	})
 
 	// let rxRefreshingLibrary = emby.socket.filter<ScheduledTasksInfo[]>('ScheduledTasksInfo').pipe(
@@ -85,21 +82,16 @@ process.nextTick(async () => {
 export const library = {
 	qualities: ['2160p', '1080p'] as Quality[],
 
-	folders: { movie: '', show: '' },
+	folders: { movies: '', shows: '' },
 	async setFolders() {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
-		library.folders.movie = Folders.find(v => v.CollectionType == 'movies').Locations[0]
-		library.folders.show = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
+		library.folders.movies = Folders.find(v => v.CollectionType == 'movies').Locations[0]
+		library.folders.shows = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
 	},
 
-	// isRefreshing: false,
-	// needsRefresh: false,
 	async refresh() {
-		// library.needsRefresh = library.isRefreshing
-		// if (library.isRefreshing) return
-		// console.warn(`await emby.client.post('/Library/Refresh')`)
 		await emby.client.post('/Library/Refresh')
 	},
 
@@ -183,12 +175,15 @@ export const library = {
 		return _.fromPairs(pairs) as Partial<{ imdb: string; tmdb: string }>
 	},
 
-	async toFile(item: media.Item) {
+	async toStrmPath(item: media.Item) {
+		if (!item) throw new Error(`library toStrmPath !item`)
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			await library.setFolders()
 		}
-		let dir = library.folders[item.type]
+		let dir = library.folders[`${item.type}s`]
 		let file = `/${item.main.title} (${item.year})`
+		if (!item.ids.imdb || !item.ids.tmdb) {
+		}
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
 		if (item.movie) {
@@ -199,36 +194,39 @@ export const library = {
 		}
 		return `${dir}${file}.strm`
 	},
-
-	async toStrm(item: media.Item) {
+	toStrmUrl(item: media.Item) {
+		if (!item) throw new Error(`library toStrmUrl !item`)
 		let query = {
 			...item.ids,
 			traktId: item.traktId,
 			type: item.type,
 			year: item.year,
 		} as StrmQuery
-		if (item.episode) {
-			query = { ...query, s: item.S.n, e: item.E.n }
-		}
+		if (item.episode) query = { ...query, s: item.S.n, e: item.E.n }
 		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
 		let url = `${emby.env.PROTO}//${host}`
 		if (isIp(host)) url += `:${emby.env.STRM_PORT}`
-		url += `/strm?${qs.stringify(query)}`
-		await fs.outputFile(await library.toFile(item), url)
+		return `/strm?${qs.stringify(query)}`
+	},
+
+	async toStrmFile(item: media.Item) {
+		if (!item) throw new Error(`library toStrmFile !item`)
+		await fs.outputFile(await library.toStrmPath(item), library.toStrmUrl(item))
 	},
 
 	async add(item: media.Item) {
-		let exists = false
+		if (!item) throw new Error(`library add !item`)
+		let exists: boolean
 		if (!item) {
-			console.warn(`library add !item`)
+			console.error(`library add -> %O`, new Error(`!item`))
 			return exists
 		}
 		if (item.movie) {
-			exists = await fs.pathExists(await library.toFile(item))
-			await library.toStrm(item)
+			exists = await fs.pathExists(await library.toStrmPath(item))
+			await library.toStrmFile(item)
 		}
 		if (item.show) {
-			exists = await fs.pathExists(path.dirname(await library.toFile(item)))
+			exists = await fs.pathExists(path.dirname(await library.toStrmPath(item)))
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
 				.get(`/shows/${item.traktId}/seasons`, {
@@ -242,11 +240,50 @@ export const library = {
 				item.use({ season })
 				for (let i = 1; i <= item.S.a; i++) {
 					item.use({ episode: { number: i, season: season.number } })
-					await library.toStrm(item)
+					await library.toStrmFile(item)
 				}
 			}
 		}
 		return exists
+	},
+
+	async addAll(items: media.Item[]) {
+		if (items.length == 0) return []
+		let Updates = [] as { Path: string; UpdateType: string }[]
+		for (let item of items) {
+			let exists = await library.add(item)
+			let Path = await library.toStrmPath(item)
+			Updates.push({
+				Path: item.show ? path.dirname(Path) : Path,
+				UpdateType: exists ? 'Modified' : 'Created',
+			})
+		}
+		await emby.client.post('/Library/Media/Updated', { body: { Updates } })
+
+		let t = Date.now()
+		let Items = [] as emby.Item[]
+		while (Items.length != items.length) {
+			if (Date.now() > t + utils.duration(1, 'minute')) {
+				throw new Error(`library add while loop greater than one minute`)
+			}
+			await utils.pRandom(1000)
+			Items = (await emby.client.get('/Items', {
+				query: {
+					Fields: 'Path,ProviderIds',
+					IncludeItemTypes: 'Movie,Series',
+					Recursive: 'true',
+				},
+			})).Items
+			Items = items.map(item =>
+				Items.find(({ Path }) => {
+					if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
+					if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
+				})
+			)
+			Items = Items.filter(Boolean)
+		}
+		console.log(Date.now() - t, `-> library addAll ${items.length} items`)
+		return Items
 	},
 }
 

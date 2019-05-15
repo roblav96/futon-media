@@ -1,5 +1,6 @@
 export * from '@/mocks/movies'
 export * from '@/mocks/shows'
+export * from '@/mocks/people'
 import * as _ from 'lodash'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'

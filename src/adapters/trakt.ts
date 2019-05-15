@@ -180,17 +180,19 @@ export interface Person {
 export type Full = Movie & Show & Season & Episode & Person
 
 export interface Result extends Extras {
-	type: media.ContentType
-	movie: Movie
-	show: Show
-	season: Season
 	episode: Episode
+	list: List
+	movie: Movie
 	person: Person
+	season: Season
+	show: Show
+	type: media.ContentType
 }
 
 export interface Extras {
 	character: string
 	collected_at: string
+	id: number
 	job: string
 	listed_at: string
 	rank: number
