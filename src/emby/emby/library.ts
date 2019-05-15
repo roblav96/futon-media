@@ -159,7 +159,7 @@ export const library = {
 		if (item.show) {
 			file += `/${item.main.title} S${item.S.z}E${item.E.z}`
 		}
-		return `${library.folders[item.type]}/${file}.strm`
+		return `${library.folders[item.type]}${file}.strm`
 	},
 
 	async toStrm(item: media.Item) {
@@ -180,7 +180,10 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
-		if (!item) throw new Error(`!item`)
+		if (!item) {
+			console.warn(`library add !item`)
+			return false
+		}
 		let exists = await fs.pathExists(await library.toFile(item))
 		if (item.movie) {
 			await library.toStrm(item)
