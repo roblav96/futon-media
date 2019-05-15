@@ -14,13 +14,13 @@ import db from '@/adapters/db'
 
 process.nextTick(() => {
 	// process.DEVELOPMENT && db.flush('UserId:*')
-	let rxItems = emby.rxHttp.pipe(
+	let rxItem = emby.rxHttp.pipe(
 		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilChanged((a, b) => utils.hash(a) == utils.hash(b))
 	)
-	rxItems.subscribe(async ({ ItemId, UserId }) => {
+	rxItem.subscribe(async ({ ItemId, UserId }) => {
 		let Item = await library.Item(ItemId)
 		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
 		if (Item.Type == 'Person') {
@@ -36,14 +36,14 @@ process.nextTick(() => {
 			let results = await library.itemsOf(person)
 			let items = results.map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk)
-			console.log(`rxItems ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
+			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
 			for (let item of items) {
 				await emby.library.add(item)
 			}
 		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
-			console.log(`rxItems ${Item.Type} ->`, item.title)
+			console.log(`rxItem ${Item.Type} ->`, item.title)
 			await emby.library.add(item)
 			if (UserId) {
 				let entry = (await db.entries()).find(([k, v]) => v == UserId)
