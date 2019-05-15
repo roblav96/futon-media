@@ -11,7 +11,7 @@
 	},
 	"scripts": {
 		"deploy": "run-s pull build restart",
-		"pull": "git pull; git status",
+		"pull": "git pull; echo; git status",
 		"build": "tsc || true",
 		"restart": "forever stop futon-media || true; forever start forever.config.json; tail -n 0 -f ~/.forever/futon-media.log",
 		"logs": "tail -n 1000 -f ~/.forever/futon-media.log",
