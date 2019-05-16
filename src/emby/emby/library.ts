@@ -62,7 +62,7 @@ export const library = {
 	qualities: ['2160p', '1080p'] as Quality[],
 
 	async refresh() {
-		await emby.client.post('/Library/Refresh')
+		await emby.client.post('/Library/Refresh', { retries: false, timeout: 30000 })
 	},
 
 	folders: { movies: '', shows: '' },

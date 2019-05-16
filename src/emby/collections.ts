@@ -100,28 +100,28 @@ async function syncCollections() {
 	let t = Date.now()
 	let schemas = await buildSchemas()
 
-	if (process.DEVELOPMENT) {
-		// console.log(`schemas ->`, schemas.map(v => v.name))
-		let lists = [
-			'007',
-			'100 Greatest Sci Fi Movies',
-			'Based on a TRUE STORY',
-			'Best Mindfucks',
-			'Disney',
-			'James Bond',
-			'Latest 4K Releases',
-			'MARVEL Cinematic Universe',
-			'Movie Watchlist',
-			'Pixar Collection',
-			'Star Wars Timeline',
-			'TV Watchlist',
-			'Walt Disney Animated feature films',
-			'Worlds of DC',
-		]
-		schemas = schemas.filter(v => lists.includes(v.name))
-		// console.log(`schemas ->`, schemas)
-		// console.log(`schemas.length ->`, schemas.length)
-	}
+	// if (process.DEVELOPMENT) {
+	// 	// console.log(`schemas ->`, schemas.map(v => v.name))
+	// 	let lists = [
+	// 		'007',
+	// 		'100 Greatest Sci Fi Movies',
+	// 		'Based on a TRUE STORY',
+	// 		'Best Mindfucks',
+	// 		'Disney',
+	// 		'James Bond',
+	// 		'Latest 4K Releases',
+	// 		'MARVEL Cinematic Universe',
+	// 		'Movie Watchlist',
+	// 		'Pixar Collection',
+	// 		'Star Wars Timeline',
+	// 		'TV Watchlist',
+	// 		'Walt Disney Animated feature films',
+	// 		'Worlds of DC',
+	// 	]
+	// 	schemas = schemas.filter(v => lists.includes(v.name))
+	// 	// console.log(`schemas ->`, schemas)
+	// 	// console.log(`schemas.length ->`, schemas.length)
+	// }
 
 	console.log(`syncCollections ->`, schemas.length)
 
@@ -142,6 +142,7 @@ async function syncCollections() {
 		results = trakt.uniq(results).filter(v => !v.season && !v.episode && !v.person)
 		schema.items = results.map(v => new media.Item(v)).filter(v => !v.isJunk)
 
+		console.warn(`schema '${schema.name}' ->`, schema.items.length)
 		let Items = await emby.library.addAll(
 			schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item)))
 		)
