@@ -11,7 +11,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	process.DEVELOPMENT && syncCollections()
+	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
 		// schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
@@ -54,8 +54,6 @@ async function buildSchemas() {
 			})
 		).flat()
 	)
-	console.log(`schemas ->`, schemas)
-	throw new Error(`DEV`)
 
 	let lists = [] as trakt.List[]
 	for (let type of ['popular', 'trending']) {
