@@ -147,7 +147,7 @@ export const library = {
 		return _.fromPairs(pairs) as trakt.IDs
 	},
 
-	toStrmPath(item: media.Item, base = false) {
+	toStrmPath(item: media.Item, full = false) {
 		if (!item) throw new Error(`library toStrmPath !item`)
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			throw new Error(`library toStrmPath '${item.title}' !library.folders`)
@@ -162,7 +162,7 @@ export const library = {
 		if (item.movie) {
 			file += `/${item.main.title} (${item.year})`
 		}
-		if (base == true) {
+		if (full == false) {
 			let Path = `${dir}${file}`
 			return item.movie ? `${Path}.strm` : Path
 		}
@@ -193,7 +193,7 @@ export const library = {
 
 	async toStrmFile(item: media.Item) {
 		if (!item) throw new Error(`library toStrmFile !item`)
-		let Path = library.toStrmPath(item)
+		let Path = library.toStrmPath(item, true)
 		let Updated = { Path, UpdateType: 'Modified' } as emby.MediaUpdated
 		if (await fs.pathExists(Path)) return Updated
 		Updated.UpdateType = 'Created'
@@ -247,7 +247,7 @@ export const library = {
 		}
 
 		let t = Date.now()
-		let pItems = items.map(item => () => library.byPath(library.toStrmPath(item, true)))
+		let pItems = items.map(item => () => library.byPath(library.toStrmPath(item)))
 		let Items = [] as emby.Item[]
 		while (pItems.length > 0) {
 			console.log(`addAll while pItems ->`, pItems.length)

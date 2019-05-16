@@ -14,8 +14,8 @@ process.nextTick(() => {
 	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
-		schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
-		schedule.scheduleJob('0 2-23 * * *', () => emby.library.refresh())
+		// schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
+		// schedule.scheduleJob('0 2-23 * * *', () => emby.library.refresh())
 	}
 })
 
@@ -97,25 +97,26 @@ async function buildSchemas() {
 }
 
 async function syncCollections() {
-	/** 	let schemas = await buildSchemas()
+	let t = Date.now()
+	let schemas = await buildSchemas()
 
 	if (process.DEVELOPMENT) {
 		// console.log(`schemas ->`, schemas.map(v => v.name))
 		let lists = [
-			// '007',
-			// '100 Greatest Sci Fi Movies',
-			// 'Based on a TRUE STORY',
-			// 'Best Mindfucks',
+			'007',
+			'100 Greatest Sci Fi Movies',
+			'Based on a TRUE STORY',
+			'Best Mindfucks',
 			'Disney',
 			'James Bond',
-			// 'Latest 4K Releases',
-			// 'MARVEL Cinematic Universe',
+			'Latest 4K Releases',
+			'MARVEL Cinematic Universe',
 			'Movie Watchlist',
 			'Pixar Collection',
 			'Star Wars Timeline',
 			'TV Watchlist',
-			// 'Walt Disney Animated feature films',
-			// 'Worlds of DC',
+			'Walt Disney Animated feature films',
+			'Worlds of DC',
 		]
 		schemas = schemas.filter(v => lists.includes(v.name))
 		// console.log(`schemas ->`, schemas)
@@ -124,7 +125,8 @@ async function syncCollections() {
 
 	console.log(`syncCollections ->`, schemas.length)
 
-	let slugs = [] as string[]
+	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	let mIds = new Map<string, string>()
 	for (let schema of schemas) {
 		await utils.pRandom(100)
 		let results = (await trakt.client
@@ -133,64 +135,74 @@ async function syncCollections() {
 				console.error(`trakt get ${schema.url} -> %O`, error)
 				return []
 			})) as trakt.Result[]
-		schema.items = results.map(v => {
+		results = results.filter(v => !v.season && !v.episode && !v.person)
+		schema.items = trakt.uniq(results).map(v => {
 			!v[schema.type] && schema.type && (v = { [schema.type]: v } as any)
 			return new media.Item(v)
 		})
 		schema.items = schema.items.filter(v => !v.isJunk)
 
-		for (let item of schema.items) {
-			let slug = `${item.type}:${item.traktId}`
-			if (!slugs.includes(slug)) {
-				slugs.push(slug)
-				await emby.library.add(item)
-			}
-		}
-	}
+		let Items = await emby.library.addAll(
+			schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item)))
+		)
+		// console.log(`Items ->`, Items.map(v => `${v.Id} ${v.Name}`))
+		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
-	let hits = new Set<string>()
-	let misses = new Set<string>()
-	let Items = await emby.library.Items()
-	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	for (let schema of schemas) {
-		let Ids = new Set<string>()
-		for (let item of schema.items) {
-			let Item = Items.find(({ Path }) => {
-				if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
-				if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
-			})
-			if (Item) {
-				hits.add(item.title)
-				Ids.add(Item.Id)
-			} else misses.add(item.title)
-		}
-		if (Ids.size == 0) continue
+		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).join()
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
-			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
-				query: { Ids: Array.from(Ids).join() },
-				silent: true,
-			})
+			await emby.client.post(`/Collections/${Collection.Id}/Items`, { query: { Ids } })
 		} else {
-			await emby.client.post('/Collections', {
-				query: { Ids: Array.from(Ids).join(), Name: schema.name },
-				silent: true,
-			})
+			await emby.client.post('/Collections', { query: { Ids, Name: schema.name } })
 		}
 	}
 
 	await emby.library.refresh()
+	console.log(Date.now() - t, `syncCollections ${mIds.size} Items -> DONE`)
 
-	if (hits.size > 0) console.log(`misses ->`, Array.from(misses).sort())
-	console.log(`syncCollections DONE ->`, {
-		hits: hits.size,
-		misses: misses.size,
-		schemas: schemas.length,
-		slugs: slugs.length,
-	}) */
+	// let hits = new Set<string>()
+	// let misses = new Set<string>()
+	// let Items = await emby.library.Items()
+	// let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	// for (let schema of schemas) {
+	// 	let Ids = new Set<string>()
+	// 	for (let item of schema.items) {
+	// 		let Item = Items.find(({ Path }) => {
+	// 			if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
+	// 			if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
+	// 		})
+	// 		if (Item) {
+	// 			hits.add(item.title)
+	// 			Ids.add(Item.Id)
+	// 		} else misses.add(item.title)
+	// 	}
+	// 	if (Ids.size == 0) continue
+	// 	let Collection = Collections.find(v => v.Name == schema.name)
+	// 	if (Collection) {
+	// 		await emby.client.post(`/Collections/${Collection.Id}/Items`, {
+	// 			query: { Ids: Array.from(Ids).join() },
+	// 			silent: true,
+	// 		})
+	// 	} else {
+	// 		await emby.client.post('/Collections', {
+	// 			query: { Ids: Array.from(Ids).join(), Name: schema.name },
+	// 			silent: true,
+	// 		})
+	// 	}
+	// }
+
+	// await emby.library.refresh()
+
+	// if (hits.size > 0) console.log(`misses ->`, Array.from(misses).sort())
+	// console.log(`syncCollections DONE ->`, {
+	// 	hits: hits.size,
+	// 	misses: misses.size,
+	// 	schemas: schemas.length,
+	// 	slugs: slugs.length,
+	// })
 }
 
-interface CollectionSchema {
+export interface CollectionSchema {
 	items: media.Item[]
 	limit: number
 	name: string
