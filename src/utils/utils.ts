@@ -32,7 +32,7 @@ export function pTimeout<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(ms), { value })
 }
 export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
-	return pDelay(_.ceil(_.random(ms / Math.PI, ms)), { value })
+	return pDelay(_.ceil(_.random(ms * Math.E * 0.1, ms)), { value })
 }
 
 export function same(...args: string[]) {

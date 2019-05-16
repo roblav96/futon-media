@@ -49,11 +49,13 @@ export async function toTrakt({ id, media_type }: Full) {
 	let type = toType(media_type)
 	let results = (await trakt.client.get(`/search/tmdb/${id}`, {
 		query: { type },
+		memoize: true,
 	})) as trakt.Result[]
 	return results.find(v => trakt.toFull(v).ids.tmdb == id)
 }
 
 export function toType(media_type: string) {
+	if (!media_type) return 'movie'
 	return media_type == 'tv' ? 'show' : (media_type as media.ContentType)
 }
 
@@ -879,4 +881,13 @@ export interface Result {
 	season: Season
 	episode: Episode
 	person: Person
+}
+
+export interface Collection {
+	backdrop_path: string
+	id: number
+	name: string
+	overview: string
+	parts: Full[]
+	poster_path: string
 }

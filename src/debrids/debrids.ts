@@ -81,7 +81,7 @@ export async function getStreamUrl(
 					})
 					if (file) break
 				}
-				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
+				// if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
 				let title = item.title

@@ -85,13 +85,13 @@ export class Http {
 				{ length: 100 }
 			),
 			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
-				length: 100,
+				length: 100 - url.length,
 			}),
 			form: _.truncate(_.size(config.form) > 0 ? JSON.stringify(config.form) : '', {
-				length: 100,
+				length: 100 - url.length,
 			}),
 			body: _.truncate(_.size(config.body) > 0 ? JSON.stringify(config.body) : '', {
-				length: 100,
+				length: 100 - url.length,
 			}),
 		}
 
@@ -161,7 +161,7 @@ export class Http {
 		}
 
 		if (options.profile) {
-			console.log(`${Date.now() - t}ms`, min.url)
+			console.log(Date.now() - t, min.url)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)

@@ -26,9 +26,9 @@ process.nextTick(async () => {
 		onopen({ target }) {
 			let url = target.url as string
 			console.info(`emby onopen ->`, url.slice(0, url.indexOf('?')))
-			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
-			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
-			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
+			ws.json({ MessageType: 'SessionsStart', Data: '1000,1000' })
+			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '1000,1000' })
+			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '1000,1000' })
 			emby.Tail.connect()
 		},
 		onmessage({ data }) {

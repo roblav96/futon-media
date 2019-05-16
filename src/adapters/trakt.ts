@@ -60,6 +60,22 @@ export function person(results: Result[], name: string) {
 	return sizes[0] && sizes[0].person
 }
 
+export async function resultsFor(person: Person) {
+	if (!person) return []
+	let results = [] as Result[]
+	for (let type of media.MAIN_TYPESS) {
+		let credits = (await client.get(`/people/${person.ids.slug}/${type}`, {
+			query: { limit: 100 },
+		})) as Credits
+		let { cast, crew } = { cast: [], crew: [], ...credits }
+		results.push(...cast.filter(v => !!v.character))
+		for (let job in crew) {
+			results.push(...crew[job].filter(v => !!v.job))
+		}
+	}
+	return uniq(results.filter(v => !v.person))
+}
+
 export function toFull(result: Result) {
 	let type = media.TYPES.find(type => !!result[type])
 	return result[type] as Full
