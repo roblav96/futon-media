@@ -82,7 +82,7 @@ export function toFull(result: Result) {
 }
 
 export function uniq(results: Result[]) {
-	return _.uniqWith(results.filter(Boolean), (a, b) => toFull(a).ids.slug == toFull(b).ids.slug)
+	return _.uniqWith(results, (a, b) => toFull(a).ids.slug == toFull(b).ids.slug)
 }
 
 export interface IDs {

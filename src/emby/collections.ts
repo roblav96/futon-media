@@ -135,12 +135,12 @@ async function syncCollections() {
 				console.error(`trakt get ${schema.url} -> %O`, error)
 				return []
 			})) as trakt.Result[]
-		results = results.filter(v => !v.season && !v.episode && !v.person)
-		schema.items = trakt.uniq(results).map(v => {
+		results = results.map(v => {
 			!v[schema.type] && schema.type && (v = { [schema.type]: v } as any)
-			return new media.Item(v)
+			return v
 		})
-		schema.items = schema.items.filter(v => !v.isJunk)
+		results = trakt.uniq(results).filter(v => !v.season && !v.episode && !v.person)
+		schema.items = results.map(v => new media.Item(v)).filter(v => !v.isJunk)
 
 		let Items = await emby.library.addAll(
 			schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item)))
