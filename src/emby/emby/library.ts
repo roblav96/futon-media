@@ -242,7 +242,11 @@ export const library = {
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		console.log(`addAll Creations ->`, Creations.length)
 		if (Creations.length > 0) {
-			await emby.client.post('/Library/Media/Updated', { body: { Updates: Creations } })
+			await emby.client.post('/Library/Media/Updated', {
+				body: { Updates: Creations },
+				retries: false,
+				timeout: 30000,
+			})
 			await library.refresh()
 		}
 
