@@ -11,7 +11,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// process.DEVELOPMENT && syncCollections()
+	process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
 		// schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
@@ -46,7 +46,7 @@ async function buildSchemas() {
 		...STATIC_SCHEMAS.map(schema =>
 			media.MAIN_TYPESS.map((type, i) => {
 				return {
-					limit: schema[2],
+					limit: _.ceil(schema[2] / (i + 1)),
 					name: `${['Movie', 'TV'][i]} ${schema[0]}`,
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
@@ -54,12 +54,14 @@ async function buildSchemas() {
 			})
 		).flat()
 	)
+	console.log(`schemas ->`, schemas)
+	throw new Error(`DEV`)
 
 	let lists = [] as trakt.List[]
 	for (let type of ['popular', 'trending']) {
 		await utils.pRandom(100)
 		let response = (await trakt.client.get(`/lists/${type}`, {
-			query: { limit: 100, extended: '' },
+			query: { limit: 50, extended: '' },
 			silent: true,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map(v => v.list))
