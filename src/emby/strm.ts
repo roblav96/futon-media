@@ -39,10 +39,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
 	let UserId = await db.get(`UserId:${traktId}`)
-	if (UserId) {
-		console.info(`db.get UserId ->`, UserId)
-		Session = Sessions.find(v => v.UserId == UserId)
-	}
+	if (UserId) Session = Sessions.find(v => v.UserId == UserId)
 	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 

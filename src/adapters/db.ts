@@ -26,21 +26,27 @@ export class Db {
 	}
 
 	get<T = any>(key: string) {
-		return (this.level.get(key).catch(_.noop) as any) as Promise<T>
+		return new Promise<T>(resolve => {
+			this.level.get(key, (error, value) => resolve(value as any))
+		})
 	}
 
 	put(key: string, value: any, ttl?: number) {
 		let options = _.isFinite(ttl) ? { ttl } : {}
-		return new Promise((resolve, reject) => {
-			this.level.put(key, value, options, error => (error ? reject(error) : resolve()))
-		}).catch(error => {
-			console.error(`[DB] put '${key}' -> %O`, error)
+		return new Promise(resolve => {
+			this.level.put(key, value, options, error => {
+				if (error) console.error(`[DB] put '${key}'  -> %O`, error)
+				resolve()
+			})
 		})
 	}
 
 	del(key: string) {
-		return this.level.del(key).catch(error => {
-			console.error(`[DB] del '${key}' -> %O`, error)
+		return new Promise(resolve => {
+			this.level.del(key, error => {
+				if (error) console.error(`[DB] del '${key}'  -> %O`, error)
+				resolve()
+			})
 		})
 	}
 
