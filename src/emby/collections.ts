@@ -13,7 +13,7 @@ import * as utils from '@/utils/utils'
 process.nextTick(() => {
 	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
-		schedule.scheduleJob(`0 0 * * *`, () => syncCollections())
+		schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 		// schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
 		// schedule.scheduleJob('0 2-23 * * *', () => emby.library.refresh())
 	}
@@ -139,7 +139,7 @@ async function syncCollections() {
 			!v[schema.type] && schema.type && (v = { [schema.type]: v } as any)
 			return v
 		})
-		results = trakt.uniq(results).filter(v => !v.season && !v.episode && !v.person)
+		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))
 		schema.items = results.map(v => new media.Item(v)).filter(v => !v.isJunk)
 
 		console.warn(`schema '${schema.name}' ->`, schema.items.length)
