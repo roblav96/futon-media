@@ -19,22 +19,10 @@ export class Db {
 		name = path.basename(name)
 		let { pkg } = pkgup.sync({ cwd: __dirname })
 		let location = path.join(xdgBasedir.cache, pkg.name, name)
-		this.level = level(`${location}.db`, {
-			sub: level(`${location}.ttl.db`),
+		let db = level(`${location}.db`, {
 			valueEncoding: 'json',
-			// valueEncoding: {
-			// 	buffer: false,
-			// 	decode(data) {
-			// 		let { err, value } = fastParse(data)
-			// 		if (err) console.error(`[DB] decode -> %O`, err)
-			// 		return err ? data : value
-			// 	},
-			// 	encode(data) {
-			// 		return fastStringify(data)
-			// 	},
-			// 	type: 'fast-json',
-			// },
-		} as Partial<leveldown.LevelDownOpenOptions & levelcodec.CodecOptions & { sub: any }>)
+		} as Partial<leveldown.LevelDownOpenOptions & levelcodec.CodecOptions>)
+		this.level = ttl(db, { sub: level(`${location}.ttl.db`) })
 	}
 
 	get<T = any>(key: string) {
@@ -43,7 +31,9 @@ export class Db {
 
 	put(key: string, value: any, ttl?: number) {
 		let options = _.isFinite(ttl) ? { ttl } : {}
-		return this.level.put(key, value, options).catch(error => {
+		return new Promise((resolve, reject) => {
+			this.level.put(key, value, options, error => (error ? reject(error) : resolve()))
+		}).catch(error => {
 			console.error(`[DB] put '${key}' -> %O`, error)
 		})
 	}

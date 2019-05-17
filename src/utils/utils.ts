@@ -100,7 +100,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 	return split.join(options.separator)
 }
 
-export const VIDEOS = ['m4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
+export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
 	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
 	// file = path.basename(file.toLowerCase())

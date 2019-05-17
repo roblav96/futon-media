@@ -111,7 +111,10 @@ fastify.get('/strm', async (request, reply) => {
 		utils.isNumeric(v) && k != 'traktId' ? _.parseInt(v) : v
 	) as emby.StrmQuery
 	let { e, s, slug, traktId, type } = query
-	console.log(`/strm ->`, `${slug} s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`)
+
+	let title = slug
+	if (type == 'show') title += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
+	console.log(`/strm ->`, title)
 
 	let rkey = `stream:${traktId}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
