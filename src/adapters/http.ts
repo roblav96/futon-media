@@ -26,7 +26,7 @@ export interface Config extends http.RequestOptions {
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
 	query?: Record<string, string | number | string[] | number[]>
 	redirect?: boolean
-	retries?: boolean
+	retries?: number[]
 	silent?: boolean
 	url?: string
 }
@@ -46,13 +46,14 @@ export class HTTPError extends Error {
 }
 
 export class Http {
-	static timeouts = [10000, 10000, 15000]
+	static timeouts = [5000, 10000, 15000]
 	static defaults = {
 		method: 'GET',
 		headers: {
 			'content-type': 'application/json',
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
 		},
+		retries: [408],
 		timeout: Http.timeouts[0],
 	} as Config
 
@@ -137,11 +138,11 @@ export class Http {
 							let message = httperrors[error.statusCode]
 							error.statusMessage = message ? message.name : 'ok'
 						}
-						if (error.statusCode == 408 && options.retries != false) {
+						if (options.retries.includes(error.statusCode)) {
 							let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
 							if (Http.timeouts.includes(timeout)) {
 								Object.assign(config, { timeout })
-								console.warn(`[RETRY]`, min.url, config.timeout, 'ms')
+								console.warn(`[RETRY]`, error.statusCode, min.url, config.timeout)
 								return this.request(config)
 							}
 						}

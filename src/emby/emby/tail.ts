@@ -82,7 +82,6 @@ export class Tail {
 	}
 
 	destroy = _.once(() => {
-		console.warn(`Tail destroy`)
 		this.child.kill('SIGTERM')
 		process.nextTick(() => {
 			this.child.removeAllListeners()

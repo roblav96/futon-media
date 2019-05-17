@@ -10,9 +10,8 @@ export const client = new Http({
 		'trakt-api-key': process.env.TRAKT_KEY,
 		'trakt-api-version': '2',
 	},
-	query: {
-		extended: 'full',
-	},
+	query: { extended: 'full' },
+	retries: [408, 502],
 	afterResponse: {
 		append: [
 			async (options, response) => {

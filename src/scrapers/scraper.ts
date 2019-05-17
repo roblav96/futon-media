@@ -63,7 +63,7 @@ export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
 			memoize: true,
-			retries: false,
+			retries: [],
 			silent: true,
 			timeout: 10000,
 		} as http.Config)
