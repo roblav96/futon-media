@@ -102,8 +102,7 @@ export async function getStreamUrl(
 				.catch(error => console.error(`ffprobe '${stream}' -> %O`, error))) as ffprobe.Probe
 			if (!probe) continue
 
-			let fkeys = ['bit_rate', 'duration', 'format_long_name', 'format_name', 'size']
-			console.log(`probe format ->`, _.pick(probe.format, fkeys))
+			console.log(`probe format ->`, ffprobe.json(probe.format))
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type)
 			)

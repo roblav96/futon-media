@@ -41,15 +41,19 @@ export async function probe(
 export function json(format: Format) {
 	let fkeys = ['bit_rate', 'duration', 'format_long_name', 'format_name', 'size']
 	format = _.pick(format, fkeys) as any
-	if (format.bit_rate) {
-		format.bit_rate = `${utils.fromBytes(_.parseInt(format.bit_rate))}/s`
-	}
-	if (format.duration) {
-		let duration = utils.duration(_.parseInt(format.duration), 'second')
-		format.duration = ms(duration, { unitCount: 2 })
-	}
-	if (format.size) {
-		format.size = utils.fromBytes(_.parseInt(format.size))
+	try {
+		if (format.bit_rate) {
+			format.bit_rate = `${utils.fromBytes(_.parseInt(format.bit_rate))}/s`
+		}
+		if (format.duration) {
+			let duration = utils.duration(_.parseInt(format.duration), 'second')
+			format.duration = ms(duration, { unitCount: 2 })
+		}
+		if (format.size) {
+			format.size = utils.fromBytes(_.parseInt(format.size))
+		}
+	} catch (error) {
+		console.error(`ffprobe json -> %O`, error)
 	}
 	return format
 }
