@@ -46,7 +46,7 @@ export class HTTPError extends Error {
 }
 
 export class Http {
-	static timeouts = [5000, 10000, 15000]
+	static timeouts = [10000, 15000]
 	static defaults = {
 		method: 'GET',
 		headers: {
