@@ -133,6 +133,5 @@ fastify.get('/strm', async (request, reply) => {
 		stream = await emitter.toPromise(traktId)
 	}
 
-	console.log(`redirect ->`, stream)
 	reply.redirect(stream)
 })
