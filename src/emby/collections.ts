@@ -14,8 +14,6 @@ process.nextTick(() => {
 	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
-		// schedule.scheduleJob(`0 1 * * *`, () => syncCollections())
-		// schedule.scheduleJob('0 2-23 * * *', () => emby.library.refresh())
 	}
 })
 
@@ -170,47 +168,6 @@ async function syncCollections() {
 
 	await emby.library.refresh()
 	console.log(Date.now() - t, `syncCollections ${mIds.size} Items -> DONE`)
-
-	// let hits = new Set<string>()
-	// let misses = new Set<string>()
-	// let Items = await emby.library.Items()
-	// let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	// for (let schema of schemas) {
-	// 	let Ids = new Set<string>()
-	// 	for (let item of schema.items) {
-	// 		let Item = Items.find(({ Path }) => {
-	// 			if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
-	// 			if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
-	// 		})
-	// 		if (Item) {
-	// 			hits.add(item.title)
-	// 			Ids.add(Item.Id)
-	// 		} else misses.add(item.title)
-	// 	}
-	// 	if (Ids.size == 0) continue
-	// 	let Collection = Collections.find(v => v.Name == schema.name)
-	// 	if (Collection) {
-	// 		await emby.client.post(`/Collections/${Collection.Id}/Items`, {
-	// 			query: { Ids: Array.from(Ids).join() },
-	// 			silent: true,
-	// 		})
-	// 	} else {
-	// 		await emby.client.post('/Collections', {
-	// 			query: { Ids: Array.from(Ids).join(), Name: schema.name },
-	// 			silent: true,
-	// 		})
-	// 	}
-	// }
-
-	// await emby.library.refresh()
-
-	// if (hits.size > 0) console.log(`misses ->`, Array.from(misses).sort())
-	// console.log(`syncCollections DONE ->`, {
-	// 	hits: hits.size,
-	// 	misses: misses.size,
-	// 	schemas: schemas.length,
-	// 	slugs: slugs.length,
-	// })
 }
 
 export interface CollectionSchema {
