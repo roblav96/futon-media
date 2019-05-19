@@ -60,7 +60,10 @@ process.nextTick(async () => {
 
 export const library = {
 	async refresh() {
-		await emby.client.post('/Library/Refresh', { retries: [], timeout: 30000 })
+		await emby.client.post('/Library/Refresh', {
+			retries: [],
+			timeout: utils.duration(1, 'minute'),
+		})
 	},
 
 	folders: { movies: '', shows: '' },
@@ -240,10 +243,15 @@ export const library = {
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		console.log(`addAll Creations ->`, Creations.length)
 		if (Creations.length > 0) {
+			let Tasks = (await emby.client.get('/ScheduledTasks')) as ScheduledTasksInfo[]
+			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
+			if (State != 'Idle') {
+				await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
+			}
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
-				timeout: 30000,
+				timeout: utils.duration(1, 'minute'),
 			})
 			await library.refresh()
 		}
@@ -252,6 +260,9 @@ export const library = {
 		let pItems = items.map(item => () => library.byPath(library.toStrmPath(item)))
 		let Items = [] as emby.Item[]
 		while (pItems.length > 0) {
+			if (Date.now() > t + utils.duration(1, 'minute')) {
+				throw new Error(`addAll duration > 1 minute`)
+			}
 			console.log(`addAll while pItems ->`, pItems.length)
 			for (let i = pItems.length; i--; ) {
 				let pItem = pItems[i]
