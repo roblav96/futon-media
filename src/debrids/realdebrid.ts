@@ -8,9 +8,7 @@ import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
-	query: {
-		auth_token: process.env.REALDEBRID_SECRET,
-	},
+	query: { auth_token: process.env.REALDEBRID_SECRET },
 })
 
 export class RealDebrid extends debrid.Debrid<Item> {

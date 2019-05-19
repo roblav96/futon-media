@@ -3,6 +3,7 @@ import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
+import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from 'query-string'
 import * as realdebrid from '@/debrids/realdebrid'
@@ -16,9 +17,7 @@ import Sockette from '@/shims/sockette'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.put.io/v2',
-	headers: {
-		authorization: `token ${process.env.PUTIO_TOKEN}`,
-	},
+	headers: { authorization: `token ${process.env.PUTIO_TOKEN}` },
 })
 
 type PutioEvent<Data = any> = { action: 'create' | 'delete' | 'update'; value: Data }
@@ -50,12 +49,12 @@ process.nextTick(() => {
 			let values = value.map(v => fastParse(v).value || v)
 			values.forEach(({ type, value }) => {
 				if (!type) {
-					process.DEVELOPMENT && console.log(`putio !type '${type}' ->`, value)
+					// process.DEVELOPMENT && console.log(`putio !type '${type}' ->`, value)
 					return
 				}
 				let [target, action] = type.split('_') as string[]
 				if (!rx[target]) {
-					process.DEVELOPMENT && console.log(`putio !rx[${target}] '${type}' ->`, value)
+					// process.DEVELOPMENT && console.log(`putio !rx[${target}] '${type}' ->`, value)
 					return
 				}
 				rx[target].next({ action, value } as PutioEvent)
@@ -65,6 +64,16 @@ process.nextTick(() => {
 	exithook(() => ws.close())
 
 	if (process.DEVELOPMENT) return
+
+	let rxNullUpdate = rx.transfer.pipe(
+		Rx.op.filter(({ action }) => action == 'update'),
+		Rx.op.filter(({ value }) => !value.name && !value.status),
+		Rx.op.map(({ value }) => value.id)
+	)
+	rxNullUpdate.subscribe(transfer_ids => {
+		client.post('/transfers/remove', { form: { transfer_ids } })
+	})
+
 	schedule.scheduleJob('0 * * * *', async () => {
 		let { transfers } = (await client.get('/transfers/list', { silent: true })) as Response
 		for (let transfer of transfers) {
@@ -78,9 +87,40 @@ process.nextTick(() => {
 	})
 })
 
+// rx.transfer.subscribe(({ action, value }) => {
+// 	if (action != 'update') return
+// 	console.log(`rx.transfer update ->`, value.id, value.name, value.status)
+// })
+
 export class Putio extends debrid.Debrid<Transfer> {
-	static async cached(hashes: string[]) {
-		return hashes.map(v => false)
+	static async cached(magnets: string[]) {
+		return (await pAll(
+			magnets.map(magnet => async () => {
+				await utils.pRandom(100)
+				let { transfer } = (await client.post('/transfers/add', {
+					form: { url: magnet },
+					silent: true,
+				})) as Response
+				let rxStatus = rx.transfer.pipe(
+					Rx.op.filter(
+						({ action, value }) => action == 'update' && value.id == transfer.id
+					),
+					Rx.op.filter(({ value }) => {
+						return ['COMPLETED', 'DOWNLOADING'].includes(value.status) || !value.status
+					}),
+					Rx.op.map(({ value }) => value.status),
+					Rx.op.take(1)
+				)
+				let status = await Promise.race([
+					rxStatus.toPromise(),
+					utils.pTimeout(utils.duration(5, 'second')),
+				])
+				if (status) {
+					client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })
+				}
+				return { status, magnet }
+			})
+		)).filter(({ status }) => status == 'COMPLETED')
 	}
 
 	async getFiles() {
@@ -117,8 +157,11 @@ export class Putio extends debrid.Debrid<Transfer> {
 			let rxCompleted = rx.transfer.pipe(
 				Rx.op.filter(({ action, value }) => action == 'update' && value.id == transfer.id),
 				Rx.op.filter(({ value }) => ['COMPLETED', 'DOWNLOADING'].includes(value.status)),
-				Rx.op.map(({ value }) => value.status == 'COMPLETED'),
-				Rx.op.first()
+				Rx.op.map(({ value }) => {
+					transfer.file_id = value.file_id
+					return value.status == 'COMPLETED'
+				}),
+				Rx.op.take(1)
 			)
 			let completed = await rxCompleted.toPromise()
 			if (!completed) {

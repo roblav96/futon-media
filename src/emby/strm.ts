@@ -4,6 +4,7 @@ import * as emby from '@/emby/emby'
 import * as Fastify from 'fastify'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
+import * as putio from '@/debrids/putio'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
@@ -80,6 +81,19 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 		}
 		return true
 	})
+
+	if (Quality.includes('HD')) {
+		let putios = torrents.filter(({ cached, seeders }) => {
+			return seeders > 0 && cached.length == 0
+		})
+		putios = putios.slice(0, 10)
+		let cached = await putio.Putio.cached(putios.map(v => v.magnet))
+		cached.forEach(({ magnet }) => {
+			let torrent = torrents.find(v => v.magnet == magnet)
+			torrent.cached.push('putio')
+			console.warn(`Putio cached ->`, torrent.json)
+		})
+	}
 
 	torrents = torrents.filter(({ cached }) => cached.length > 0)
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)

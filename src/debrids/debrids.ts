@@ -1,11 +1,11 @@
 import * as _ from 'lodash'
-import * as pAll from 'p-all'
 import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
+import * as ffprobe from '@/adapters/ffprobe'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
-import * as ffprobe from '@/adapters/ffprobe'
 import { Premiumize } from '@/debrids/premiumize'
 import { Putio } from '@/debrids/putio'
 import { RealDebrid } from '@/debrids/realdebrid'
@@ -13,29 +13,12 @@ import { RealDebrid } from '@/debrids/realdebrid'
 export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize, putio: Putio }
 
 export async function cached(hashes: string[]) {
-	let entries = Object.entries(debrids)
+	let entries = Object.entries({ realdebrid: RealDebrid, premiumize: Premiumize })
 	let resolved = await Promise.all(entries.map(([k, v]) => v.cached(hashes)))
 	return hashes.map((v, index) => {
 		return entries.map(([key], i) => resolved[i][index] && key).filter(Boolean)
 	}) as Debrids[][]
 }
-
-// async function eachStreamUrl(
-// 	torrent: torrent.Torrent,
-// 	item: media.Item,
-// 	channels: number,
-// 	codecs: string[]
-// ) {
-// 	let putios = torrents.filter(v => v.cached.includes('putio'))
-// 	if (putios.length > 0) {
-// 		let results = await pAll(
-// 			putios.map(torrent => async () => {
-// 				await utils.pRandom(1000)
-// 				let debrid = new debrids.putio().use(torrent.magnet)
-// 			})
-// 		)
-// 	}
-// }
 
 export async function getStreamUrl(
 	torrents: torrent.Torrent[],
@@ -54,6 +37,7 @@ export async function getStreamUrl(
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
 			if (!files) continue
+			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
 			if (files.length == 0) {
 				console.warn(`!files ->`, torrent.name)
 				next = true
