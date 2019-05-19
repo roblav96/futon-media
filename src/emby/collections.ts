@@ -20,24 +20,24 @@ process.nextTick(() => {
 })
 
 const STATIC_SCHEMAS = [
-	['Watchlist', '/sync/watchlist/<%= type %>', 999],
-	['Collection', '/sync/collection/<%= type %>', 999],
-	['Recommendations', '/recommendations/<%= type %>', 100],
-	['Popular', '/<%= type %>/popular', 100],
-	['Trending', '/<%= type %>/trending', 100],
-	['Most Played Weekly', '/<%= type %>/played/weekly', 100],
-	['Most Played Monthly', '/<%= type %>/played/monthly', 100],
-	['Most Played Yearly', '/<%= type %>/played/yearly', 100],
-	['Most Played All Time', '/<%= type %>/played/all', 100],
-	['Most Watched Weekly', '/<%= type %>/watched/weekly', 100],
-	['Most Watched Monthly', '/<%= type %>/watched/monthly', 100],
-	['Most Watched Yearly', '/<%= type %>/watched/yearly', 100],
-	['Most Watched All Time', '/<%= type %>/watched/all', 100],
-	['Most Collected Weekly', '/<%= type %>/collected/weekly', 100],
-	['Most Collected Monthly', '/<%= type %>/collected/monthly', 100],
-	['Most Collected Yearly', '/<%= type %>/collected/yearly', 100],
-	['Most Collected All Time', '/<%= type %>/collected/all', 100],
-] as [string, string, number][]
+	['Watchlist', '/sync/watchlist/<%= type %>', true],
+	['Collection', '/sync/collection/<%= type %>', true],
+	['Recommendations', '/recommendations/<%= type %>'],
+	['Popular', '/<%= type %>/popular'],
+	['Trending', '/<%= type %>/trending'],
+	['Most Played Weekly', '/<%= type %>/played/weekly'],
+	['Most Played Monthly', '/<%= type %>/played/monthly'],
+	['Most Played Yearly', '/<%= type %>/played/yearly'],
+	['Most Played All Time', '/<%= type %>/played/all'],
+	['Most Watched Weekly', '/<%= type %>/watched/weekly'],
+	['Most Watched Monthly', '/<%= type %>/watched/monthly'],
+	['Most Watched Yearly', '/<%= type %>/watched/yearly'],
+	['Most Watched All Time', '/<%= type %>/watched/all'],
+	['Most Collected Weekly', '/<%= type %>/collected/weekly'],
+	['Most Collected Monthly', '/<%= type %>/collected/monthly'],
+	['Most Collected Yearly', '/<%= type %>/collected/yearly'],
+	['Most Collected All Time', '/<%= type %>/collected/all'],
+] as [string, string, boolean][]
 
 async function buildSchemas() {
 	let schemas = [] as CollectionSchema[]
@@ -46,7 +46,8 @@ async function buildSchemas() {
 		...STATIC_SCHEMAS.map(schema =>
 			media.MAIN_TYPESS.map((type, i) => {
 				return {
-					limit: _.ceil(schema[2] / (i + 1)),
+					all: schema[2],
+					limit: schema[2] ? 999 : i == 0 ? 100 : 50,
 					name: `${['Movie', 'TV'][i]} ${schema[0]}`,
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
@@ -59,7 +60,7 @@ async function buildSchemas() {
 	for (let type of ['popular', 'trending']) {
 		await utils.pRandom(100)
 		let response = (await trakt.client.get(`/lists/${type}`, {
-			query: { limit: 50, extended: '' },
+			query: { limit: 100, extended: '' },
 			silent: true,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map(v => v.list))
@@ -100,29 +101,32 @@ async function syncCollections() {
 	let t = Date.now()
 	let schemas = await buildSchemas()
 
-	// if (process.DEVELOPMENT) {
-	// 	// console.log(`schemas ->`, schemas.map(v => v.name))
-	// 	let lists = [
-	// 		'007',
-	// 		'100 Greatest Sci Fi Movies',
-	// 		'Based on a TRUE STORY',
-	// 		'Best Mindfucks',
-	// 		'Disney',
-	// 		'James Bond',
-	// 		'Latest 4K Releases',
-	// 		'MARVEL Cinematic Universe',
-	// 		'Movie Watchlist',
-	// 		'Pixar Collection',
-	// 		'Star Wars Timeline',
-	// 		'TV Watchlist',
-	// 		'Walt Disney Animated feature films',
-	// 		'Worlds of DC',
-	// 	]
-	// 	schemas = schemas.filter(v => lists.includes(v.name))
-	// 	// console.log(`schemas ->`, schemas)
-	// 	// console.log(`schemas.length ->`, schemas.length)
-	// }
-
+	if (process.DEVELOPMENT) {
+		// console.log(`schemas ->`, schemas.map(v => v.name))
+		let lists = [
+			// '007',
+			// '100 Greatest Sci Fi Movies',
+			// 'Based on a TRUE STORY',
+			// 'Best Mindfucks',
+			// 'Disney',
+			// 'James Bond',
+			// 'Latest 4K Releases',
+			// 'MARVEL Cinematic Universe',
+			// 'Movie Most Played Monthly',
+			// 'Movie Popular',
+			'Movie Watchlist',
+			// 'Pixar Collection',
+			// 'Star Wars Timeline',
+			// 'TV Most Played Monthly',
+			// 'TV Popular',
+			'TV Watchlist',
+			// 'Walt Disney Animated feature films',
+			// 'Worlds of DC',
+		]
+		schemas = schemas.filter(v => lists.includes(v.name))
+		// console.log(`schemas ->`, schemas)
+		// console.log(`schemas.length ->`, schemas.length)
+	}
 	console.log(`syncCollections ->`, schemas.length)
 
 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
@@ -140,12 +144,18 @@ async function syncCollections() {
 			return v
 		})
 		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))
-		schema.items = results.map(v => new media.Item(v)).filter(v => !v.isJunk)
-
+		let votes = !schema.all ? 1000 : 1
+		schema.items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(votes))
+		if (schema.items.length == 0) continue
 		console.warn(`schema '${schema.name}' ->`, schema.items.length)
-		let Items = await emby.library.addAll(
-			schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item)))
-		)
+
+		let Items = await emby.library
+			.addAll(schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item))))
+			.catch(error => {
+				console.error(`syncCollections addAll -> %O`, error)
+				return []
+			})
+		if (Items.length == 0) continue
 		// console.log(`Items ->`, Items.map(v => `${v.Id} ${v.Name}`))
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
@@ -204,6 +214,7 @@ async function syncCollections() {
 }
 
 export interface CollectionSchema {
+	all: boolean
 	items: media.Item[]
 	limit: number
 	name: string

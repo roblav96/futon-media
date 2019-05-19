@@ -85,10 +85,7 @@ export function parseFloat(value: string) {
 }
 
 export function compact<T = any>(value: T) {
-	return Object.entries(value).reduce((target, [key, value], index) => {
-		if (_.isNil(value)) return
-		return target
-	}, {}) as T
+	return (_.fromPairs(_.toPairs(value as any).filter(([k, v]) => !_.isNil(v))) as any) as T
 }
 
 export function zeroSlug(value: number) {

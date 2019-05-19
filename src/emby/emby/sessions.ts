@@ -130,7 +130,7 @@ export class Session {
 		return utils.compact({
 			Age: this.Age,
 			Audio: JSON.stringify(this.Codecs.audio),
-			Bitrate: `${utils.fromBytes(this.Bitrate)}/s`,
+			Bitrate: this.Bitrate && `${utils.fromBytes(this.Bitrate)}/s`,
 			Channels: this.Channels,
 			Client: this.Client,
 			DeviceName: this.DeviceName,

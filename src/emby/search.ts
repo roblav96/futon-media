@@ -36,7 +36,7 @@ rxSearch.subscribe(async query => {
 	// results.push(...(await toListsResults(query)))
 
 	results = trakt.uniq(results.filter(v => !v.person))
-	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk)
+	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk())
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
 
 	emby.library.addQueue(items)
@@ -88,7 +88,7 @@ async function toListsResults(query: string) {
 		`/users/${list.user.ids.slug}/lists/${list.ids.slug || list.ids.trakt}/items`
 	)) as trakt.Result[]
 	// let items = (results || []).filter(v => !v.person).map(v => new media.Item(v))
-	// items = items.filter(v => !v.isJunk)
+	// items = items.filter(v => !v.isJunk())
 	// let Items = await emby.library.addAll(items)
 	// console.log(`Items ->`, Items)
 	// console.log(`Items.length ->`, Items.length)
@@ -102,7 +102,7 @@ async function toCollections(items: media.Item[], Items: emby.Item[]) {
 		let { name, parts } = (await tmdb.client.get(`/collection/${tmcolid}`)) as tmdb.Collection
 		console.log(`Collection ->`, name)
 		let cresults = await pAll(parts.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
-		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk)
+		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk())
 		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()
 		let Collection = Collections.find(v => v.Name == name)
 		if (Collection) {

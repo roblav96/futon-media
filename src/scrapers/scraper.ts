@@ -25,7 +25,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]

@@ -21,7 +21,7 @@ process.nextTick(async () => {
 	await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
-		Rx.op.filter(({ query }) => _.isString(query.ItemId)),
+		Rx.op.filter(({ query }) => !!query.ItemId),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilChanged((a, b) => utils.hash(a) == utils.hash(b))
@@ -41,7 +41,7 @@ process.nextTick(async () => {
 			})) as trakt.Result[]
 			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
 			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk)
+			items = items.filter(v => !v.isJunk())
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
 			library.addQueue(items)
 		}
@@ -247,6 +247,7 @@ export const library = {
 			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 			if (State != 'Idle') {
 				await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
+				await utils.pTimeout(1000)
 			}
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
@@ -276,179 +277,6 @@ export const library = {
 		console.log(Date.now() - t, `addAll ${Items.length} Items -> DONE`)
 		return Items
 	},
-
-	//
-
-	// let uitems = items.map(item => {
-	// 	let { Path, UpdateType } = Updates.find(({ Path }) => {
-	// 		let { imdb, tmdb } = library.pathIds(Path)
-	// 		return imdb == item.ids.imdb || tmdb == item.ids.tmdb
-	// 	})
-	// 	return { item, Path: item.show ? path.dirname(Path) : Path, UpdateType }
-	// })
-	// console.log(`uitems ->`, uitems.map(v => `${v.item.title} -> ${v.UpdateType} -> ${v.Path}`))
-	// // let Creations = uitems.filter(v => v.UpdateType == 'Created').map(v => _.omit(v, 'item'))
-	// // if (Creations.length > 0) {
-	// // 	// await emby.client.post('/Library/Media/Updated', { body: { Updates: Creations } })
-	// // 	await library.refresh()
-	// // }
-
-	// let rxNext = Rx.merge(
-	// 	Rx.interval(3000),
-	// 	emby.rxSocket.pipe(
-	// 		Rx.op.filter(({ MessageType }) => MessageType == 'RefreshProgress'),
-	// 		Rx.op.map(({ Data }) => Data as emby.RefreshProgress),
-	// 		Rx.op.map(({ Progress }) => _.parseInt(Progress))
-	// 	)
-	// ).pipe(Rx.op.throttleTime(1000))
-
-	// let Items = [] as emby.Item[]
-	// let rxRefresh = rxNext.pipe(
-	// 	Rx.op.startWith(0),
-	// 	Rx.op.switchMap(async () => {
-	// 		console.log(`addAll switchMap uitems ->`, uitems.map(v => v.item.title))
-	// 		for (let i = uitems.length; i--; ) {
-	// 			let uitem = uitems[i]
-	// 			let Item = await library.byPath(uitem.Path)
-	// 			if (!Item) continue
-	// 			Items.push(Item)
-	// 			uitems.splice(i, 1)
-	// 		}
-	// 	}),
-	// 	Rx.op.first(() => uitems.length == 0)
-	// )
-	// console.warn(`await rxRefresh.toPromise ->`, uitems.length)
-	// let t = Date.now()
-	// await rxRefresh.toPromise()
-	// console.warn(`addAll Items ->`, Items.map(v => `${v.Id} -> ${v.Name}`))
-	// console.log(Date.now() - t, `rxRefresh -> DONE`)
-
-	// let rxRefresh = Rx.merge(
-	// 	Rx.of(0),
-	// 	Rx.interval(1000),
-	// 	emby.rxSocket.pipe(
-	// 		Rx.op.filter(({ MessageType }) => MessageType == 'RefreshProgress'),
-	// 		Rx.op.map(({ Data }) => Data as emby.RefreshProgress),
-	// 		Rx.op.map(({ Progress }) => _.parseInt(Progress)),
-	// 		Rx.op.filter(v => v == 100)
-	// 	)
-	// ).pipe(
-	// 	Rx.op.debounceTime(1000),
-	// 	Rx.op.switchMap(async () => {
-	// 		console.log(`addAll switchMap uitems.length ->`, uitems.length)
-	// 		let Items = [] as emby.Item[]
-	// 		for (let i = uitems.length; i--; ) {
-	// 			let PathItem = uitems[i]
-	// 			let Item = await library.byPath(PathItem.Path)
-	// 			if (Item) {
-	// 				Items.push(Item)
-	// 				uitems.splice(i, 1)
-	// 			}
-	// 		}
-	// 		return Items
-	// 	}),
-	// 	Rx.op.scan(
-	// 		(Items, values) => {
-	// 			console.log(`addAll scan uitems.length ->`, uitems.length)
-	// 			Items.push(...values)
-	// 			console.log(`addAll scan Items.length ->`, Items.length)
-	// 			return Items
-	// 		},
-	// 		[] as emby.Item[]
-	// 	),
-	// 	Rx.op.first(Items => Items.length == items.length)
-	// )
-	// console.warn(`await rxRefresh.toPromise ->`, items.length)
-	// let Items = await rxRefresh.toPromise()
-	// console.warn(`addAll Items ->`, Items.map(v => v.Name))
-
-	// let rxRefreshProgress = emby.socket.filter<RefreshProgress>('RefreshProgress').pipe(
-	// 	// Rx.op.filter(({ Progress }) => _.parseInt(Progress) == 100),
-	// 	Rx.op.debounceTime(1000),
-	// 	Rx.op.switchMap(async () => {
-	// 		let Item = await library.byPath(Update.Path)
-	// 		console.log(`switchMap Item  ->`, Item && Item.Name)
-	// 		return Item
-	// 	}),
-	// 	Rx.op.filter(v => !!v),
-	// 	Rx.op.first()
-	// )
-	// return await rxRefreshProgress.toPromise()
-
-	// let Items = [] as emby.Item[]
-	// for (let item of items) {
-	// 	let Updates = await library.add(item)
-	// 	console.warn(`addAll Updates '${item.title}' ->`, Updates)
-
-	// 	let Item: emby.Item
-	// 	while (!Item) {
-	// 		Item = await library.byProviderIds(item.ids)
-	// 		if (!Item) {
-	// 			console.log(`addAll !Item ->`, item.title)
-	// 			await utils.pRandom(1000)
-	// 		}
-	// 	}
-	// 	Items.push(Item)
-	// }
-	// console.warn(`addAll Items ->`, Items.map(v => v.Name))
-
-	// let Items = await pAll(Updates.map(v => () => library.addUpdate(v)), { concurrency: 1 })
-	// console.warn(`addAll Itemss ->`, Items)
-
-	// let creations = Updates.filter(v => v.UpdateType == 'Created')
-	// // console.log(`creations ->`, creations)
-	// let modifications = Updates.filter(v => v.UpdateType == 'Created')
-	// // console.log(`modifications ->`, modifications)
-
-	// async addUpdate(Update: emby.MediaUpdated) {
-	// 	console.log(`addUpdate Update ->`, Update)
-
-	// 	let Item = await library.byPath(Update.Path)
-	// 	if (Item) return Item
-
-	// 	// await emby.client.post('/Library/Media/Updated', { body: { Updates: [Update] } })
-	// 	let rxRefreshProgress = emby.socket.filter<RefreshProgress>('RefreshProgress').pipe(
-	// 		// Rx.op.filter(({ Progress }) => _.parseInt(Progress) == 100),
-	// 		Rx.op.debounceTime(1000),
-	// 		Rx.op.switchMap(async () => {
-	// 			let Item = await library.byPath(Update.Path)
-	// 			console.log(`switchMap Item  ->`, Item && Item.Name)
-	// 			return Item
-	// 		}),
-	// 		Rx.op.filter(v => !!v),
-	// 		Rx.op.first()
-	// 	)
-	// 	return await rxRefreshProgress.toPromise()
-	// let rxRefreshProgress$ = rxRefreshProgress.subscribe(async refresh => {
-
-	// 	// rxRefreshProgress$.unsubscribe()
-	// })
-
-	// let creations = Updates.filter(v => v.UpdateType == 'Created')
-	// let seconds = _.ceil(_.max([creations.length, 1]) * Math.PI)
-	// let bailout = Date.now() + utils.duration(seconds, 'second')
-	// while (Date.now() < bailout) {
-	// 	let Items = ((await emby.client.get('/Items', {
-	// 		query: {
-	// 			Fields: 'Path,ProviderIds',
-	// 			IncludeItemTypes: 'Movie,Series',
-	// 			Recursive: 'true',
-	// 		},
-	// 		silent: true,
-	// 	})).Items || []) as emby.Item[]
-	// 	Items = items.map(item =>
-	// 		Items.find(({ Path }) => {
-	// 			if (Path.includes(`[imdbid=${item.ids.imdb}]`)) return true
-	// 			if (Path.includes(`[tmdbid=${item.ids.tmdb}]`)) return true
-	// 		})
-	// 	)
-	// 	if (Items.filter(Boolean).length == items.length) {
-	// 		return Items
-	// 	}
-	// 	await utils.pRandom(1000)
-	// }
-	// throw new Error(`addAll while loop bailout '${seconds}' seconds`)
-	// },
 }
 
 export type Quality = 'SD' | 'HD' | 'UHD'

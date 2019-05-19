@@ -58,7 +58,7 @@ export class Item {
 		_.has(this.show, 'first_aired') && (released = new Date(this.show.first_aired))
 		_.has(this.season, 'first_aired') && (released = new Date(this.season.first_aired))
 		_.has(this.episode, 'first_aired') && (released = new Date(this.episode.first_aired))
-		return released.valueOf()
+		return released
 	}
 	get runtime() {
 		let runtime = Infinity
@@ -72,17 +72,20 @@ export class Item {
 		return _.has(this.main, 'language') && (this.main.language || '').includes('en')
 	}
 	get isReleased() {
-		return this.released < Date.now()
-	}
-	get isPopular() {
-		if (_.has(this.main, 'votes')) return this.main.votes >= 250
-		return false
+		return this.released.valueOf() < Date.now()
 	}
 	get hasRuntime() {
 		return this.runtime >= 10
 	}
-	get isJunk() {
-		let valid = this.isEnglish && this.isReleased && this.isPopular && this.hasRuntime
+	isPopular(votes: number) {
+		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
+		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
+		votes -= _.ceil((votes / 2) * penalty)
+		if (_.has(this.main, 'votes')) return this.main.votes >= votes
+		return false
+	}
+	isJunk(votes = 250) {
+		let valid = this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes)
 		return !(valid && !!this.ids.slug && !!this.main.year)
 	}
 
