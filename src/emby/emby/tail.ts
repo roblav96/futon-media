@@ -107,6 +107,10 @@ const JUNK = [
 export const rxHttp = rxTail.pipe(
 	Rx.op.map(line => {
 		if (line.match(/Info HttpServer: HTTP [DGP]/)) {
+			/**
+				TODO:
+				- add http method to matches
+			**/
 			return (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
 		}
 	}),
@@ -119,10 +123,10 @@ export const rxHttp = rxTail.pipe(
 		for (let i = 0; i < parts.length; i++) {
 			let [part, next] = [parts[i], parts[i + 1]]
 			if (!next) continue
-			part == 'users' && next.length == 32 && (query.UserId = next)
-			if (['items', 'movies', 'shows', 'episodes'].includes(part)) {
-				utils.isNumeric(next) && (query.ItemId = next)
-				next.length == 32 && (query.ItemId = next)
+			if (part == 'users' && next.length == 32) query.UserId = next
+			if (['items', 'movies', 'shows', 'episodes', 'favoriteitems'].includes(part)) {
+				if (utils.isNumeric(next)) query.ItemId = next
+				if (next.length == 32) query.ItemId = next
 			}
 		}
 		return { url, query }

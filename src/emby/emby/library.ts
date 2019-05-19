@@ -56,6 +56,28 @@ process.nextTick(async () => {
 			}
 		}
 	})
+
+	/**
+		TODO:
+		- scrape and pre-download favorite items
+	**/
+	let rxFavorite = emby.rxHttp.pipe(
+		Rx.op.filter(({ url }) => url.toLowerCase().includes('favoriteitems')),
+		Rx.op.map(({ query }) => query.ItemId)
+	)
+	rxFavorite.subscribe(async ItemId => {
+		let Item = await library.byItemId(ItemId)
+		if (!Item) return
+		console.log(`Item ->`, Item)
+		if (Item.Type == 'Movie') {
+		}
+		if (Item.Type == 'Series') {
+		}
+		if (Item.Type == 'Episode') {
+		}
+		if (Item.Type == 'Person') {
+		}
+	})
 })
 
 export const library = {
