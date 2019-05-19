@@ -144,8 +144,11 @@ async function syncCollections() {
 		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))
 		let votes = !schema.all ? 1000 : 1
 		schema.items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(votes))
-		if (schema.items.length == 0) continue
-		console.warn(`schema '${schema.name}' ->`, schema.items.length)
+		if (schema.items.length == 0) {
+			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
+			continue
+		}
+		console.log(`schema '${schema.name}' ->`, schema.items.length)
 
 		let Items = await emby.library
 			.addAll(schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item))))
@@ -153,7 +156,10 @@ async function syncCollections() {
 				console.error(`syncCollections addAll -> %O`, error)
 				return []
 			})
-		if (Items.length == 0) continue
+		if (Items.length == 0) {
+			console.warn(`schema '${schema.name}' ->`, 'Items.length == 0')
+			continue
+		}
 		// console.log(`Items ->`, Items.map(v => `${v.Id} ${v.Name}`))
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
