@@ -70,28 +70,26 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 			return bsize - asize
 		})
 	}
+
 	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
 	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
 
-	torrents = torrents.filter(v => {
-		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
-		if (split.includes('720p')) v.seeders = _.ceil(v.seeders / 10)
-		if (split.includes('2160p') || split.includes('4k')) {
+	// let stop = false
+	torrents = torrents.filter((v, i) => {
+		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
 			if (Quality != 'UHD') return false
-			if (split.includes('sdr')) {
-				if (split.includes('8bit') || split.includes('10bit')) return false
-			}
 		}
-		return v.cached.length > 0
-		// if (Quality == '2160p' && Channels > 2) {
-		// 	v.cached.length == 0 && v.cached.push('putio')
-		// 	return v.seeders > 0
-		// }
+		// if (!stop && v.cached.length == 0) {
+		// 	v.cached.push('putio')
+		// } else stop = true
+		return true
 	})
+
+	torrents = torrents.filter(v => v.cached.length > 0)
+	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 
 	if (Quality == 'SD') torrents.sort((a, b) => b.seeders - a.seeders)
 
-	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
 	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.json))
 

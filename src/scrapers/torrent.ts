@@ -10,6 +10,7 @@ import * as utils from '@/utils/utils'
 export interface Torrent extends scraper.Result {}
 export class Torrent {
 	hash: string
+	split: string[]
 	cached = [] as debrids.Debrids[]
 
 	get age() {
@@ -42,6 +43,8 @@ export class Torrent {
 	}
 
 	constructor(result: scraper.Result) {
+		this.split = utils.toSlug(result.name, { toName: true, lowercase: true }).split(' ')
+
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 		magnet.xt = magnet.xt.toLowerCase()
 		magnet.dn = result.name

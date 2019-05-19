@@ -25,7 +25,8 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
@@ -35,9 +36,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	)).flat()
 
 	torrents = _.uniqWith(torrents, (from, to) => {
-		if (to.hash != from.hash) {
-			return false
-		}
+		if (to.hash != from.hash) return false
 		let accuracy = utils.accuracy(to.name, from.name)
 		if (accuracy.length > 0) {
 			to.name += `.${accuracy.join('.')}`
@@ -53,7 +52,16 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	let cached = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cached[i]))
 
-	return torrents
+	return torrents.filter(v => {
+		if (v.split.includes('720p')) v.seeders = _.ceil(v.seeders / 10)
+		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.2)
+		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
+			if (v.split.includes('sdr')) {
+				if (v.split.includes('8bit') || v.split.includes('10bit')) return false
+			}
+		}
+		return true
+	})
 }
 
 export interface Scraper {
@@ -92,6 +100,7 @@ export class Scraper {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
+		// console.log(`${this.constructor.name} combinations ->`, JSON.stringify(combinations))
 
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {

@@ -69,7 +69,7 @@ export class Session {
 		return _.max(Channels)
 	}
 	get Quality(): emby.Quality {
-		// if (utils.minify(this.Client + this.DeviceName).includes('mobile')) return 'SD'
+		if (utils.minify(this.Client + this.DeviceName).includes('mobile')) return 'SD'
 		if (this.Channels > 2) {
 			let user = this.UserName.toLowerCase()
 			let users = ['admin', 'dev', 'developer', 'robert']
