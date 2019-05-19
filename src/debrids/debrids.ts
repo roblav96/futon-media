@@ -10,7 +10,7 @@ import { Premiumize } from '@/debrids/premiumize'
 import { Putio } from '@/debrids/putio'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = { premiumize: Premiumize, realdebrid: RealDebrid, putio: Putio }
+export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize, putio: Putio }
 
 export async function cached(hashes: string[]) {
 	let entries = Object.entries(debrids)
