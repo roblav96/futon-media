@@ -118,8 +118,7 @@ export class Scraper {
 		)).flat() as Result[]
 
 		results = results.filter(v => filters.results(v, this.item))
-
-		console.log(Date.now() - t, `${this.constructor.name}`, results.length)
+		console.log(Date.now() - t, this.constructor.name, combinations.length, results.length)
 		return results.map(v => new torrent.Torrent(v))
 	}
 }

@@ -74,18 +74,14 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
 	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
 
-	// let stop = false
-	torrents = torrents.filter((v, i) => {
-		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
+	torrents = torrents.filter(({ split }) => {
+		if (split.includes('2160p') || split.includes('uhd') || split.includes('4k')) {
 			if (Quality != 'UHD') return false
 		}
-		// if (!stop && v.cached.length == 0) {
-		// 	v.cached.push('putio')
-		// } else stop = true
 		return true
 	})
 
-	torrents = torrents.filter(v => v.cached.length > 0)
+	torrents = torrents.filter(({ cached }) => cached.length > 0)
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 
 	if (Quality == 'SD') torrents.sort((a, b) => b.seeders - a.seeders)
