@@ -87,12 +87,6 @@ async function toListsResults(query: string) {
 	return (await trakt.client.get(
 		`/users/${list.user.ids.slug}/lists/${list.ids.slug || list.ids.trakt}/items`
 	)) as trakt.Result[]
-	// let items = (results || []).filter(v => !v.person).map(v => new media.Item(v))
-	// items = items.filter(v => !v.isJunk())
-	// let Items = await emby.library.addAll(items)
-	// console.log(`Items ->`, Items)
-	// console.log(`Items.length ->`, Items.length)
-	// return
 }
 
 async function toCollections(items: media.Item[], Items: emby.Item[]) {
