@@ -39,7 +39,7 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
 	let UserId = await db.get(`UserId:${traktId}`)
-	if (UserId) Session = Sessions.find(v => v.UserId == UserId)
+	if (UserId) Session = Sessions.find(v => v.UserId == UserId) || Session
 	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
@@ -75,9 +75,9 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 
 	torrents = torrents.filter(v => {
 		let split = utils.toSlug(v.name, { toName: true, lowercase: true }).split(' ')
-		split.includes('720p') && (v.seeders = _.ceil(v.seeders / 10))
+		if (split.includes('720p')) v.seeders = _.ceil(v.seeders / 10)
 		if (split.includes('2160p') || split.includes('4k')) {
-			if (Quality != '2160p') return false
+			if (Quality != 'UHD') return false
 			if (split.includes('sdr')) {
 				if (split.includes('8bit') || split.includes('10bit')) return false
 			}
@@ -88,7 +88,8 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 		// 	return v.seeders > 0
 		// }
 	})
-	if (Channels <= 2) torrents.sort((a, b) => b.seeders - a.seeders)
+
+	if (Quality == 'SD') torrents.sort((a, b) => b.seeders - a.seeders)
 
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)

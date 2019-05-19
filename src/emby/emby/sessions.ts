@@ -22,13 +22,6 @@ export const sessions = {
 }
 
 export class Session {
-	get Is4kUser() {
-		let users = ['admin', 'dev', 'developer', 'mom', 'robert']
-		return users.includes(this.UserName.toLowerCase())
-	}
-	get IsRoku() {
-		return `${this.Client} ${this.DeviceName}`.toLowerCase().includes('roku')
-	}
 	get Codecs() {
 		let { audio, video } = { audio: '', video: '' }
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
@@ -44,7 +37,7 @@ export class Session {
 		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
 		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
 		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
-		return {
+		let Codecs = {
 			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)).map(v =>
 				v.startsWith('-') ? utils.minify(v) : v
 			),
@@ -52,6 +45,11 @@ export class Session {
 				v.startsWith('-') ? utils.minify(v) : v
 			),
 		}
+		if (Codecs.video.includes('h264')) {
+			Codecs.video.push('h265')
+			Codecs.video.sort()
+		}
+		return Codecs
 	}
 	get Channels() {
 		let Channels = [2]
@@ -68,13 +66,17 @@ export class Session {
 			MaxAudioChannels && Channels.push(_.parseInt(MaxAudioChannels))
 		})
 		if (Channels.length == 1) return 8
-		return 2
-		// return _.max(Channels)
-		// return this.Is4kUser && Channels == 6 ? 8 : Channels
+		return _.max(Channels)
 	}
 	get Quality(): emby.Quality {
-		if (this.Channels <= 2) return '1080p'
-		return this.Is4kUser ? '2160p' : '1080p'
+		// if (utils.minify(this.Client + this.DeviceName).includes('mobile')) return 'SD'
+		if (this.Channels > 2) {
+			let user = this.UserName.toLowerCase()
+			let users = ['admin', 'dev', 'developer', 'robert']
+			if (users.includes(user)) return 'UHD'
+			if (users.concat(['mom']).includes(user)) return 'HD'
+		}
+		return 'SD'
 	}
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
@@ -125,33 +127,30 @@ export class Session {
 	}
 
 	get json() {
-		return _.fromPairs(
-			_.toPairs({
-				// Ago: `${dayjs(this.LastActivityDate).from(dayjs(this.Stamp + this.Age))}`,
-				// Bitrate: this.Bitrate,
-				Age: this.Age,
-				Audio: JSON.stringify(this.Codecs.audio),
-				Channels: this.Channels,
-				Client: this.Client,
-				DeviceName: this.DeviceName,
-				IsStreaming: this.IsStreaming,
-				Quality: this.Quality,
-				StrmPath: this.StrmPath,
-				UserName: this.UserName,
-				Video: JSON.stringify(this.Codecs.video),
-			}).filter(([k, v]) => !_.isNil(v))
-		)
+		return utils.compact({
+			Age: this.Age,
+			Audio: JSON.stringify(this.Codecs.audio),
+			Bitrate: `${utils.fromBytes(this.Bitrate)}/s`,
+			Channels: this.Channels,
+			Client: this.Client,
+			DeviceName: this.DeviceName,
+			IsStreaming: this.IsStreaming,
+			Quality: this.Quality,
+			StrmPath: this.StrmPath,
+			UserName: this.UserName,
+			Video: JSON.stringify(this.Codecs.video),
+		})
 	}
 
 	constructor(Session: Session) {
 		_.merge(this, Session)
 	}
 
-	async User() {
+	async getUser() {
 		return await emby.users.byUserId(this.UserId)
 	}
 
-	async Device() {
+	async getDevice() {
 		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
 	}
 

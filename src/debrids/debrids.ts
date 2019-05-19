@@ -151,7 +151,6 @@ export async function getStreamUrl(
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
 			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
 			if (audios.filter(v => v.channels <= channels).length == 0) {
-				// if (audios[0].channels > channels) {
 				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
 				continue
 			}

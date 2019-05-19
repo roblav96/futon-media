@@ -59,8 +59,6 @@ process.nextTick(async () => {
 })
 
 export const library = {
-	qualities: ['2160p', '1080p'] as Quality[],
-
 	async refresh() {
 		await emby.client.post('/Library/Refresh', { retries: [], timeout: 30000 })
 	},
@@ -442,7 +440,7 @@ export const library = {
 	// },
 }
 
-export type Quality = '2160p' | '1080p'
+export type Quality = 'SD' | 'HD' | 'UHD'
 
 export interface StrmQuery extends trakt.IDs {
 	e: number

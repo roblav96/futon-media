@@ -84,6 +84,13 @@ export function parseFloat(value: string) {
 	return Number.parseFloat(value.replace(/[^\d.]/g, ''))
 }
 
+export function compact<T = any>(value: T) {
+	return Object.entries(value).reduce((target, [key, value], index) => {
+		if (_.isNil(value)) return
+		return target
+	}, {}) as T
+}
+
 export function zeroSlug(value: number) {
 	return _.isFinite(value) && (value / 100).toFixed(2).slice(-2)
 }
