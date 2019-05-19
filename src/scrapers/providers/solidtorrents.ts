@@ -1,7 +1,8 @@
 import * as _ from 'lodash'
-import * as utils from '@/utils/utils'
+import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
+import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://solidtorrents.net/api/v1',
@@ -21,7 +22,7 @@ export class SolidTorrents extends scraper.Scraper {
 				magnet: v.magnet,
 				name: v.title,
 				seeders: v.swarm.seeders,
-				stamp: new Date(v.imported).valueOf(),
+				stamp: dayjs(v.imported).valueOf(),
 			} as scraper.Result
 		})
 	}
