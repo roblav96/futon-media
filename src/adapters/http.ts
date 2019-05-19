@@ -58,7 +58,10 @@ export class Http {
 	} as Config
 
 	constructor(public config = {} as Config) {
-		_.defaultsDeep(this.config, Http.defaults)
+		_.defaults(this.config, Http.defaults)
+		_.mapValues(this.config, (v, k) =>
+			_.isPlainObject(v) ? _.defaults(v, Http.defaults[k] || {}) : v
+		)
 	}
 
 	extend(config: Config) {
