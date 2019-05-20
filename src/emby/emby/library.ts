@@ -45,39 +45,13 @@ process.nextTick(async () => {
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
 			library.addQueue(items)
 		}
-		if (Item.Type == 'Season' || Item.Type == 'Episode') {
-			Item = await library.byItemId(Item.SeriesId)
-			if (!Item) return
-		}
-		if (Item.Type == 'Movie' || Item.Type == 'Series') {
-			let item = await library.item(Item)
+		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
+			let item = await library.item(Item.Path, Item.Type)
 			console.log(`rxItem ${Item.Type} ->`, item.title)
 			library.addQueue([item])
 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
 			if (_.isArray(entry)) await db.del(entry[0])
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
-		}
-	})
-
-	/**
-		TODO:
-		- scrape and pre-download favorite items
-	**/
-	let rxFavorite = emby.rxHttp.pipe(
-		Rx.op.filter(({ url }) => url.toLowerCase().includes('favoriteitems')),
-		Rx.op.map(({ query }) => query.ItemId)
-	)
-	rxFavorite.subscribe(async ItemId => {
-		let Item = await library.byItemId(ItemId)
-		if (!Item) return
-		console.log(`Item ->`, Item)
-		if (Item.Type == 'Movie') {
-		}
-		if (Item.Type == 'Series') {
-		}
-		if (Item.Type == 'Episode') {
-		}
-		if (Item.Type == 'Person') {
 		}
 	})
 })
@@ -149,8 +123,8 @@ export const library = {
 		return (await library.Items({ AnyProviderIdEquals }))[0]
 	},
 
-	async item({ Path, Type }: Item) {
-		let type = Type == 'Series' ? 'show' : Type.toLowerCase()
+	async item(Path: string, Type: string) {
+		let type = ['Series', 'Season', 'Episode'].includes(Type) ? 'show' : Type.toLowerCase()
 		let ids = library.pathIds(Path)
 		for (let key in ids) {
 			let value = ids[key] as string

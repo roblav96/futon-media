@@ -54,10 +54,12 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
-		let seasons = (await trakt.client.get(`/${type}s/${traktId}/seasons`)) as trakt.Season[]
+		let seasons = (await trakt.client.get(`/shows/${traktId}/seasons`)) as trakt.Season[]
 		let season = seasons.find(v => v.number == s)
 		item.use({ type: 'season', season })
-		let episode = await trakt.client.get(`/${type}s/${traktId}/seasons/${s}/episodes/${e}`)
+		let episode = (await trakt.client.get(
+			`/shows/${traktId}/seasons/${s}/episodes/${e}`
+		)) as trakt.Episode
 		item.use({ type: 'episode', episode })
 	}
 	// process.DEVELOPMENT && console.log(`item ->`, item)

@@ -12,6 +12,7 @@ async function start() {
 	await import('@/mocks/mocks')
 	await import('@/emby/collections')
 	await import('@/emby/emby')
+	await import('@/emby/favorites')
 	await import('@/emby/search')
 	await import('@/emby/strm')
 }

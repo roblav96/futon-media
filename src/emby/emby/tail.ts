@@ -102,11 +102,15 @@ export const rxHttp = rxTail.pipe(
 		return [matches[1], matches[2]]
 	}),
 	Rx.op.filter(matches => matches.filter(Boolean).length == 2),
-	Rx.op.map(matches => ({ method: matches[0], ...qs.parseUrl(matches[1]) } as TailHttp)),
+	Rx.op.map(matches => {
+		let parsed = qs.parseUrl(matches[1]) as { url: string; query: Record<string, string> }
+		return { ...parsed, method: matches[0] as 'GET' | 'POST' | 'DELETE' }
+	}),
 	Rx.op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
-	Rx.op.map(({ method, query, url }) => {
+	Rx.op.map(({ method, url, query }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
-		let parts = _.filter(new Url(url).pathname.toLowerCase().split('/'), Boolean)
+		let parts = new Url(url).pathname.toLowerCase().split('/')
+		parts = parts.filter(Boolean)
 		for (let i = 0; i < parts.length; i++) {
 			let [part, next] = [parts[i], parts[i + 1]]
 			if (!next) continue
@@ -116,7 +120,7 @@ export const rxHttp = rxTail.pipe(
 				if (next.length == 32) query.ItemId = next
 			}
 		}
-		return { method, url, parts, query } as TailHttp
+		return { method, url, parts, query }
 	})
 )
 
@@ -124,9 +128,9 @@ export const rxHttp = rxTail.pipe(
 // 	console.log(`rxHttp ->`, method, url, parts, query)
 // })
 
-export interface TailHttp {
-	method: 'GET' | 'POST' | 'DELETE'
-	parts: string[]
-	query: Record<string, string>
-	url: string
-}
+// export interface TailHttp {
+// 	method: 'GET' | 'POST' | 'DELETE'
+// 	parts: string[]
+// 	query: Record<string, string>
+// 	url: string
+// }
