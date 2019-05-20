@@ -94,32 +94,19 @@ export class Tail {
 
 exithook(() => Tail.destroy())
 
-const JUNK = [
-	'.png',
-	'/images/',
-	'/info/public',
-	'/strings/en-us.json',
-	'/system/endpoint',
-	'/system/info',
-	'/system/wakeonlaninfo',
-	'/web/manifest.json',
-]
+const JUNK = ['/bower_components/', '/web/']
 export const rxHttp = rxTail.pipe(
+	Rx.op.filter(line => !!line.match(/Info HttpServer: HTTP [DGP]/)),
 	Rx.op.map(line => {
-		if (line.match(/Info HttpServer: HTTP [DGP]/)) {
-			/**
-				TODO:
-				- add http method to matches
-			**/
-			return (line.match(/\b\s(http.*)\.\s\b/) || [])[1] as string
-		}
+		let matches = (line.match(/\b([DGP].*)\s(http.*)\.\s\b/) || []) as string[]
+		return [matches[1], matches[2]]
 	}),
-	Rx.op.filter(match => !!match),
-	Rx.op.map(match => qs.parseUrl(match) as { url: string; query: Record<string, string> }),
+	Rx.op.filter(matches => matches.filter(Boolean).length == 2),
+	Rx.op.map(matches => ({ method: matches[0], ...qs.parseUrl(matches[1]) } as TailHttp)),
 	Rx.op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
-	Rx.op.map(({ url, query }) => {
+	Rx.op.map(({ method, query, url }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
-		let parts = new Url(url).pathname.toLowerCase().split('/')
+		let parts = _.filter(new Url(url).pathname.toLowerCase().split('/'), Boolean)
 		for (let i = 0; i < parts.length; i++) {
 			let [part, next] = [parts[i], parts[i + 1]]
 			if (!next) continue
@@ -129,10 +116,17 @@ export const rxHttp = rxTail.pipe(
 				if (next.length == 32) query.ItemId = next
 			}
 		}
-		return { url, query }
+		return { method, url, parts, query } as TailHttp
 	})
 )
 
-// rxHttp.subscribe(({ url, query }) => {
-// 	console.log(`rxHttp ->`, url)
+// rxHttp.subscribe(({ method, url, parts, query }) => {
+// 	console.log(`rxHttp ->`, method, url, parts, query)
 // })
+
+export interface TailHttp {
+	method: 'GET' | 'POST' | 'DELETE'
+	parts: string[]
+	query: Record<string, string>
+	url: string
+}

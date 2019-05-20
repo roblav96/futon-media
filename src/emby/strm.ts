@@ -63,14 +63,6 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	// process.DEVELOPMENT && console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
-	torrents.sort((a, b) => b.bytes - a.bytes)
-	if (type == 'show') {
-		torrents.sort((a, b) => {
-			let asize = a.packs ? a.bytes / (item.S.e * a.packs) : a.bytes
-			let bsize = b.packs ? b.bytes / (item.S.e * b.packs) : b.bytes
-			return bsize - asize
-		})
-	}
 
 	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
 	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))

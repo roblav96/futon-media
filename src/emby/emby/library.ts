@@ -21,14 +21,14 @@ process.nextTick(async () => {
 	await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
-		Rx.op.filter(({ query }) => !!query.ItemId),
+		Rx.op.filter(({ query }) => [query.ItemId, query.UserId].filter(Boolean).length == 2),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilChanged((a, b) => utils.hash(a) == utils.hash(b))
 	)
 	rxItem.subscribe(async ({ ItemId, UserId }) => {
 		let Item = await library.byItemId(ItemId)
-		if (!Item || !['Movie', 'Series', 'Person'].includes(Item.Type)) return
+		if (!Item) return
 		if (Item.Type == 'Person') {
 			let fulls = ((await tmdb.client.get('/search/person', {
 				query: { query: Item.Name },
@@ -45,15 +45,17 @@ process.nextTick(async () => {
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
 			library.addQueue(items)
 		}
+		if (Item.Type == 'Season' || Item.Type == 'Episode') {
+			Item = await library.byItemId(Item.SeriesId)
+			if (!Item) return
+		}
 		if (Item.Type == 'Movie' || Item.Type == 'Series') {
 			let item = await library.item(Item)
 			console.log(`rxItem ${Item.Type} ->`, item.title)
 			library.addQueue([item])
-			if (UserId) {
-				let entry = (await db.entries()).find(([k, v]) => v == UserId)
-				if (_.isArray(entry)) await db.del(entry[0])
-				await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
-			}
+			let entry = (await db.entries()).find(([k, v]) => v == UserId)
+			if (_.isArray(entry)) await db.del(entry[0])
+			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
 		}
 	})
 
@@ -260,11 +262,11 @@ export const library = {
 
 		let Updates = (await pAll(items.map(v => () => library.add(v)), { concurrency: 1 })).flat()
 		Updates.sort((a, b) => utils.alphabetically(a.UpdateType, b.UpdateType))
-		console.log(`addAll Updates ->`, Updates.length)
+		// console.log(`addAll Updates ->`, Updates.length)
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
-		console.log(`addAll Creations ->`, Creations.length)
 		if (Creations.length > 0) {
+			console.log(`addAll Creations ->`, Creations.length)
 			let Tasks = (await emby.client.get('/ScheduledTasks')) as ScheduledTasksInfo[]
 			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 			if (State != 'Idle') {
@@ -286,7 +288,7 @@ export const library = {
 			if (Date.now() > t + utils.duration(1, 'minute')) {
 				throw new Error(`addAll duration > 1 minute`)
 			}
-			console.log(`addAll while pItems ->`, pItems.length)
+			// console.log(`addAll while pItems ->`, pItems.length)
 			for (let i = pItems.length; i--; ) {
 				let pItem = pItems[i]
 				let Item = await pItem()
@@ -296,7 +298,7 @@ export const library = {
 			}
 			if (pItems.length > 0) await utils.pRandom(3000)
 		}
-		console.log(Date.now() - t, `addAll ${Items.length} Items -> DONE`)
+		console.log(Date.now() - t, `addAll ${Items.length} Items`)
 		return Items
 	},
 }

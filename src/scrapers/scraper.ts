@@ -52,7 +52,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	let cached = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cached[i]))
 
-	return torrents.filter(v => {
+	torrents = torrents.filter(v => {
 		if (v.split.includes('720p')) v.seeders = _.ceil(v.seeders / 10)
 		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.2)
 		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
@@ -62,6 +62,17 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		}
 		return true
 	})
+
+	torrents.sort((a, b) => b.bytes - a.bytes)
+	if (item.show) {
+		torrents.sort((a, b) => {
+			let asize = a.packs ? a.bytes / (item.S.e * a.packs) : a.bytes
+			let bsize = b.packs ? b.bytes / (item.S.e * b.packs) : b.bytes
+			return bsize - asize
+		})
+	}
+
+	return torrents
 }
 
 export interface Scraper {
