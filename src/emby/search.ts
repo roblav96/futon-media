@@ -36,7 +36,11 @@ rxSearch.subscribe(async query => {
 	// results.push(...(await toListsResults(query)))
 
 	results = trakt.uniq(results.filter(v => !v.person))
-	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk())
+	let items = results.map(v => new media.Item(v))
+	items = items.filter(v => {
+		if (utils.accuracy(query, v.main.title).length == 0) return !v.isJunk(25)
+		return !v.isJunk()
+	})
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
 
 	emby.library.addQueue(items)

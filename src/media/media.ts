@@ -73,7 +73,6 @@ export class Item {
 		return this.runtime >= 10
 	}
 	isPopular(votes: number) {
-		if (this.show && this.isDaily) votes = _.ceil(votes * 0.5)
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
 		votes -= _.ceil((votes / 2) * penalty)
@@ -81,7 +80,7 @@ export class Item {
 	}
 	isJunk(votes = 500) {
 		let valid = this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes)
-		return !(valid && !!this.ids.slug && !!this.main.year)
+		return !(valid && !!this.main.year && !!this.ids.slug && !!this.ids.imdb && !!this.ids.tmdb)
 	}
 
 	get isDaily() {
