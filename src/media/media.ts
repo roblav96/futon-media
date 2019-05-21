@@ -120,7 +120,7 @@ export class Item {
 		if (_.has(this.episode, 'title')) {
 			E.t = this.episode.title
 			if (this.isDaily) {
-				let t = utils.toSlug(E.t, { toName: true }).split(' ')
+				let t = utils.toSlug(E.t, { separator: ' ' }).split(' ')
 				E.t = `${t[0]} ${t[1]}`
 			}
 		}

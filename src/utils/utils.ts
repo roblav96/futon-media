@@ -59,6 +59,14 @@ export function minify(value: string) {
 	return value.replace(/\W/g, '').toLowerCase()
 }
 
+/** array of `target` words are included in `value` words */
+export function includes(value: string, target: string) {
+	value = toSlug(value, { separator: ' ', lowercase: true })
+	target = toSlug(target, { separator: ' ', lowercase: true })
+	let splits = [value, target].map(v => v.split(' ').filter(Boolean))
+	return splits[1].filter(v => splits[0].includes(v))
+}
+
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
 	let values = _.uniq(_.split(toSlug(value, { toName: true, lowercase: true }), ' '))

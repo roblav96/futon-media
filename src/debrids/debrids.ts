@@ -72,7 +72,8 @@ export async function getStreamUrl(
 					`E${item.E.z}`,
 					`${item.E.z}`,
 				]
-				let skips = `${item.title} ${item.year} ${item.E.t}`
+				let skips = `${item.main.title} ${item.year}`
+				if (item.episode) skips += ` ${item.episode.title}`
 				for (let test of tests) {
 					file = files.find(v => {
 						let name = _.trim(utils.accuracy(skips, v.name).join(' '))
