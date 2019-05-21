@@ -156,19 +156,23 @@ async function syncCollections() {
 				console.error(`syncCollections addAll -> %O`, error)
 				return []
 			})
-		if (Items.length == 0) {
-			console.warn(`schema '${schema.name}' ->`, 'Items.length == 0')
-			continue
-		}
+		// if (Items.length == 0) {
+		// 	console.warn(`schema '${schema.name}' ->`, 'Items.length == 0')
+		// 	continue
+		// }
 		// console.log(`Items ->`, Items.map(v => `${v.Id} ${v.Name}`))
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
-		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).join()
+		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).filter(Boolean)
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
-			await emby.client.post(`/Collections/${Collection.Id}/Items`, { query: { Ids } })
+			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
+				query: { Ids: Ids.join() },
+			})
 		} else {
-			await emby.client.post('/Collections', { query: { Ids, Name: schema.name } })
+			await emby.client.post('/Collections', {
+				query: { Ids: Ids.join(), Name: schema.name },
+			})
 		}
 	}
 

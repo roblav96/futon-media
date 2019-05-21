@@ -89,6 +89,10 @@ export class Item {
 		return !(valid && !!this.ids.slug && !!this.main.year)
 	}
 
+	get isDaily() {
+		return this.main.genres.includes('news') || this.main.genres.includes('talk-show')
+	}
+
 	/** season */
 	get S() {
 		let S = {

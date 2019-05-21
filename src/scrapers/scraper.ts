@@ -13,6 +13,9 @@ import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
 	// (await import('@/scrapers/providers/digbt')).Digbt,
+	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	let providers = [
 		(await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
@@ -21,13 +24,10 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
@@ -50,20 +50,16 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	})
 
 	let cached = await debrids.cached(torrents.map(v => v.hash))
-	torrents.forEach((v, i) => (v.cached = cached[i]))
-
-	torrents = torrents.filter(v => {
-		if (v.split.includes('720p')) {
-			v.seeders = _.ceil(v.seeders * 0.1)
+	torrents.forEach((v, i) => {
+		v.cached = cached[i]
+		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.25)
+		if (
+			v.split.includes('720p') ||
+			(v.split.includes('sdr') && (v.split.includes('8bit') || v.split.includes('10bit')))
+		) {
+			v.seeders = _.ceil(v.seeders * 0.25)
 			v.bytes = _.ceil(v.bytes * 0.75)
 		}
-		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.25)
-		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
-			if (v.split.includes('sdr')) {
-				if (v.split.includes('8bit') || v.split.includes('10bit')) return false
-			}
-		}
-		return true
 	})
 
 	torrents.sort((a, b) => b.bytes - a.bytes)
@@ -96,11 +92,16 @@ export class Scraper {
 	concurrency = 3
 
 	slugs() {
-		let slugs = [] as string[]
-		this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
-		this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
-		this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
-		slugs.length == 0 && slugs.push(this.item.title)
+		let slugs = this.item.movie ? [this.item.title] : []
+		if (this.item.show && this.item.isDaily) {
+			slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
+			slugs.push(`${this.item.title} ${this.item.episode.first_aired.split('T')[0]}`)
+			slugs.push(`${this.item.title} ${this.item.episode.title}`)
+		} else if (this.item.show) {
+			this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
+			this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
+			this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
+		}
 		return slugs.map(v => utils.toSlug(v))
 	}
 
@@ -114,7 +115,7 @@ export class Scraper {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
-		// console.log(`${this.constructor.name} combinations ->`, combinations)
+		console.log(`${this.constructor.name} combinations ->`, combinations)
 
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {
