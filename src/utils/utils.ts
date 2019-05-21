@@ -89,7 +89,9 @@ export function compact<T = any>(value: T) {
 }
 
 export function zeroSlug(value: number) {
-	return _.isFinite(value) && (value / 100).toFixed(2).slice(-2)
+	if (!_.isFinite(value)) return 'NaN'
+	if (value >= 100) return value.toString()
+	return (value / 100).toFixed(2).slice(-2)
 }
 
 export function toSlug(value: string, options = {} as SlugifyOptions & { toName?: boolean }) {
