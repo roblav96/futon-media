@@ -36,11 +36,25 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery, rkey: string) {
+async function getDebridStreamUrl(
+	{ e, s, imdb, slug, tmdb, traktId, type }: emby.StrmQuery,
+	rkey: string
+) {
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
 	let UserId = await db.get(`UserId:${traktId}`)
 	if (UserId) Session = Sessions.find(v => v.UserId == UserId) || Session
+	Session = (Sessions.find(v => {
+		if (!v.StrmPath) return
+		if (type == 'show') {
+			let zero = `S${utils.zeroSlug(s)}E${utils.zeroSlug(e)}`
+			if (!v.StrmPath.includes(zero)) return
+		}
+		let ids = emby.library.pathIds(v.StrmPath)
+		if (imdb) return ids.imdb == imdb
+		if (tmdb) return ids.tmdb == tmdb
+	}) || Session) as emby.Session
+
 	let { Quality, Channels, Codecs } = Session
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
