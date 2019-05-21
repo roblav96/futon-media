@@ -10,8 +10,6 @@ export const client = scraper.Scraper.http({
 })
 
 export class Eztv extends scraper.Scraper {
-	sorts = ['']
-
 	slugs() {
 		return [this.item.ids.imdb.replace(/\D/g, '')]
 	}
@@ -20,7 +18,7 @@ export class Eztv extends scraper.Scraper {
 		if (!this.item.show) return []
 		let results = [] as Result[]
 		await pForever(async page => {
-			page > 1 && (await utils.pRandom(1000))
+			if (page > 1) await utils.pRandom(1000)
 			let response = (await client.get('/get-torrents', {
 				query: { imdb_id, page } as Partial<Query>,
 			})) as Response

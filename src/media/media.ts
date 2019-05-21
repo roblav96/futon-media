@@ -54,17 +54,17 @@ export class Item {
 	}
 	get released() {
 		let released = new Date(new Date().setFullYear(this.year))
-		_.has(this.movie, 'released') && (released = new Date(this.movie.released))
-		_.has(this.show, 'first_aired') && (released = new Date(this.show.first_aired))
-		_.has(this.season, 'first_aired') && (released = new Date(this.season.first_aired))
-		_.has(this.episode, 'first_aired') && (released = new Date(this.episode.first_aired))
+		if (_.has(this.movie, 'released')) released = new Date(this.movie.released)
+		if (_.has(this.show, 'first_aired')) released = new Date(this.show.first_aired)
+		if (_.has(this.season, 'first_aired')) released = new Date(this.season.first_aired)
+		if (_.has(this.episode, 'first_aired')) released = new Date(this.episode.first_aired)
 		return released
 	}
 	get runtime() {
 		let runtime = Infinity
-		_.has(this.movie, 'runtime') && (runtime = this.movie.runtime)
-		_.has(this.show, 'runtime') && (runtime = this.show.runtime)
-		_.has(this.episode, 'runtime') && (runtime = this.episode.runtime)
+		if (_.has(this.movie, 'runtime')) runtime = this.movie.runtime
+		if (_.has(this.show, 'runtime')) runtime = this.show.runtime
+		if (_.has(this.episode, 'runtime')) runtime = this.episode.runtime
 		return runtime
 	}
 
@@ -102,12 +102,12 @@ export class Item {
 			/** season `number` */ n: NaN,
 			/** season `0 number` */ z: '',
 		}
-		_.has(this.season, 'aired_episodes') && (S.a = this.season.aired_episodes)
-		_.has(this.season, 'episode_count') && (S.e = this.season.episode_count)
-		_.has(this.season, 'title') && (S.t = this.season.title)
-		_.has(this.season, 'number') && (S.n = this.season.number)
-		!_.isFinite(S.n) && _.has(this.episode, 'season') && (S.n = this.episode.season)
-		_.isFinite(S.n) && (S.z = utils.zeroSlug(S.n))
+		if (_.has(this.season, 'aired_episodes')) S.a = this.season.aired_episodes
+		if (_.has(this.season, 'episode_count')) S.e = this.season.episode_count
+		if (_.has(this.season, 'title')) S.t = this.season.title
+		if (_.has(this.season, 'number')) S.n = this.season.number
+		if (!_.isFinite(S.n) && _.has(this.episode, 'season')) S.n = this.episode.season
+		if (_.isFinite(S.n)) S.z = utils.zeroSlug(S.n)
 		return S
 	}
 
@@ -118,9 +118,9 @@ export class Item {
 			/** episode `number` */ n: NaN,
 			/** episode `0 number` */ z: '',
 		}
-		_.has(this.episode, 'title') && (E.t = this.episode.title)
-		_.has(this.episode, 'number') && (E.n = this.episode.number)
-		_.isFinite(E.n) && (E.z = utils.zeroSlug(E.n))
+		if (_.has(this.episode, 'title')) E.t = this.episode.title
+		if (_.has(this.episode, 'number')) E.n = this.episode.number
+		if (_.isFinite(E.n)) E.z = utils.zeroSlug(E.n)
 		return E
 	}
 

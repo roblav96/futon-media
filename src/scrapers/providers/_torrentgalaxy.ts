@@ -15,7 +15,7 @@ export class TorrentGalaxy extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let cats = ['c3', 'c45', 'c46', 'c42', 'c4', 'c1']
-		this.item.show && (cats = ['c28', 'c41', 'c5', 'c6', 'c7', 'c9'])
+		if (this.item.show) cats = ['c28', 'c41', 'c5', 'c6', 'c7', 'c9']
 		let qcats = _.fromPairs(cats.map(k => [k, '1']))
 		let $ = cheerio.load(
 			await client.get('/torrents.php', {

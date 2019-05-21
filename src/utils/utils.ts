@@ -162,7 +162,7 @@ export function toStamp(value: string) {
 	let amount = parseInt(value)
 	let unit = _.trim(value.replace(/[^a-z ]/gi, '').toLowerCase())
 	unit = unit.split(' ').shift()
-	unit.endsWith('s') && (unit = unit.slice(0, -1))
+	if (unit.endsWith('s')) unit = unit.slice(0, -1)
 	let day = dayjs().subtract(amount, unit as any)
 	return day.add(1, 'minute').valueOf()
 }

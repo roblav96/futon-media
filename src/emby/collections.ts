@@ -138,7 +138,7 @@ async function syncCollections() {
 				return []
 			})) as trakt.Result[]
 		results = results.map(v => {
-			!v[schema.type] && schema.type && (v = { [schema.type]: v } as any)
+			if (!v[schema.type] && schema.type) v = { [schema.type]: v } as any
 			return v
 		})
 		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))

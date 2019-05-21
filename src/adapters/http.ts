@@ -71,7 +71,7 @@ export class Http {
 	async request(config: Config) {
 		let options = Http.merge(this.config, config)
 
-		options.url.startsWith('http') && (options.baseUrl = '')
+		if (options.url.startsWith('http')) options.baseUrl = ''
 		let { url, query } = qs.parseUrl(
 			normalize((options.baseUrl || '') + options.url, {
 				normalizeProtocol: false,

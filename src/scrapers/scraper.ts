@@ -88,7 +88,7 @@ export class Scraper {
 		return new http.Http(config)
 	}
 
-	sorts: string[]
+	sorts = [] as string[]
 	concurrency = 3
 
 	slugs() {
@@ -113,13 +113,15 @@ export class Scraper {
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
+			if (sorts.length == 0) return combinations.push([slug] as any)
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
 		console.log(`${this.constructor.name} combinations ->`, combinations)
+		return []
 
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {
-				index > 0 && (await utils.pRandom(1000))
+				if (index > 0) await utils.pRandom(1000)
 				return (await this.getResults(slug, sort).catch(error => {
 					console.error(`${this.constructor.name} getResults -> %O`, error)
 					return [] as Result[]
