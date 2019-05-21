@@ -24,7 +24,7 @@ for (let [method, color] of Object.entries(colors)) {
 	console[method]['__wrapped'] && shimmer.unwrap(console, method as any)
 	shimmer.wrap(console, method as any, function wrapper(fn: Function) {
 		return function called(...args: string[]) {
-			if (_.isString(args[0])) {
+			if (_.isString(args[0]) || _.isNumber(args[0])) {
 				let now = Date.now()
 				let delta = now - before
 				before = now

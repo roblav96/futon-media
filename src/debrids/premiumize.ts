@@ -35,17 +35,17 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 					}
 				})
 			}),
-			{ concurrency: 5 }
+			{ concurrency: 3 }
 		)
 		return cached
 	}
 
 	async getFiles() {
-		let content = (await client.post(`/transfer/directdl`, {
+		let downloads = (await client.post(`/transfer/directdl`, {
 			query: { src: this.magnet },
-		})).content as Item[]
+		})).content as Download[]
 
-		this.files = (content || []).map(file => {
+		this.files = (downloads || []).map(file => {
 			let name = path.basename(`/${file.path}`)
 			return {
 				bytes: _.parseInt(file.size),
@@ -54,7 +54,10 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 				path: `/${file.path}`,
 			} as debrid.File
 		})
-		_.remove(this.files, file => !utils.isVideo(file.path))
+		_.remove(this.files, file => {
+			if (file.path.toLowerCase().includes('rarbg.com.mp4')) return true
+			return !utils.isVideo(file.path)
+		})
 		this.files.sort((a, b) => utils.parseInt(a.path) - utils.parseInt(b.path))
 		return this.files
 	}
@@ -90,7 +93,7 @@ interface Transfer {
 	status: string
 }
 
-interface Item {
+interface Download {
 	cdn_hostname: string
 	created_at: number
 	id: string
@@ -104,7 +107,7 @@ interface Item {
 }
 
 interface Folder {
-	content: Item[]
+	content: Download[]
 	name: string
 	parent_id: string
 	status: string

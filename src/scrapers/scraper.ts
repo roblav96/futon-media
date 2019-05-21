@@ -54,7 +54,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 
 	torrents = torrents.filter(v => {
 		if (v.split.includes('720p')) v.seeders = _.ceil(v.seeders / 10)
-		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.2)
+		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.25)
 		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
 			if (v.split.includes('sdr')) {
 				if (v.split.includes('8bit') || v.split.includes('10bit')) return false
@@ -111,13 +111,13 @@ export class Scraper {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
-		// console.log(`${this.constructor.name} combinations ->`, JSON.stringify(combinations))
+		// console.log(`${this.constructor.name} combinations ->`, combinations)
 
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {
 				index > 0 && (await utils.pRandom(1000))
 				return (await this.getResults(slug, sort).catch(error => {
-					console.error(`${this.constructor.name} -> %O`, error)
+					console.error(`${this.constructor.name} getResults -> %O`, error)
 					return [] as Result[]
 				})).map(result => ({
 					providers: [this.constructor.name],

@@ -48,9 +48,9 @@ export class Item {
 		return NaN
 	}
 	get title() {
-		let title = this.main.title
-		if (this.movie && this.year) title += ` ${this.year}`
-		return title
+		if (this.movie && this.year) return `${this.main.title} ${this.year}`
+		if (this.ids.slug == 'cosmos') return `${this.main.title} ${this.year}`
+		return this.main.title
 	}
 	get released() {
 		let released = new Date(new Date().setFullYear(this.year))

@@ -22,6 +22,9 @@ export const sessions = {
 }
 
 export class Session {
+	static UHDUsers = ['admin', 'dev', 'developer', 'robert']
+	static HDUsers = Session.UHDUsers.concat(['mom'])
+	
 	get Codecs() {
 		let { audio, video } = { audio: '', video: '' }
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
@@ -80,9 +83,8 @@ export class Session {
 		if (utils.minify(this.Client + this.DeviceName).includes('mobile')) return 'SD'
 		if (this.Channels > 2) {
 			let user = this.UserName.toLowerCase()
-			let users = ['admin', 'dev', 'developer', 'robert']
-			if (users.includes(user)) return 'UHD'
-			if (users.concat(['mom']).includes(user)) return 'HD'
+			if (Session.UHDUsers.includes(user)) return 'UHD'
+			if (Session.HDUsers.includes(user)) return 'HD'
 		}
 		return 'SD'
 	}

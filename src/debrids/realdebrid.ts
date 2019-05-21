@@ -9,9 +9,25 @@ import * as utils from '@/utils/utils'
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
 	query: { auth_token: process.env.REALDEBRID_SECRET },
+	// retries: [408, 503],
 })
 
-export class RealDebrid extends debrid.Debrid<Item> {
+process.nextTick(async () => {
+	if (!process.DEVELOPMENT) return
+	if (process.DEVELOPMENT) return
+	let transfers = (await client.get('/torrents', { silent: true })) as Transfer[]
+	transfers = transfers.filter(v => v.status == 'downloading')
+	for (let i = 0; i < transfers.length; i++) {
+		let transfer = transfers[i]
+		transfers[i] = (await client.get(`/torrents/info/${transfer.id}`, {
+			silent: true,
+		})) as Transfer
+	}
+	let tkeys = ['original_filename', 'progress', 'seeders']
+	console.log(`RealDebrid transfers ->`, transfers.map(v => _.pick(v, tkeys)))
+})
+
+export class RealDebrid extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
@@ -30,9 +46,46 @@ export class RealDebrid extends debrid.Debrid<Item> {
 					}
 				})
 			}),
-			{ concurrency: 5 }
+			{ concurrency: 3 }
 		)
 		return cached
+	}
+
+	static async download(magnet: string) {
+		let { dn, infoHash } = magneturi.decode(magnet)
+		console.log(`RealDebrid download ->`, dn)
+
+		let transfers = (await client.get('/torrents')) as Transfer[]
+		let transfer = transfers.find(v => v.hash.toLowerCase() == infoHash)
+		if (transfer) {
+			console.warn(`RealDebrid download transfer exists ->`, dn)
+			return true
+		}
+
+		let download = (await client.post('/torrents/addMagnet', {
+			form: { magnet: magnet },
+		})) as Download
+		await utils.pTimeout(1000)
+		transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
+		let files = transfer.files.filter(v => {
+			if (v.path.toLowerCase().includes('rarbg.com.mp4')) return false
+			return utils.isVideo(v.path)
+		})
+		if (files.length == 0) {
+			console.warn(`RealDebrid files == 0 ->`, dn)
+			client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
+			return false
+		}
+
+		await client
+			.post(`/torrents/selectFiles/${download.id}`, {
+				form: { files: files.map(v => v.id).join() },
+			})
+			.catch(error => {
+				client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
+				return Promise.reject(error)
+			})
+		return true
 	}
 
 	async getFiles() {
@@ -66,11 +119,11 @@ export class RealDebrid extends debrid.Debrid<Item> {
 	}
 
 	async streamUrl(file: debrid.File) {
-		let items = (await client.get('/torrents')) as Item[]
-		let item = items.find(v => v.hash.toLowerCase() == this.infoHash)
+		let transfers = (await client.get('/torrents')) as Transfer[]
+		let transfer = transfers.find(v => v.hash.toLowerCase() == this.infoHash)
 
-		if (item) {
-			item = (await client.get(`/torrents/info/${item.id}`)) as Item
+		if (transfer) {
+			transfer = (await client.get(`/torrents/info/${transfer.id}`)) as Transfer
 		} else {
 			let download = (await client.post('/torrents/addMagnet', {
 				form: { magnet: this.magnet },
@@ -78,29 +131,29 @@ export class RealDebrid extends debrid.Debrid<Item> {
 			await client.post(`/torrents/selectFiles/${download.id}`, {
 				form: { files: this.files.map(v => v.id).join() },
 			})
-			item = (await client.get(`/torrents/info/${download.id}`)) as Item
+			transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
 			client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
 		}
-		if (item.links.length == 0) {
-			console.warn(`item.links.length == 0 ->`, this.dn)
+		if (transfer.files.length == 0) {
+			console.warn(`RealDebrid transfer files == 0 ->`, this.dn)
 			return
 		}
-		if (item.files.length == 0) {
-			console.warn(`item.files.length == 0 ->`, this.dn)
+		if (transfer.links.length == 0) {
+			console.warn(`RealDebrid transfer links == 0 ->`, this.dn)
 			return
 		}
 
-		let selected = item.files.filter(v => v.selected == 1)
+		let selected = transfer.files.filter(v => v.selected == 1)
 		let index = selected.findIndex(v => v.path.includes(file.name))
-		let link = item.links[index]
+		let link = transfer.links[index]
 		if (!link) {
-			console.warn(`!link ->`, this.dn, index, item.links, selected)
+			console.warn(`RealDebrid transfer !link ->`, this.dn, index, transfer.links, selected)
 			return
 		}
 
 		let { download } = (await client.post(`/unrestrict/link`, { form: { link } })) as Unrestrict
 		if (!utils.isVideo(download)) {
-			console.warn(`!utils.isVideo(download) ->`, this.dn)
+			console.warn(`RealDebrid !isVideo download ->`, this.dn)
 			return
 		}
 		return download
@@ -122,7 +175,7 @@ export interface File {
 	selected: number
 }
 
-export interface Item {
+export interface Transfer {
 	added: string
 	bytes: number
 	filename: string
@@ -156,6 +209,7 @@ export interface Unrestrict {
 
 export interface ActiveCount {
 	limit: number
+	list: string[]
 	nb: number
 }
 

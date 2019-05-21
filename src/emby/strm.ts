@@ -77,16 +77,18 @@ async function getDebridStreamUrl({ e, s, slug, traktId, type }: emby.StrmQuery,
 	})
 
 	if (Quality.includes('HD')) {
-		let putios = torrents.filter(({ cached, seeders }) => {
-			return seeders > 0 && cached.length == 0
-		})
+		let index = torrents.findIndex(({ cached }) => cached.length > 0)
+		let putios = torrents.slice(0, index)
+		putios = putios.filter(({ seeders }) => seeders > 1)
 		putios = putios.slice(0, 10)
-		let cached = await putio.Putio.cached(putios.map(v => v.magnet))
-		cached.forEach(({ magnet }) => {
-			let torrent = torrents.find(v => v.magnet == magnet)
-			torrent.cached.push('putio')
-			console.warn(`Putio cached ->`, torrent.json)
-		})
+		if (putios.length > 0) {
+			let cached = await putio.Putio.cached(putios.map(v => v.magnet))
+			cached.forEach(({ magnet }) => {
+				let torrent = torrents.find(v => v.magnet == magnet)
+				torrent.cached.push('putio')
+				console.warn(`Putio cached ->`, torrent.json)
+			})
+		}
 	}
 
 	torrents = torrents.filter(({ cached }) => cached.length > 0)

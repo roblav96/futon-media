@@ -4,6 +4,7 @@ import * as debrid from '@/debrids/debrid'
 import * as ffprobe from '@/adapters/ffprobe'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
+import * as pQueue from 'p-queue'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import { Premiumize } from '@/debrids/premiumize'
@@ -18,6 +19,22 @@ export async function cached(hashes: string[]) {
 	return hashes.map((v, index) => {
 		return entries.map(([key], i) => resolved[i][index] && key).filter(Boolean)
 	}) as Debrids[][]
+}
+
+let queue = new pQueue({ concurrency: 1 })
+export function download(torrents: torrent.Torrent[]) {
+	queue.add(async () => {
+		for (let torrent of torrents) {
+			let success = await RealDebrid.download(torrent.magnet).catch(error => {
+				console.error(`RealDebrid download -> %O`, error)
+				return false
+			})
+			if (success) {
+				console.info(`👍 download success ->`, torrent.name)
+				// return true
+			}
+		}
+	})
 }
 
 export async function getStreamUrl(
@@ -119,8 +136,8 @@ export async function getStreamUrl(
 				continue
 			}
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
-			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
 			if (_.size(codecs) > 0 && !codecs.includes(videos[0].codec_name)) {
+				console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
 				console.warn(`probe !codecs ->`, torrent.name, videos[0].codec_name)
 				next = true
 				continue
@@ -139,8 +156,8 @@ export async function getStreamUrl(
 				continue
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
-			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
 			if (audios.filter(v => v.channels <= channels).length == 0) {
+				console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
 				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
 				next = true
 				continue

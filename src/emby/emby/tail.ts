@@ -94,7 +94,7 @@ export class Tail {
 
 exithook(() => Tail.destroy())
 
-const JUNK = ['/bower_components/', '/web/']
+const JUNK = ['/bower_components/', '/images/', '/web/']
 export const rxHttp = rxTail.pipe(
 	Rx.op.filter(line => !!line.match(/Info HttpServer: HTTP [DGP]/)),
 	Rx.op.map(line => {

@@ -175,7 +175,7 @@ export const library = {
 		return `${dir}${file}.strm`
 	},
 
-	toStrmUrl(item: media.Item) {
+	toStrmQuery(item: media.Item) {
 		if (!item) throw new Error(`library toStrmUrl !item`)
 		let query = {
 			...item.ids,
@@ -183,7 +183,14 @@ export const library = {
 			type: item.type,
 			year: item.year,
 		} as StrmQuery
-		if (item.episode) query = { ...query, s: item.S.n, e: item.E.n }
+		if (item.S.n) query.s = item.S.n
+		if (item.E.n) query.e = item.E.n
+		return query
+	},
+
+	toStrmUrl(item: media.Item) {
+		if (!item) throw new Error(`library toStrmUrl !item`)
+		let query = library.toStrmQuery(item)
 		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
 		let url = `${emby.env.PROTO}//${host}`
 		if (isIp(host)) url += `:${emby.env.STRM_PORT}`
@@ -209,14 +216,13 @@ export const library = {
 		if (item.show) {
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
-				.get(`/shows/${item.traktId}/seasons`, {
-					silent: true,
-				})
+				.get(`/shows/${item.traktId}/seasons`, { silent: true })
 				.catch(error => {
 					console.error(`library add '${item.title}' -> %O`, error)
 					return []
 				})) as trakt.Season[]
-			for (let season of seasons.filter(v => v.number > 0)) {
+			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
+			for (let season of seasons) {
 				item.use({ season })
 				for (let i = 1; i <= item.S.a; i++) {
 					item.use({ episode: { number: i, season: season.number } })
@@ -241,15 +247,18 @@ export const library = {
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
 			console.log(`addAll Creations ->`, Creations.length)
-			let Tasks = (await emby.client.get('/ScheduledTasks')) as ScheduledTasksInfo[]
+			let Tasks = (await emby.client.get('/ScheduledTasks', {
+				silent: true,
+			})) as ScheduledTasksInfo[]
 			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 			if (State != 'Idle') {
-				await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
+				await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
 				await utils.pTimeout(1000)
 			}
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
+				silent: true,
 				timeout: utils.duration(1, 'minute'),
 			})
 			await library.refresh()
@@ -272,7 +281,7 @@ export const library = {
 			}
 			if (pItems.length > 0) await utils.pRandom(3000)
 		}
-		console.log(Date.now() - t, `addAll ${Items.length} Items`)
+		Creations.length > 0 && console.log(Date.now() - t, `addAll ${Items.length} Items`)
 		return Items
 	},
 }

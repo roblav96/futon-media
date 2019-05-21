@@ -34,27 +34,27 @@ process.nextTick(() => {
 		timeout: 3000,
 		maxAttempts: Infinity,
 		onerror({ error }) {
-			console.error(`putio onerror -> %O`, error)
+			console.error(`Putio onerror -> %O`, error)
 		},
 		onclose({ code, reason }) {
-			console.warn(`putio onclose ->`, code, reason)
+			console.warn(`Putio onclose ->`, code, reason)
 		},
 		onopen({ target }) {
-			console.info(`putio onopen ->`, target.url)
+			console.info(`Putio onopen ->`, target.url)
 			ws.json([process.env.PUTIO_TOKEN])
 		},
 		onmessage({ data }: { data: string }) {
 			let { err, value } = fastParse(data.slice(1) || '[]') as { err: Error; value: any[] }
-			if (err) return console.error(`putio onmessage -> %O`, err)
+			if (err) return console.error(`Putio onmessage -> %O`, err)
 			let values = value.map(v => fastParse(v).value || v)
 			values.forEach(({ type, value }) => {
 				if (!type) {
-					// process.DEVELOPMENT && console.log(`putio !type '${type}' ->`, value)
+					// process.DEVELOPMENT && console.log(`Putio !type '${type}' ->`, value)
 					return
 				}
 				let [target, action] = type.split('_') as string[]
 				if (!rx[target]) {
-					// process.DEVELOPMENT && console.log(`putio !rx[${target}] '${type}' ->`, value)
+					// process.DEVELOPMENT && console.log(`Putio !rx[${target}] '${type}' ->`, value)
 					return
 				}
 				rx[target].next({ action, value } as PutioEvent)
@@ -128,10 +128,15 @@ export class Putio extends debrid.Debrid<Transfer> {
 			form: { magnet: this.magnet },
 		})) as realdebrid.Download
 		await utils.pTimeout(1000)
-		let item = (await realdebrid.client.get(`/torrents/info/${download.id}`)) as realdebrid.Item
-		await realdebrid.client.delete(`/torrents/delete/${download.id}`)
+		let transfer = (await realdebrid.client.get(
+			`/torrents/info/${download.id}`
+		)) as realdebrid.Transfer
+		realdebrid.client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
 
-		let files = item.files.filter(v => utils.isVideo(v.path))
+		let files = transfer.files.filter(v => {
+			if (v.path.toLowerCase().includes('rarbg.com.mp4')) return false
+			return utils.isVideo(v.path)
+		})
 		this.files = files.map(file => {
 			let name = path.basename(file.path)
 			return {

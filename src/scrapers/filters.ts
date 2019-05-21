@@ -41,7 +41,7 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	let nleven = utils.leven(result.name, item.title) // utils.toSlug(item.title))
 	if (nleven > 0) {
-		return // console.log(`❌ name leven ->`, result.name, item.title, JSON.stringify(nleven))
+		return // console.log(`❌ name leven ->`, result.name, `-> '${item.title}'`, nleven)
 	}
 	// let naccuracy = utils.accuracy(result.name, item.title)
 	// if (naccuracy.length > 0) {

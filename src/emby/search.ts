@@ -16,7 +16,7 @@ export const rxSearch = emby.rxHttp.pipe(
 			return utils.toSlug(query.searchterm, { toName: true, lowercase: true })
 		}
 	}),
-	Rx.op.filter(search => !!search && utils.minify(search).length >= 2),
+	Rx.op.filter(search => !!search && utils.minify(search).length >= 3),
 	Rx.op.distinctUntilChanged()
 )
 
