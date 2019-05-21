@@ -25,14 +25,12 @@ let queue = new pQueue({ concurrency: 1 })
 export function download(torrents: torrent.Torrent[]) {
 	queue.add(async () => {
 		for (let torrent of torrents) {
+			console.log(`download ->`, torrent.name, torrent.size)
 			let success = await RealDebrid.download(torrent.magnet).catch(error => {
 				console.error(`RealDebrid download -> %O`, error)
 				return false
 			})
-			if (success) {
-				console.info(`👍 download success ->`, torrent.name)
-				// return true
-			}
+			if (success) console.info(`👍 download success ->`, torrent.name, torrent.size)
 		}
 	})
 }
