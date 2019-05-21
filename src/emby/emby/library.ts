@@ -281,7 +281,7 @@ export const library = {
 			}
 			if (pItems.length > 0) await utils.pRandom(3000)
 		}
-		Creations.length > 0 && console.log(Date.now() - t, `addAll ${Items.length} Items`)
+		/** Creations.length > 0 && */ console.log(Date.now() - t, `addAll ${Items.length} Items`)
 		return Items
 	},
 }

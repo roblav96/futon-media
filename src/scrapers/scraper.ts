@@ -53,7 +53,10 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	torrents.forEach((v, i) => (v.cached = cached[i]))
 
 	torrents = torrents.filter(v => {
-		if (v.split.includes('720p')) v.seeders = _.ceil(v.seeders / 10)
+		if (v.split.includes('720p')) {
+			v.seeders = _.ceil(v.seeders * 0.1)
+			v.bytes = _.ceil(v.bytes * 0.75)
+		}
 		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.25)
 		if (v.split.includes('2160p') || v.split.includes('uhd') || v.split.includes('4k')) {
 			if (v.split.includes('sdr')) {
