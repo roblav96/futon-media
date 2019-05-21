@@ -11,7 +11,8 @@ export const client = scraper.Scraper.http({
 
 export class ThePirateBay extends scraper.Scraper {
 	// size, date, seeds
-	sorts = ['5' /** , '3', '7' */]
+	sorts = ['5', '3' /** , '7' */]
+	slow = true
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {

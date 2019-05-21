@@ -21,6 +21,7 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
 		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
@@ -89,18 +90,19 @@ export class Scraper {
 	}
 
 	sorts = [] as string[]
+	slow = false
 	concurrency = 3
 
 	slugs() {
 		let slugs = this.item.movie ? [this.item.title] : []
-		if (this.item.show && this.item.isDaily) {
-			slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
-			slugs.push(`${this.item.title} ${this.item.episode.first_aired.split('T')[0]}`)
-			slugs.push(`${this.item.title} ${this.item.episode.title}`)
-		} else if (this.item.show) {
-			this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
+		this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
+		if (!this.item.isDaily) {
 			this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
-			this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
+		}
+		this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
+		if (this.item.isDaily) {
+			this.item.E.a && slugs.push(`${this.item.title} ${this.item.E.a}`)
+			this.item.E.t && slugs.push(`${this.item.title} ${this.item.E.t}`)
 		}
 		return slugs.map(v => utils.toSlug(v))
 	}
@@ -110,14 +112,22 @@ export class Scraper {
 	async getTorrents() {
 		let t = Date.now()
 
+		if (this.sorts.length >= 2) {
+			if (this.item.isDaily && this.constructor.name != 'Rarbg') {
+				let sorts = _.clone(this.sorts)
+				this.sorts[0] = sorts[1]
+				this.sorts[1] = sorts[0]
+			}
+			if (this.slow || this.item.isDaily) this.sorts = this.sorts.slice(0, 1)
+		}
+
 		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
+			if (this.sorts.length == 0) return combinations.push([slug] as any)
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
-			if (sorts.length == 0) return combinations.push([slug] as any)
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
 		console.log(`${this.constructor.name} combinations ->`, combinations)
-		return []
 
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {

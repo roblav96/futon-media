@@ -28,15 +28,14 @@ export class ExtraTorrent extends scraper.Scraper {
 					name: $el.find(`.tli > a`).text(),
 					magnet: _.trim($el.find(`a[href^="magnet:"]`).attr('href')),
 					seeders: utils.parseInt($el.find(`.sn`).text()),
-					stamp: new Date(added).valueOf(),
 				} as scraper.Result
+				let day = dayjs(new Date(added))
 				if (added.startsWith('Today')) {
-					result.stamp = dayjs(added.replace('Today-', ''), 'hh:mm').valueOf()
+					day = dayjs(added.replace('Today-', ''), 'hh:mm')
 				} else if (added.startsWith('Y-day')) {
-					result.stamp = dayjs()
-						.subtract(1, 'day')
-						.valueOf()
+					day = dayjs().subtract(1, 'day')
 				}
+				result.stamp = day.valueOf()
 				results.push(result)
 			} catch (error) {
 				console.error(`${this.constructor.name} -> %O`, error)

@@ -1,6 +1,5 @@
 import * as _ from 'lodash'
 import * as http from '@/adapters/http'
-import * as pForever from 'p-forever'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 
@@ -17,7 +16,8 @@ export class Eztv extends scraper.Scraper {
 	async getResults(imdb_id: string) {
 		if (!this.item.show) return []
 		let results = [] as Result[]
-		await pForever(async page => {
+		let page = 1
+		while (true) {
 			if (page > 1) await utils.pRandom(1000)
 			let response = (await client.get('/get-torrents', {
 				query: { imdb_id, page } as Partial<Query>,
@@ -25,15 +25,27 @@ export class Eztv extends scraper.Scraper {
 			let torrents = (response.torrents || []).filter(v => {
 				let season = _.parseInt(v.season)
 				let episode = _.parseInt(v.episode)
-				if (_.isFinite(this.item.E.n) && season && episode) {
-					return this.item.S.n == season && this.item.E.n == episode
-				} else if (_.isFinite(this.item.S.n) && season) {
-					return this.item.S.n == season
-				} else return true
+				let title = utils.minify(v.title)
+				if (this.item.E.a && title.includes(utils.minify(this.item.E.a))) {
+					return true
+				}
+				if (this.item.E.t && title.includes(utils.minify(this.item.E.t))) {
+					return true
+				}
+				if (this.item.S.n && season && this.item.E.n && episode) {
+					if (this.item.S.n == season && this.item.E.n == episode) {
+						return true
+					}
+				}
+				if (this.item.S.n && season && this.item.S.n == season) {
+					return true
+				}
 			})
 			results.push(...torrents)
-			return response.torrents_count > page * 100 ? ++page : pForever.end
-		}, 1)
+			if (results.length > 0 && torrents.length == 0) break
+			if (response.torrents_count > page * 100) page++
+			else break
+		}
 		return results.map(v => {
 			return {
 				bytes: _.parseInt(v.size_bytes),

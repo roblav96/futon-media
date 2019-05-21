@@ -44,7 +44,6 @@ export class Item {
 		if (_.isFinite(this.main.year)) return this.main.year
 		if (_.has(this.movie, 'released')) return dayjs(this.movie.released).year()
 		if (_.has(this.show, 'first_aired')) return dayjs(this.show.first_aired).year()
-		if (_.has(this.season, 'first_aired')) return dayjs(this.season.first_aired).year()
 		return NaN
 	}
 	get title() {
@@ -56,16 +55,12 @@ export class Item {
 		let released = new Date(new Date().setFullYear(this.year))
 		if (_.has(this.movie, 'released')) released = new Date(this.movie.released)
 		if (_.has(this.show, 'first_aired')) released = new Date(this.show.first_aired)
-		if (_.has(this.season, 'first_aired')) released = new Date(this.season.first_aired)
-		if (_.has(this.episode, 'first_aired')) released = new Date(this.episode.first_aired)
 		return released
 	}
 	get runtime() {
-		let runtime = Infinity
-		if (_.has(this.movie, 'runtime')) runtime = this.movie.runtime
-		if (_.has(this.show, 'runtime')) runtime = this.show.runtime
-		if (_.has(this.episode, 'runtime')) runtime = this.episode.runtime
-		return runtime
+		if (_.has(this.movie, 'runtime')) return this.movie.runtime
+		if (_.has(this.show, 'runtime')) return this.show.runtime
+		return Infinity
 	}
 
 	get isEnglish() {
@@ -78,11 +73,11 @@ export class Item {
 		return this.runtime >= 10
 	}
 	isPopular(votes: number) {
+		if (this.show && this.isDaily) votes = _.ceil(votes * 0.5)
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
 		votes -= _.ceil((votes / 2) * penalty)
-		if (_.has(this.main, 'votes')) return this.main.votes >= votes
-		return false
+		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
 	}
 	isJunk(votes = 500) {
 		let valid = this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes)
@@ -114,11 +109,21 @@ export class Item {
 	/** episode */
 	get E() {
 		let E = {
+			/** episode `aired date` */ a: '',
 			/** episode `title` */ t: '',
 			/** episode `number` */ n: NaN,
 			/** episode `0 number` */ z: '',
 		}
-		if (_.has(this.episode, 'title')) E.t = this.episode.title
+		if (_.has(this.episode, 'first_aired')) {
+			E.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
+		}
+		if (_.has(this.episode, 'title')) {
+			E.t = this.episode.title
+			if (this.isDaily) {
+				let t = utils.toSlug(E.t, { toName: true }).split(' ')
+				E.t = `${t[0]} ${t[1]}`
+			}
+		}
 		if (_.has(this.episode, 'number')) E.n = this.episode.number
 		if (_.isFinite(E.n)) E.z = utils.zeroSlug(E.n)
 		return E

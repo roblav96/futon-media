@@ -63,7 +63,6 @@
 		"numbro": "^2.1.2",
 		"p-all": "^2.1.0",
 		"p-debounce": "^2.1.0",
-		"p-forever": "^2.1.0",
 		"p-queue": "^5.0.0",
 		"pretty-bytes": "^5.2.0",
 		"pretty-ms": "^4.0.0",

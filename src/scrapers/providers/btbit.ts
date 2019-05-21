@@ -9,8 +9,9 @@ export const client = scraper.Scraper.http({
 })
 
 export class BtBit extends scraper.Scraper {
-	/** size, popularity, created */
-	sorts = ['2' /** , '3', '1' */]
+	/** size, created, popularity */
+	sorts = ['2', '1' /** , '3' */]
+	slow = true
 	concurrency = 1
 
 	slugs() {
