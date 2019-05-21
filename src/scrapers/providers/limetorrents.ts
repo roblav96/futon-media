@@ -15,15 +15,9 @@ export class LimeTorrents extends scraper.Scraper {
 	slow = true
 	concurrency = 1
 
-	slugs() {
-		return super.slugs().slice(0, 1)
-	}
-
 	async getResults(slug: string, sort: string) {
 		let type = this.item.show ? 'tv' : `${this.item.type}s`
-		let $ = cheerio.load(
-			await client.get(`/search/${type}/${slug}/${sort}/1/`, { silent: false })
-		)
+		let $ = cheerio.load(await client.get(`/search/${type}/${slug}/${sort}/1/`))
 		let results = [] as scraper.Result[]
 		$('.table2 tr').each((i, el) => {
 			if (i == 0) return

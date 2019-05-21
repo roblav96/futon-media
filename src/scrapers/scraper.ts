@@ -127,7 +127,7 @@ export class Scraper {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
 			sorts.forEach(sort => combinations.push([slug, sort]))
 		})
-		console.log(`${this.constructor.name} combinations ->`, combinations)
+		// console.log(`${this.constructor.name} combinations ->`, combinations)
 
 		let results = (await pAll(
 			combinations.map(([slug, sort], index) => async () => {

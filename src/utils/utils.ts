@@ -61,8 +61,8 @@ export function minify(value: string) {
 
 /** array of `target` words are included in `value` words */
 export function includes(value: string, target: string) {
-	value = toSlug(value, { separator: ' ', lowercase: true })
-	target = toSlug(target, { separator: ' ', lowercase: true })
+	value = toSlug(value, { lowercase: true })
+	target = toSlug(target, { lowercase: true })
 	let splits = [value, target].map(v => v.split(' ').filter(Boolean))
 	return splits[1].filter(v => splits[0].includes(v))
 }
@@ -109,7 +109,8 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 		separator: ' ',
 	} as Parameters<typeof toSlug>[1])
 	let slug = slugify(clean(value.replace(/'/g, '')), { ...options, separator: ' ' })
-	let filters = !options.toName ? ['a', 'an', 'and', 'ii', 'iii', 'of', 'the', 'to', 'with'] : []
+	let stops = ['a', 'an', 'and', 'ii', 'iii', 'in', 'of', 'the', 'to', 'with']
+	let filters = !options.toName ? stops : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
 }

@@ -47,7 +47,7 @@ export class Item {
 		return NaN
 	}
 	get title() {
-		if (this.movie && this.year) return `${this.main.title} ${this.year}`
+		// if (this.movie && this.year) return `${this.main.title} ${this.year}`
 		if (this.ids.slug == 'cosmos') return `${this.main.title} ${this.year}`
 		return this.main.title
 	}
@@ -120,7 +120,7 @@ export class Item {
 		if (_.has(this.episode, 'title')) {
 			E.t = this.episode.title
 			if (this.isDaily) {
-				let t = utils.toSlug(E.t, { separator: ' ' }).split(' ')
+				let t = utils.toSlug(E.t).split(' ')
 				E.t = `${t[0]} ${t[1]}`
 			}
 		}

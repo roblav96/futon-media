@@ -50,29 +50,32 @@ export function results(result: scraper.Result, item: media.Item) {
 		}
 	}
 
-	let slug = utils.toSlug(result.name, { separator: ' ', lowercase: true })
-	let title = utils.toSlug(item.main.title, { separator: ' ', lowercase: true })
+	let slug = utils.toSlug(result.name, { lowercase: true })
+	let title = utils.toSlug(item.title, { lowercase: true })
 	let splits = [slug, title].map(v => v.split(' ').filter(Boolean))
-	let min = item.show ? _.min([splits[1].length, 2]) : splits[1].length
-	if (splits[1].filter(v => splits[0].includes(v)).length < min) {
-		return console.log(`❌ title includes < ${min} '${title}' ->`, result.name)
+	let min = (item.show && item.isDaily ? _.min([splits[1].length, 2]) : splits[1].length) - 1
+	if (splits[1].filter(v => splits[0].includes(v)).length <= min) {
+		return // console.log(`❌ title includes <= ${min} '${title}' ->`, result.name)
 	}
 
 	if (item.movie) {
 		try {
 			let years = splits[0].map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
+			if (years.length == 0) {
+				return // console.log(`❌ years.length == 0 ->`, result.name)
+			}
 			if (years.length >= 2) {
-				return console.log(`❌ years.length >= 2 '${years.join()}' ->`, result.name)
+				return // console.log(`❌ years.length >= 2 '${years.join()}' ->`, result.name)
 			}
 			let year = years[0]
 			years = [year - 1, year]
 			if (!years.includes(year)) {
-				return console.log(`❌ years '${years}' !includes '${year}' ->`, result.name)
+				return // console.log(`❌ years '${years}' !includes '${year}' ->`, result.name)
 			}
 			return true
 		} catch (error) {
-			console.log(`❌ movie ${error.message} ->`, result.name)
+			// console.log(`❌ movie ${error.message} ->`, result.name)
 			return false
 		}
 	}
@@ -96,12 +99,12 @@ export function results(result: scraper.Result, item: media.Item) {
 				return true
 			}
 		} catch (error) {
-			console.log(`❌ show ${error.message} ->`, result.name)
+			// console.log(`❌ show ${error.message} ->`, result.name)
 			return false
 		}
 	}
 
-	console.warn(`❌ return false ->`, result.name)
+	// console.log(`❌ return false ->`, result.name)
 	return false
 }
 
@@ -113,24 +116,25 @@ export const regex = {
 		if (matches.length == 0) return
 		let target = utils.minify(item.E.a)
 		if (matches.includes(target)) return true
-		throw new Error(`regex isodate '${matches}' !includes '${target}'`)
+		throw new Error(`regex '${matches}' !includes '${target}'`)
 	},
 	/** `s00e00` `season 1 episode 1` */
 	s00e00(item: media.Item, slug: string) {
 		let matches = [
-			slug.match(/\ss\d{1,2}e\d{1,2}\s/gi) || [],
-			slug.match(/\ss(eason)?\s?\d{1,2}\se(pisode)?\s?\d{1,2}\s/gi) || [],
+			slug.match(/\ss\d{1,2}e\d{1,3}\s/gi) || [],
+			slug.match(/\ss(eason)?\s?\d{1,2}\se(pisode)?\s?\d{1,3}\s/gi) || [],
 		].flat()
 		matches = (matches || []).map(v => v.trim())
 		matches = matches.map(v => {
-			let [s, e] = _.split(v, 'e').map(utils.parseInt)
+			let zeros = _.split(v.match(/(\d).*(\d)/gi)[0], 'e').map(utils.parseInt)
+			let [s, e] = zeros.filter(Boolean)
 			return `s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 		})
 		if (matches.length == 0) return
-		if (!item.episode) throw new Error(`regex s00e00 !item.episode`)
+		if (!item.episode) throw new Error(`regex !item.episode`)
 		let target = `s${item.S.z}e${item.E.z}`
 		if (matches.includes(target)) return true
-		throw new Error(`regex s00e00 '${matches}' !includes '${target}'`)
+		throw new Error(`regex '${matches}' !includes '${target}'`)
 	},
 	/** `1st season` */
 	nthseason(item: media.Item, slug: string) {

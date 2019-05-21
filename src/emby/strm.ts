@@ -83,8 +83,6 @@ async function getDebridStreamUrl(
 	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
 	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
 
-	throw new Error(`DEV`)
-
 	torrents = torrents.filter(({ split }) => {
 		if (split.includes('2160p') || split.includes('uhd') || split.includes('4k')) {
 			if (Quality != 'UHD') return false
