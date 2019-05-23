@@ -79,7 +79,7 @@ export class Item {
 	isPopular(votes: number) {
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
-		votes -= _.ceil((votes * 0.75) * penalty)
+		votes -= _.ceil((votes * 0.5) * penalty)
 		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
 	}
 	isJunk(votes = 1000) {

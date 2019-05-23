@@ -22,7 +22,7 @@ rxSearch.subscribe(async query => {
 	})) as trakt.Result[]
 
 	let person = trakt.person(results, query)
-	if (query.includes(' ') && person) {
+	if (person && query.includes(' ')) {
 		results.push(...(await trakt.resultsFor(person)))
 	}
 
@@ -32,14 +32,13 @@ rxSearch.subscribe(async query => {
 	// results.push(...(await toListsResults(query)))
 
 	results = trakt.uniq(results.filter(v => !v.person))
-	let items = results.map(v => new media.Item(v))
-	items = items.filter(v => {
-		// if (query.split(' ').length >= 2 && utils.leven(v.main.title, query) == 0) {
-		// 	console.warn(`rxSearch '${query}' accuracy ->`, v.slug)
-		// 	return !v.isJunk(25)
-		// }
-		return !v.isJunk()
-	})
+	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(500))
+	// items = items.filter(v => {
+	// 	if (query.split(' ').length >= 2 && utils.leven(v.main.title, query) == 0) {
+	// 		console.warn(`rxSearch '${query}' accuracy ->`, v.slug)
+	// 		return !v.isJunk(25)
+	// 	}
+	// })
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.slug).sort())
 
 	emby.library.addQueue(items)

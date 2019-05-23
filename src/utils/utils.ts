@@ -59,12 +59,13 @@ export function minify(value: string) {
 	return value.replace(/\W/g, '').toLowerCase()
 }
 
-/** array of `target` words are included in `value` words */
+/** all of `target` is included in `value` */
 export function includes(value: string, target: string) {
-	value = toSlug(value)
-	target = toSlug(target)
-	let splits = [value, target].map(v => v.split(' ').filter(Boolean))
-	return splits[1].filter(v => splits[0].includes(v))
+	return minify(value).includes(minify(target))
+	// value = toSlug(value)
+	// target = toSlug(target)
+	// let splits = [value, target].map(v => v.split(' ').filter(Boolean))
+	// return splits[1].filter(v => splits[0].includes(v))
 }
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
