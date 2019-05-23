@@ -180,7 +180,7 @@ async function syncCollections() {
 	}
 
 	await emby.library.refresh()
-	console.log(Date.now() - t, `syncCollections ${mIds.size} Items -> DONE`)
+	console.log(Date.now() - t, `syncCollections ${mIds.size} Items ->`, 'DONE')
 }
 
 export interface CollectionSchema {
