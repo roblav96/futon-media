@@ -16,6 +16,7 @@ const SKIPS = [
 	'enhanced',
 	'extras',
 	'hdcam',
+	'latino',
 	'sample',
 	'trailer',
 ]
@@ -50,8 +51,8 @@ export function results(result: scraper.Result, item: media.Item) {
 		}
 	}
 
-	let slug = utils.toSlug(result.name, { lowercase: true })
-	let title = utils.toSlug(item.title, { lowercase: true })
+	let slug = utils.toSlug(result.name)
+	let title = utils.toSlug(item.title)
 	let splits = [slug, title].map(v => v.split(' ').filter(Boolean))
 	let min = (item.show && item.isDaily ? _.min([splits[1].length, 2]) : splits[1].length) - 1
 	if (splits[1].filter(v => splits[0].includes(v)).length <= min) {

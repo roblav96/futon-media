@@ -61,8 +61,8 @@ export function minify(value: string) {
 
 /** array of `target` words are included in `value` words */
 export function includes(value: string, target: string) {
-	value = toSlug(value, { lowercase: true })
-	target = toSlug(target, { lowercase: true })
+	value = toSlug(value)
+	target = toSlug(target)
 	let splits = [value, target].map(v => v.split(' ').filter(Boolean))
 	return splits[1].filter(v => splits[0].includes(v))
 }

@@ -60,8 +60,10 @@ export async function getStreamUrl(
 			}
 
 			let file: debrid.File
-			if (item.type == 'show') {
+			if (item.show) {
 				let tests = [
+					`${item.E.a}`,
+					`${item.E.t}`,
 					`S${item.S.z}E${item.E.z}`,
 					`S${item.S.z}xE${item.E.z}`,
 					`${item.S.n}x${item.E.z}`,
@@ -72,8 +74,8 @@ export async function getStreamUrl(
 					`E${item.E.z}`,
 					`${item.E.z}`,
 				]
-				let skips = `${item.main.title} ${item.year}`
-				if (item.episode) skips += ` ${item.episode.title}`
+				let skips = `${item.main.title}` // ${item.year}`
+				// if (item.episode) skips += ` ${item.episode.title}`
 				for (let test of tests) {
 					file = files.find(v => {
 						let name = _.trim(utils.accuracy(skips, v.name).join(' '))
@@ -84,8 +86,9 @@ export async function getStreamUrl(
 				// if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
-				let title = item.title
-				if (item.show) title += ` S${item.S.z}E${item.E.z} ${item.E.t}`
+				let title = item.main.title
+				if (item.movie) title += ` ${item.year}`
+				if (item.episode) title += ` S${item.S.z}E${item.E.z} ${item.E.t} ${item.E.a}`
 				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
 				file = levens.sort((a, b) => a.leven - b.leven)[0]
 			}

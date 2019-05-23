@@ -41,13 +41,13 @@ process.nextTick(async () => {
 			})) as trakt.Result[]
 			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
 			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk(1000))
-			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.title).sort())
+			items = items.filter(v => !v.isJunk())
+			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.slug).sort())
 			library.addQueue(items)
 		}
 		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
 			let item = await library.item(Item.Path, Item.Type)
-			console.log(`rxItem ${Item.Type} ->`, item.title)
+			console.log(`rxItem ${Item.Type} ->`, item.slug)
 			library.addQueue([item])
 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
 			if (_.isArray(entry)) await db.del(entry[0])
@@ -149,12 +149,12 @@ export const library = {
 	toStrmPath(item: media.Item, full = false) {
 		if (!item) throw new Error(`library toStrmPath !item`)
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
-			throw new Error(`library toStrmPath '${item.title}' !library.folders`)
+			throw new Error(`library toStrmPath '${item.slug}' !library.folders`)
 		}
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${item.main.title} (${item.year})`
 		if (!item.ids.imdb && !item.ids.tmdb) {
-			throw new Error(`library toStrmPath '${item.title}' !imdb && !tmdb`)
+			throw new Error(`library toStrmPath '${item.slug}' !imdb && !tmdb`)
 		}
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
@@ -167,7 +167,7 @@ export const library = {
 		}
 		if (item.show) {
 			if (!_.isFinite(item.S.n) || !_.isFinite(item.E.n)) {
-				throw new Error(`library toStrmPath '${item.title}' !item.S.n || !item.E.n`)
+				throw new Error(`library toStrmPath '${item.slug}' !item.S.n || !item.E.n`)
 			}
 			file += `/Season ${item.S.n}`
 			file += `/${item.main.title} S${item.S.z}E${item.E.z}`
@@ -218,13 +218,13 @@ export const library = {
 			let seasons = (await trakt.client
 				.get(`/shows/${item.traktId}/seasons`, { silent: true })
 				.catch(error => {
-					console.error(`library add '${item.title}' -> %O`, error)
+					console.error(`library add '${item.slug}' -> %O`, error)
 					return []
 				})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
 			for (let season of seasons) {
 				item.use({ season })
-				for (let i = 1; i <= item.S.a; i++) {
+				for (let i = 1; i <= item.S.e; i++) {
 					item.use({ episode: { number: i, season: season.number } })
 					Updates.push(await library.toStrmFile(item))
 				}

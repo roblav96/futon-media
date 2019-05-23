@@ -51,6 +51,10 @@ export class Item {
 		if (this.ids.slug == 'cosmos') return `${this.main.title} ${this.year}`
 		return this.main.title
 	}
+	get slug() {
+		return this.ids.slug
+	}
+
 	get released() {
 		let released = new Date(new Date().setFullYear(this.year))
 		if (_.has(this.movie, 'released')) released = new Date(this.movie.released)
@@ -75,10 +79,10 @@ export class Item {
 	isPopular(votes: number) {
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
-		votes -= _.ceil((votes / 2) * penalty)
+		votes -= _.ceil((votes * 0.75) * penalty)
 		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
 	}
-	isJunk(votes = 500) {
+	isJunk(votes = 1000) {
 		let valid = this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes)
 		return !(valid && !!this.main.year && !!this.ids.slug && !!this.ids.imdb && !!this.ids.tmdb)
 	}

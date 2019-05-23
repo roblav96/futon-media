@@ -31,6 +31,7 @@ process.nextTick(() => {
 		}
 
 		let item = await emby.library.item(Item.Path, Item.Type)
+		if (item.isDaily) return
 
 		if (Item.Type == 'Movie') {
 			queue.add(() => download(item))
@@ -58,7 +59,7 @@ process.nextTick(() => {
 
 let queue = new pQueue({ concurrency: 1 })
 async function download(item: media.Item) {
-	console.warn(`download ->`, item.title, `${item.S.z}${item.E.z}`)
+	console.warn(`download ->`, item.slug, item.S.z, item.E.z)
 	let torrents = await scraper.scrapeAll(item)
 	// console.log(`all torrents ->`, torrents.map(v => v.json))
 	let index = torrents.findIndex(({ cached }) => cached.length > 0)

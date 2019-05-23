@@ -9,14 +9,10 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 export const rxSearch = emby.rxHttp.pipe(
-	Rx.op.filter(({ url }) => ['items', 'hints'].includes(path.basename(url).toLowerCase())),
-	Rx.op.map(({ url, query }) => {
-		query = _.mapKeys(query, (v, k) => k.toLowerCase())
-		if (query.searchterm) {
-			return utils.toSlug(query.searchterm, { toName: true, lowercase: true })
-		}
-	}),
+	Rx.op.filter(({ query }) => !!query.SearchTerm),
+	Rx.op.map(({ query }) => utils.toSlug(query.SearchTerm, { toName: true, lowercase: true })),
 	Rx.op.filter(search => !!search && utils.minify(search).length >= 3),
+	Rx.op.debounceTime(1000),
 	Rx.op.distinctUntilChanged()
 )
 
@@ -38,10 +34,13 @@ rxSearch.subscribe(async query => {
 	results = trakt.uniq(results.filter(v => !v.person))
 	let items = results.map(v => new media.Item(v))
 	items = items.filter(v => {
-		if (utils.accuracy(query, v.main.title).length == 0) return !v.isJunk(25)
+		// if (query.split(' ').length >= 2 && utils.leven(v.main.title, query) == 0) {
+		// 	console.warn(`rxSearch '${query}' accuracy ->`, v.slug)
+		// 	return !v.isJunk(25)
+		// }
 		return !v.isJunk()
 	})
-	console.log(`rxSearch '${query}' ->`, items.map(v => v.title).sort())
+	console.log(`rxSearch '${query}' ->`, items.map(v => v.slug).sort())
 
 	emby.library.addQueue(items)
 	// await toCollections(items, await emby.library.addAll(items))
