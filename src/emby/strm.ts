@@ -42,8 +42,10 @@ async function getDebridStreamUrl(
 ) {
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
+
 	let UserId = await db.get(`UserId:${traktId}`)
 	if (UserId) Session = Sessions.find(v => v.UserId == UserId) || Session
+
 	Session = (Sessions.find(v => {
 		if (!v.StrmPath) return
 		if (type == 'show') {
@@ -74,7 +76,6 @@ async function getDebridStreamUrl(
 		)) as trakt.Episode
 		item.use({ type: 'episode', episode })
 	}
-	// process.DEVELOPMENT && console.log(`item ->`, item)
 
 	let torrents = await scraper.scrapeAll(item)
 
@@ -88,7 +89,7 @@ async function getDebridStreamUrl(
 		return true
 	})
 
-	if (Quality.includes('HD')) {
+	if (Quality.includes('HD') && Channels >= 6) {
 		let index = torrents.findIndex(({ cached }) => cached.length > 0)
 		let putios = torrents.slice(0, index)
 		putios = putios.filter(({ seeders }) => seeders > 1)
@@ -110,6 +111,8 @@ async function getDebridStreamUrl(
 
 	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
 	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.json))
+
+	// throw new Error(`DEV`)
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs.video)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)

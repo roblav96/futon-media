@@ -104,7 +104,7 @@ export class Item {
 		if (_.has(this.season, 'episode_count')) S.e = this.season.episode_count
 		if (_.has(this.season, 'title')) S.t = this.season.title
 		if (_.has(this.season, 'number')) S.n = this.season.number
-		if (!_.isFinite(S.n) && _.has(this.episode, 'season')) S.n = this.episode.season
+		else if (_.has(this.episode, 'season')) S.n = this.episode.season
 		if (_.isFinite(S.n)) S.z = utils.zeroSlug(S.n)
 		return S
 	}
@@ -127,8 +127,10 @@ export class Item {
 				E.t = `${t[0]} ${t[1]}`
 			}
 		}
-		if (_.has(this.episode, 'number')) E.n = this.episode.number
-		if (_.isFinite(E.n)) E.z = utils.zeroSlug(E.n)
+		if (_.has(this.episode, 'number')) {
+			E.n = this.episode.number
+			E.z = utils.zeroSlug(E.n)
+		}
 		return E
 	}
 

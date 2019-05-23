@@ -40,15 +40,11 @@ export function results(result: scraper.Result, item: media.Item) {
 	}
 	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
 
-	{
-		let title = item.title
-		if (item.episode) title += ` ${item.episode.title}`
-		let skips = utils.accuracy(title, SKIPS.join(' '))
-		let skipped = utils.accuracy(result.name, skips.join(' '))
-		if (skipped.length < skips.length) {
-			let diff = JSON.stringify(_.difference(skips, skipped))
-			return // console.log(`❌ skips accuracy diff ->`, result.name, diff)
-		}
+	let skips = utils.accuracy(`${item.main.title} ${item.E.t}`, SKIPS.join(' '))
+	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
+	if (skipped.length < skips.length) {
+		let diff = JSON.stringify(_.difference(skips, skipped))
+		return // console.log(`❌ skips accuracy diff ->`, result.name, diff)
 	}
 
 	let slug = utils.toSlug(result.name)
@@ -60,6 +56,7 @@ export function results(result: scraper.Result, item: media.Item) {
 	}
 
 	if (item.movie) {
+		return true
 		try {
 			let years = splits[0].map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))

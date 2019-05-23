@@ -109,8 +109,8 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 		lowercase: !options.toName,
 		separator: ' ',
 	} as Parameters<typeof toSlug>[1])
-	let slug = slugify(clean(value.replace(/'/g, '')), { ...options, separator: ' ' })
-	let stops = ['a', 'an', 'and', 'ii', 'iii', 'in', 'of', 'the', 'to', 'with']
+	let slug = slugify(clean(value.replace(/['"/]/g, '')), { ...options, separator: ' ' })
+	let stops = ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with']
 	let filters = !options.toName ? stops : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)

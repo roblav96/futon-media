@@ -62,8 +62,6 @@ export async function getStreamUrl(
 			let file: debrid.File
 			if (item.show) {
 				let tests = [
-					`${item.E.a}`,
-					`${item.E.t}`,
 					`S${item.S.z}E${item.E.z}`,
 					`S${item.S.z}xE${item.E.z}`,
 					`${item.S.n}x${item.E.z}`,
@@ -74,16 +72,16 @@ export async function getStreamUrl(
 					`E${item.E.z}`,
 					`${item.E.z}`,
 				]
-				let skips = `${item.main.title}` // ${item.year}`
-				// if (item.episode) skips += ` ${item.episode.title}`
+				let skips = `${item.main.title} ${item.year}`
+				if (item.episode) skips += ` ${item.episode.title}`
 				for (let test of tests) {
 					file = files.find(v => {
 						let name = _.trim(utils.accuracy(skips, v.name).join(' '))
-						return utils.minify(name).includes(utils.minify(test))
+						return utils.includes(name, test)
 					})
 					if (file) break
 				}
-				// if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
+				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
 				let title = item.main.title

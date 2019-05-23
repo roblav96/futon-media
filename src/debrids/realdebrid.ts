@@ -53,7 +53,6 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 
 	static async download(magnet: string) {
 		let { dn, infoHash } = magneturi.decode(magnet)
-		console.log(`RealDebrid download ->`, dn)
 
 		let transfers = (await client.get('/torrents')) as Transfer[]
 		let transfer = transfers.find(v => v.hash.toLowerCase() == infoHash)

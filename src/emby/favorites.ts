@@ -61,13 +61,20 @@ let queue = new pQueue({ concurrency: 1 })
 async function download(item: media.Item) {
 	console.warn(`download ->`, item.slug, item.S.z, item.E.z)
 	let torrents = await scraper.scrapeAll(item)
-	// console.log(`all torrents ->`, torrents.map(v => v.json))
+
+	// if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
+	// else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
+
 	let index = torrents.findIndex(({ cached }) => cached.length > 0)
-	if (index == -1) return console.warn(`download index == -1`)
-	console.log(`best cached ->`, torrents[index].json)
+	if (index == -1) return console.warn(`download best cached index == -1`)
+	console.log(`download best cached ->`, torrents[index].json)
+
 	torrents = torrents.slice(0, index)
 	torrents = torrents.filter(({ seeders }) => seeders > 1)
+
 	if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
 	else console.log(`download torrents ->`, torrents.length, torrents.map(v => v.json))
-	if (torrents.length > 0) debrids.download(torrents)
+
+	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
+	debrids.download(torrents)
 }

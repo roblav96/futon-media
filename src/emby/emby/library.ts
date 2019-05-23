@@ -52,7 +52,7 @@ process.nextTick(async () => {
 			})) as trakt.Result[]
 			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
 			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk())
+			items = items.filter(v => !v.isJunk(500))
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.slug).sort())
 			library.addQueue(items)
 		}
@@ -162,15 +162,16 @@ export const library = {
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			throw new Error(`library toStrmPath '${item.slug}' !library.folders`)
 		}
+		let title = utils.toSlug(item.main.title, { toName: true })
 		let dir = library.folders[`${item.type}s`]
-		let file = `/${item.main.title} (${item.year})`
+		let file = `/${title} (${item.year})`
 		if (!item.ids.imdb && !item.ids.tmdb) {
 			throw new Error(`library toStrmPath '${item.slug}' !imdb && !tmdb`)
 		}
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
 		if (item.movie) {
-			file += `/${item.main.title} (${item.year})`
+			file += `/${title} (${item.year})`
 		}
 		if (full == false) {
 			let Path = `${dir}${file}`
@@ -181,7 +182,7 @@ export const library = {
 				throw new Error(`library toStrmPath '${item.slug}' !item.S.n || !item.E.n`)
 			}
 			file += `/Season ${item.S.n}`
-			file += `/${item.main.title} S${item.S.z}E${item.E.z}`
+			file += `/${title} S${item.S.z}E${item.E.z}`
 		}
 		return `${dir}${file}.strm`
 	},
