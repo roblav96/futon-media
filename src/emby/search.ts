@@ -32,14 +32,26 @@ rxSearch.subscribe(async query => {
 	// results.push(...(await toListsResults(query)))
 
 	results = trakt.uniq(results.filter(v => !v.person))
-	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(500))
-	// items = items.filter(v => {
-	// 	if (query.split(' ').length >= 2 && utils.leven(v.main.title, query) == 0) {
-	// 		console.warn(`rxSearch '${query}' accuracy ->`, v.slug)
-	// 		return !v.isJunk(25)
-	// 	}
-	// })
-	console.log(`rxSearch '${query}' ->`, items.map(v => v.slug).sort())
+	let items = results.map(v => new media.Item(v))
+	items = items.filter(v => {
+		if (v.isJunk(25)) return false
+		if (utils.equals(v.slug, query)) {
+			console.log(`equals '${v.slug}' ${v.main.votes} ->`, 25)
+			return !v.isJunk(25)
+		}
+		if (utils.accuracy(v.title, query).length == 0) {
+			let votes = [750, 500, 250, 100]
+			let index = _.clamp(query.split(' ').length - 1, 0, votes.length - 1)
+			console.log(`accuracy '${v.short}' ->`, v.main.votes, '/', votes[index])
+			return !v.isJunk(votes[index])
+		}
+		return !v.isJunk()
+	})
+	console.log(`rxSearch '${query}' ->`, items.map(v => v.short).sort())
+
+	// for (let item of items) {
+	// 	await item.setAliases()
+	// }
 
 	emby.library.addQueue(items)
 	// await toCollections(items, await emby.library.addAll(items))
@@ -54,7 +66,7 @@ async function toTmdbResults(query: string, tmids: number[], person: trakt.Perso
 		if (v.media_type == 'person') return !!v.profile_path
 		return (
 			['movie', 'tv'].includes(v.media_type) &&
-			(v.original_language == 'en' && !v.adult && v.vote_count >= 100)
+			(v.original_language == 'en' && !v.adult && v.vote_count >= 50)
 		)
 	})
 	fulls.sort((a, b) => b.popularity - a.popularity)

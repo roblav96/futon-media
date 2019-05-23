@@ -47,14 +47,9 @@ export class Rarbg extends scraper.Scraper {
 		if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
-
-		let slugs = super.slugs()
-		if (_.size(query) == 0) {
-			return slugs.map(slug => JSON.stringify({ search_string: slug } as Query))
-		}
-
+		if (this.item.movie) return [JSON.stringify(query)]
 		let title = utils.toSlug(this.item.title)
-		let queries = slugs.map((slug, i) => {
+		let queries = super.slugs().map((slug, i) => {
 			if (slug.startsWith(title)) slug = slug.replace(title, '').trim()
 			return slug ? ({ ...query, search_string: slug } as Query) : query
 		})

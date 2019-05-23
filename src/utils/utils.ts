@@ -35,11 +35,6 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(_.random(ms * Math.E * 0.1, ms)), { value })
 }
 
-export function same(...args: string[]) {
-	if (args.length == 1) return false
-	return new Set(args.map(v => _.trim(_.deburr(v).toLowerCase()))).size == 1
-}
-
 export function squash(value: string) {
 	return value.replace(/[^\x20-\x7E]/g, '')
 }
@@ -51,17 +46,26 @@ export function clean(value: string) {
 // 	let arr = Array.from({ length: value.length }).map((v, i) => value.charCodeAt(i))
 // 	return arr.filter(v => v >= 128).length > 0
 // }
-// export function isForeign(value: string) {
-// 	return value != _.deburr(value)
-// }
+export function isForeign(value: string) {
+	return value != _.deburr(value)
+}
 
 export function minify(value: string) {
 	return value.replace(/\W/g, '').toLowerCase()
 }
 
+export function same(...args: string[]) {
+	if (args.length == 1) return false
+	return new Set(args.map(v => _.trim(_.deburr(v).toLowerCase()))).size == 1
+}
+
+export function equals(value: string, target: string) {
+	return minify(_.deburr(value)) == minify(_.deburr(target))
+}
+
 /** all of `target` is included in `value` */
 export function includes(value: string, target: string) {
-	return minify(value).includes(minify(target))
+	return minify(_.deburr(value)).includes(minify(_.deburr(target)))
 	// value = toSlug(value)
 	// target = toSlug(target)
 	// let splits = [value, target].map(v => v.split(' ').filter(Boolean))

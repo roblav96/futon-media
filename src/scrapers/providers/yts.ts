@@ -20,10 +20,12 @@ export class Yts extends scraper.Scraper {
 		let response = (await client.get('/list_movies.json', {
 			query: { sort_by: sort, query_term: slug } as Partial<Query>,
 		})) as Response
-		let results = ((response.data && response.data.movies) || []).map(m =>
-			m.torrents.map((v, i) => {
-				let rip = m.torrents.length >= 2 && i >= 2 ? 'WEB' : 'BluRay'
-				let name = _.startCase(m.title_long || m.title_english || m.title || slug)
+		let results = ((response.data && response.data.movies) || []).map(result =>
+			result.torrents.map((v, i) => {
+				let rip = result.torrents.length >= 2 && i >= 2 ? 'WEB' : 'BluRay'
+				let name = _.startCase(
+					result.title_long || result.title_english || result.title || slug
+				)
 				let title = `${name} ${v.quality} ${rip}`
 				return {
 					bytes: v.size_bytes,

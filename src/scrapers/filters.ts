@@ -29,54 +29,53 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	result.name = result.name || magnet.dn
 	if (!result.name) return
-	if (result.name != _.deburr(result.name)) return
+	if (utils.isForeign(result.name)) return
 	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
 
-	let skips = utils.accuracy(`${item.main.title} ${item.E.t}`, SKIPS.join(' '))
+	let skips = utils.accuracy(`${item.title} ${item.E.t}`, SKIPS.join(' '))
 	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
-	if (skipped.length < skips.length) {
-		let diff = JSON.stringify(_.difference(skips, skipped))
-		return // console.log(`❌ skips accuracy diff ->`, result.name, diff)
-	}
+	if (skipped.length < skips.length) return
 
-	let slug = utils.toSlug(result.name)
-	let title = utils.toSlug(item.title)
-	let splits = [slug, title].map(v => v.split(' ').filter(Boolean))
-	let min = (item.show && item.isDaily ? _.min([splits[1].length, 2]) : splits[1].length) - 1
-	if (splits[1].filter(v => splits[0].includes(v)).length <= min) {
-		return // console.log(`❌ title includes <= ${min} '${title}' ->`, result.name)
-	}
+	let providers = JSON.stringify(result.providers)
+	let slug = utils.toSlug(result.name, { toName: true, lowercase: true })
 
 	if (item.movie) {
-		// return true
 		try {
-			let years = splits[0].map(v => _.parseInt(v))
-			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
-			if (years.length == 0) {
-				return // console.log(`❌ years.length == 0 ->`, result.name)
+			// let titles = item.titles.map(title => item.years.map(year => `${title} ${year}`)).flat()
+			let titles = item.years.map(year => `${item.title} ${year}`)
+			if (!item.isPopular()) titles.unshift(item.title)
+			titles = _.uniq(titles.map(v => utils.toSlug(v)))
+			if (titles.filter(v => utils.leven(slug, v) == 0).length == 0) {
+				return // console.log(`❌ name leven '${titles}' ->`, result.name, providers)
 			}
+
+			let extras = utils.accuracy(`${item.title} 720 1080 2160`, slug)
+			let years = _.uniq(
+				extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
+			)
 			if (years.length >= 2) {
-				return // console.log(`❌ years.length >= 2 '${years.join()}' ->`, result.name)
+				return // console.log(`❌ years >= 2 '${years}' ->`, result.name, providers)
 			}
-			let year = years[0]
-			years = [year - 1, year]
-			if (!years.includes(year)) {
-				return // console.log(`❌ years '${years}' !includes '${year}' ->`, result.name)
-			}
+
 			return true
 		} catch (error) {
-			// console.log(`❌ movie ${error.message} ->`, result.name)
+			// console.log(`❌ movie ${error.message} ->`, result.name, providers)
 			return false
 		}
 	}
 
 	if (item.show) {
 		try {
-			let slug = ` ${utils.toSlug(result.name, { toName: true, lowercase: true })} `
+			let title = utils.toSlug(item.title)
+			if (!item.isDaily && utils.leven(slug, title) == 0) {
+				return // console.log(`❌ name leven '${title}' ->`, result.name, providers)
+			}
+
+			slug = ` ${utils.toSlug(result.name, { toName: true, lowercase: true })} `
 
 			result.packs = 0
 			if (item.isDaily && regex.isodate(item, slug)) return true
-			if (item.E.t && utils.minify(slug).includes(utils.minify(item.E.t))) return true
+			if (item.E.t && utils.includes(slug, item.E.t)) return true
 			if (regex.s00e00(item, slug)) return true
 
 			result.packs = 1
@@ -89,12 +88,12 @@ export function results(result: scraper.Result, item: media.Item) {
 				return true
 			}
 		} catch (error) {
-			// console.log(`❌ show ${error.message} ->`, result.name)
+			// console.log(`❌ show ${error.message} ->`, result.name, providers)
 			return false
 		}
 	}
 
-	// console.log(`❌ return false ->`, result.name)
+	// console.log(`❌ return false ->`, result.name, providers)
 	return false
 }
 

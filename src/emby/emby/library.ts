@@ -162,7 +162,7 @@ export const library = {
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			throw new Error(`library toStrmPath '${item.slug}' !library.folders`)
 		}
-		let title = utils.toSlug(item.main.title, { toName: true })
+		let title = utils.toSlug(item.title, { toName: true })
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${title} (${item.year})`
 		if (!item.ids.imdb && !item.ids.tmdb) {

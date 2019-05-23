@@ -143,10 +143,7 @@ async function syncCollections() {
 		})
 		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))
 		schema.items = results.map(v => new media.Item(v))
-		schema.items = schema.items.filter(v => {
-			if (schema.all) return !v.isJunk(25)
-			return !v.isJunk()
-		})
+		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(25) : !v.isJunk()))
 		if (schema.items.length == 0) {
 			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
 			continue

@@ -49,7 +49,13 @@ export async function search(query: string, type = 'movie,show' as media.MainCon
 }
 
 export function person(results: Result[], name: string) {
-	results = results.filter(v => v.person && utils.same(v.person.name, name))
+	results = results.filter(v => {
+		return (
+			v.person &&
+			utils.same(v.person.name, name) &&
+			_.values(v.person).filter(Boolean).length > 3
+		)
+	})
 	if (results.length == 0) return
 	let sizes = results.map(({ person }) => ({
 		person,
@@ -297,4 +303,9 @@ export interface User {
 	username: string
 	vip: boolean
 	vip_ep: boolean
+}
+
+export interface Alias {
+	country: string
+	title: string
 }

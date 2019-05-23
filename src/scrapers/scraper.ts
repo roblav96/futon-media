@@ -12,11 +12,14 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
+	await Promise.all([await item.setAliases(), await item.setOmdb(), await item.setTmdb()])
+
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	let providers = [
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
 		(await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
@@ -45,8 +48,8 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes]))
-		to.stamp = _.ceil(_.mean([to.stamp, from.stamp]))
-		to.seeders = _.ceil(_.mean([to.seeders, from.seeders]))
+		to.stamp = _.ceil(_.min([to.stamp, from.stamp]))
+		to.seeders = _.ceil(_.max([to.seeders, from.seeders]))
 		return true
 	})
 
@@ -94,16 +97,32 @@ export class Scraper {
 	concurrency = 3
 
 	slugs() {
-		let slugs = this.item.movie ? [this.item.title] : []
-		this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
-		if (!this.item.isDaily) {
-			this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
+		let slugs = [] as string[]
+		if (this.item.movie) {
+			// if (this.item.isJunk(500)) {
+			// 	if (this.item.collection) {
+			// 		let split = this.item.collection.name.split(' ').slice(0, -1)
+			// 		slugs.push(split.join(' '))
+			// 	} else slugs.push(this.item.title)
+			// }
+			if (!this.item.isPopular()) slugs.push(this.item.title)
+			this.item.years.forEach(year => slugs.push(`${this.item.title} ${year}`))
 		}
-		this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
-		if (this.item.isDaily) {
-			this.item.E.a && slugs.push(`${this.item.title} ${this.item.E.a}`)
-			this.item.E.t && slugs.push(`${this.item.title} ${this.item.E.t}`)
+		if (this.item.show) {
+			this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
+			if (!this.item.isDaily) {
+				// if (this.item.tmdb.name.length > this.item.title.length) {
+				// 	slugs.unshift(this.item.tmdb.name)
+				// }
+				this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
+			}
+			this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
+			if (this.item.isDaily) {
+				this.item.E.a && slugs.push(`${this.item.title} ${this.item.E.a}`)
+				this.item.E.t && slugs.push(`${this.item.title} ${this.item.E.t}`)
+			}
 		}
+		if (slugs.length == 0) slugs.push(this.item.title)
 		return slugs.map(v => utils.toSlug(v))
 	}
 
@@ -145,6 +164,7 @@ export class Scraper {
 		)).flat() as Result[]
 
 		results = results.filter(v => filters.results(v, this.item))
+
 		console.log(Date.now() - t, this.constructor.name, combinations.length, results.length)
 		return results.map(v => new torrent.Torrent(v))
 	}

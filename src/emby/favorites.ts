@@ -59,22 +59,27 @@ process.nextTick(() => {
 
 let queue = new pQueue({ concurrency: 1 })
 async function download(item: media.Item) {
-	console.warn(`download ->`, item.slug, item.S.z, item.E.z)
+	let slug = `${item.slug} ${item.S.z} ${item.E.z}`.trim()
+	console.info(`download '${slug}' ->`)
 	let torrents = await scraper.scrapeAll(item)
 
-	// if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
-	// else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
+	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
+	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	let index = torrents.findIndex(({ cached }) => cached.length > 0)
 	if (index == -1) return console.warn(`download best cached index == -1`)
-	console.log(`download best cached ->`, torrents[index].json)
+	console.log(`download best cached ->`, torrents[index].short)
 
-	torrents = torrents.slice(0, index)
-	torrents = torrents.filter(({ seeders }) => seeders > 1)
+	torrents = torrents.filter(v => v.cached.length == 0 && v.seeders > 1).slice(0, 10)
+	// torrents = torrents.slice(0, index)
+	// torrents = torrents.filter(
+	// 	({ seeders }) => seeders >= _.floor(_.clamp(item.main.votes * 0.1, 1, 5))
+	// )
 
 	if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
-	else console.log(`download torrents ->`, torrents.length, torrents.map(v => v.json))
+	else console.log(`download torrents ->`, torrents.map(v => v.short))
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
-	debrids.download(torrents)
+	await debrids.download(torrents)
+	console.info(`download '${slug}' ->`, 'DONE')
 }

@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as Memoize from '@/utils/memoize'
+import * as omdb from '@/adapters/omdb'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
@@ -33,28 +34,31 @@ export class Item {
 	get ids() {
 		return this.main.ids
 	}
+	get title() {
+		return this.main.title
+	}
+	get slug() {
+		return this.ids.slug
+	}
+	get short() {
+		return `${this.slug} ${this.show ? `(${this.count})` : ''}`.trim()
+	}
+	// get query() {
+	// 	return this.isPopular(500) ? 
+	// }
+
 	get traktId() {
 		if (_.has(this.ids, 'trakt')) return this.ids.trakt.toString()
 		if (_.has(this.ids, 'imdb')) return this.ids.imdb
 		if (_.has(this.ids, 'slug')) return this.ids.slug
 		return ''
 	}
-
 	get year() {
 		if (_.isFinite(this.main.year)) return this.main.year
 		if (_.has(this.movie, 'released')) return dayjs(this.movie.released).year()
 		if (_.has(this.show, 'first_aired')) return dayjs(this.show.first_aired).year()
 		return NaN
 	}
-	get title() {
-		// if (this.movie && this.year) return `${this.main.title} ${this.year}`
-		if (this.ids.slug == 'cosmos') return `${this.main.title} ${this.year}`
-		return this.main.title
-	}
-	get slug() {
-		return this.ids.slug
-	}
-
 	get released() {
 		let released = new Date(new Date().setFullYear(this.year))
 		if (_.has(this.movie, 'released')) released = new Date(this.movie.released)
@@ -66,6 +70,9 @@ export class Item {
 		if (_.has(this.show, 'runtime')) return this.show.runtime
 		return Infinity
 	}
+	get count() {
+		return this.show ? this.show.aired_episodes : this.isReleased ? 1 : 0
+	}
 
 	get isEnglish() {
 		return _.has(this.main, 'language') && (this.main.language || '').includes('en')
@@ -76,10 +83,10 @@ export class Item {
 	get hasRuntime() {
 		return this.runtime >= 10
 	}
-	isPopular(votes: number) {
+	isPopular(votes = 500) {
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
-		votes -= _.ceil((votes * 0.5) * penalty)
+		votes -= _.ceil(votes * 0.5 * penalty)
 		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
 	}
 	isJunk(votes = 1000) {
@@ -88,7 +95,7 @@ export class Item {
 	}
 
 	get isDaily() {
-		return this.main.genres.includes('news') || this.main.genres.includes('talk-show')
+		return this.main.genres.filter(v => ['news', 'reality', 'talk-show'].includes(v)).length > 0
 	}
 
 	/** season */
@@ -133,6 +140,62 @@ export class Item {
 		}
 		return E
 	}
+
+	aliases: string[]
+	get alias() {
+		return this.aliases.sort((a, b) => b.length - a.length)[0]
+	}
+	async setAliases() {
+		if (_.isArray(this.aliases)) return
+		let response = (await trakt.client.get(`/${this.type}s/${this.slug}/aliases`, {
+			silent: true,
+		})) as trakt.Alias[]
+		let aliases = response.filter(v => ['gb', 'us'].includes(v.country)).map(v => v.title)
+		aliases = aliases.filter(v => !utils.isForeign(v))
+		aliases = aliases.filter(v => !utils.equals(v, this.title))
+		aliases = aliases.filter(v => !utils.equals(v, this.slug))
+		aliases = aliases.filter(v => utils.includes(v, this.title))
+		aliases = aliases.filter(v => utils.accuracy(v, '3d').length > 0)
+		this.aliases = _.uniq(aliases)
+		if (this.aliases.length > 0) {
+			console.log(`aliases '${this.slug}' ->`, this.aliases)
+			console.log(`alias '${this.slug}' ->`, this.alias)
+		}
+	}
+
+	omdb: omdb.Full
+	async setOmdb() {
+		this.omdb = (await omdb.client.get('/', {
+			query: { i: this.ids.imdb },
+			silent: true,
+		})) as omdb.Full
+	}
+
+	tmdb: tmdb.Full
+	collection: tmdb.Collection
+	async setTmdb() {
+		let type = this.show ? 'tv' : 'movie'
+		this.tmdb = (await tmdb.client.get(`/${type}/${this.ids.tmdb}`, {
+			silent: true,
+		})) as tmdb.Full
+		if (this.tmdb.belongs_to_collection) {
+			let id = this.tmdb.belongs_to_collection.id
+			this.collection = (await tmdb.client.get(`/collection/${id}`)) as tmdb.Collection
+		}
+	}
+
+	// get titles() {
+	// 	return _.uniq([this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)).sort()
+	// }
+	get years() {
+		let tmdbyear = dayjs(this.tmdb.release_date).year()
+		return _.uniq([this.year, _.parseInt(this.omdb.Year), tmdbyear].filter(Boolean)).sort()
+	}
+	// get slugs() {
+	// 	let slugs = [] as string[]
+	// 	this.titles.forEach(title => this.years.forEach(year => slugs.push(`${title} ${year}`)))
+	// 	return _.uniq(slugs)
+	// }
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {
 		this.use(result)

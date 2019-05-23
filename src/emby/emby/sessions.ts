@@ -55,10 +55,10 @@ export class Session {
 		return Codecs
 	}
 	get Channels() {
-		if (process.DEVELOPMENT) {
-			console.warn(`DEVELOPMENT Channels ->`, 8)
-			return 8
-		}
+		// if (process.DEVELOPMENT) {
+		// 	console.warn(`DEVELOPMENT Channels ->`, 8)
+		// 	return 8
+		// }
 		if (utils.includes(this.Client, 'Roku SG')) return 2
 		let Channels = [2]
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
@@ -77,10 +77,10 @@ export class Session {
 		return _.max(Channels)
 	}
 	get Quality(): emby.Quality {
-		if (process.DEVELOPMENT) {
-			console.warn(`DEVELOPMENT Quality ->`, 'UHD')
-			return 'UHD'
-		}
+		// if (process.DEVELOPMENT) {
+		// 	console.warn(`DEVELOPMENT Quality ->`, 'UHD')
+		// 	return 'UHD'
+		// }
 		if (utils.includes(this.Client + this.DeviceName, 'mobile')) return 'SD'
 		if (this.Channels > 2) {
 			let user = this.UserName.toLowerCase()

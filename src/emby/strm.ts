@@ -59,7 +59,7 @@ async function getDebridStreamUrl(
 
 	let { Quality, Channels, Codecs } = Session
 
-	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.video])}`
+	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs])}`
 	let streamUrl = await db.get(skey)
 	if (streamUrl) return streamUrl
 
@@ -80,21 +80,15 @@ async function getDebridStreamUrl(
 	let torrents = await scraper.scrapeAll(item)
 
 	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
-	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.json))
+	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	torrents = torrents.filter(({ split }) => {
-		if (split.includes('2160p') || split.includes('uhd') || split.includes('4k')) {
-			if (Quality != 'UHD') return false
-		}
-		return true
-	})
-
-	if (Quality.includes('HD') && Channels >= 6) {
-		let index = torrents.findIndex(({ cached }) => cached.length > 0)
-		let putios = torrents.slice(0, index)
-		putios = putios.filter(({ seeders }) => seeders > 1)
-		putios = putios.slice(0, 10)
-		if (putios.length > 0) {
+	let index = torrents.findIndex(({ cached }) => cached.length > 0)
+	let putios = torrents.slice(0, index)
+	putios = putios.filter(({ seeders }) => seeders > 1)
+	putios = putios.slice(0, 10)
+	if (putios.length > 0) {
+		// if (item.movie) emitter.once(traktId, () => debrids.download(putios))
+		if (Quality.includes('HD') && Channels >= 6 && !process.DEVELOPMENT) {
 			let cached = await putio.Putio.cached(putios.map(v => v.magnet))
 			cached.forEach(({ magnet }) => {
 				let torrent = torrents.find(v => v.magnet == magnet)
@@ -104,17 +98,22 @@ async function getDebridStreamUrl(
 		}
 	}
 
+	torrents = torrents.filter(({ split }) => {
+		if (split.includes('2160p') || split.includes('uhd') || split.includes('4k')) {
+			if (Quality != 'UHD') return false
+		}
+		return true
+	})
+
 	torrents = torrents.filter(({ cached }) => cached.length > 0)
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 
 	if (Quality == 'SD' || Channels == 2) torrents.sort((a, b) => b.seeders - a.seeders)
 
 	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
-	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.json))
+	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	// throw new Error(`DEV`)
-
-	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs.video)
+	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
 	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 

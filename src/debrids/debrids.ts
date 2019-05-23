@@ -23,14 +23,14 @@ export async function cached(hashes: string[]) {
 
 let queue = new pQueue({ concurrency: 1 })
 export function download(torrents: torrent.Torrent[]) {
-	queue.add(async () => {
+	return queue.add(async () => {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, `[${torrent.size}]`, torrent.name)
 			let success = await RealDebrid.download(torrent.magnet).catch(error => {
 				console.error(`RealDebrid download '${torrent.magnet}' -> %O`, error)
 				return false
 			})
-			if (success) console.info(`download success ->`, `[${torrent.size}]`, torrent.name)
+			if (success) console.log(`👍 download success ->`, `[${torrent.size}]`, torrent.name)
 		}
 	})
 }
@@ -39,7 +39,7 @@ export async function getStreamUrl(
 	torrents: torrent.Torrent[],
 	item: media.Item,
 	channels: number,
-	codecs: string[]
+	codecs: { audio: string[]; video: string[] }
 ) {
 	for (let torrent of torrents) {
 		let next = false
@@ -72,7 +72,7 @@ export async function getStreamUrl(
 					`E${item.E.z}`,
 					`${item.E.z}`,
 				]
-				let skips = `${item.main.title} ${item.year}`
+				let skips = `${item.title} ${item.year}`
 				if (item.episode) skips += ` ${item.episode.title}`
 				for (let test of tests) {
 					file = files.find(v => {
@@ -84,7 +84,7 @@ export async function getStreamUrl(
 				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {
-				let title = item.main.title
+				let title = item.title
 				if (item.movie) title += ` ${item.year}`
 				if (item.episode) title += ` S${item.S.z}E${item.E.z} ${item.E.t} ${item.E.a}`
 				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
@@ -137,8 +137,8 @@ export async function getStreamUrl(
 			}
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
 			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
-			if (_.size(codecs) > 0 && !codecs.includes(videos[0].codec_name)) {
-				console.warn(`probe !codecs ->`, torrent.name, videos[0].codec_name)
+			if (_.size(codecs.video) > 0 && !codecs.video.includes(videos[0].codec_name)) {
+				console.warn(`probe !codecs.video ->`, torrent.name, videos[0].codec_name)
 				next = true
 				continue
 			}
@@ -157,8 +157,14 @@ export async function getStreamUrl(
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
 			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
-			if (audios.filter(v => v.channels <= channels).length == 0) {
+			let audio = audios.find(v => v.channels <= channels)
+			if (!audio) {
 				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
+				next = true
+				continue
+			}
+			if (_.size(codecs.audio) > 0 && !codecs.audio.includes(audio.codec_name)) {
+				console.warn(`probe !codecs.audio ->`, torrent.name, audio.codec_name)
 				next = true
 				continue
 			}
