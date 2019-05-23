@@ -56,14 +56,12 @@ async function getDebridStreamUrl(
 	}) || Session) as emby.Session
 
 	let { Quality, Channels, Codecs } = Session
-	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
 	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.video])}`
 	let streamUrl = await db.get(skey)
-	if (streamUrl) {
-		console.log(`streamUrl '${slug}' ->`, streamUrl)
-		return streamUrl
-	}
+	if (streamUrl) return streamUrl
+
+	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
 	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
