@@ -15,6 +15,6 @@ async function start() {
 	await import('@/emby/favorites')
 	await import('@/emby/search')
 	await import('@/emby/strm')
-	// await import('@/scripts/users-sync')
+	await import('@/scripts/users-sync')
 }
 process.nextTick(() => start().catch(error => console.error(`start -> %O`, error)))
