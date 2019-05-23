@@ -24,11 +24,22 @@ process.nextTick(async () => {
 		Rx.op.filter(({ query }) => [query.ItemId, query.UserId].filter(Boolean).length == 2),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(100),
-		Rx.op.distinctUntilChanged((a, b) => utils.hash(a) == utils.hash(b))
+		Rx.op.switchMap(async ({ ItemId, UserId }) => {
+			let Item = await library.byItemId(ItemId)
+			if (Item && Item.SeriesId) {
+				ItemId = Item.SeriesId
+			}
+			return { ItemId, UserId, Item }
+		}),
+		Rx.op.filter(({ Item }) => {
+			return Item && ['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
+		}),
+		Rx.op.distinctUntilChanged((a, b) => {
+			let keys = ['ItemId', 'UserId']
+			return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
+		})
 	)
-	rxItem.subscribe(async ({ ItemId, UserId }) => {
-		let Item = await library.byItemId(ItemId)
-		if (!Item) return
+	rxItem.subscribe(async ({ Item, UserId }) => {
 		if (Item.Type == 'Person') {
 			let fulls = ((await tmdb.client.get('/search/person', {
 				query: { query: Item.Name },
