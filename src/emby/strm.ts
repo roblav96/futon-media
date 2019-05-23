@@ -59,7 +59,7 @@ async function getDebridStreamUrl(
 
 	let { Quality, Channels, Codecs } = Session
 
-	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs])}`
+	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.audio, Codecs.video])}`
 	let streamUrl = await db.get(skey)
 	if (streamUrl) return streamUrl
 
@@ -112,6 +112,8 @@ async function getDebridStreamUrl(
 
 	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
 	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.short))
+
+	// throw new Error(`DEV`)
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)

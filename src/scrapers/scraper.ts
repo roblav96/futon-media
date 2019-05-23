@@ -12,7 +12,7 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
 export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
-	await Promise.all([await item.setAliases(), await item.setOmdb(), await item.setTmdb()])
+	await item.setAll()
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,

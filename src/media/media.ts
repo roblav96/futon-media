@@ -43,9 +43,16 @@ export class Item {
 	get short() {
 		return `${this.slug} ${this.show ? `(${this.count})` : ''}`.trim()
 	}
-	// get query() {
-	// 	return this.isPopular(500) ? 
-	// }
+	get queries() {
+		let queries = [this.title]
+		if (utils.equals(this.title, this.slug)) {
+			queries.push(`${this.title} ${this.year}`)
+		}
+		if (this.alias && !this.isPopular()) {
+			queries.push(this.alias)
+		}
+		return queries
+	}
 
 	get traktId() {
 		if (_.has(this.ids, 'trakt')) return this.ids.trakt.toString()
@@ -143,7 +150,8 @@ export class Item {
 
 	aliases: string[]
 	get alias() {
-		return this.aliases.sort((a, b) => b.length - a.length)[0]
+		return _.isArray(this.aliases) && this.aliases[0]
+		// return this.aliases.sort((a, b) => b.length - a.length)[0]
 	}
 	async setAliases() {
 		if (_.isArray(this.aliases)) return
@@ -154,13 +162,11 @@ export class Item {
 		aliases = aliases.filter(v => !utils.isForeign(v))
 		aliases = aliases.filter(v => !utils.equals(v, this.title))
 		aliases = aliases.filter(v => !utils.equals(v, this.slug))
+		aliases = aliases.filter(v => !utils.includes(v, this.year.toString()))
 		aliases = aliases.filter(v => utils.includes(v, this.title))
 		aliases = aliases.filter(v => utils.accuracy(v, '3d').length > 0)
 		this.aliases = _.uniq(aliases)
-		if (this.aliases.length > 0) {
-			console.log(`aliases '${this.slug}' ->`, this.aliases)
-			console.log(`alias '${this.slug}' ->`, this.alias)
-		}
+		// if (this.aliases.length > 0) console.log(`aliases '${this.slug}' ->`, this.aliases)
 	}
 
 	omdb: omdb.Full
@@ -182,6 +188,11 @@ export class Item {
 			let id = this.tmdb.belongs_to_collection.id
 			this.collection = (await tmdb.client.get(`/collection/${id}`)) as tmdb.Collection
 		}
+	}
+
+	async setAll() {
+		await Promise.all([await this.setAliases(), await this.setOmdb(), await this.setTmdb()])
+		Memoize.clear(this)
 	}
 
 	// get titles() {

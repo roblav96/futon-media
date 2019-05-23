@@ -67,7 +67,7 @@ export function results(result: scraper.Result, item: media.Item) {
 	if (item.show) {
 		try {
 			let title = utils.toSlug(item.title)
-			if (!item.isDaily && utils.leven(slug, title) == 0) {
+			if (!item.isDaily && utils.leven(slug, title) != 0) {
 				return // console.log(`❌ name leven '${title}' ->`, result.name, providers)
 			}
 
