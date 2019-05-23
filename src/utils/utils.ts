@@ -47,10 +47,10 @@ export function clean(value: string) {
 	return _.trim(squash(stripBom(stripAnsi(_.unescape(_.deburr(value))))))
 }
 
-export function isForeign(value: string) {
-	let arr = Array.from({ length: value.length }).map((v, i) => value.charCodeAt(i))
-	return arr.filter(v => v >= 128).length > 0
-}
+// export function isForeign(value: string) {
+// 	let arr = Array.from({ length: value.length }).map((v, i) => value.charCodeAt(i))
+// 	return arr.filter(v => v >= 128).length > 0
+// }
 // export function isForeign(value: string) {
 // 	return value != _.deburr(value)
 // }

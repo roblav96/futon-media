@@ -24,20 +24,12 @@ const SKIPS = [
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) {
-		return // console.log(`❌ !magnet.xt ->`, result)
-	}
-	if (magnet.xt.length != 49) {
-		return // console.log(`❌ magnet.xt.length != 49 ->`, result)
-	}
+	if (!_.isString(magnet.xt)) return
+	if (magnet.xt.length != 49) return
 
 	result.name = result.name || magnet.dn
-	if (!result.name) {
-		return // console.log(`❌ !name ->`, result)
-	}
-	if (utils.isForeign(result.name)) {
-		return // console.log(`❌ isForeign name ->`, result.name)
-	}
+	if (!result.name) return
+	if (result.name != _.deburr(result.name)) return
 	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
 
 	let skips = utils.accuracy(`${item.main.title} ${item.E.t}`, SKIPS.join(' '))
@@ -56,7 +48,7 @@ export function results(result: scraper.Result, item: media.Item) {
 	}
 
 	if (item.movie) {
-		return true
+		// return true
 		try {
 			let years = splits[0].map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))

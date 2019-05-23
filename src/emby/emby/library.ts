@@ -52,7 +52,7 @@ process.nextTick(async () => {
 			})) as trakt.Result[]
 			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
 			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk(500))
+			items = items.filter(v => !v.isJunk())
 			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.slug).sort())
 			library.addQueue(items)
 		}
