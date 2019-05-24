@@ -56,7 +56,13 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	let cached = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => {
 		v.cached = cached[i]
-		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.25)
+		if (v.split.includes('fgt')) v.bytes = _.ceil(v.bytes * 1.5)
+		if (
+			utils.equals(v.name, `${item.title} ${item.movie ? item.year : ''}`.trim()) &&
+			v.providers.length == 1
+		) {
+			v.bytes = _.ceil(v.bytes * 0.5)
+		}
 		if (
 			v.split.includes('720p') ||
 			(v.split.includes('sdr') && (v.split.includes('8bit') || v.split.includes('10bit')))

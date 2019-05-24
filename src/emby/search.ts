@@ -50,7 +50,7 @@ rxSearch.subscribe(async query => {
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.short).sort())
 
 	// for (let item of items) {
-	// 	await item.setAliases()
+	// 	await item.setAll()
 	// }
 
 	emby.library.addQueue(items)
