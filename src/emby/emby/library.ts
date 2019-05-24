@@ -67,7 +67,9 @@ process.nextTick(async () => {
 				silent: true,
 			})) as RemoteSubtitle[]
 			if (subs[0]) {
-				await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`)
+				await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`, {
+					silent: true,
+				})
 			}
 		}
 	})
