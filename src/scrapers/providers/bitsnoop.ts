@@ -16,7 +16,7 @@ export class BitSnoop extends scraper.Scraper {
 	async getResults(slug: string) {
 		let $ = cheerio.load(await client.get('/search', { query: { q: slug } }))
 		let results = [] as scraper.Result[]
-		$('.rtable tr.row').each((i, el) => {
+		$('.rtable tr.row:has(a[href^="magnet:"])').each((i, el) => {
 			try {
 				let $el = $(el)
 				results.push({

@@ -11,7 +11,6 @@ export interface Torrent extends scraper.Result {}
 export class Torrent {
 	hash: string
 	split: string[]
-	boost = 1
 	cached = [] as debrids.Debrids[]
 
 	get age() {
@@ -23,9 +22,17 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
-	get min() {
-		let min = { realdebrid: 'RD', premiumize: 'PR' } as Record<debrids.Debrids, string>
-		return { cached: this.cached.map(v => min[v]).join(' ') }
+
+	boost = 1
+	boosts(episodes?: number) {
+		let bytes = this.bytes
+		if (_.isFinite(episodes) && this.packs) {
+			bytes = this.bytes / (episodes * this.packs)
+		}
+		return {
+			bytes: _.ceil(bytes * this.boost),
+			seeders: _.ceil(this.seeders * this.boost),
+		}
 	}
 
 	get short() {
@@ -47,23 +54,17 @@ export class Torrent {
 	}
 
 	constructor(result: scraper.Result) {
-		this.split = utils.toSlug(result.name, { toName: true, lowercase: true }).split(' ')
-
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 		magnet.xt = magnet.xt.toLowerCase()
 		magnet.dn = result.name
-
-		// magnet.tr = ((_.isString(magnet.tr) ? [magnet.tr] : magnet.tr) || []).map(tr => tr.trim())
-		// magnet.tr = magnet.tr.filter(tr => !trackers.BAD.includes(tr))
-		// magnet.tr = _.uniq(magnet.tr.concat(trackers.GOOD)).sort()
 		magnet.tr = trackers.GOOD
-
 		result.magnet = `magnet:?${qs.stringify(
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
 
 		_.merge(this, result)
+		this.split = utils.toSlug(result.name, { toName: true, lowercase: true }).split(' ')
 		this.hash = magneturi.decode(result.magnet).infoHash.toLowerCase()
 	}
 }

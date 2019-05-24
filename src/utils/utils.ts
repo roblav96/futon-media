@@ -74,8 +74,8 @@ export function includes(value: string, target: string) {
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
-	let values = _.uniq(_.split(toSlug(value, { toName: true, lowercase: true }), ' '))
-	let targets = _.uniq(_.split(toSlug(target, { toName: true, lowercase: true }), ' '))
+	let values = _.uniq(toSlug(value, { toName: true, lowercase: true }).split(' '))
+	let targets = _.uniq(toSlug(target, { toName: true, lowercase: true }).split(' '))
 	return targets.filter(v => !values.includes(v))
 }
 

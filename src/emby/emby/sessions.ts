@@ -24,6 +24,15 @@ export const sessions = {
 export class Session {
 	static UHDUsers = ['admin', 'dev', 'developer', 'robert']
 	static HDUsers = Session.UHDUsers.concat(['mom'])
+	get isUHD() {
+		return Session.UHDUsers.includes(this.UserName.toLowerCase())
+	}
+	get isHD() {
+		return Session.HDUsers.includes(this.UserName.toLowerCase())
+	}
+	isDevice(device: string) {
+		return utils.includes(`${this.Client} ${this.DeviceName}`, device)
+	}
 
 	get Codecs() {
 		let { audio, video } = { audio: '', video: '' }
@@ -55,11 +64,8 @@ export class Session {
 		return Codecs
 	}
 	get Channels() {
-		if (process.DEVELOPMENT) {
-			console.warn(`DEVELOPMENT Channels ->`, 8)
-			return 8
-		}
-		if (utils.includes(this.Client, 'Roku SG')) return 2
+		// if (process.DEVELOPMENT) return 8
+		if (this.Client == 'Roku SG') return 2
 		let Channels = [2]
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
 		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
@@ -77,18 +83,15 @@ export class Session {
 		return _.max(Channels)
 	}
 	get Quality(): emby.Quality {
-		if (process.DEVELOPMENT) {
-			console.warn(`DEVELOPMENT Quality ->`, 'UHD')
-			return 'UHD'
-		}
-		if (utils.includes(this.Client + this.DeviceName, 'mobile')) return 'SD'
+		// if (process.DEVELOPMENT) return 'UHD'
+		if (this.isDevice('mobile')) return 'SD'
 		if (this.Channels > 2) {
-			let user = this.UserName.toLowerCase()
-			if (Session.UHDUsers.includes(user)) return 'UHD'
-			if (Session.HDUsers.includes(user)) return 'HD'
+			if (this.isUHD) return 'UHD'
+			if (this.isHD) return 'HD'
 		}
 		return 'SD'
 	}
+
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}

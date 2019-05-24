@@ -11,7 +11,7 @@ import * as qs from 'query-string'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
-export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>) {
+export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	await item.setAll()
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
@@ -56,6 +56,8 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 	let cached = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => {
 		v.cached = cached[i]
+		if (v.split.includes('720p')) v.boost *= 0.25
+		if (!hd) return
 		if (v.split.includes('fgt')) v.boost *= 1.5
 		if (
 			utils.equals(v.name, `${item.title} ${item.movie ? item.year : ''}`.trim()) &&
@@ -66,18 +68,11 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		if (v.split.includes('8bit') || v.split.includes('10bit')) {
 			v.boost *= 0.5
 		}
-		if (v.split.includes('720p')) {
-			v.boost *= 0.25
-		}
 	})
 
-	torrents.sort((a, b) => b.bytes * b.boost - a.bytes * a.boost)
-	if (item.show) {
-		torrents.sort((a, b) => {
-			let asize = a.packs ? a.bytes / (item.S.e * a.packs) : a.bytes
-			let bsize = b.packs ? b.bytes / (item.S.e * b.packs) : b.bytes
-			return bsize * b.boost - asize * a.boost
-		})
+	torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
+	if (item.show && _.isFinite(item.S.e)) {
+		torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	}
 
 	return torrents

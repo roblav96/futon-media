@@ -77,7 +77,7 @@ async function getDebridStreamUrl(
 		item.use({ type: 'episode', episode })
 	}
 
-	let torrents = await scraper.scrapeAll(item)
+	let torrents = await scraper.scrapeAll(item, Quality.includes('HD'))
 
 	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
 	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))

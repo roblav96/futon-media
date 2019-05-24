@@ -159,13 +159,16 @@ export class Item {
 			silent: true,
 		})) as trakt.Alias[]
 		let aliases = response.filter(v => ['gb', 'us'].includes(v.country)).map(v => v.title)
-		aliases = aliases.filter(v => !utils.isForeign(v))
-		aliases = aliases.filter(v => !utils.equals(v, this.title))
-		aliases = aliases.filter(v => !utils.equals(v, this.slug))
-		aliases = aliases.filter(v => !utils.includes(v, this.year.toString()))
-		aliases = aliases.filter(v => utils.includes(v, this.title))
-		aliases = aliases.filter(v => utils.accuracy(v, '3d').length > 0)
-		this.aliases = _.uniq(aliases)
+		_.remove(aliases, v => {
+			if (utils.isForeign(v)) return true
+			if (utils.equals(v, this.title)) return true
+			if (utils.equals(v, this.slug)) return true
+			if (utils.includes(v, this.year.toString())) return true
+			if (utils.accuracy(v, '3d').length == 0) return true
+			if (!utils.includes(v, this.title)) return true
+			if (!utils.minify(v).startsWith(utils.minify(this.title))) return true
+		})
+		this.aliases = _.uniqWith(aliases, (a, b) => utils.minify(a) == utils.minify(b))
 		// if (this.aliases.length > 0) console.log(`aliases '${this.slug}' ->`, this.aliases)
 	}
 
