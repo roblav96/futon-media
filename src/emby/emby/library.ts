@@ -64,9 +64,10 @@ process.nextTick(async () => {
 			if (_.isArray(entry)) await db.del(entry[0])
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
 			let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
+				query: { IsPerfectMatch: 'false', IsForced: 'true' },
 				silent: true,
 			})) as RemoteSubtitle[]
-			if (subs[0]) {
+			if (subs && subs[0]) {
 				await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`, {
 					silent: true,
 				})
