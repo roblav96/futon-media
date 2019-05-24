@@ -66,22 +66,23 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		})) as Download
 		await utils.pTimeout(1000)
 		transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
+
 		let files = transfer.files.filter(v => {
 			if (v.path.toLowerCase().includes('rarbg.com.mp4')) return false
 			return utils.isVideo(v.path)
 		})
 		if (files.length == 0) {
 			console.warn(`RealDebrid files == 0 ->`, dn)
-			client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
+			client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
 			return false
 		}
 
 		await client
-			.post(`/torrents/selectFiles/${download.id}`, {
+			.post(`/torrents/selectFiles/${transfer.id}`, {
 				form: { files: files.map(v => v.id).join() },
 			})
 			.catch(error => {
-				client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
+				client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
 				return Promise.reject(error)
 			})
 		return true

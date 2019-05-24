@@ -70,12 +70,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		}
 	})
 
-	torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
-	if (item.show && _.isFinite(item.S.e)) {
-		torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	}
-
-	return torrents
+	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 }
 
 export interface Scraper {

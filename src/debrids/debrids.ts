@@ -30,7 +30,10 @@ export function download(torrents: torrent.Torrent[]) {
 				console.error(`RealDebrid download '${torrent.magnet}' -> %O`, error)
 				return false
 			})
-			if (success) console.log(`👍 download success ->`, `[${torrent.size}]`, torrent.name)
+			if (success) {
+				console.log(`👍 download success ->`, `[${torrent.size}]`, torrent.name)
+				return
+			}
 		}
 	})
 }
