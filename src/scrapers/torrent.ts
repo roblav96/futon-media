@@ -11,6 +11,7 @@ export interface Torrent extends scraper.Result {}
 export class Torrent {
 	hash: string
 	split: string[]
+	boost = 1
 	cached = [] as debrids.Debrids[]
 
 	get age() {

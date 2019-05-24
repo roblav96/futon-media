@@ -108,7 +108,9 @@ async function getDebridStreamUrl(
 	torrents = torrents.filter(({ cached }) => cached.length > 0)
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 
-	if (Quality == 'SD' || Channels == 2) torrents.sort((a, b) => b.seeders - a.seeders)
+	if (Quality == 'SD' || Channels == 2) {
+		torrents.sort((a, b) => b.seeders * b.boost - a.seeders * a.boost)
+	}
 
 	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
 	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.short))
