@@ -63,12 +63,12 @@ export async function scrapeAll(...[item]: ConstructorParameters<typeof Scraper>
 		) {
 			v.bytes = _.ceil(v.bytes * 0.5)
 		}
-		if (
-			v.split.includes('720p') ||
-			(v.split.includes('sdr') && (v.split.includes('8bit') || v.split.includes('10bit')))
-		) {
+		if (v.split.includes('8bit') || v.split.includes('10bit')) {
+			v.bytes = _.ceil(v.bytes * 0.5)
+		}
+		if (v.split.includes('720p')) {
 			v.seeders = _.ceil(v.seeders * 0.25)
-			v.bytes = _.ceil(v.bytes * 0.75)
+			v.bytes = _.ceil(v.bytes * 0.5)
 		}
 	})
 
