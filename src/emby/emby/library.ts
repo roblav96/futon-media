@@ -63,6 +63,12 @@ process.nextTick(async () => {
 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
 			if (_.isArray(entry)) await db.del(entry[0])
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+			let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
+				silent: true,
+			})) as RemoteSubtitle[]
+			if (subs[0]) {
+				await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`)
+			}
 		}
 	})
 })
@@ -605,4 +611,19 @@ export interface ScheduledTaskEnded {
 export interface RefreshProgress {
 	ItemId: string
 	Progress: string
+}
+
+export interface RemoteSubtitle {
+	Author: string
+	Comment: string
+	CommunityRating: number
+	DateCreated: string
+	DownloadCount: number
+	Format: string
+	Id: string
+	IsForced: boolean
+	IsHashMatch: boolean
+	Name: string
+	ProviderName: string
+	ThreeLetterISOLanguageName: string
 }
