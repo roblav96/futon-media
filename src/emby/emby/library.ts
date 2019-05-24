@@ -53,12 +53,12 @@ process.nextTick(async () => {
 			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
 			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk())
-			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.slug).sort())
+			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.short).sort())
 			library.addQueue(items)
 		}
 		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
 			let item = await library.item(Item.Path, Item.Type)
-			console.log(`rxItem ${Item.Type} ->`, item.slug)
+			console.log(`rxItem ${Item.Type} ->`, item.short)
 			library.addQueue([item])
 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
 			if (_.isArray(entry)) await db.del(entry[0])
@@ -230,7 +230,7 @@ export const library = {
 			let seasons = (await trakt.client
 				.get(`/shows/${item.traktId}/seasons`, { silent: true })
 				.catch(error => {
-					console.error(`library add '${item.slug}' -> %O`, error)
+					console.error(`library add '${item.short}' -> %O`, error)
 					return []
 				})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
