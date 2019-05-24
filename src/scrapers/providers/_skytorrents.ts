@@ -26,7 +26,7 @@ export class SkyTorrents extends scraper.Scraper {
 				results.push({
 					bytes: utils.toBytes($el.find('td:nth-child(2)').text()),
 					name: $el.find('td a:nth-of-type(1)').text(),
-					magnet: $el.find('a[href^="magnet:?xt"]').attr('href'),
+					magnet: $el.find('a[href^="magnet:?"]').attr('href'),
 					seeders: utils.parseInt($el.find('td:nth-child(5)').text()),
 					stamp: utils.toStamp($el.find('td:nth-child(4)').text()),
 				} as scraper.Result)

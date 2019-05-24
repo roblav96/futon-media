@@ -22,6 +22,11 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
+	get minify() {
+		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		let minify = qs.stringify({ dn: magnet.dn, xt: magnet.xt }, { encode: false, sort: false })
+		return `magnet:?${minify}`
+	}
 
 	boost = 1
 	boosts(episodes?: number) {
@@ -40,12 +45,10 @@ export class Torrent {
 		return `[${this.size}] [${this.seeders}] ${cached}${this.name} (${this.providers})`
 	}
 	get json() {
-		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
-		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return utils.compact({
 			age: this.age,
 			cached: this.cached.join(', '),
-			magnet: `magnet:?${minify}`,
+			magnet: this.minify,
 			name: this.name,
 			packs: this.packs,
 			providers: this.providers.join(', '),
@@ -60,7 +63,7 @@ export class Torrent {
 		magnet.dn = result.name
 		magnet.tr = trackers.GOOD
 		result.magnet = `magnet:?${qs.stringify(
-			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
+			{ dn: magnet.dn, xt: magnet.xt, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
 

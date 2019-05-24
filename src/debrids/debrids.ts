@@ -149,7 +149,7 @@ export async function getStreamUrl(
 			let audios = probe.streams.filter(({ codec_type, tags }) => {
 				if (codec_type != 'audio') return false
 				if (!tags) return true
-				if (tags.title && tags.title.includes('commentary')) return false
+				if (tags.title && utils.includes(tags.title, 'commentary')) return false
 				if (!tags.language) return true
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})

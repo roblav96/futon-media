@@ -29,7 +29,7 @@ export class Pirateiro extends scraper.Scraper {
 				results.push({
 					bytes: utils.toBytes($el.find(`td:nth-of-type(4)`).text()),
 					name: $el.find(`td:nth-of-type(1) b`).text(),
-					magnet: $el.find(`td:nth-of-type(2) a[href^="magnet:"]`).attr('href'),
+					magnet: $el.find(`td:nth-of-type(2) a[href^="magnet:?"]`).attr('href'),
 					seeders: utils.parseInt($el.find(`td:nth-of-type(5)`).text()),
 					stamp: utils.toStamp($el.find(`td:nth-of-type(3)`).text()),
 				} as scraper.Result)

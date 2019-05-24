@@ -17,13 +17,13 @@ export class Magnet4You extends scraper.Scraper {
 			await client.get(`/search.php`, { query: { s: `*${slug}*`, sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
-		$(`div[id^="profile"]:has(a[href^="magnet:"])`).each((i, el) => {
+		$(`div[id^="profile"]:has(a[href^="magnet:?"])`).each((i, el) => {
 			try {
 				let $el = $(el)
 				results.push({
 					bytes: utils.toBytes($el.find(`td:nth-of-type(3)`).text()),
 					name: $el.find(`td:nth-of-type(1) a:nth-of-type(2)`).text(),
-					magnet: $el.find(`td:nth-of-type(1) a[href^="magnet:"]`).attr('href'),
+					magnet: $el.find(`td:nth-of-type(1) a[href^="magnet:?"]`).attr('href'),
 					seeders: utils.parseInt($el.find(`td:nth-of-type(5)`).text()),
 					stamp: utils.toStamp($el.find(`td:nth-of-type(2)`).text()),
 				} as scraper.Result)

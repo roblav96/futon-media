@@ -21,13 +21,13 @@ export class BtBit extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(await client.get(`/list/${slug}/1-${sort}-2.html`))
 		let results = [] as scraper.Result[]
-		$('.rs:has(a[href^="magnet:?xt"])').each((i, el) => {
+		$('.rs:has(a[href^="magnet:?"])').each((i, el) => {
 			try {
 				let $el = $(el)
 				results.push({
 					bytes: utils.toBytes($el.find('.sbar span:nth-of-type(4) b').text()),
 					name: _.trim($el.find('.title').text()),
-					magnet: $el.find('.sbar a[href^="magnet:?xt"]').attr('href'),
+					magnet: $el.find('.sbar a[href^="magnet:?"]').attr('href'),
 					seeders: _.ceil(
 						utils.parseInt($el.find('.sbar span:nth-of-type(6) b').text()) / 100
 					),

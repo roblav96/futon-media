@@ -26,7 +26,7 @@ export class ExtraTorrent extends scraper.Scraper {
 				let result = {
 					bytes: utils.toBytes($el.find(`.tli + td + td`).text()),
 					name: $el.find(`.tli > a`).text(),
-					magnet: _.trim($el.find(`a[href^="magnet:"]`).attr('href')),
+					magnet: _.trim($el.find(`a[href^="magnet:?"]`).attr('href')),
 					seeders: utils.parseInt($el.find(`.sn`).text()),
 				} as scraper.Result
 				let day = dayjs(new Date(added))
