@@ -36,7 +36,8 @@ export class Torrent {
 	}
 
 	get short() {
-		return `[${this.size}] [${this.seeders}] ${this.name} (${this.providers})`
+		let cached = this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
+		return `[${this.size}] [${this.seeders}] ${cached}${this.name} (${this.providers})`
 	}
 	get json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery

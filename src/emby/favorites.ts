@@ -63,21 +63,22 @@ async function download(item: media.Item) {
 	console.info(`download '${slug}' ->`)
 	let torrents = await scraper.scrapeAll(item)
 
-	if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
-	else console.log(`download torrents ->`, torrents.length, torrents.map(v => v.short))
+	// if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
+	// else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	let index = torrents.findIndex(({ cached }) => cached.length > 0)
 	if (index == -1) console.warn(`download best cached ->`, 'index == -1')
 	else console.log(`download best cached ->`, torrents[index].short)
 
+	torrents = torrents.filter(v => v.cached.length > 0 || v.seeders >= 3)
 	// torrents = torrents.filter(v => v.cached.length == 0 && v.seeders >= 3)
 	// torrents = torrents.slice(0, index)
 	// torrents = torrents.filter(
 	// 	({ seeders }) => seeders >= _.floor(_.clamp(item.main.votes * 0.1, 1, 5))
 	// )
 
-	// if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
-	// else console.log(`download torrents ->`, torrents.map(v => v.short))
+	if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
+	else console.log(`download torrents ->`, torrents.map(v => v.short))
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
 	await debrids.download(torrents)
