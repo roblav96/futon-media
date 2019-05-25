@@ -60,7 +60,7 @@ export class Session {
 	}
 	get Channels() {
 		// if (process.DEVELOPMENT) return 8
-		if (this.Client == 'Roku SG') return 2
+		if (this.DeviceName == 'Roku Device' && this.Client == 'Roku SG') return 2
 		let Channels = [2]
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
 		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
