@@ -73,9 +73,9 @@ process.nextTick(async () => {
 		Rx.op.filter(({ Item }) => {
 			return ['Movie', 'Episode'].includes(Item.Type)
 		}),
-		Rx.op.distinctUntilChanged((a, b) => a.ItemId == b.ItemId)
+		Rx.op.distinctUntilChanged((a, b) => a.Item.Id == b.Item.Id)
 	)
-	rxSubtitles.subscribe(async ({ Item, ItemId, UserId }) => {
+	rxSubtitles.subscribe(async ({ Item }) => {
 		let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
 			query: { IsPerfectMatch: 'false', IsForced: 'true' },
 			silent: true,
