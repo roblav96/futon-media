@@ -27,9 +27,7 @@ process.nextTick(async () => {
 		Rx.op.debounceTime(100),
 		Rx.op.switchMap(async ({ ItemId, UserId }) => {
 			let Item = await library.byItemId(ItemId)
-			if (Item && Item.SeriesId) {
-				ItemId = Item.SeriesId
-			}
+			if (Item && Item.SeriesId) ItemId = Item.SeriesId
 			return { ItemId, UserId, Item }
 		}),
 		Rx.op.filter(({ Item }) => {
@@ -40,7 +38,7 @@ process.nextTick(async () => {
 			return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
 		})
 	)
-	rxItem.subscribe(async ({ Item, UserId }) => {
+	rxItem.subscribe(async ({ Item, ItemId, UserId }) => {
 		if (Item.Type == 'Person') {
 			let fulls = ((await tmdb.client.get('/search/person', {
 				query: { query: Item.Name },
@@ -64,6 +62,8 @@ process.nextTick(async () => {
 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
 			if (_.isArray(entry)) await db.del(entry[0])
 			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+		}
+		if (['Movie', 'Episode'].includes(Item.Type)) {
 			let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
 				query: { IsPerfectMatch: 'false', IsForced: 'true' },
 				silent: true,
@@ -74,6 +74,18 @@ process.nextTick(async () => {
 				})
 			}
 		}
+		// if (['Series', 'Season', 'Episode'].includes(Item.Type)) {
+		// 	await emby.client.post(`/Items/${ItemId}/Refresh`, {
+		// 		query: {
+		// 			ImageRefreshMode: 'FullRefresh',
+		// 			MetadataRefreshMode: 'FullRefresh',
+		// 			Recursive: 'true',
+		// 			ReplaceAllImages: 'false',
+		// 			ReplaceAllMetadata: 'false',
+		// 		},
+		// 		silent: true,
+		// 	})
+		// }
 	})
 })
 
