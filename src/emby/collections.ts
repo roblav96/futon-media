@@ -46,7 +46,7 @@ async function buildSchemas() {
 				return {
 					all: schema[2],
 					limit: schema[2] ? 999 : i == 0 ? 100 : 50,
-					name: schema[0],
+					name: `${['M', 'T'][i]} ${schema[0]}`,
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
 				} as CollectionSchema
@@ -111,15 +111,14 @@ async function syncCollections() {
 			// 'MARVEL Cinematic Universe',
 			// 'M Most Played Monthly',
 			// 'M Popular',
-			// 'M Watchlist',
+			'M Watchlist',
 			// 'Pixar Collection',
 			// 'Star Wars Timeline',
 			// 'T Most Played Monthly',
 			// 'T Popular',
-			// 'T Watchlist',
+			'T Watchlist',
 			// 'Walt Disney Animated feature films',
 			// 'Worlds of DC',
-			'Watchlist',
 		]
 		schemas = schemas.filter(v => lists.includes(v.name))
 		// console.log(`schemas ->`, schemas)
@@ -128,22 +127,7 @@ async function syncCollections() {
 	if (!process.DEVELOPMENT) console.log(`syncCollections schemas ->`, schemas.length)
 	else console.log(`syncCollections schemas ->`, schemas)
 
-	let Playlists = await emby.library.Items({ IncludeItemTypes: ['Playlist'] })
-	for (let Playlist of Playlists) {
-		await emby.client.delete(`/Items/${Playlist.Id}`, {
-			query: { api_key: emby.env.ADMIN_KEY },
-		})
-		if (process.env.EMBY_DATA) {
-			await fs.remove(Playlist.Path)
-		}
-	}
-	if (process.env.EMBY_DATA) {
-		let Updates = Playlists.map(v => {
-			return { Path: v.Path, UpdateType: 'Deleted' } as emby.MediaUpdated
-		})
-		await emby.client.post('/Library/Media/Updated', { body: { Updates } })
-		await emby.library.refresh()
-	}
+	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 
 	let mIds = new Map<string, string>()
 	for (let schema of schemas) {
@@ -158,7 +142,7 @@ async function syncCollections() {
 			if (!v[schema.type] && schema.type) v = { [schema.type]: v } as any
 			return v
 		})
-		results = trakt.uniq(results.filter(v => v.movie || v.show))
+		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))
 		schema.items = results.map(v => new media.Item(v))
 		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(25) : !v.isJunk()))
 		if (schema.items.length == 0) {
@@ -175,16 +159,17 @@ async function syncCollections() {
 			})
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
-		schema.items = schema.items.filter(v => v.movie)
-		if (schema.items.length == 0) continue
-
-		if (schema.all) schema.items.reverse()
-		else schema.items.sort((a, b) => b.released.valueOf() - a.released.valueOf())
-
 		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).filter(Boolean)
-		await emby.client.post('/Playlists', {
-			query: { Name: schema.name, Ids: Ids.join(), MediaType: 'Video' },
-		})
+		let Collection = Collections.find(v => v.Name == schema.name)
+		if (Collection) {
+			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
+				query: { Ids: Ids.join() },
+			})
+		} else {
+			await emby.client.post('/Collections', {
+				query: { Ids: Ids.join(), Name: schema.name },
+			})
+		}
 	}
 
 	await emby.library.refresh()
