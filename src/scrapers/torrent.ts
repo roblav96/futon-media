@@ -24,7 +24,7 @@ export class Torrent {
 	}
 	get minify() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
-		let minify = qs.stringify({ dn: magnet.dn, xt: magnet.xt }, { encode: false, sort: false })
+		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return `magnet:?${minify}`
 	}
 
@@ -63,7 +63,7 @@ export class Torrent {
 		magnet.dn = result.name
 		magnet.tr = trackers.GOOD
 		result.magnet = `magnet:?${qs.stringify(
-			{ dn: magnet.dn, xt: magnet.xt, tr: magnet.tr },
+			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
 

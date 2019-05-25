@@ -1,5 +1,4 @@
 import * as _ from 'lodash'
-import * as deepmerge from 'deepmerge'
 import * as emby from '@/emby/emby'
 
 process.nextTick(async () => {

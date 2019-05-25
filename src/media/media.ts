@@ -102,6 +102,7 @@ export class Item {
 	}
 
 	get isDaily() {
+		if (this.movie) return false
 		return this.main.genres.filter(v => ['news', 'reality', 'talk-show'].includes(v)).length > 0
 	}
 

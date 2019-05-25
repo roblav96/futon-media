@@ -18,6 +18,7 @@ process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
 	await library.setFolders()
+	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
@@ -93,6 +94,19 @@ export const library = {
 		library.folders.shows = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
 	},
 
+	async setCollections() {
+		let Roots = await library.Items({ IncludeItemTypes: ['Folder'] })
+		let Root = Roots.find(v => v.ParentId == '1' && v.Name == 'collections')
+		let Folders = await library.Items({
+			IncludeItemTypes: ['BoxSet'],
+			ParentId: Root.Id,
+		})
+		if (Folders.length > 0) return
+		for (let Name of ['Movie Collections', 'Movie Lists', 'TV Show Lists']) {
+			await emby.client.post('/Collections', { query: { Name } })
+		}
+	},
+
 	async setLibraryMonitorDelay() {
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			query: { api_key: emby.env.ADMIN_KEY },
@@ -115,7 +129,7 @@ export const library = {
 			Filters: string
 			Ids: string[]
 			IncludeItemTypes: string[]
-			ParentId: number
+			ParentId: string
 			Path: string
 			Recursive: boolean
 			SortBy: string
