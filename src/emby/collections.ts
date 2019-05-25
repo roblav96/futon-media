@@ -47,7 +47,6 @@ async function buildSchemas() {
 					all: schema[2],
 					limit: schema[2] ? 999 : i == 0 ? 100 : 50,
 					name: schema[0],
-					// name: `${['M', 'T'][i]} ${schema[0]}`,
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
 				} as CollectionSchema
@@ -129,23 +128,22 @@ async function syncCollections() {
 	if (!process.DEVELOPMENT) console.log(`syncCollections schemas ->`, schemas.length)
 	else console.log(`syncCollections schemas ->`, schemas)
 
-	let Roots = await emby.library.Items({ IncludeItemTypes: ['Folder'] })
-	let Root = Roots.find(v => v.ParentId == '1' && v.Name == 'collections')
-	let Folders = await emby.library.Items({
-		IncludeItemTypes: ['BoxSet'],
-		ParentId: Root.Id,
-	})
-	console.log(`Folders ->`, Folders)
-	// let MovieCollections = Folders.find(v => v.Name == 'Movie Collections')
-	let Lists = {
-		movie: Folders.find(v => v.Name == 'Movie Lists'),
-		show: Folders.find(v => v.Name == 'TV Show Lists'),
-	} as Record<string, emby.Item>
-	console.log(`Lists ->`, Lists)
-	let BoxSets = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	console.log(`BoxSets ->`, BoxSets.map(v => v.ParentId))
-	BoxSets = BoxSets.filter(v => !Folders.map(v => v.Id).includes(v.Id))
-	console.log(`BoxSets ->`, BoxSets)
+	let Playlists = await emby.library.Items({ IncludeItemTypes: ['Playlist'] })
+	for (let Playlist of Playlists) {
+		await emby.client.delete(`/Items/${Playlist.Id}`, {
+			query: { api_key: emby.env.ADMIN_KEY },
+		})
+		if (process.env.EMBY_DATA) {
+			await fs.remove(Playlist.Path)
+		}
+	}
+	if (process.env.EMBY_DATA) {
+		let Updates = Playlists.map(v => {
+			return { Path: v.Path, UpdateType: 'Deleted' } as emby.MediaUpdated
+		})
+		await emby.client.post('/Library/Media/Updated', { body: { Updates } })
+		await emby.library.refresh()
+	}
 
 	let mIds = new Map<string, string>()
 	for (let schema of schemas) {
@@ -162,7 +160,7 @@ async function syncCollections() {
 		})
 		results = trakt.uniq(results.filter(v => v.movie || v.show))
 		schema.items = results.map(v => new media.Item(v))
-		_.remove(schema.items, v => (schema.all ? v.isJunk(25) : v.isJunk()))
+		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(25) : !v.isJunk()))
 		if (schema.items.length == 0) {
 			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
 			continue
@@ -177,37 +175,16 @@ async function syncCollections() {
 			})
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
-		for (let [type, items] of Object.entries(_.groupBy(schema.items, 'type'))) {
-			let Ids = items.map(item => mIds.get(emby.library.toStrmPath(item)))
-			Ids = Ids.filter(Boolean)
-			if (Ids.length == 0) continue
-			let List = Lists[type]
-			let BoxSet = BoxSets.find(
-				v => v.ParentId == List.Id && utils.equals(v.Name, schema.name)
-			)
-			console.log(`BoxSet ->`, BoxSet)
-			if (BoxSet) {
-				await emby.client.post(`/Collections/${BoxSet.Id}/Items`, {
-					query: { Ids: Ids.join() },
-				})
-			} else {
-				let { Id } = (await emby.client.post('/Collections', {
-					query: {
-						Ids: Ids.join(),
-						ParentId: List.Id,
-						Name: schema.name,
-						IsLocked: 'true',
-					},
-				})) as { Id: string }
-				await emby.client.post(`/Collections/${List.Id}/Items`, { query: { Ids: Id } })
-				// let Item = await emby.library.byItemId(Id)
-				// Item.ParentId = List.Id
-				// await emby.client.post(`/Items/${Item.Id}`, {
-				// 	body: Item,
-				// 	query: { api_key: emby.env.ADMIN_KEY },
-				// })
-			}
-		}
+		schema.items = schema.items.filter(v => v.movie)
+		if (schema.items.length == 0) continue
+
+		if (schema.all) schema.items.reverse()
+		else schema.items.sort((a, b) => b.released.valueOf() - a.released.valueOf())
+
+		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).filter(Boolean)
+		await emby.client.post('/Playlists', {
+			query: { Name: schema.name, Ids: Ids.join(), MediaType: 'Video' },
+		})
 	}
 
 	await emby.library.refresh()
