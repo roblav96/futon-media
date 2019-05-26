@@ -23,10 +23,10 @@ export const sessions = {
 
 export class Session {
 	static UHDUsers = ['admin', 'dev', 'developer', 'robert']
-	static HDUsers = Session.UHDUsers.concat(['mom'])
 	get isUHD() {
 		return Session.UHDUsers.includes(this.UserName.toLowerCase())
 	}
+	static HDUsers = Session.UHDUsers.concat(['mom'])
 	get isHD() {
 		return Session.HDUsers.includes(this.UserName.toLowerCase())
 	}

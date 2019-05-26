@@ -18,7 +18,7 @@ process.nextTick(() => {
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId }) => {
 		let Session = await emby.sessions.byUserId(UserId)
-		if (!emby.Session.HDUsers.includes(Session.UserName.toLowerCase())) return
+		if (!Session.isHD) return
 
 		let Item = await emby.library.byItemId(ItemId)
 		if (!Item || !['Movie', 'Series', 'Episode'].includes(Item.Type)) return
@@ -31,6 +31,7 @@ process.nextTick(() => {
 		}
 
 		let item = await emby.library.item(Item.Path, Item.Type)
+		if (item.isDaily) return
 
 		if (Item.Type == 'Movie') {
 			queue.add(() => download(item))
@@ -58,7 +59,6 @@ process.nextTick(() => {
 
 let queue = new pQueue({ concurrency: 1 })
 async function download(item: media.Item) {
-	if (item.isDaily) return
 	let slug = `${item.slug} ${item.S.z} ${item.E.z}`.trim()
 	console.info(`download '${slug}' ->`)
 	let torrents = await scraper.scrapeAll(item)
@@ -70,15 +70,17 @@ async function download(item: media.Item) {
 	if (index == -1) console.warn(`download best cached ->`, 'index == -1')
 	else console.log(`download best cached ->`, torrents[index].short)
 
-	torrents = torrents.filter(v => v.cached.length > 0 || v.seeders >= 3)
+	torrents = torrents.filter(
+		v => v.bytes > utils.toBytes('5 GB') && (v.cached.length > 0 || v.seeders >= 3)
+	)
 	// torrents = torrents.filter(v => v.cached.length == 0 && v.seeders >= 3)
 	// torrents = torrents.slice(0, index)
 	// torrents = torrents.filter(
 	// 	({ seeders }) => seeders >= _.floor(_.clamp(item.main.votes * 0.1, 1, 5))
 	// )
 
-	if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
-	else console.log(`download torrents ->`, torrents.map(v => v.short))
+	// if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
+	console.log(`download torrents ->`, torrents.map(v => v.short))
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
 	await debrids.download(torrents)
