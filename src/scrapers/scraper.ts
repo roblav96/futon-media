@@ -60,7 +60,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			v.boost *= 0.25
 		}
 		if (!hd) return
-		if (v.split.includes('fgt')) v.boost *= 2
+		if (v.split.includes('fgt')) v.boost *= 1.5
 		if (v.split.includes('grym')) v.boost *= 1.5
 		if (v.split.includes('remux')) v.boost *= 1.5
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5

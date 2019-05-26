@@ -44,7 +44,7 @@ export function results(result: scraper.Result, item: media.Item) {
 			// let titles = item.titles.map(title => item.years.map(year => `${title} ${year}`)).flat()
 			let titles = item.years.map(year => `${item.title} ${year}`)
 			if (!item.isPopular()) titles.unshift(item.title)
-			titles = _.uniq(titles.map(v => utils.toSlug(v)))
+			titles = _.uniq(titles.map(v => utils.toSlug(v, { toName: true })))
 			if (titles.filter(v => utils.leven(slug, v) == 0).length == 0) {
 				return // console.log(`❌ name leven '${titles}' ->`, result.name, providers)
 			}
