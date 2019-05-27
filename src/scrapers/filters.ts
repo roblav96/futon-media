@@ -19,6 +19,7 @@ const SKIPS = [
 	'latino',
 	'sample',
 	'trailer',
+	'xxx',
 ]
 
 export function results(result: scraper.Result, item: media.Item) {

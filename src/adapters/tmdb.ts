@@ -35,7 +35,7 @@ export async function search(query: string, type = 'multi' as media.MainContentT
 	let fulls = (response.results || []).filter(v => {
 		return (
 			['movie', 'tv'].includes(v.media_type) &&
-			(v.original_language == 'en' && !v.adult && v.vote_count >= 100)
+			(v.original_language == 'en' && !v.adult && v.popularity >= 1)
 		)
 	})
 	let results = await pAll(fulls.map(result => () => toTrakt(result)), { concurrency: 1 })

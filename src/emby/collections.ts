@@ -149,7 +149,7 @@ async function syncCollections() {
 			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
 			continue
 		}
-		console.log(`schema '${schema.name}' ->`, schema.items.length)
+		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, schema.items.length)
 
 		let Items = await emby.library
 			.addAll(schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item))))
@@ -164,10 +164,12 @@ async function syncCollections() {
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
 				query: { Ids: Ids.join() },
+				silent: !process.DEVELOPMENT,
 			})
 		} else {
 			await emby.client.post('/Collections', {
 				query: { Ids: Ids.join(), Name: schema.name },
+				silent: !process.DEVELOPMENT,
 			})
 		}
 	}

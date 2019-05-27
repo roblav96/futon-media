@@ -17,8 +17,10 @@ export const rxSearch = emby.rxHttp.pipe(
 )
 
 rxSearch.subscribe(async query => {
-	let results = (await trakt.client.get(`/search/movie,show,person`, {
-		query: { query, fields: 'title,aliases,name', limit: 100 },
+	let types = query.includes(' ') ? 'movie,show,person' : 'movie,show'
+	let fields = query.includes(' ') ? 'title,aliases,name' : 'title,aliases'
+	let results = (await trakt.client.get(`/search/${types}`, {
+		query: { query, fields, limit: 100 },
 	})) as trakt.Result[]
 
 	let person = trakt.person(results, query)
@@ -34,13 +36,13 @@ rxSearch.subscribe(async query => {
 	results = trakt.uniq(results.filter(v => !v.person))
 	let items = results.map(v => new media.Item(v))
 	items = items.filter(v => {
-		if (v.isJunk(25)) return false
+		if (v.isJunk(5)) return false
 		if (utils.equals(v.slug, query)) {
-			console.log(`equals '${v.slug}' ${v.main.votes} ->`, 25)
-			return !v.isJunk(25)
+			console.warn(`equals '${v.slug}' ->`, v.main.votes)
+			return !v.isJunk(5)
 		}
 		if (utils.accuracy(v.title, query).length == 0) {
-			let votes = [750, 500, 250, 100]
+			let votes = [500, 250, 100, 50, 25]
 			let index = _.clamp(query.split(' ').length - 1, 0, votes.length - 1)
 			console.log(`accuracy '${v.short}' ->`, v.main.votes, '/', votes[index])
 			return !v.isJunk(votes[index])
@@ -66,7 +68,7 @@ async function toTmdbResults(query: string, tmids: number[], person: trakt.Perso
 		if (v.media_type == 'person') return !!v.profile_path
 		return (
 			['movie', 'tv'].includes(v.media_type) &&
-			(v.original_language == 'en' && !v.adult && v.vote_count >= 50)
+			(v.original_language == 'en' && !v.adult && v.popularity >= 1)
 		)
 	})
 	fulls.sort((a, b) => b.popularity - a.popularity)
@@ -85,7 +87,7 @@ async function toTmdbResults(query: string, tmids: number[], person: trakt.Perso
 		results.push(...(await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })))
 	}
 
-	return results
+	return _.compact(results)
 }
 
 async function toListsResults(query: string) {

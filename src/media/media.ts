@@ -67,10 +67,9 @@ export class Item {
 		return NaN
 	}
 	get released() {
-		let released = new Date(new Date().setFullYear(this.year))
-		if (_.has(this.movie, 'released')) released = new Date(this.movie.released)
-		if (_.has(this.show, 'first_aired')) released = new Date(this.show.first_aired)
-		return released
+		if (_.has(this.movie, 'released')) return new Date(this.movie.released)
+		if (_.has(this.show, 'first_aired')) return new Date(this.show.first_aired)
+		return new Date(new Date().setFullYear(this.year))
 	}
 	get runtime() {
 		if (_.has(this.movie, 'runtime')) return this.movie.runtime

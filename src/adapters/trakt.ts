@@ -52,7 +52,7 @@ export function person(results: Result[], name: string) {
 	results = results.filter(v => {
 		return (
 			v.person &&
-			utils.same(v.person.name, name) &&
+			utils.equals(v.person.name, name) &&
 			_.values(v.person).filter(Boolean).length > 3
 		)
 	})
