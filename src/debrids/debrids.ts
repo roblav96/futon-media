@@ -57,7 +57,7 @@ export async function getStreamUrl(
 			if (!files) continue
 			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
 			if (files.length == 0) {
-				console.warn(`!files ->`, torrent.name)
+				console.warn(`!files ->`, torrent.short)
 				next = true
 				continue
 			}
@@ -134,14 +134,14 @@ export async function getStreamUrl(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (videos.length == 0) {
-				console.warn(`probe videos.length == 0 ->`, torrent.name)
+				console.warn(`probe videos.length == 0 ->`, torrent.short)
 				next = true
 				continue
 			}
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
 			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
 			if (_.size(codecs.video) > 0 && !codecs.video.includes(videos[0].codec_name)) {
-				console.warn(`probe !codecs.video ->`, torrent.name, videos[0].codec_name)
+				console.warn(`probe !codecs.video ->`, torrent.short, videos[0].codec_name)
 				next = true
 				continue
 			}
@@ -154,14 +154,14 @@ export async function getStreamUrl(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (audios.length == 0) {
-				console.warn(`probe audios.length == 0 ->`, torrent.name)
+				console.warn(`probe audios.length == 0 ->`, torrent.short)
 				next = true
 				continue
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
 			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
 			if (!audios.find(v => v.channels <= channels)) {
-				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
+				console.warn(`probe !channels ->`, torrent.short, audios.map(v => v.channels))
 				next = true
 				continue
 			}
@@ -169,7 +169,7 @@ export async function getStreamUrl(
 				_.size(codecs.audio) > 0 &&
 				!audios.find(v => codecs.audio.includes(v.codec_name))
 			) {
-				console.warn(`probe !codecs.audio ->`, torrent.name, audios.map(v => v.codec_name))
+				console.warn(`probe !codecs.audio ->`, torrent.short, audios.map(v => v.codec_name))
 				next = true
 				continue
 			}

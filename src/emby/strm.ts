@@ -79,24 +79,24 @@ async function getDebridStreamUrl(
 
 	let torrents = await scraper.scrapeAll(item, Quality.includes('HD'))
 
-	if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
-	else console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))
+	// if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
+	console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	if (Quality.includes('HD') && Channels >= 6 && !process.DEVELOPMENT) {
-		let index = torrents.findIndex(({ cached }) => cached.length > 0)
-		let putios = torrents.slice(0, index)
-		putios = putios.filter(({ seeders }) => seeders >= 3)
-		putios = putios.slice(0, 10)
-		if (putios.length > 0) {
-			// if (item.movie) emitter.once(traktId, () => debrids.download(putios))
-			let cached = await putio.Putio.cached(putios.map(v => v.magnet))
-			cached.forEach(({ magnet }) => {
-				let torrent = torrents.find(v => v.magnet == magnet)
-				torrent.cached.push('putio')
-				console.warn(`Putio cached ->`, torrent.short)
-			})
-		}
-	}
+	// if (Quality.includes('HD') && Channels >= 6 && !process.DEVELOPMENT) {
+	// 	let index = torrents.findIndex(({ cached }) => cached.length > 0)
+	// 	let putios = torrents.slice(0, index)
+	// 	putios = putios.filter(({ seeders }) => seeders >= 3)
+	// 	putios = putios.slice(0, 10)
+	// 	if (putios.length > 0) {
+	// 		// if (item.movie) emitter.once(traktId, () => debrids.download(putios))
+	// 		let cached = await putio.Putio.cached(putios.map(v => v.magnet))
+	// 		cached.forEach(({ magnet }) => {
+	// 			let torrent = torrents.find(v => v.magnet == magnet)
+	// 			torrent.cached.push('putio')
+	// 			console.warn(`Putio cached ->`, torrent.short)
+	// 		})
+	// 	}
+	// }
 
 	torrents = torrents.filter(({ split }) => {
 		if (split.includes('2160p') || split.includes('uhd') || split.includes('4k')) {
@@ -112,8 +112,8 @@ async function getDebridStreamUrl(
 		torrents.sort((a, b) => b.seeders * b.boost - a.seeders * a.boost)
 	}
 
-	if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
-	else console.log(`torrents ->`, torrents.length, torrents.map(v => v.short))
+	// if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
+	console.log(`torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)

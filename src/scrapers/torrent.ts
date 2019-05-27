@@ -41,8 +41,9 @@ export class Torrent {
 	}
 
 	get short() {
-		let cached = this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
-		return `[${this.size}] [${this.seeders}] ${cached}${this.name} (${this.providers})`
+		return `[${this.boost.toFixed(1)}] [${this.size}] [${this.seeders}] ${
+			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
+		}${this.name} (${this.providers})`
 	}
 	get json() {
 		return utils.compact({
