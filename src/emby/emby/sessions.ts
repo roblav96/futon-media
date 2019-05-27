@@ -49,7 +49,7 @@ export class Session {
 		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
 		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
 		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
-		return {
+		let Codecs = {
 			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)).map(v =>
 				v.startsWith('-') ? utils.minify(v) : v
 			),
@@ -57,6 +57,11 @@ export class Session {
 				v.startsWith('-') ? utils.minify(v) : v
 			),
 		}
+		if (Codecs.audio.includes('dts') && this.isHD) {
+			Codecs.audio.push('truehd')
+			Codecs.audio.sort()
+		}
+		return Codecs
 	}
 	get Channels() {
 		// if (process.DEVELOPMENT) return 8
@@ -83,7 +88,7 @@ export class Session {
 		if (this.DeviceName == 'Roku Device') return 'SD'
 		if (this.Channels > 2) {
 			if (this.isUHD) {
-				// if (this.DeviceName == 'Roku Ultra') return 'HD'
+				if (this.DeviceName == 'Roku Ultra') return 'HD'
 				return 'UHD'
 			}
 			if (this.isHD) return 'HD'
