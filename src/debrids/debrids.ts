@@ -160,14 +160,16 @@ export async function getStreamUrl(
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
 			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
-			let audio = audios.find(v => v.channels <= channels)
-			if (!audio) {
+			if (!audios.find(v => v.channels <= channels)) {
 				console.warn(`probe !channels ->`, torrent.name, audios.map(v => v.channels))
 				next = true
 				continue
 			}
-			if (_.size(codecs.audio) > 0 && !codecs.audio.includes(audio.codec_name)) {
-				console.warn(`probe !codecs.audio ->`, torrent.name, audio.codec_name)
+			if (
+				_.size(codecs.audio) > 0 &&
+				!audios.find(v => codecs.audio.includes(v.codec_name))
+			) {
+				console.warn(`probe !codecs.audio ->`, torrent.name, audios.map(v => v.codec_name))
 				next = true
 				continue
 			}
