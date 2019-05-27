@@ -4,6 +4,8 @@ import * as http from '@/adapters/http'
 import * as magneturi from 'magnet-uri'
 import * as pAll from 'p-all'
 import * as path from 'path'
+import * as qs from 'query-string'
+import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
@@ -16,15 +18,14 @@ process.nextTick(async () => {
 	if (!process.DEVELOPMENT) return
 	if (process.DEVELOPMENT) return
 	let transfers = (await client.get('/torrents', { silent: true })) as Transfer[]
-	transfers = transfers.filter(v => v.status == 'downloading')
+	transfers = transfers.filter(v => v.status != 'downloaded' || !v.filename)
 	for (let i = 0; i < transfers.length; i++) {
-		let transfer = transfers[i]
-		transfers[i] = (await client.get(`/torrents/info/${transfer.id}`, {
-			silent: true,
-		})) as Transfer
+		utils.pRandom(100)
+		transfers[i] = (await client.get(`/torrents/info/${transfers[i].id}`)) as Transfer
 	}
-	let tkeys = ['original_filename', 'progress', 'seeders']
-	console.log(`RealDebrid transfers ->`, transfers.map(v => _.pick(v, tkeys)))
+	console.log(`RealDebrid transfers ->`, transfers)
+	// let tkeys = ['original_filename', 'progress', 'seeders']
+	// console.log(`RealDebrid transfers ->`, transfers.map(v => _.pick(v, tkeys)))
 })
 
 export class RealDebrid extends debrid.Debrid<Transfer> {
