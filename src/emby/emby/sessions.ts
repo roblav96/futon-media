@@ -58,8 +58,7 @@ export class Session {
 			),
 		}
 		if (Codecs.audio.includes('dts') && this.isHD) {
-			Codecs.audio.push('truehd')
-			Codecs.audio.sort()
+			Codecs.audio.push('truehd') && Codecs.audio.sort()
 		}
 		return Codecs
 	}
