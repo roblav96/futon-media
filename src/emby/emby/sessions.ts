@@ -80,8 +80,12 @@ export class Session {
 	get Quality(): emby.Quality {
 		// if (process.DEVELOPMENT) return 'UHD'
 		if (this.isDevice('mobile')) return 'SD'
+		if (this.DeviceName == 'Roku Device') return 'SD'
 		if (this.Channels > 2) {
-			if (this.isUHD) return 'UHD'
+			if (this.isUHD) {
+				// if (this.DeviceName == 'Roku Ultra') return 'HD'
+				return 'UHD'
+			}
 			if (this.isHD) return 'HD'
 		}
 		return 'SD'
