@@ -13,15 +13,12 @@ export const client = scraper.Scraper.http({
 
 export class Katli extends scraper.Scraper {
 	sorts = ['size', 'time_add', 'seeders']
-	slow = true
-	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
 		let type = this.item.show ? 'tv' : `${this.item.type}s`
 		let $ = cheerio.load(
 			await client.get(`/usearch/${slug} category:${type}/`, {
 				query: { field: sort, sorder: 'desc' },
-				debug: true,
 			})
 		)
 		let results = [] as scraper.Result[]

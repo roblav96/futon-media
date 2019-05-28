@@ -95,7 +95,7 @@ export function results(result: scraper.Result, item: media.Item) {
 		}
 	}
 
-	console.warn(`❌ return false ->`, result.name, providers)
+	// console.log(`❌ return false ->`, result.name, providers)
 	return false
 }
 

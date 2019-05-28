@@ -8,6 +8,8 @@ import * as StackTracey from 'stacktracey'
 import * as util from 'util'
 import exithook = require('exit-hook')
 
+exithook(() => inspector.close())
+
 _.merge(util.inspect.defaultOptions, {
 	depth: 2,
 } as util.InspectOptions)
@@ -19,11 +21,12 @@ ${ansi.dim('■■■■■■■■■■■■■■■■■■■■■■�
 `)
 
 let before = Date.now()
-let colors = { log: 'blue', info: 'green', warn: 'yellow', error: 'red' }
+let colors = { log: 'blue', info: 'green', warn: 'yellow', error: 'red', debug: 'cyan' }
 for (let [method, color] of Object.entries(colors)) {
 	console[method]['__wrapped'] && shimmer.unwrap(console, method as any)
 	shimmer.wrap(console, method as any, function wrapper(fn: Function) {
 		return function called(...args: string[]) {
+			if (method == 'debug' && !process.DEVELOPMENT) return _.noop()
 			if (_.isString(args[0]) || _.isNumber(args[0])) {
 				let now = Date.now()
 				let delta = now - before
@@ -46,5 +49,3 @@ for (let [method, color] of Object.entries(colors)) {
 		}
 	})
 }
-
-exithook(() => inspector.close()) // inspector must close for process to exit

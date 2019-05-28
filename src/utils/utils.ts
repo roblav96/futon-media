@@ -120,6 +120,9 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
 }
+export function slug(value: string, options = {} as SlugifyOptions) {
+	return slugify(value, _.defaults(options, { decamelize: false, separator: ' ' }))
+}
 export { slugify }
 
 export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
@@ -153,7 +156,7 @@ export function chunks<T = any>(values: T[], max: number) {
 	return chunks
 }
 
-export function fillRandom(size = 32) {
+export function randoms(size = 32) {
 	return Array.from(Array(size), v => Math.random().toString())
 }
 export function nonce() {

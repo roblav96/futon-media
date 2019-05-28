@@ -22,11 +22,6 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
-	get minify() {
-		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
-		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
-		return `magnet:?${minify}`
-	}
 
 	boost = 1
 	boosts(episodes?: number) {
@@ -43,13 +38,15 @@ export class Torrent {
 	get short() {
 		return `[${this.boost.toFixed(2)}] [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
-		}${this.name} [${this.age}] [${this.providers}]`
+		}${this.name} [${this.split}] [${this.age}] [${this.providers}]`
 	}
 	get json() {
+		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return utils.compact({
 			age: this.age,
 			cached: this.cached.join(', '),
-			magnet: this.minify,
+			magnet: `magnet:?${minify}`,
 			name: this.name,
 			packs: this.packs,
 			providers: this.providers.join(', '),
@@ -67,9 +64,7 @@ export class Torrent {
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
 		)}`
-
 		_.merge(this, result)
-		this.split = utils.toSlug(result.name, { toName: true, lowercase: true }).split(' ')
-		this.hash = magneturi.decode(result.magnet).infoHash.toLowerCase()
+		this.hash = magneturi.decode(this.magnet).infoHash.toLowerCase()
 	}
 }

@@ -23,9 +23,9 @@ process.nextTick(() => {
 		let Item = await emby.library.byItemId(ItemId)
 		if (!Item || !['Movie', 'Series', 'Episode'].includes(Item.Type)) return
 
-		let actives = (await realdebrid.client.get(
-			'/torrents/activeCount'
-		)) as realdebrid.ActiveCount
+		let actives = (await realdebrid.client.get('/torrents/activeCount', {
+			silent: true,
+		})) as realdebrid.ActiveCount
 		if (actives.nb >= _.ceil(actives.limit * 0.8)) {
 			throw new Error(`RealDebrid actives ${actives.nb} >= ${actives.limit}`)
 		}
@@ -37,29 +37,35 @@ process.nextTick(() => {
 			queue.add(() => download(item))
 		}
 
-		if (Item.Type == 'Series') {
-			let seasons = (await trakt.client.get(
-				`/shows/${item.traktId}/seasons`
-			)) as trakt.Season[]
+		if (['Series', 'Episode'].includes(Item.Type)) {
+			let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+				silent: true,
+			})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
-			queue.addAll(
-				seasons.map(season => () => download(item.use({ type: 'season', season })))
-			)
-		}
-
-		if (Item.Type == 'Episode') {
-			let { ParentIndexNumber: s, IndexNumber: e } = Item
-			let episode = (await trakt.client.get(
-				`/shows/${item.traktId}/seasons/${s}/episodes/${e}`
-			)) as trakt.Episode
-			queue.add(() => download(item.use({ type: 'episode', episode })))
+			if (Item.Type == 'Series') {
+				queue.addAll(
+					seasons.map(season => () => download(item.use({ type: 'season', season })))
+				)
+			}
+			if (Item.Type == 'Episode') {
+				let { ParentIndexNumber: s, IndexNumber: e } = Item
+				item.use({ type: 'season', season: seasons.find(v => v.number == s) })
+				let episode = (await trakt.client.get(
+					`/shows/${item.slug}/seasons/${s}/episodes/${e}`,
+					{ silent: true }
+				)) as trakt.Episode
+				item.use({ type: 'episode', episode })
+				queue.add(() => download(item))
+			}
 		}
 	})
 })
 
 let queue = new pQueue({ concurrency: 1 })
 async function download(item: media.Item) {
-	let slug = `${item.slug} ${item.S.z} ${item.E.z}`.trim()
+	let slug = item.slug
+	if (item.S.z) slug += ` S${item.S.z}`
+	if (item.E.z) slug += `E${item.E.z}`
 	console.info(`download '${slug}' ->`)
 	let torrents = await scraper.scrapeAll(item)
 
@@ -70,8 +76,13 @@ async function download(item: media.Item) {
 	// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
 	// else console.log(`download best cached ->`, torrents[index].short)
 
-	let bytes = utils.toBytes(`${_.round(item.runtime / 25, 2)} GB`)
-	torrents = torrents.filter(v => v.bytes > bytes && (v.cached.length > 0 || v.seeders >= 3))
+	let gb = _.round(item.runtime / (item.movie ? 20 : 30), 2)
+	console.log(`gb ->`, utils.fromBytes(utils.toBytes(`${gb} GB`)))
+	torrents = torrents.filter(v => {
+		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
+		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gb} GB`)) return false
+		return v.cached.length > 0 || v.seeders >= 1
+	})
 	// torrents = torrents.filter(v => v.cached.length == 0 && v.seeders >= 3)
 	// torrents = torrents.slice(0, index)
 	// torrents = torrents.filter(

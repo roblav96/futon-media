@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrids from '@/debrids/debrids'
+import * as fastParse from 'fast-json-parse'
 import * as filters from '@/scrapers/filters'
 import * as http from '@/adapters/http'
 import * as magneturi from 'magnet-uri'
@@ -10,6 +11,7 @@ import * as path from 'path'
 import * as qs from 'query-string'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
+import fastStringify from 'fast-safe-stringify'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	await item.setAll()
@@ -17,7 +19,6 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	let providers = [
 		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
@@ -31,6 +32,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
@@ -58,12 +60,14 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	let cached = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => {
 		v.cached = cached[i]
+		v.split = v.name.toLowerCase().split('.')
 		if (v.split.includes('720p') || v.split.includes('480p') || v.split.includes('360p')) {
 			v.boost *= 0.25
 		}
 		if (!hd) return
 		if (v.split.includes('bdremux')) v.boost *= 1.25
 		if (v.split.includes('bluray')) v.boost *= 1.25
+		if (v.split.includes('ctrlhd')) v.boost *= 1.25
 		if (v.split.includes('exkinoray')) v.boost *= 1.25
 		if (v.split.includes('fgt')) v.boost *= 1.5
 		if (v.split.includes('grym')) v.boost *= 1.25
@@ -131,9 +135,10 @@ export class Scraper {
 
 	async getTorrents() {
 		let t = Date.now()
+		let ctor = this.constructor.name
 
 		if (this.sorts.length >= 2) {
-			if (this.item.isDaily && this.constructor.name != 'Rarbg') {
+			if (this.item.isDaily && ctor != 'Rarbg') {
 				let sorts = _.clone(this.sorts)
 				this.sorts[0] = sorts[1]
 				this.sorts[1] = sorts[0]
@@ -141,22 +146,21 @@ export class Scraper {
 			if (this.slow || this.item.isDaily) this.sorts = this.sorts.slice(0, 1)
 		}
 
-		let combinations = [] as Parameters<typeof Scraper.prototype.getResults>[]
+		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
-			if (this.sorts.length == 0) return combinations.push([slug] as any)
+			if (this.sorts.length == 0) return combos.push([slug] as any)
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
-			sorts.forEach(sort => combinations.push([slug, sort]))
+			sorts.forEach(sort => combos.push([slug, sort]))
 		})
-		// console.log(`${this.constructor.name} combinations ->`, combinations)
 
 		let results = (await pAll(
-			combinations.map(([slug, sort], index) => async () => {
+			combos.map(([slug, sort], index) => async () => {
 				if (index > 0) await utils.pRandom(1000)
 				return (await this.getResults(slug, sort).catch(error => {
-					console.error(`${this.constructor.name} getResults -> %O`, error)
+					console.error(`${ctor} getResults -> %O`, error)
 					return [] as Result[]
 				})).map(result => ({
-					providers: [this.constructor.name],
+					providers: [ctor],
 					slugs: [slug],
 					...result,
 				}))
@@ -164,12 +168,13 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
-		results = results.filter(v => {
-			if (!_.isFinite(v.bytes) || !_.isFinite(v.seeders) || !_.isFinite(v.stamp)) return false
-			return filters.results(v, this.item)
-		})
+		results = results.filter(
+			v => v && v.bytes > 0 && v.seeders >= 0 && v.stamp > 0 && filters.results(v, this.item)
+		)
 
-		console.log(Date.now() - t, this.constructor.name, combinations.length, results.length)
+		let jsons = fastStringify(combos.map(v => v.map(vv => fastParse(vv).value || vv)))
+		console.log(Date.now() - t, ctor, results.length, combos.length /** , jsons */)
+
 		return results.map(v => new torrent.Torrent(v))
 	}
 }
