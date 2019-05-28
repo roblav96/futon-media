@@ -35,55 +35,40 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(_.random(ms * Math.E * 0.1, ms)), { value })
 }
 
+export function isForeign(value: string) {
+	return value != _.deburr(value)
+}
+export function isAscii(value: string) {
+	return /[^\w\s]/gi.test(value)
+}
 export function squash(value: string) {
-	return value.replace(/[^\x20-\x7E]/g, '')
-	// return _.trim(value.replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' '))
+	return _.trim(value.replace(/[^\w\s]/gi, '').replace(/\s+/g, ' '))
+}
+export function minify(value: string) {
+	return _.trim(clean(value).replace(/[^\w]/gi, '').toLowerCase())
 }
 export function clean(value: string) {
-	return _.trim(squash(stripBom(stripAnsi(_.unescape(_.deburr(value))))))
-}
-
-export function isForeign(value: string) {
-	let arr = Array.from({ length: value.length }).map((v, i) => value.charCodeAt(i))
-	return arr.filter(v => v >= 128).length > 0
-}
-// export function isForeign(value: string) {
-// 	return value != _.deburr(value)
-// }
-
-export function minify(value: string) {
-	return value.replace(/\W/g, '').toLowerCase()
-}
-
-export function same(...args: string[]) {
-	if (args.length == 1) return false
-	return new Set(args.map(v => _.trim(_.deburr(v).toLowerCase()))).size == 1
+	return _.trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
 }
 
 export function equals(value: string, target: string) {
-	return minify(_.deburr(value)) == minify(_.deburr(target))
+	return minify(value) == minify(target)
 }
-
-/** all of `target` is included in `value` */
 export function includes(value: string, target: string) {
-	return minify(_.deburr(value)).includes(minify(_.deburr(target)))
-	// value = toSlug(value)
-	// target = toSlug(target)
-	// let splits = [value, target].map(v => v.split(' ').filter(Boolean))
-	// return splits[1].filter(v => splits[0].includes(v))
+	return minify(value).includes(minify(target))
 }
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
-	let values = _.uniq(toSlug(value, { toName: true, lowercase: true }).split(' '))
-	let targets = _.uniq(toSlug(target, { toName: true, lowercase: true }).split(' '))
+	let values = _.uniq(toSlug(value, { slug: false, squash: true, lowercase: true }).split(' '))
+	let targets = _.uniq(toSlug(target, { slug: false, squash: true, lowercase: true }).split(' '))
 	return targets.filter(v => !values.includes(v))
 }
 
 /** `leven == 0` when all of `target` is included in `value` */
 export function leven(value: string, target: string) {
-	value = minify(_.deburr(value))
-	target = minify(_.deburr(target))
+	value = minify(value)
+	target = minify(target)
 	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
 export { levenshtein }
@@ -108,31 +93,28 @@ export function zeroSlug(value: number) {
 	return (value / 100).toFixed(2).slice(-2)
 }
 
-export function toSlug(value: string, options = {} as SlugifyOptions & { toName?: boolean }) {
+export function toSlug(
+	value: string,
+	options = {} as SlugifyOptions & { slug?: boolean; squash?: boolean; stops?: boolean }
+) {
 	_.defaults(options, {
 		decamelize: false,
-		lowercase: !options.toName,
-		separator: ' ',
+		lowercase: options.slug != false,
+		separator: options.slug != false ? '-' : ' ',
+		squash: options.slug == false,
+		stops: false,
 	} as Parameters<typeof toSlug>[1])
-	let slug = slugify(clean(value.replace(/['"/]/g, '')), { ...options, separator: ' ' })
-	// let slug = slugify(clean(value), { ...options, separator: ' ' })
-	let stops = ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with']
-	let filters = !options.toName ? stops : []
+	value = clean(value)
+	let slug = slugify(!options.squash ? value : squash(value), { ...options, separator: ' ' })
+	let filters = !options.stops ? [] : ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with']
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
-}
-export function slug(value: string, options = {} as SlugifyOptions) {
-	return slugify(value, _.defaults(options, { decamelize: false, separator: ' ' }))
 }
 export { slugify }
 
 export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
 	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
-	// file = path.basename(file.toLowerCase())
-	// if (file == 'rarbg.com.mp4') return false
-	// let junk = ['bonus', 'sample', 'trailer']
-	// let valid = accuracy(file, junk.join(' ')).length == junk.length
 }
 
 export function alphabetically(a: string, b: string) {
@@ -167,15 +149,6 @@ export function nonce() {
 
 export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]) {
 	Object.defineProperty(target, key, { value })
-}
-
-export function compactNumber(value: number) {
-	let numb = numbro(value).format({
-		average: true,
-		mantissa: 1,
-		optionalMantissa: true,
-	} as INumbro.Format)
-	return numb.toUpperCase()
 }
 
 export function toStamp(value: string) {

@@ -155,6 +155,7 @@ export class Item {
 			if (utils.equals(v, this.slug)) return true
 			if (utils.includes(v, this.year.toString())) return true
 			if (utils.accuracy(v, '3d').length == 0) return true
+			if (utils.accuracy(v, 'imax').length == 0) return true
 			if (!utils.equals(v.split(' ').shift(), this.title.split(' ').shift())) return true
 			if (v.length > this.title.length && !utils.includes(v, this.title)) return true
 		})
@@ -169,7 +170,9 @@ export class Item {
 			silent: true,
 		})) as trakt.Result[]
 		let items = results.map(v => new Item(v))
-		items = items.filter(v => !v.isJunk() && utils.equals(v.title, this.title))
+		items = items.filter(
+			v => !v.isJunk() && v.slug != this.slug && utils.equals(v.title, this.title)
+		)
 		this.collisions = items.map(v => v.slug)
 	}
 
@@ -213,7 +216,7 @@ export class Item {
 		this.titles.forEach(title => {
 			let words = title.split(' ')
 			words.forEach(word => {
-				if (/['"/]/g.test(word)) {
+				if (/\W/g.test(word)) {
 					console.warn(`test '"/ ->`, word)
 				}
 			})

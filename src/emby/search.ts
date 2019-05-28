@@ -11,7 +11,7 @@ import * as utils from '@/utils/utils'
 export const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
 	Rx.op.map(({ query }) => ({
-		query: utils.toSlug(query.SearchTerm, { toName: true, lowercase: true }),
+		query: utils.toSlug(query.SearchTerm, { slug: false, lowercase: true }),
 		UserId: query.UserId,
 	})),
 	Rx.op.filter(({ query }) => utils.minify(query).length >= 3),
