@@ -60,6 +60,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			v.boost *= 0.25
 		}
 		if (!hd) return
+		if (v.split.includes('bdremux')) v.boost *= 1.25
 		if (v.split.includes('bluray')) v.boost *= 1.25
 		if (v.split.includes('exkinoray')) v.boost *= 1.25
 		if (v.split.includes('fgt')) v.boost *= 1.5
