@@ -17,9 +17,9 @@ import db from '@/adapters/db'
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
-	// let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
-	// titles = titles.filter(v => v.split(' ').find(vv => /['"]/g.test(vv)))
-	// console.log(`library titles ->`, titles)
+	let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
+	titles = titles.filter(v => utils.isForeign(v) || v.split(' ').find(vv => /['"]/g.test(vv)))
+	console.log(`library titles ->`, titles)
 
 	await library.setFolders()
 	// await library.setCollections()

@@ -25,17 +25,17 @@ export const SKIPS = [
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) return
-	if (magnet.xt.length != 49) return
+	if (!_.isString(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
+	if (magnet.xt.length != 49) return // console.log(`⛔ magnet.xt != 49 ->`, result.name)
 
 	result.name = result.name || magnet.dn
-	if (!result.name) return
-	if (utils.isForeign(result.name)) return
+	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
+	if (utils.isForeign(result.name)) return // console.log(`⛔ isForeign ->`, result.name)
 	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
 
 	let skips = utils.accuracy(`${item.title} ${item.E.t}`, SKIPS.join(' '))
 	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
-	if (skipped.length < skips.length) return
+	if (skipped.length < skips.length) return // console.log(`⛔ skips ->`, result.name)
 
 	let slug = utils.toSlug(result.name, { toName: true, lowercase: true })
 

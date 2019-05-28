@@ -68,27 +68,19 @@ async function download(item: media.Item) {
 	if (item.E.z) slug += `E${item.E.z}`
 	let gigs = _.round(item.runtime / (item.movie ? 20 : 30), 2)
 	console.info(`download '${slug}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
-	let torrents = await scraper.scrapeAll(item)
 
-	// if (!process.DEVELOPMENT) console.log(`download all torrents ->`, torrents.length)
+	let torrents = await scraper.scrapeAll(item)
 	console.log(`download all torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	// let index = torrents.findIndex(({ cached }) => cached.length > 0)
-	// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
-	// else console.log(`download best cached ->`, torrents[index].short)
+	let index = torrents.findIndex(({ cached }) => cached.length > 0)
+	if (index == -1) console.warn(`download best cached ->`, 'index == -1')
+	else console.log(`download best cached ->`, torrents[index].short)
 
 	torrents = torrents.filter(v => {
-		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
+		console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gigs} GB`)) return false
 		return v.cached.length > 0 || v.seeders >= 1
 	})
-	// torrents = torrents.filter(v => v.cached.length == 0 && v.seeders >= 3)
-	// torrents = torrents.slice(0, index)
-	// torrents = torrents.filter(
-	// 	({ seeders }) => seeders >= _.floor(_.clamp(item.main.votes * 0.1, 1, 5))
-	// )
-
-	// if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
 	console.log(`download torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	throw new Error(`DEV`)

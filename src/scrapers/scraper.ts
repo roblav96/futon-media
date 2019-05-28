@@ -16,40 +16,43 @@ import fastStringify from 'fast-safe-stringify'
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	await item.setAll()
 
-	// console.log(`item.titles ->`, item.titles)
-	// console.log(`item.aliases ->`, item.aliases)
-	// console.log(`item.years ->`, item.years)
-	// console.log(`item.slugs ->`, item.slugs)
-	// console.log(`item.queries ->`, item.queries)
-	// throw new Error(`DEV`)
+	console.log(`item.titles ->`, item.titles)
+	console.log(`item.aliases ->`, item.aliases)
+	console.log(`item.collisions ->`, item.collisions)
+	console.log(`item.years ->`, item.years)
+	console.log(`item.slugs ->`, item.slugs)
+	console.log(`item.queries ->`, item.queries)
+	throw new Error(`DEV`)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btbit')).BtBit,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/katli')).Katli,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// // (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		(await import('@/scrapers/providers/btbit')).BtBit,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
+		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/katli')).Katli,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(
 		providers.map(scraper => () => new scraper(item).getTorrents())
 	)).flat()
+	
+	console.log(`torrents.length ->`, torrents.length)
 
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
@@ -108,9 +111,6 @@ export class Scraper {
 	sorts = [] as string[]
 	slow = false
 	concurrency = 3
-	get ctor() {
-		return this.constructor.name
-	}
 
 	slugs() {
 		let slugs = [] as string[]
@@ -146,9 +146,10 @@ export class Scraper {
 
 	async getTorrents() {
 		let t = Date.now()
+		let ctor = this.constructor.name
 
 		if (this.sorts.length >= 2) {
-			if (this.item.isDaily && this.ctor != 'Rarbg') {
+			if (this.item.isDaily && ctor != 'Rarbg') {
 				let sorts = _.clone(this.sorts)
 				this.sorts[0] = sorts[1]
 				this.sorts[1] = sorts[0]
@@ -167,10 +168,10 @@ export class Scraper {
 			combos.map(([slug, sort], index) => async () => {
 				if (index > 0) await utils.pRandom(1000)
 				return (await this.getResults(slug, sort).catch(error => {
-					console.error(`${this.ctor} getResults -> %O`, error)
+					console.error(`${ctor} getResults -> %O`, error)
 					return [] as Result[]
 				})).map(result => ({
-					providers: [this.ctor],
+					providers: [ctor],
 					slugs: [slug],
 					...result,
 				}))
@@ -183,7 +184,7 @@ export class Scraper {
 		)
 
 		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
-		console.log(Date.now() - t, this.ctor, results.length, combos.length, fastStringify(jsons))
+		console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
 
 		return results.map(v => new torrent.Torrent(v))
 	}

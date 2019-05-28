@@ -42,7 +42,6 @@ export class YourBittorrent2 extends scraper.Scraper {
 				console.error(`${this.constructor.name} -> %O`, error)
 			}
 		})
-		console.log(`results ->`, results)
 		return results
 	}
 }

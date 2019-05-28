@@ -162,6 +162,17 @@ export class Item {
 		// console.log(`aliases '${this.slug}' ->`, JSON.stringify(this.aliases))
 	}
 
+	collisions: string[]
+	async setCollisions() {
+		let results = (await trakt.client.get(`/search/${this.type}`, {
+			query: { query: this.title, fields: 'title,tagline,aliases', limit: 100 },
+			silent: true,
+		})) as trakt.Result[]
+		let items = results.map(v => new Item(v))
+		items = items.filter(v => !v.isJunk() && utils.equals(v.title, this.title))
+		this.collisions = items.map(v => v.slug)
+	}
+
 	omdb: omdb.Full
 	async setOmdb() {
 		this.omdb = (await omdb.client.get('/', {
@@ -184,7 +195,7 @@ export class Item {
 	}
 
 	async setAll() {
-		await Promise.all([await this.setAliases(), await this.setOmdb(), await this.setTmdb()])
+		await Promise.all([this.setAliases(), this.setCollisions(), this.setOmdb(), this.setTmdb()])
 		Memoize.clear(this)
 	}
 
@@ -192,7 +203,9 @@ export class Item {
 		return _.uniq([this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)).sort()
 	}
 	get years() {
-		let tmdbyear = dayjs(this.tmdb.release_date).year()
+		let tmdbyear: number
+		if (this.tmdb.release_date) tmdbyear = dayjs(this.tmdb.release_date).year()
+		if (this.tmdb.first_air_date) tmdbyear = dayjs(this.tmdb.first_air_date).year()
 		return _.uniq([this.year, _.parseInt(this.omdb.Year), tmdbyear].filter(Boolean)).sort()
 	}
 	get slugs() {
