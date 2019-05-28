@@ -17,7 +17,7 @@ export class Katcr extends scraper.Scraper {
 
 	async getResults(slug: string) {
 		if (!process.env.CF_KATCR) {
-			console.warn(`Katcr ->`, '!process.env.CF_KATCR')
+			console.warn(`${this.constructor.name} ->`, '!process.env.CF_KATCR')
 			return []
 		}
 		let type = this.item.show ? 'tv' : `${this.item.type}s`

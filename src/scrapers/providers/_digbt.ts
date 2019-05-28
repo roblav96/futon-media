@@ -27,6 +27,10 @@ export class Digbt extends scraper.Scraper {
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
+		if (!process.env.CF_DIGBIT) {
+			console.warn(`${this.constructor.name} ->`, '!process.env.CF_DIGBIT')
+			return []
+		}
 		let $ = cheerio.load(
 			await client.get(`/search/${slug}-${sort}-1/`, {
 				query: { s: sort } as Partial<Query>,
@@ -44,7 +48,7 @@ export class Digbt extends scraper.Scraper {
 					bytes: utils.toBytes(size.slice(-2).join(' ')),
 					name: $el.find('div a').attr('title'),
 					magnet: $el.find('div.tail a[href^="magnet:?"]').attr('href'),
-					seeders: _.max([_.parseInt(downloads), 3]),
+					seeders: _.max([utils.parseInt(downloads), 3]),
 					stamp: utils.toStamp(ctime.replace('ago', '').trim()),
 				} as scraper.Result)
 			} catch (error) {

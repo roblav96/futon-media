@@ -14,7 +14,7 @@ export class BitSnoop extends scraper.Scraper {
 	concurrency = 1
 
 	async getResults(slug: string) {
-		let $ = cheerio.load(await client.get('/search', { query: { q: slug } }))
+		let $ = cheerio.load(await client.get('/search', { query: { q: slug } as Partial<Query> }))
 		let results = [] as scraper.Result[]
 		$('.rtable tr.row:has(a[href^="magnet:?"])').each((i, el) => {
 			try {
@@ -32,4 +32,8 @@ export class BitSnoop extends scraper.Scraper {
 		})
 		return results
 	}
+}
+
+interface Query {
+	q: string
 }

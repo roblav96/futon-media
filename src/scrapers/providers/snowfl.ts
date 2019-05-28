@@ -38,6 +38,10 @@ export class Snowfl extends scraper.Scraper {
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
+		if (!process.env.CF_SNOWFL) {
+			console.warn(`${this.constructor.name} ->`, '!process.env.CF_SNOWFL')
+			return []
+		}
 		let token = await getToken()
 		let url = `/${token}/${slug}/${utils.nonce()}/0/${sort}/NONE/0`
 		let response = (await client.get(url, {

@@ -44,16 +44,6 @@ export class Item {
 		let episodes = this.show ? ` [x${this.show.aired_episodes.toLocaleString()}] ` : ' '
 		return `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
 	}
-	get queries() {
-		let queries = [this.title]
-		if (utils.equals(this.title, this.slug)) {
-			queries.push(`${this.title} ${this.year}`)
-		}
-		if (this.alias && !this.isPopular()) {
-			queries.push(this.alias)
-		}
-		return queries
-	}
 
 	get traktId() {
 		if (_.has(this.ids, 'trakt')) return this.ids.trakt.toString()
@@ -169,7 +159,7 @@ export class Item {
 			if (v.length > this.title.length && !utils.includes(v, this.title)) return true
 		})
 		this.aliases = _.uniqWith(aliases, (a, b) => utils.minify(a) == utils.minify(b))
-		console.log(`aliases '${this.slug}' ->`, JSON.stringify(this.aliases))
+		// console.log(`aliases '${this.slug}' ->`, JSON.stringify(this.aliases))
 	}
 
 	omdb: omdb.Full
@@ -198,18 +188,36 @@ export class Item {
 		Memoize.clear(this)
 	}
 
-	// get titles() {
-	// 	return _.uniq([this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)).sort()
-	// }
+	get titles() {
+		return _.uniq([this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)).sort()
+	}
 	get years() {
 		let tmdbyear = dayjs(this.tmdb.release_date).year()
 		return _.uniq([this.year, _.parseInt(this.omdb.Year), tmdbyear].filter(Boolean)).sort()
 	}
-	// get slugs() {
-	// 	let slugs = [] as string[]
-	// 	this.titles.forEach(title => this.years.forEach(year => slugs.push(`${title} ${year}`)))
-	// 	return _.uniq(slugs)
-	// }
+	get slugs() {
+		let slugs = [] as string[]
+		this.titles.forEach(title => {
+			let words = title.split(' ')
+			words.forEach(word => {
+				if (/['"/]/g.test(word)) {
+					console.warn(`test '"/ ->`, word)
+				}
+			})
+			this.years.forEach(year => slugs.push(`${title} ${year}`))
+		})
+		return _.uniq(slugs)
+	}
+	get queries() {
+		let queries = [this.title]
+		if (utils.equals(this.title, this.slug)) {
+			queries.push(`${this.title} ${this.year}`)
+		}
+		if (this.alias && !this.isPopular()) {
+			queries.push(this.alias)
+		}
+		return queries
+	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {
 		this.use(result)

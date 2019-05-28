@@ -18,7 +18,7 @@ export class Katli extends scraper.Scraper {
 		let type = this.item.show ? 'tv' : `${this.item.type}s`
 		let $ = cheerio.load(
 			await client.get(`/usearch/${slug} category:${type}/`, {
-				query: { field: sort, sorder: 'desc' },
+				query: { field: sort, sorder: 'desc' } as Partial<Query>,
 			})
 		)
 		let results = [] as scraper.Result[]
@@ -40,4 +40,9 @@ export class Katli extends scraper.Scraper {
 		})
 		return results
 	}
+}
+
+interface Query {
+	field: string
+	sorder: string
 }

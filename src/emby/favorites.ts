@@ -91,7 +91,7 @@ async function download(item: media.Item) {
 	// if (!process.DEVELOPMENT) console.log(`download torrents ->`, torrents.length)
 	console.log(`download torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	// throw new Error(`DEV`)
+	throw new Error(`DEV`)
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
 	await debrids.download(torrents)
