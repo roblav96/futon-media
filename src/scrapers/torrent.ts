@@ -41,7 +41,7 @@ export class Torrent {
 	}
 
 	get short() {
-		return `[${this.boost.toFixed(1)}] [${this.size}] [${this.seeders}] ${
+		return `[${this.boost.toFixed(2)}] [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
 		}${this.name} (${this.providers})`
 	}
