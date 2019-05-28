@@ -60,13 +60,15 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			v.boost *= 0.25
 		}
 		if (!hd) return
-		if (v.split.includes('bluray')) v.boost *= 1.5
+		if (v.split.includes('bluray')) v.boost *= 1.25
+		if (v.split.includes('exkinoray')) v.boost *= 1.25
 		if (v.split.includes('fgt')) v.boost *= 1.5
-		if (v.split.includes('grym')) v.boost *= 1.5
-		if (v.split.includes('memento')) v.boost *= 1.5
-		if (v.split.includes('publichd')) v.boost *= 1.5
-		if (v.split.includes('remux')) v.boost *= 1.5
-		if (v.split.includes('sparks')) v.boost *= 1.5
+		if (v.split.includes('grym')) v.boost *= 1.25
+		if (v.split.includes('kralimarko')) v.boost *= 1.25
+		if (v.split.includes('memento')) v.boost *= 1.25
+		if (v.split.includes('publichd')) v.boost *= 1.25
+		if (v.split.includes('remux')) v.boost *= 1.25
+		if (v.split.includes('sparks')) v.boost *= 1.25
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (v.split.includes('8bit') || v.split.includes('10bit')) v.boost *= 0.5
 	})
