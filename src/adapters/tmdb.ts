@@ -79,12 +79,7 @@ export interface Movie {
 		}[]
 	}
 	backdrop_path: string
-	belongs_to_collection: {
-		backdrop_path: string
-		id: number
-		name: string
-		poster_path: string
-	}
+	belongs_to_collection: Collection
 	budget: number
 	credits: {
 		cast: {

@@ -10,7 +10,6 @@ import * as utils from '@/utils/utils'
 export interface Torrent extends scraper.Result {}
 export class Torrent {
 	hash: string
-	split: string[]
 	cached = [] as debrids.Debrids[]
 
 	get age() {
@@ -21,6 +20,9 @@ export class Torrent {
 	}
 	get size() {
 		return utils.fromBytes(this.bytes)
+	}
+	get split() {
+		return this.name.toLowerCase().split('.')
 	}
 
 	boost = 1
@@ -38,7 +40,7 @@ export class Torrent {
 	get short() {
 		return `[${this.boost.toFixed(2)}] [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
-		}${this.name} [${this.split}] [${this.age}] [${this.providers}]`
+		}${this.name} [${this.age}] [${this.providers}]`
 	}
 	get json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery

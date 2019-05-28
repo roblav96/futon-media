@@ -15,7 +15,6 @@ import fastStringify from 'fast-safe-stringify'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	await item.setAll()
-	console.log(`aliases '${item.short}' ->`, item.aliases)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
@@ -31,7 +30,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
+		// (await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
@@ -58,27 +57,27 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		return true
 	})
 
-	let cached = await debrids.cached(torrents.map(v => v.hash))
-	torrents.forEach((v, i) => {
-		v.cached = cached[i]
-		v.split = v.name.toLowerCase().split('.')
-		if (v.split.includes('720p') || v.split.includes('480p') || v.split.includes('360p')) {
+	let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	torrents.forEach(({ split }, i) => {
+		let v = torrents[i]
+		v.cached = cacheds[i]
+		if (split.includes('360p') || split.includes('480p') || split.includes('720p')) {
 			v.boost *= 0.25
 		}
 		if (!hd) return
-		if (v.split.includes('bdremux')) v.boost *= 1.25
-		if (v.split.includes('bluray')) v.boost *= 1.25
-		if (v.split.includes('ctrlhd')) v.boost *= 1.25
-		if (v.split.includes('exkinoray')) v.boost *= 1.25
-		if (v.split.includes('fgt')) v.boost *= 1.5
-		if (v.split.includes('grym')) v.boost *= 1.25
-		if (v.split.includes('kralimarko')) v.boost *= 1.25
-		if (v.split.includes('memento')) v.boost *= 1.25
-		if (v.split.includes('publichd')) v.boost *= 1.25
-		if (v.split.includes('remux')) v.boost *= 1.25
-		if (v.split.includes('sparks')) v.boost *= 1.25
+		if (split.includes('bdremux')) v.boost *= 1.25
+		if (split.includes('bluray')) v.boost *= 1.25
+		if (split.includes('ctrlhd')) v.boost *= 1.25
+		if (split.includes('exkinoray')) v.boost *= 1.25
+		if (split.includes('fgt')) v.boost *= 1.5
+		if (split.includes('grym')) v.boost *= 1.25
+		if (split.includes('kralimarko')) v.boost *= 1.25
+		if (split.includes('memento')) v.boost *= 1.25
+		if (split.includes('publichd')) v.boost *= 1.25
+		if (split.includes('remux')) v.boost *= 1.25
+		if (split.includes('sparks')) v.boost *= 1.25
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
-		if (v.split.includes('8bit') || v.split.includes('10bit')) v.boost *= 0.5
+		if (split.includes('8bit') || split.includes('10bit')) v.boost *= 0.5
 	})
 
 	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
@@ -144,9 +143,7 @@ export class Scraper {
 				this.sorts[0] = sorts[1]
 				this.sorts[1] = sorts[0]
 			}
-			if ((this.slow && this.item.show) || this.item.isDaily) {
-				this.sorts = this.sorts.slice(0, 1)
-			}
+			if (this.slow || this.item.isDaily) this.sorts = this.sorts.slice(0, 1)
 		}
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]

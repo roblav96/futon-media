@@ -165,11 +165,11 @@ export class Item {
 			if (utils.equals(v, this.slug)) return true
 			if (utils.includes(v, this.year.toString())) return true
 			if (utils.accuracy(v, '3d').length == 0) return true
-			if (!utils.includes(v, this.title)) return true
-			if (!utils.minify(v).startsWith(utils.minify(this.title))) return true
+			if (!utils.equals(v.split(' ').shift(), this.title.split(' ').shift())) return true
+			if (v.length > this.title.length && !utils.includes(v, this.title)) return true
 		})
 		this.aliases = _.uniqWith(aliases, (a, b) => utils.minify(a) == utils.minify(b))
-		// if (this.aliases.length > 0) console.log(`aliases '${this.slug}' ->`, this.aliases)
+		console.log(`aliases '${this.slug}' ->`, JSON.stringify(this.aliases))
 	}
 
 	omdb: omdb.Full
@@ -181,15 +181,15 @@ export class Item {
 	}
 
 	tmdb: tmdb.Full
-	collection: tmdb.Collection
 	async setTmdb() {
 		let type = this.show ? 'tv' : 'movie'
 		this.tmdb = (await tmdb.client.get(`/${type}/${this.ids.tmdb}`, {
 			silent: true,
 		})) as tmdb.Full
 		if (this.tmdb.belongs_to_collection) {
-			let id = this.tmdb.belongs_to_collection.id
-			this.collection = (await tmdb.client.get(`/collection/${id}`)) as tmdb.Collection
+			this.tmdb.belongs_to_collection = (await tmdb.client.get(
+				`/collection/${this.tmdb.belongs_to_collection.id}`
+			)) as tmdb.Collection
 		}
 	}
 
