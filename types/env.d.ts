@@ -1,4 +1,9 @@
 interface Env {
+	CF_BTBIT: string
+	CF_DIGBIT: string
+	CF_KATCR: string
+	CF_SNOWFL: string
+	CF_UA: string
 	EMBY_ADMIN_ID: string
 	EMBY_ADMIN_KEY: string
 	EMBY_DATA: string
@@ -7,8 +12,6 @@ interface Env {
 	EMBY_PORT: string
 	EMBY_PROTO: string
 	EMBY_STRM_PORT: string
-	KATCR_COOKIE: string
-	KATCR_UA: string
 	NODE_ENV: string
 	OMDB_KEY: string
 	ORION_APP: string

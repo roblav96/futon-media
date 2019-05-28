@@ -8,7 +8,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://katcr.co',
-	headers: { 'cookie': process.env.KATCR_COOKIE, 'user-agent': process.env.KATCR_UA },
+	headers: { 'cookie': process.env.CF_KATCR, 'user-agent': process.env.CF_UA },
 	memoize: false,
 })
 
@@ -16,8 +16,8 @@ export class Katcr extends scraper.Scraper {
 	concurrency = 1
 
 	async getResults(slug: string) {
-		if (!process.env.KATCR_COOKIE) {
-			console.warn(`Katcr ->`, '!process.env.KATCR_COOKIE')
+		if (!process.env.CF_KATCR) {
+			console.warn(`Katcr ->`, '!process.env.CF_KATCR')
 			return []
 		}
 		let type = this.item.show ? 'tv' : `${this.item.type}s`

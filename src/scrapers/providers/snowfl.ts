@@ -9,10 +9,13 @@ import db from '@/adapters/db'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
-	headers: {
-		'cookie': '__cfduid=de49cc6edc863df03173cda277139fd141553817924',
-		'referer': 'https://snowfl.com/',
-		'x-requested-with': 'XMLHttpRequest',
+	headers: { 'cookie': process.env.CF_SNOWFL, 'user-agent': process.env.CF_UA },
+	beforeRequest: {
+		append: [
+			async options => {
+				options.headers.referer = options.url
+			},
+		],
 	},
 })
 
@@ -33,10 +36,6 @@ export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'DATE']
 	slow = true
 	concurrency = 1
-
-	slugs() {
-		return super.slugs().slice(0, 2)
-	}
 
 	async getResults(slug: string, sort: string) {
 		let token = await getToken()

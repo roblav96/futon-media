@@ -6,17 +6,20 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'http://en.btbit.org',
+	headers: { 'cookie': process.env.CF_BTBIT, 'user-agent': process.env.CF_UA },
+	beforeRequest: {
+		append: [
+			async options => {
+				options.headers.referer = options.url
+			},
+		],
+	},
 })
 
 export class BtBit extends scraper.Scraper {
-	/** size, created, popularity */
-	sorts = ['2', '1' /** , '3' */]
+	sorts = ['2', '1']
 	slow = true
 	concurrency = 1
-
-	slugs() {
-		return super.slugs().slice(0, 1)
-	}
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(await client.get(`/list/${slug}/1-${sort}-2.html`))

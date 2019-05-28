@@ -1,12 +1,11 @@
 import * as _ from 'lodash'
-import * as qs from 'query-string'
-import * as magneturi from 'magnet-uri'
 import * as media from '@/media/media'
-import * as trackers from '@/scrapers/trackers'
+import * as qs from 'query-string'
 import * as scraper from '@/scrapers/scraper'
+import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
-const SKIPS = [
+export const SKIPS = [
 	'3d',
 	'avi',
 	// 'bonus',
@@ -38,7 +37,6 @@ export function results(result: scraper.Result, item: media.Item) {
 	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
 	if (skipped.length < skips.length) return
 
-	let providers = JSON.stringify(result.providers)
 	let slug = utils.toSlug(result.name, { toName: true, lowercase: true })
 
 	if (item.movie) {
@@ -48,7 +46,7 @@ export function results(result: scraper.Result, item: media.Item) {
 			if (!item.isPopular()) titles.unshift(item.title)
 			titles = _.uniq(titles.map(v => utils.toSlug(v, { toName: true })))
 			if (titles.filter(v => utils.leven(slug, v) == 0).length == 0) {
-				return // console.log(`❌ name leven '${titles}' ->`, result.name, providers)
+				return // console.log(`❌ name leven '${titles}' ->`, result.name)
 			}
 
 			let extras = utils.accuracy(`${item.title} 720 1080 1920 2160`, slug)
@@ -56,12 +54,12 @@ export function results(result: scraper.Result, item: media.Item) {
 				extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			)
 			if (years.length >= 2) {
-				return // console.log(`❌ years >= 2 '${years}' ->`, result.name, providers)
+				return // console.log(`❌ years >= 2 '${years}' ->`, result.name)
 			}
 
 			return true
 		} catch (error) {
-			// console.log(`❌ movie ${error.message} ->`, result.name, providers)
+			// console.log(`❌ movie ${error.message} ->`, result.name)
 			return false
 		}
 	}
@@ -70,7 +68,7 @@ export function results(result: scraper.Result, item: media.Item) {
 		try {
 			let title = utils.toSlug(item.title)
 			if (!item.isDaily && utils.leven(slug, title) > 0) {
-				return // console.log(`❌ name leven '${title}' ->`, result.name, providers)
+				return // console.log(`❌ name leven '${title}' ->`, result.name)
 			}
 
 			slug = ` ${utils.toSlug(result.name, { toName: true, lowercase: true })} `
@@ -90,12 +88,12 @@ export function results(result: scraper.Result, item: media.Item) {
 				return true
 			}
 		} catch (error) {
-			// console.log(`❌ show ${error.message} ->`, result.name, providers)
+			// console.log(`❌ show ${error.message} ->`, result.name)
 			return false
 		}
 	}
 
-	// console.log(`❌ return false ->`, result.name, providers)
+	// console.log(`❌ return false ->`, result.name)
 	return false
 }
 

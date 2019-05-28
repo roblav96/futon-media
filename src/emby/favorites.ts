@@ -66,7 +66,8 @@ async function download(item: media.Item) {
 	let slug = item.slug
 	if (item.S.z) slug += ` S${item.S.z}`
 	if (item.E.z) slug += `E${item.E.z}`
-	console.info(`download '${slug}' ->`)
+	let gigs = _.round(item.runtime / (item.movie ? 20 : 30), 2)
+	console.info(`download '${slug}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
 	let torrents = await scraper.scrapeAll(item)
 
 	// if (!process.DEVELOPMENT) console.log(`download all torrents ->`, torrents.length)
@@ -76,11 +77,9 @@ async function download(item: media.Item) {
 	// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
 	// else console.log(`download best cached ->`, torrents[index].short)
 
-	let gb = _.round(item.runtime / (item.movie ? 20 : 30), 2)
-	console.log(`gb ->`, utils.fromBytes(utils.toBytes(`${gb} GB`)))
 	torrents = torrents.filter(v => {
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
-		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gb} GB`)) return false
+		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gigs} GB`)) return false
 		return v.cached.length > 0 || v.seeders >= 1
 	})
 	// torrents = torrents.filter(v => v.cached.length == 0 && v.seeders >= 3)

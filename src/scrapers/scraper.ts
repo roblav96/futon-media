@@ -15,6 +15,7 @@ import fastStringify from 'fast-safe-stringify'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	await item.setAll()
+	console.log(`aliases '${item.short}' ->`, item.aliases)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
@@ -143,7 +144,9 @@ export class Scraper {
 				this.sorts[0] = sorts[1]
 				this.sorts[1] = sorts[0]
 			}
-			if (this.slow || this.item.isDaily) this.sorts = this.sorts.slice(0, 1)
+			if ((this.slow && this.item.show) || this.item.isDaily) {
+				this.sorts = this.sorts.slice(0, 1)
+			}
 		}
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
@@ -172,8 +175,8 @@ export class Scraper {
 			v => v && v.bytes > 0 && v.seeders >= 0 && v.stamp > 0 && filters.results(v, this.item)
 		)
 
-		let jsons = fastStringify(combos.map(v => v.map(vv => fastParse(vv).value || vv)))
-		console.log(Date.now() - t, ctor, results.length, combos.length /** , jsons */)
+		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
+		console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
 
 		return results.map(v => new torrent.Torrent(v))
 	}
