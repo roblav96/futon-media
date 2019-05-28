@@ -37,6 +37,7 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 
 export function squash(value: string) {
 	return value.replace(/[^\x20-\x7E]/g, '')
+	// return _.trim(value.replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' '))
 }
 export function clean(value: string) {
 	return _.trim(squash(stripBom(stripAnsi(_.unescape(_.deburr(value))))))
@@ -119,6 +120,7 @@ export function toSlug(value: string, options = {} as SlugifyOptions & { toName?
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
 }
+export { slugify }
 
 export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {

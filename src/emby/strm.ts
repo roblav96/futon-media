@@ -80,7 +80,7 @@ async function getDebridStreamUrl(
 	let torrents = await scraper.scrapeAll(item, Quality.includes('HD'))
 
 	// if (!process.DEVELOPMENT) console.log(`all torrents ->`, torrents.length)
-	console.log(`all torrents ->`, torrents.length, torrents.map(v => v.short))
+	console.log(`strm all torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	// if (Quality.includes('HD') && Channels >= 6 && !process.DEVELOPMENT) {
 	// 	let index = torrents.findIndex(({ cached }) => cached.length > 0)
@@ -113,7 +113,7 @@ async function getDebridStreamUrl(
 	}
 
 	// if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
-	console.log(`torrents ->`, torrents.length, torrents.map(v => v.short))
+	console.log(`strm torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)

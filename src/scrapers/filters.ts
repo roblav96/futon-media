@@ -9,12 +9,13 @@ import * as utils from '@/utils/utils'
 const SKIPS = [
 	'3d',
 	'avi',
-	'bonus',
+	// 'bonus',
 	'cam',
 	'camhd',
 	'camrip',
 	'enhanced',
-	'extras',
+	// 'extras',
+	// 'french',
 	'hdcam',
 	'latino',
 	'sample',
@@ -50,7 +51,7 @@ export function results(result: scraper.Result, item: media.Item) {
 				return // console.log(`❌ name leven '${titles}' ->`, result.name, providers)
 			}
 
-			let extras = utils.accuracy(`${item.title} 720 1080 2160`, slug)
+			let extras = utils.accuracy(`${item.title} 720 1080 1920 2160`, slug)
 			let years = _.uniq(
 				extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			)
@@ -68,7 +69,7 @@ export function results(result: scraper.Result, item: media.Item) {
 	if (item.show) {
 		try {
 			let title = utils.toSlug(item.title)
-			if (!item.isDaily && utils.leven(slug, title) != 0) {
+			if (!item.isDaily && utils.leven(slug, title) > 0) {
 				return // console.log(`❌ name leven '${title}' ->`, result.name, providers)
 			}
 
@@ -94,7 +95,7 @@ export function results(result: scraper.Result, item: media.Item) {
 		}
 	}
 
-	// console.log(`❌ return false ->`, result.name, providers)
+	console.warn(`❌ return false ->`, result.name, providers)
 	return false
 }
 

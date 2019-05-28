@@ -73,7 +73,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 			return utils.isVideo(v.path)
 		})
 		if (files.length == 0) {
-			console.warn(`RealDebrid files == 0 ->`, dn)
+			console.warn(`RealDebrid files.length == 0/${transfer.files.length} ->`, dn)
 			client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
 			return false
 		}
@@ -153,10 +153,6 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		}
 
 		let { download } = (await client.post(`/unrestrict/link`, { form: { link } })) as Unrestrict
-		if (!utils.isVideo(download)) {
-			console.warn(`RealDebrid !isVideo download ->`, this.dn)
-			return
-		}
 		return download
 	}
 }

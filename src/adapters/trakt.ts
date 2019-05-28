@@ -100,7 +100,6 @@ export interface IDs {
 }
 
 export interface Movie {
-	available_translations: string[]
 	certification: string
 	comment_count: number
 	country: string
@@ -127,7 +126,6 @@ export interface Show {
 		time: string
 		timezone: string
 	}
-	available_translations: string[]
 	certification: string
 	comment_count: number
 	country: string
@@ -150,30 +148,18 @@ export interface Show {
 
 export interface Season {
 	aired_episodes: number
-	available_translations: string[]
-	comment_count: number
 	episode_count: number
 	first_aired: string
 	ids: IDs
 	network: string
 	number: number
-	number_abs: number
 	overview: string
 	rating: number
-	runtime: number
-	season: number
 	title: string
-	translations: {
-		language: string
-		overview: string
-		title: string
-	}[]
-	updated_at: string
 	votes: number
 }
 
 export interface Episode {
-	available_translations: string[]
 	comment_count: number
 	first_aired: string
 	ids: IDs
@@ -184,11 +170,6 @@ export interface Episode {
 	runtime: number
 	season: number
 	title: string
-	translations: {
-		language: string
-		overview: string
-		title: string
-	}[]
 	updated_at: string
 	votes: number
 }

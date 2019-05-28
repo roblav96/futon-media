@@ -41,7 +41,8 @@ export class Item {
 		return this.ids.slug
 	}
 	get short() {
-		return `${this.slug} ${this.show ? `(${this.count})` : ''}`.trim()
+		let episodes = this.show ? ` [x${this.show.aired_episodes.toLocaleString()}] ` : ' '
+		return `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
 	}
 	get queries() {
 		let queries = [this.title]
@@ -73,11 +74,9 @@ export class Item {
 	}
 	get runtime() {
 		if (_.has(this.movie, 'runtime')) return this.movie.runtime
+		// if (_.has(this.episode, 'runtime')) return this.episode.runtime
 		if (_.has(this.show, 'runtime')) return this.show.runtime
-		return Infinity
-	}
-	get count() {
-		return this.show ? this.show.aired_episodes : this.isReleased ? 1 : 0
+		return 0
 	}
 
 	get isEnglish() {
@@ -96,8 +95,9 @@ export class Item {
 		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
 	}
 	isJunk(votes = 1000) {
-		let valid = this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes)
-		return !(valid && !!this.main.year && !!this.ids.slug && !!this.ids.imdb && !!this.ids.tmdb)
+		if (this.show && !(this.show.aired_episodes > 0)) return true
+		if (!this.main.year || !this.ids.slug || !this.ids.imdb || !this.ids.tmdb) return true
+		return !(this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes))
 	}
 
 	get isDaily() {

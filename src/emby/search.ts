@@ -10,15 +10,22 @@ import * as utils from '@/utils/utils'
 
 export const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
-	Rx.op.map(({ query }) => utils.toSlug(query.SearchTerm, { toName: true, lowercase: true })),
-	Rx.op.filter(search => !!search && utils.minify(search).length >= 3),
+	Rx.op.map(({ query }) => ({
+		query: utils.toSlug(query.SearchTerm, { toName: true, lowercase: true }),
+		UserId: query.UserId,
+	})),
+	Rx.op.filter(({ query }) => utils.minify(query).length >= 3),
 	Rx.op.debounceTime(1000),
-	Rx.op.distinctUntilChanged()
+	Rx.op.distinctUntilChanged((a, b) => a.query == b.query)
 )
 
-rxSearch.subscribe(async query => {
+rxSearch.subscribe(async ({ query, UserId }) => {
+	let ranges = [1000, 500, 250, 100, 25, 5]
+	let votes = ranges[_.clamp(query.split(' ').length - 1, 0, ranges.length - 1)]
+	console.info(`${await emby.sessions.byWho(UserId)}rxSearch '${query}' ->`, votes)
+
 	let types = query.includes(' ') ? 'movie,show,person' : 'movie,show'
-	let fields = query.includes(' ') ? 'title,aliases,name' : 'title,aliases'
+	let fields = query.includes(' ') ? 'title,tagline,aliases,name' : 'title,tagline,aliases'
 	let results = (await trakt.client.get(`/search/${types}`, {
 		query: { query, fields, limit: 100 },
 	})) as trakt.Result[]
@@ -38,14 +45,12 @@ rxSearch.subscribe(async query => {
 	items = items.filter(v => {
 		if (v.isJunk(5)) return false
 		if (utils.equals(v.slug, query)) {
-			console.warn(`equals '${v.slug}' ->`, v.main.votes)
+			console.warn(`equals ->`, v.short)
 			return !v.isJunk(5)
 		}
 		if (utils.accuracy(v.title, query).length == 0) {
-			let votes = [500, 250, 100, 50, 25]
-			let index = _.clamp(query.split(' ').length - 1, 0, votes.length - 1)
-			console.log(`accuracy '${v.short}' ->`, v.main.votes, '/', votes[index])
-			return !v.isJunk(votes[index])
+			// console.log(`accuracy ->`, v.short)
+			return !v.isJunk(votes)
 		}
 		return !v.isJunk()
 	})

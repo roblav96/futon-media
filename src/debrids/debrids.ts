@@ -57,7 +57,7 @@ export async function getStreamUrl(
 			if (!files) continue
 			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
 			if (files.length == 0) {
-				console.warn(`!files ->`, torrent.short)
+				console.warn(`files.length == 0 ->`, torrent.short)
 				next = true
 				continue
 			}
@@ -97,7 +97,14 @@ export async function getStreamUrl(
 			let stream = (await debrid.streamUrl(file).catch(error => {
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
-			if (!stream) continue
+			if (!stream) {
+				console.warn(`!stream ->`, torrent.short)
+				continue
+			}
+			if (!utils.isVideo(stream)) {
+				console.warn(`!isVideo stream ->`, torrent.short)
+				continue
+			}
 			if (stream.startsWith('http:')) stream = stream.replace('http:', 'https:')
 
 			console.log(`probe stream ->`, stream)

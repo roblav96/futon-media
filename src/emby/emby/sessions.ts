@@ -16,6 +16,11 @@ export const sessions = {
 	async byUserId(UserId: string) {
 		return (await sessions.get()).find(v => v.UserId == UserId)
 	},
+	async byWho(UserId: string) {
+		if (!UserId) return ''
+		let Session = await sessions.byUserId(UserId)
+		return Session ? `[${Session.short}] ` : ''
+	},
 	broadcast(message: string) {
 		sessions.get().then(exts => exts.forEach(v => v.message(message)))
 	},
@@ -143,6 +148,10 @@ export class Session {
 		return !!this.IsPlayState && !!this.IsNowPlaying
 	}
 
+	get short() {
+		let parts = [this.UserName, this.Client, this.DeviceName].map(v => v.replace(/\s+/g, ''))
+		return `${parts[0]}@${parts[1]}.${parts[2]}`
+	}
 	get json() {
 		return utils.compact({
 			Age: this.Age,

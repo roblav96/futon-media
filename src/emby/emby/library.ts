@@ -17,6 +17,12 @@ import db from '@/adapters/db'
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
+	// let titles = (await library.Items({ IncludeItemTypes: ['Movie'] })).map(v => v.Name)
+	// let camels = titles.filter(v =>
+	// 	v.split(' ').find(vv => vv.match(/([a-z\d])([A-Z])/g))
+	// )
+	// console.log(`camels ->`, camels)
+
 	await library.setFolders()
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
@@ -43,6 +49,7 @@ process.nextTick(async () => {
 		})
 	)
 	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
+		let who = await emby.sessions.byWho(UserId)
 		if (Item.Type == 'Person') {
 			let fulls = ((await tmdb.client.get('/search/person', {
 				query: { query: Item.Name },
@@ -56,16 +63,19 @@ process.nextTick(async () => {
 			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
 			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk())
-			console.log(`rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.short).sort())
+			let shorts = items.map(v => v.short).sort()
+			console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, shorts)
 			library.addQueue(items)
 		}
 		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
 			let item = await library.item(Item.Path, Item.Type)
-			console.log(`rxItem ${Item.Type} ->`, item.short)
+			console.info(`${who}rxItem ${Item.Type} ->`, item.short)
 			library.addQueue([item])
-			let entry = (await db.entries()).find(([k, v]) => v == UserId)
-			if (_.isArray(entry)) await db.del(entry[0])
-			await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+			if (UserId) {
+				let entry = (await db.entries()).find(([k, v]) => v == UserId)
+				if (_.isArray(entry)) await db.del(entry[0])
+				await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+			}
 		}
 	})
 
@@ -139,10 +149,9 @@ export const library = {
 
 	async setLibraryMonitorDelay() {
 		let Configuration = (await emby.client.get('/System/Configuration', {
-			query: { api_key: emby.env.ADMIN_KEY },
 			silent: true,
 		})) as emby.SystemConfiguration
-		if (Configuration.LibraryMonitorDelay != 1) {
+		if (Configuration.LibraryMonitorDelay != 1 && emby.env.ADMIN_KEY) {
 			Configuration.LibraryMonitorDelay = 1
 			console.warn(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
 			await emby.client.post('/System/Configuration', {

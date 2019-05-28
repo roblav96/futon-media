@@ -21,7 +21,7 @@ export class BitSnoop extends scraper.Scraper {
 				let $el = $(el)
 				results.push({
 					bytes: utils.toBytes($el.find('td:nth-child(2)').text()),
-					magnet: $el.find(`td a[href^="magnet:?"]`).attr('href'),
+					magnet: $el.find('td a[href^="magnet:?"]').attr('href'),
 					name: $el.find('.rtitle').text(),
 					seeders: utils.parseInt($el.find('td:nth-child(4)').text()),
 					stamp: utils.toStamp($el.find('td:nth-child(3)').text()),

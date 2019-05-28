@@ -11,8 +11,7 @@ import Sockette from '@/shims/sockette'
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 process.nextTick(async () => {
-	let query = { api_key: emby.env.ADMIN_KEY }
-
+	let query = { api_key: emby.env.ADMIN_KEY || emby.env.KEY }
 	let ws = new Sockette(`${emby.env.URL}/embywebsocket?${qs.stringify(query)}`, {
 		timeout: 3000,
 		maxAttempts: Infinity,

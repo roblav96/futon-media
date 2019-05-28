@@ -123,6 +123,7 @@ export class Http {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
 		if (options.debug) {
+			options.memoize = false
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 

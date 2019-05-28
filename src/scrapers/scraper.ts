@@ -24,6 +24,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
 		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/katcr')).Katcr,
+		(await import('@/scrapers/providers/katli')).Katli,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
@@ -162,7 +164,10 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
-		results = results.filter(v => filters.results(v, this.item))
+		results = results.filter(v => {
+			if (!_.isFinite(v.bytes) || !_.isFinite(v.seeders) || !_.isFinite(v.stamp)) return false
+			return filters.results(v, this.item)
+		})
 
 		console.log(Date.now() - t, this.constructor.name, combinations.length, results.length)
 		return results.map(v => new torrent.Torrent(v))
