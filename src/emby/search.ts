@@ -11,7 +11,7 @@ import * as utils from '@/utils/utils'
 export const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
 	Rx.op.map(({ query }) => ({
-		query: utils.toSlug(query.SearchTerm, { slug: false, lowercase: true }),
+		query: utils.toSlug(query.SearchTerm, { slug: false }),
 		UserId: query.UserId,
 	})),
 	Rx.op.filter(({ query }) => utils.minify(query).length >= 3),
@@ -24,6 +24,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let votes = ranges[_.clamp(query.split(' ').length - 1, 0, ranges.length - 1)]
 	console.info(`${await emby.sessions.byWho(UserId)}rxSearch '${query}' ->`, votes)
 
+	query = query.toLowerCase()
 	let types = query.includes(' ') ? 'movie,show,person' : 'movie,show'
 	let fields = query.includes(' ') ? 'title,tagline,aliases,name' : 'title,tagline,aliases'
 	let results = (await trakt.client.get(`/search/${types}`, {
@@ -44,7 +45,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let items = results.map(v => new media.Item(v))
 	items = items.filter(v => {
 		if (v.isJunk(5)) return false
-		if (utils.equals(v.slug, query)) {
+		if (utils.equals(v.title, query)) {
 			console.warn(`equals ->`, v.short)
 			return !v.isJunk(5)
 		}

@@ -19,7 +19,7 @@ export const sessions = {
 	async byWho(UserId: string) {
 		if (!UserId) return ''
 		let Session = await sessions.byUserId(UserId)
-		return Session ? `[${Session.short}] ` : ''
+		return Session ? `[${Session.short}]\n` : ''
 	},
 	broadcast(message: string) {
 		sessions.get().then(exts => exts.forEach(v => v.message(message)))

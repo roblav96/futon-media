@@ -36,16 +36,19 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 }
 
 export function isForeign(value: string) {
-	return value != _.deburr(value)
+	for (let i = 0; i < value.length; i++) {
+		if (value.charCodeAt(i) >= 256) return true
+	}
+	return false
 }
 export function isAscii(value: string) {
-	return /[^\w\s]/gi.test(value)
+	return /[^\w\s]/gi.test(value) == false
 }
 export function squash(value: string) {
 	return _.trim(value.replace(/[^\w\s]/gi, '').replace(/\s+/g, ' '))
 }
 export function minify(value: string) {
-	return _.trim(clean(value).replace(/[^\w]/gi, '').toLowerCase())
+	return _.trim(clean(value).replace(/[^\w]/gi, '')).toLowerCase()
 }
 export function clean(value: string) {
 	return _.trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
@@ -60,8 +63,8 @@ export function includes(value: string, target: string) {
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
-	let values = _.uniq(toSlug(value, { slug: false, squash: true, lowercase: true }).split(' '))
-	let targets = _.uniq(toSlug(target, { slug: false, squash: true, lowercase: true }).split(' '))
+	let values = _.uniq(toSlug(value, { squash: true }).split('-'))
+	let targets = _.uniq(toSlug(target, { squash: true }).split('-'))
 	return targets.filter(v => !values.includes(v))
 }
 

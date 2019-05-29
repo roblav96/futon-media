@@ -25,11 +25,10 @@ export class Eztv extends scraper.Scraper {
 			let torrents = (response.torrents || []).filter(v => {
 				let season = _.parseInt(v.season)
 				let episode = _.parseInt(v.episode)
-				let title = utils.minify(v.title)
-				if (this.item.E.a && title.includes(utils.minify(this.item.E.a))) {
+				if (this.item.E.a && utils.includes(v.title, this.item.E.a)) {
 					return true
 				}
-				if (this.item.E.t && title.includes(utils.minify(this.item.E.t))) {
+				if (this.item.E.t && utils.includes(v.title, this.item.E.t)) {
 					return true
 				}
 				if (this.item.S.n && season && this.item.E.n && episode) {

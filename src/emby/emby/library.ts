@@ -17,9 +17,9 @@ import db from '@/adapters/db'
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
-	let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
-	titles = titles.filter(v => utils.isForeign(v) || v.split(' ').find(vv => /['"]/g.test(vv)))
-	console.log(`library titles ->`, titles)
+	// let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
+	// titles = titles.filter(v => !utils.isAscii(v))
+	// console.log(`library titles ->`, titles)
 
 	await library.setFolders()
 	// await library.setCollections()
@@ -49,17 +49,10 @@ process.nextTick(async () => {
 	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
 		let who = await emby.sessions.byWho(UserId)
 		if (Item.Type == 'Person') {
-			let fulls = ((await tmdb.client.get('/search/person', {
-				query: { query: Item.Name },
-			})) as tmdb.Paginated<tmdb.Full>).results
-			fulls.sort((a, b) => b.popularity - a.popularity)
-			if (fulls.length == 0) return
-			let id = fulls[0].id
-			let results = (await trakt.client.get(`/search/tmdb/${id}`, {
-				query: { type: 'person' },
-			})) as trakt.Result[]
-			let result = results.find(v => trakt.toFull(v).ids.tmdb == id)
-			let items = (await trakt.resultsFor(result.person)).map(v => new media.Item(v))
+			let person = (await trakt.client.get(
+				`/people/${Item.ProviderIds.Imdb}`
+			)) as trakt.Person
+			let items = (await trakt.resultsFor(person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk())
 			let shorts = items.map(v => v.short).sort()
 			console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, shorts)
@@ -89,9 +82,7 @@ process.nextTick(async () => {
 			silent: true,
 		})) as RemoteSubtitle[]
 		if (subs && subs[0]) {
-			await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`, {
-				silent: true,
-			})
+			await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`)
 		}
 	})
 
@@ -222,7 +213,7 @@ export const library = {
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			throw new Error(`library toStrmPath '${item.slug}' !library.folders`)
 		}
-		let title = utils.toSlug(item.title, { toName: true })
+		let title = utils.toSlug(item.title, { slug: false })
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${title} (${item.year})`
 		if (!item.ids.imdb && !item.ids.tmdb) {

@@ -31,7 +31,7 @@ process.nextTick(() => {
 		}
 
 		let item = await emby.library.item(Item.Path, Item.Type)
-		if (item.isDaily) return
+		if (!process.DEVELOPMENT && item.isDaily) return
 
 		if (Item.Type == 'Movie') {
 			queue.add(() => download(item))
@@ -72,9 +72,9 @@ async function download(item: media.Item) {
 	let torrents = await scraper.scrapeAll(item)
 	console.log(`download all torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	let index = torrents.findIndex(({ cached }) => cached.length > 0)
-	if (index == -1) console.warn(`download best cached ->`, 'index == -1')
-	else console.log(`download best cached ->`, torrents[index].short)
+	// let index = torrents.findIndex(({ cached }) => cached.length > 0)
+	// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
+	// else console.log(`download best cached ->`, torrents[index].short)
 
 	torrents = torrents.filter(v => {
 		console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
@@ -83,6 +83,7 @@ async function download(item: media.Item) {
 	})
 	console.log(`download torrents ->`, torrents.length, torrents.map(v => v.short))
 
+	if (item.isDaily) return console.warn(`download item.isDaily`)
 	throw new Error(`DEV`)
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)

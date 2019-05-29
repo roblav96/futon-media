@@ -16,8 +16,8 @@ import fastStringify from 'fast-safe-stringify'
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	await item.setAll()
 
+	// console.log(`item ->`, item)
 	console.log(`item.titles ->`, item.titles)
-	console.log(`item.aliases ->`, item.aliases)
 	console.log(`item.collisions ->`, item.collisions)
 	console.log(`item.years ->`, item.years)
 	console.log(`item.slugs ->`, item.slugs)
@@ -51,7 +51,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	let torrents = (await pAll(
 		providers.map(scraper => () => new scraper(item).getTorrents())
 	)).flat()
-	
+
 	console.log(`torrents.length ->`, torrents.length)
 
 	torrents = _.uniqWith(torrents, (from, to) => {
@@ -139,6 +139,10 @@ export class Scraper {
 			}
 		}
 		if (slugs.length == 0) slugs.push(this.item.title)
+		/**
+			TODO:
+			- toSlug refactor
+		**/
 		return slugs.map(v => utils.toSlug(v))
 	}
 

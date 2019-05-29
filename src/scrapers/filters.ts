@@ -25,26 +25,27 @@ export const SKIPS = [
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
-	if (magnet.xt.length != 49) return // console.log(`⛔ magnet.xt != 49 ->`, result.name)
+	if (!_.isString(magnet.xt)) return console.log(`⛔ !magnet.xt ->`, result.name)
+	if (magnet.xt.length != 49) return console.log(`⛔ magnet.xt != 49 ->`, result.name)
 
 	result.name = result.name || magnet.dn
-	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
-	if (utils.isForeign(result.name)) return // console.log(`⛔ isForeign ->`, result.name)
-	result.name = utils.toSlug(result.name, { toName: true, separator: '.' })
+	if (!result.name) return console.log(`⛔ !result.name ->`, result.name)
+	if (utils.isForeign(result.name)) return console.log(`⛔ isForeign ->`, result.name)
+	result.name = utils.toSlug(result.name, { slug: false, separator: '.' })
 
 	let skips = utils.accuracy(`${item.title} ${item.E.t}`, SKIPS.join(' '))
 	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
-	if (skipped.length < skips.length) return // console.log(`⛔ skips ->`, result.name)
+	if (skipped.length < skips.length) return console.log(`⛔ skips ->`, result.name)
 
-	let slug = utils.toSlug(result.name, { toName: true, lowercase: true })
+	let slug = utils.toSlug(result.name, { slug: false, lowercase: true })
+	console.log(`slug ->`, slug)
 
 	if (item.movie) {
 		try {
 			// let titles = item.titles.map(title => item.years.map(year => `${title} ${year}`)).flat()
 			let titles = item.years.map(year => `${item.title} ${year}`)
 			if (!item.isPopular()) titles.unshift(item.title)
-			titles = _.uniq(titles.map(v => utils.toSlug(v, { toName: true })))
+			titles = _.uniq(titles.map(v => utils.toSlug(v, { slug: false })))
 			if (titles.filter(v => utils.leven(slug, v) == 0).length == 0) {
 				return console.log(`❌ name leven '${titles}' ->`, result.name)
 			}
@@ -71,7 +72,7 @@ export function results(result: scraper.Result, item: media.Item) {
 				return console.log(`❌ name leven '${title}' ->`, result.name)
 			}
 
-			slug = ` ${utils.toSlug(result.name, { toName: true, lowercase: true })} `
+			slug = ` ${utils.toSlug(result.name, { slug: false, lowercase: true })} `
 
 			result.packs = 0
 			if (item.isDaily && regex.isodate(item, slug)) return true

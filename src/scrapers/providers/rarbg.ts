@@ -48,6 +48,10 @@ export class Rarbg extends scraper.Scraper {
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
 		if (this.item.movie) return [JSON.stringify(query)]
+		/**
+			TODO:
+			- make sure this works
+		**/
 		let title = utils.toSlug(this.item.title)
 		let queries = super.slugs().map((slug, i) => {
 			if (slug.startsWith(title)) slug = slug.replace(title, '').trim()
