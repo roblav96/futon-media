@@ -260,7 +260,7 @@ export const library = {
 		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
 		let url = `${emby.env.PROTO}//${host}`
 		if (isIp(host)) url += `:${emby.env.STRM_PORT}`
-		return `${url}/strm?${qs.stringify(query)}`
+		return `${url}/strm?${qs.stringify(query as any)}`
 	},
 
 	async toStrmFile(item: media.Item) {

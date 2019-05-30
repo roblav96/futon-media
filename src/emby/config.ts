@@ -36,7 +36,7 @@ async function withEmbyData() {
 	if (!(await fs.pathExists(xmlfile))) return
 	let data = await fs.readFile(xmlfile, 'utf-8')
 	let system = {} as SystemConfiguration
-	skeys.forEach(k => (system[k] = (new RegExp(`<${k}>(.*)<\/${k}>`).exec(data) || [])[1]))
+	skeys.forEach(k => (system[k as any] = (new RegExp(`<${k}>(.*)<\/${k}>`).exec(data) || [])[1]))
 	let { HttpServerPortNumber, HttpsPortNumber, RequireHttps, WanDdns } = system
 	defaults({
 		EMBY_HOST: WanDdns,

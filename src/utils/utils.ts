@@ -7,11 +7,11 @@ import * as levenshtein from 'js-levenshtein'
 import * as path from 'path'
 import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
-import * as stripBom from 'strip-bom'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
 import stripAnsi from 'strip-ansi'
+import stripBom = require('strip-bom')
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
