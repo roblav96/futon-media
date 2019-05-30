@@ -1,2 +1,2 @@
-# futon-media
-Emby Media meets instant movies and tv shows on-demand streaming
+## Futon Media
+> Instantly stream movies and TV shows for [Emby Media](https://emby.media/)
