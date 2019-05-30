@@ -142,7 +142,7 @@ async function syncCollections() {
 			if (!v[schema.type] && schema.type) v = { [schema.type]: v } as any
 			return v
 		})
-		results = trakt.uniq(results.filter(v => !v.season && !v.episode && !v.person))
+		results = trakt.uniqWith(results.filter(v => !v.season && !v.episode && !v.person))
 		schema.items = results.map(v => new media.Item(v))
 		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(25) : !v.isJunk()))
 		if (schema.items.length == 0) {

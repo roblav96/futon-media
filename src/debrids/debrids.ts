@@ -26,9 +26,9 @@ export function download(torrents: torrent.Torrent[]) {
 	return queue.add(async () => {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, torrent.short)
-			let success = await RealDebrid.download(torrent.magnet).catch(error => {
+			let success = await RealDebrid.download(torrent.magnet).catch(async error => {
 				console.error(`RealDebrid download '${torrent.magnet}' -> %O`, error)
-				return false
+				return await Premiumize.download(torrent.magnet)
 			})
 			if (success) {
 				console.log(`👍 download success ->`, torrent.short)
@@ -73,15 +73,11 @@ export async function getStreamUrl(
 					`Episode${item.E.z}`,
 					`Ep${item.E.z}`,
 					`E${item.E.z}`,
-					`${item.E.z}`,
+					`${item.E.a}`,
+					`${item.E.t}`,
 				]
-				let skips = `${item.title} ${item.year}`
-				if (item.episode) skips += ` ${item.episode.title}`
 				for (let test of tests) {
-					file = files.find(v => {
-						let name = _.trim(utils.accuracy(skips, v.name).join(' '))
-						return utils.includes(name, test)
-					})
+					file = files.find(v => utils.includes(v.name, test))
 					if (file) break
 				}
 				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())

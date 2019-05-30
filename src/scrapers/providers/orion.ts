@@ -7,6 +7,7 @@ import db from '@/adapters/db'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://api.orionoid.com',
+	headers: { 'content-type': 'application/json' },
 	query: {
 		action: 'retrieve',
 		keyapp: process.env.ORION_APP,

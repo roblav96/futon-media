@@ -5,6 +5,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://yts.am/api/v2',
+	headers: { 'content-type': 'application/json' },
 	query: { limit: 50 } as Partial<Query>,
 })
 

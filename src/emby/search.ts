@@ -20,7 +20,7 @@ export const rxSearch = emby.rxHttp.pipe(
 )
 
 rxSearch.subscribe(async ({ query, UserId }) => {
-	let ranges = [1000, 500, 250, 100, 25, 5]
+	let ranges = [1000, 500, 100, 25, 5]
 	let votes = ranges[_.clamp(query.split(' ').length - 1, 0, ranges.length - 1)]
 	console.info(`${await emby.sessions.byWho(UserId)}rxSearch '${query}' ->`, votes)
 
@@ -41,7 +41,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	// results.push(...(await toListsResults(query)))
 
-	results = trakt.uniq(results.filter(v => !v.person))
+	results = trakt.uniqWith(results.filter(v => !v.person))
 	let items = results.map(v => new media.Item(v))
 	items = items.filter(v => {
 		if (v.isJunk(5)) return false

@@ -14,19 +14,19 @@ import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
+	console.time(`scrapeAll`)
 	await item.setAll()
+	console.timeEnd(`scrapeAll`)
 
-	// console.log(`item ->`, item)
-	console.log(`item.titles ->`, item.titles)
-	console.log(`item.collisions ->`, item.collisions)
-	console.log(`item.years ->`, item.years)
-	console.log(`item.slugs ->`, item.slugs)
-	console.log(`item.queries ->`, item.queries)
-	throw new Error(`DEV`)
+	// console.log(`scrapeAll item ->`, item)
+	// console.log(`scrapeAll item.aliases ->`, item.aliases)
+	// console.log(`scrapeAll item.collisions ->`, item.collisions)
+	console.log(`scrapeAll item.titles ->`, item.titles)
+	console.log(`scrapeAll item.slugs ->`, item.slugs)
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
-	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
@@ -39,7 +39,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
@@ -52,13 +53,11 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		providers.map(scraper => () => new scraper(item).getTorrents())
 	)).flat()
 
-	console.log(`torrents.length ->`, torrents.length)
-
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
 		let accuracy = utils.accuracy(to.name, from.name)
 		if (accuracy.length > 0) {
-			to.name += `.${accuracy.join('.')}`
+			to.name += ` ${accuracy.join(' ')}`
 		}
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
@@ -72,23 +71,29 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	torrents.forEach(({ split }, i) => {
 		let v = torrents[i]
 		v.cached = cacheds[i]
-		if (split.includes('360p') || split.includes('480p') || split.includes('720p')) {
+		if (v.providers.includes('Yts')) v.boost *= 1.5
+		if (split.includes('720p') || split.includes('480p') || split.includes('360p')) {
 			v.boost *= 0.25
 		}
 		if (!hd) return
-		if (split.includes('bdremux')) v.boost *= 1.25
-		if (split.includes('bluray')) v.boost *= 1.25
-		if (split.includes('ctrlhd')) v.boost *= 1.25
-		if (split.includes('exkinoray')) v.boost *= 1.25
 		if (split.includes('fgt')) v.boost *= 1.5
-		if (split.includes('grym')) v.boost *= 1.25
-		if (split.includes('kralimarko')) v.boost *= 1.25
-		if (split.includes('memento')) v.boost *= 1.25
-		if (split.includes('publichd')) v.boost *= 1.25
-		if (split.includes('remux')) v.boost *= 1.25
-		if (split.includes('sparks')) v.boost *= 1.25
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (split.includes('8bit') || split.includes('10bit')) v.boost *= 0.5
+		;[
+			'bdremux',
+			'ctrlhd',
+			'epsilon',
+			'exkinoray',
+			'grym',
+			'kralimarko',
+			'memento',
+			'publichd',
+			'rartv',
+			'remux',
+			'rovers',
+			'sigma',
+			'sparks',
+		].forEach(vv => split.includes(vv) && (v.boost *= 1.25))
 	})
 
 	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
@@ -100,6 +105,7 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
+			headers: { 'content-type': 'text/html' },
 			memoize: true,
 			retries: [],
 			silent: true,
@@ -113,37 +119,10 @@ export class Scraper {
 	concurrency = 3
 
 	slugs() {
-		let slugs = [] as string[]
-		if (this.item.movie) {
-			// if (this.item.isJunk(500)) {
-			// 	if (this.item.collection) {
-			// 		let split = this.item.collection.name.split(' ').slice(0, -1)
-			// 		slugs.push(split.join(' '))
-			// 	} else slugs.push(this.item.title)
-			// }
-			if (!this.item.isPopular()) slugs.push(this.item.title)
-			this.item.years.forEach(year => slugs.push(`${this.item.title} ${year}`))
-		}
-		if (this.item.show) {
-			this.item.S.n && slugs.push(`${this.item.title} s${this.item.S.z}`)
-			if (!this.item.isDaily) {
-				// if (this.item.tmdb.name.length > this.item.title.length) {
-				// 	slugs.unshift(this.item.tmdb.name)
-				// }
-				this.item.S.n && slugs.push(`${this.item.title} season ${this.item.S.n}`)
-			}
-			this.item.E.n && slugs.push(`${this.item.title} s${this.item.S.z}e${this.item.E.z}`)
-			if (this.item.isDaily) {
-				this.item.E.a && slugs.push(`${this.item.title} ${this.item.E.a}`)
-				this.item.E.t && slugs.push(`${this.item.title} ${this.item.E.t}`)
-			}
-		}
-		if (slugs.length == 0) slugs.push(this.item.title)
-		/**
-			TODO:
-			- toSlug refactor
-		**/
-		return slugs.map(v => utils.toSlug(v))
+		let slugs = _.clone(this.item.slugs)
+		if (this.item.movie) return slugs
+		let queries = this.item.queries.map(v => `${slugs[0]} ${v}`)
+		return slugs.slice(this.item.seasons.length > 1 ? 1 : 0).concat(queries)
 	}
 
 	constructor(public item: media.Item) {}
@@ -158,7 +137,9 @@ export class Scraper {
 				this.sorts[0] = sorts[1]
 				this.sorts[1] = sorts[0]
 			}
-			if (this.slow || this.item.isDaily) this.sorts = this.sorts.slice(0, 1)
+			if ((this.slow && !this.item.movie) || this.item.isDaily) {
+				this.sorts = this.sorts.slice(0, 1)
+			}
 		}
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
@@ -167,6 +148,10 @@ export class Scraper {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
 			sorts.forEach(sort => combos.push([slug, sort]))
 		})
+		combos = combos.slice(0, 3)
+
+		// console.log(Date.now() - t, ctor, combos.length, fastStringify(combos))
+		// return []
 
 		let results = (await pAll(
 			combos.map(([slug, sort], index) => async () => {
@@ -183,14 +168,17 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
-		results = results.filter(
+		results = _.uniqWith(results, (a, b) => utils.equals(a.magnet, b.magnet)).filter(
 			v => v && v.bytes > 0 && v.seeders >= 0 && v.stamp > 0 && filters.results(v, this.item)
 		)
 
-		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
-		console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
+		let torrents = results.map(v => new torrent.Torrent(v))
+		torrents = _.uniqWith(torrents, (a, b) => a.hash == b.hash)
 
-		return results.map(v => new torrent.Torrent(v))
+		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
+		console.log(Date.now() - t, ctor, torrents.length, combos.length, fastStringify(jsons))
+
+		return torrents
 	}
 }
 

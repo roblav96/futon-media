@@ -49,6 +49,9 @@ process.nextTick(async () => {
 	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
 		let who = await emby.sessions.byWho(UserId)
 		if (Item.Type == 'Person') {
+			if (!Item.ProviderIds.Imdb) {
+				return console.warn(`${who}rxItem !Item.ProviderIds.Imdb ->`, Item)
+			}
 			let person = (await trakt.client.get(
 				`/people/${Item.ProviderIds.Imdb}`
 			)) as trakt.Person

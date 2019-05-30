@@ -31,7 +31,6 @@ process.nextTick(() => {
 		}
 
 		let item = await emby.library.item(Item.Path, Item.Type)
-		if (!process.DEVELOPMENT && item.isDaily) return
 
 		if (Item.Type == 'Movie') {
 			queue.add(() => download(item))
@@ -43,6 +42,9 @@ process.nextTick(() => {
 			})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
 			if (Item.Type == 'Series') {
+				if (item.isDaily || item.episodes >= 500) {
+					return console.warn(`favorites item.isDaily || item.episodes >= 500`)
+				}
 				queue.addAll(
 					seasons.map(season => () => download(item.use({ type: 'season', season })))
 				)
@@ -77,14 +79,14 @@ async function download(item: media.Item) {
 	// else console.log(`download best cached ->`, torrents[index].short)
 
 	torrents = torrents.filter(v => {
-		console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
+		if (v.cached.length > 0) return true
+		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gigs} GB`)) return false
-		return v.cached.length > 0 || v.seeders >= 1
+		return v.seeders >= 3 // || v.cached.length > 0
 	})
 	console.log(`download torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	if (item.isDaily) return console.warn(`download item.isDaily`)
-	throw new Error(`DEV`)
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
 	await debrids.download(torrents)

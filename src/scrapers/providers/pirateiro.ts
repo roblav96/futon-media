@@ -10,14 +10,18 @@ export const client = scraper.Scraper.http({
 })
 
 export class Pirateiro extends scraper.Scraper {
-	/** size, date, seeds */
-	sorts = ['tamanho', 'enviado', 'seeders']
+	sorts = ['tamanho', 'enviado']
+	slow = true
 	concurrency = 1
+
+	slugs() {
+		return super.slugs().slice(0, 2)
+	}
 
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'c300' : 'c700'
 		let $ = cheerio.load(
-			await client.get(`/torrents`, {
+			await client.get(`/torrents/`, {
 				query: { search: slug, orderby: sort, [category]: '1' } as Partial<Query>,
 			})
 		)

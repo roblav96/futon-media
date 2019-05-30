@@ -78,7 +78,7 @@ export async function resultsFor(person: Person) {
 			results.push(...crew[job].filter(v => !!v.job))
 		}
 	}
-	return uniq(results.filter(v => !v.person))
+	return uniqWith(results.filter(v => !v.person))
 }
 
 export function toFull(result: Result) {
@@ -86,8 +86,8 @@ export function toFull(result: Result) {
 	return result[type] as Full
 }
 
-export function uniq(results: Result[]) {
-	return _.uniqWith(results, (a, b) => toFull(a).ids.slug == toFull(b).ids.slug)
+export function uniqWith(results: Result[]) {
+	return _.uniqWith(results, (a, b) => toFull(a).ids.trakt == toFull(b).ids.trakt)
 }
 
 export interface IDs {

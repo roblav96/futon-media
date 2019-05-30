@@ -6,12 +6,13 @@ import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://solidtorrents.net/api/v1',
+	headers: { 'content-type': 'application/json' },
 	query: { category: 'Video' } as Partial<Query>,
 })
 
 export class SolidTorrents extends scraper.Scraper {
-	sorts = ['size', 'date', 'seeders']
-	// slow = true
+	sorts = ['size', 'date']
+	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/search', {

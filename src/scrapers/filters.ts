@@ -25,89 +25,79 @@ export const SKIPS = [
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) return console.log(`⛔ !magnet.xt ->`, result.name)
-	if (magnet.xt.length != 49) return console.log(`⛔ magnet.xt != 49 ->`, result.name)
+	if (!_.isString(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
+	if (magnet.xt.length != 49) return // console.log(`⛔ magnet.xt != 49 ->`, result.name)
 
 	result.name = result.name || magnet.dn
-	if (!result.name) return console.log(`⛔ !result.name ->`, result.name)
-	if (utils.isForeign(result.name)) return console.log(`⛔ isForeign ->`, result.name)
-	result.name = utils.toSlug(result.name, { slug: false, separator: '.' })
+	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
+	if (utils.isForeign(result.name)) return // console.log(`⛔ foreign ->`, result.name)
+	result.name = utils.toSlug(result.name)
 
-	let skips = utils.accuracy(`${item.title} ${item.E.t}`, SKIPS.join(' '))
+	let skips = utils.accuracy(`${item.titles} ${item.E.t}`, SKIPS.join(' '))
 	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
-	if (skipped.length < skips.length) return console.log(`⛔ skips ->`, result.name)
+	if (skipped.length < skips.length) {
+		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
+	}
 
-	let slug = utils.toSlug(result.name, { slug: false, lowercase: true })
-	console.log(`slug ->`, slug)
+	let slugs = item.slugs.concat(item.aliases)
+	if (!item.isDaily && slugs.filter(v => utils.leven(result.name, v) == 0).length == 0) {
+		return console.log(`❌ leven slugs ->`, result.name)
+	}
+
+	let collision = item.collisions.find(v => utils.leven(result.name, v) == 0)
+	if (collision) return console.log(`❌ collision '${collision}' ->`, result.name)
 
 	if (item.movie) {
 		try {
-			// let titles = item.titles.map(title => item.years.map(year => `${title} ${year}`)).flat()
-			let titles = item.years.map(year => `${item.title} ${year}`)
-			if (!item.isPopular()) titles.unshift(item.title)
-			titles = _.uniq(titles.map(v => utils.toSlug(v, { slug: false })))
-			if (titles.filter(v => utils.leven(slug, v) == 0).length == 0) {
-				return console.log(`❌ name leven '${titles}' ->`, result.name)
-			}
-
-			let extras = utils.accuracy(`${item.title} 720 1080 1920 2160`, slug)
-			let years = _.uniq(
-				extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
-			)
+			let extras = utils.accuracy(`${item.title} 1080 1920 2160`, result.name)
+			let years = extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
+			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
 			if (years.length >= 2) {
 				return console.log(`❌ years >= 2 '${years}' ->`, result.name)
 			}
 
 			return true
 		} catch (error) {
-			console.log(`❌ movie ${error.message} ->`, result.name)
-			return false
+			return console.log(`❌ movie ${error.message} ->`, result.name)
 		}
 	}
 
 	if (item.show) {
 		try {
-			let title = utils.toSlug(item.title)
-			if (!item.isDaily && utils.leven(slug, title) > 0) {
-				return console.log(`❌ name leven '${title}' ->`, result.name)
-			}
-
-			slug = ` ${utils.toSlug(result.name, { slug: false, lowercase: true })} `
-
+			let slug = ` ${result.name} `
 			result.packs = 0
-			if (item.isDaily && regex.isodate(item, slug)) return true
-			if (item.E.t && utils.includes(slug, item.E.t)) return true
+			if (item.isDaily && utils.includes(slug, item.E.a)) return true
+			if (item.E.t && utils.leven(slug, item.E.t) == 0) return true
 			if (regex.s00e00(item, slug)) return true
 
 			result.packs = 1
 			if (regex.nthseason(item, slug)) return true
 			if (regex.season(item, slug)) return true
+			if (item.seasons.length == 1) return true
 
 			let seasons0to = regex.seasons0to(item, slug)
 			if (_.isFinite(seasons0to)) {
 				result.packs = seasons0to
 				return true
 			}
+
+			return console.log(`❌ return false ->`, result.name)
 		} catch (error) {
-			console.log(`❌ show ${error.message} ->`, result.name)
-			return false
+			return // console.log(`⛔ show ${error.message} ->`, result.name)
 		}
 	}
-
-	console.log(`❌ return false ->`, result.name)
-	return false
 }
 
 export const regex = {
-	/** `YYYY-MM-DD` */
-	isodate(item: media.Item, slug: string) {
-		let matches = slug.match(/\s\d{4}\s\d{2}\s\d{2}\s/gi)
-		matches = (matches || []).map(v => utils.minify(v))
-		if (matches.length == 0) return
-		let target = utils.minify(item.E.a)
-		if (matches.includes(target)) return true
-		throw new Error(`regex '${matches}' !includes '${target}'`)
-	},
+	// /** `YYYY-MM-DD` */
+	// isodate(item: media.Item, slug: string) {
+	// 	let matches = slug.match(/\s\d{4}\s\d{2}\s\d{2}\s/gi)
+	// 	matches = (matches || []).map(v => utils.minify(v))
+	// 	if (matches.length == 0) return
+	// 	let target = utils.minify(item.E.a)
+	// 	if (matches.includes(target)) return true
+	// 	throw new Error(`regex '${matches}' !includes '${target}'`)
+	// },
 	/** `s00e00` `season 1 episode 1` */
 	s00e00(item: media.Item, slug: string) {
 		let matches = [
@@ -124,7 +114,7 @@ export const regex = {
 		if (!item.episode) throw new Error(`regex !item.episode`)
 		let target = `s${item.S.z}e${item.E.z}`
 		if (matches.includes(target)) return true
-		throw new Error(`regex '${matches}' !includes '${target}'`)
+		throw new Error(`regex '${matches}' != '${target}'`)
 	},
 	/** `1st season` */
 	nthseason(item: media.Item, slug: string) {

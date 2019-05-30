@@ -40,6 +40,23 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 		return cached
 	}
 
+	static async download(magnet: string) {
+		let { dn } = magneturi.decode(magnet)
+
+		let { transfers } = (await client.post('/transfer/create', {
+			query: { src: magnet },
+		})) as { transfers: Transfer[] }
+		if (transfers.find(v => utils.equals(v.name, dn as string))) {
+			console.warn(`Premiumize download transfer exists ->`, dn)
+			return true
+		}
+
+		let { status } = (await client.post('/transfer/create', {
+			query: { src: magnet },
+		})) as TransferCreateResponse
+		return status == 'success'
+	}
+
 	async getFiles() {
 		let downloads = (await client.post(`/transfer/directdl`, {
 			query: { src: this.magnet },

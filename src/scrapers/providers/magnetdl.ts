@@ -10,7 +10,8 @@ export const client = scraper.Scraper.http({
 })
 
 export class MagnetDl extends scraper.Scraper {
-	sorts = ['size', 'age', 'se']
+	sorts = ['size', 'age']
+	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'Movie' : 'TV'

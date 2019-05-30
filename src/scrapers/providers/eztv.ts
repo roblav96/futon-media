@@ -5,6 +5,7 @@ import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://eztv.io/api',
+	headers: { 'content-type': 'application/json' },
 	query: { limit: 100, page: 1 } as Partial<Query>,
 })
 

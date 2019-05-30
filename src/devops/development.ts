@@ -1,9 +1,9 @@
 import * as dts from 'dts-generate'
 
 if (process.DEVELOPMENT) {
-	let stdout = (console as any)._stdout
+	let stdout = (console as any)._stdout as NodeJS.WriteStream
 	if (stdout.isTTY) {
-		stdout.isTTY = false
+		stdout.isTTY = false as any
 		process.nextTick(() => (stdout.isTTY = true))
 	}
 	console.clear()

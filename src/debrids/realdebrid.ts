@@ -68,12 +68,16 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		await utils.pTimeout(1000)
 		transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
 
+		if (transfer.files.length == 0) {
+			throw new Error(`RealDebrid transfer files == 0`)
+		}
+
 		let files = transfer.files.filter(v => {
 			if (v.path.toLowerCase().includes('rarbg.com.mp4')) return false
 			return utils.isVideo(v.path)
 		})
 		if (files.length == 0) {
-			console.warn(`RealDebrid files.length == 0/${transfer.files.length} ->`, dn)
+			console.warn(`RealDebrid files == 0/${transfer.files.length} ->`, dn)
 			client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
 			return false
 		}

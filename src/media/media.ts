@@ -40,6 +40,9 @@ export class Item {
 	get slug() {
 		return this.ids.slug
 	}
+	get trakt() {
+		return this.ids.trakt
+	}
 	get short() {
 		let episodes = this.show ? ` [${this.show.aired_episodes.toLocaleString()} eps] ` : ' '
 		return `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
@@ -85,14 +88,17 @@ export class Item {
 		return _.has(this.main, 'votes') ? this.main.votes > votes : false
 	}
 	isJunk(votes = 1000) {
-		if (this.show && !(this.show.aired_episodes > 0)) return true
-		if (!this.main.year || !this.ids.slug || !this.ids.imdb || !this.ids.tmdb) return true
+		if (!this.main.year || (this.show && !(this.show.aired_episodes > 0))) return true
+		if (!this.ids.trakt || !this.ids.slug || !this.ids.imdb || !this.ids.tmdb) return true
 		return !(this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes))
 	}
 
 	get isDaily() {
 		if (this.movie) return false
-		return this.main.genres.filter(v => ['news', 'reality', 'talk-show'].includes(v)).length > 0
+		return this.main.genres.filter(v => ['news', 'talk-show'].includes(v)).length > 0
+	}
+	get episodes() {
+		return this.show && this.show.aired_episodes
 	}
 
 	/** season */
@@ -154,14 +160,14 @@ export class Item {
 		})) as tmdb.Full
 		if (this.tmdb.belongs_to_collection) {
 			this.tmdb.belongs_to_collection = (await tmdb.client.get(
-				`/collection/${this.tmdb.belongs_to_collection.id}`
+				`/collection/${this.tmdb.belongs_to_collection.id}`,
+				{ silent: true }
 			)) as tmdb.Collection
 		}
 	}
 
 	aliases: string[]
 	async setAliases() {
-		if (_.isArray(this.aliases)) return
 		let response = (await trakt.client.get(`/${this.type}s/${this.slug}/aliases`, {
 			silent: true,
 		})) as trakt.Alias[]
@@ -185,12 +191,13 @@ export class Item {
 			if (utils.includes(v, this.year.toString())) return true
 			if (utils.accuracy(v, '3d').length == 0) return true
 			if (utils.accuracy(v, 'imax').length == 0) return true
+			if (utils.accuracy(v, 'part').length == 0) return true
 			if (utils.accuracy(this.title, v).length <= 1) return true
 			if (!utils.equals(v.split(' ').shift(), this.title.split(' ').shift())) return true
 			if (v.length > this.title.length && !utils.includes(v, this.title)) return true
 			if (v.split(this.title).length > 2) return true
 		})
-		this.aliases = _.uniqWith(aliases, (a, b) => utils.minify(a) == utils.minify(b))
+		this.aliases = utils.uniqWith(aliases)
 		console.log(`setAliases '${this.slug}' ->`, this.aliases)
 	}
 
@@ -202,19 +209,47 @@ export class Item {
 		})) as trakt.Result[]
 		let items = results.map(v => new Item(v))
 		items = items.filter(
-			v => !v.isJunk() && v.slug != this.slug && utils.equals(v.title, this.title)
+			v => !v.isJunk(5) && v.trakt != this.trakt && utils.includes(v.title, this.title)
 		)
-		this.collisions = items.map(v => v.slug)
+		console.log(`setCollisions '${this.slug}' search ->`, items.map(v => v.title))
+
+		let aliases = [] as string[]
+		for (let item of items) {
+			let response = (await trakt.client.get(`/${item.type}s/${item.slug}/aliases`, {
+				silent: true,
+			})) as trakt.Alias[]
+			_.remove(response, v => !['gb', 'us'].includes(v.country))
+			aliases.push(item.title, ...response.map(v => v.title).filter(v => !utils.isForeign(v)))
+		}
+		aliases = aliases.filter(v => v.length > this.title.length)
+		aliases = aliases.map(v => utils.toSlug(v, { squash: true }))
+		this.collisions = utils.uniqWith(aliases)
 		console.log(`setCollisions '${this.slug}' ->`, this.collisions)
 	}
 
+	seasons: trakt.Season[]
+	async setSeasons() {
+		if (this.movie) return
+		let seasons = (await trakt.client.get(`/shows/${this.slug}/seasons`, {
+			silent: true,
+		})) as trakt.Season[]
+		this.seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
+	}
+
 	async setAll() {
-		await Promise.all([this.setOmdb(), this.setTmdb(), this.setAliases(), this.setCollisions()])
+		await Promise.all([
+			this.setOmdb(),
+			this.setTmdb(),
+			this.setAliases(),
+			this.setCollisions(),
+			this.setSeasons(),
+		])
 		Memoize.clear(this)
 	}
 
 	get titles() {
-		return _.uniq([this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)).sort()
+		let titles = [this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)
+		return utils.uniqWith(titles).sort((a, b) => a.length - b.length)
 	}
 	get years() {
 		let tmdbyear: number
@@ -224,33 +259,47 @@ export class Item {
 	}
 	get slugs() {
 		let slugs = [] as string[]
-		this.titles.forEach(title => {
-			let [a, b] = [utils.toSlug(title), utils.toSlug(title, { squash: true })]
-			slugs.push(a)
-			if (a != b) slugs.push(b)
+		let titles = this.isDaily ? [this.titles[0]] : this.titles
+		titles.forEach(title => {
+			let [a, b] = [utils.toSlug(title, { squash: true }), utils.toSlug(title)]
+			if (a == b) slugs.push(a)
+			else {
+				let words = title.split(' ').filter(v => utils.isAscii(v))
+				if (words.length >= 2) {
+					slugs.push(utils.toSlug(words.join(' ')))
+				} else {
+					slugs.push(a) && slugs.push(b)
+				}
+			}
 		})
-		slugs = slugs.concat(this.aliases.map(v => utils.toSlug(v, { squash: true })))
-		slugs = _.uniq(slugs)
+		if (!this.isPopular()) {
+			slugs.push(...this.aliases.map(v => utils.toSlug(v)))
+		}
 		if (this.movie) {
-			slugs = slugs.map(slug => this.years.map(year => `${slug}-${year}`)).flat()
+			slugs = slugs.map(slug => this.years.map(year => `${slug} ${year}`)).flat()
 			if (!this.isPopular()) {
 				slugs.push(utils.toSlug(this.title))
 				if (this.tmdb.belongs_to_collection) {
 					let split = this.tmdb.belongs_to_collection.name.split(' ').slice(0, -1)
-					slugs.push(utils.toSlug(split.join(' '), { squash: true }))
+					slugs.push(utils.toSlug(split.join(' ')))
 				}
 			}
 		}
-		if (this.show && this.collisions.length > 0) slugs[0] += `-${this.year}`
-		return slugs
+		return _.uniq(slugs)
 	}
 	get queries() {
-		let queries = [this.title]
-		if (utils.equals(this.title, this.slug)) {
-			queries.push(`${this.title} ${this.year}`)
-		}
-		if (this.alias && !this.isPopular()) {
-			queries.push(this.alias)
+		let queries = [] as string[]
+		if (this.movie) return queries
+		this.S.n && queries.push(`s${this.S.z}`)
+		// if (!this.isDaily) {
+		// 	this.S.n && queries.push(`season ${this.S.n}`)
+		// }
+		this.E.n && queries.push(`s${this.S.z}e${this.E.z}`)
+		if (this.isDaily) {
+			this.E.a && queries.push(this.E.a)
+			this.E.t && queries.push(this.E.t)
+		} else {
+			this.S.n && queries.push(`season ${this.S.n}`)
 		}
 		return queries
 	}

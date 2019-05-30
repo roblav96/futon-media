@@ -37,6 +37,10 @@ export class Snowfl extends scraper.Scraper {
 	slow = true
 	concurrency = 1
 
+	slugs() {
+		return super.slugs().slice(0, 2)
+	}
+
 	async getResults(slug: string, sort: string) {
 		if (!process.env.CF_SNOWFL) {
 			console.warn(`${this.constructor.name} ->`, '!process.env.CF_SNOWFL')

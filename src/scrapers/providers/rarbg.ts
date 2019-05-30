@@ -5,6 +5,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://torrentapi.org',
+	headers: { 'content-type': 'application/json' },
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
 	} as Partial<Query>,
@@ -40,6 +41,7 @@ async function syncToken() {
 
 export class Rarbg extends scraper.Scraper {
 	sorts = ['last', 'seeders']
+	slow = true
 	concurrency = 1
 
 	slugs() {
@@ -48,16 +50,8 @@ export class Rarbg extends scraper.Scraper {
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
 		if (this.item.movie) return [JSON.stringify(query)]
-		/**
-			TODO:
-			- make sure this works
-		**/
-		let title = utils.toSlug(this.item.title)
-		let queries = super.slugs().map((slug, i) => {
-			if (slug.startsWith(title)) slug = slug.replace(title, '').trim()
-			return slug ? ({ ...query, search_string: slug } as Query) : query
-		})
-		return queries.map(v => JSON.stringify(v))
+		let queries = this.item.queries.map(v => ({ ...query, search_string: v } as Query))
+		return [query].concat(queries).map(v => JSON.stringify(v))
 	}
 
 	async getResults(slug: string, sort: string) {

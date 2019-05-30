@@ -60,11 +60,17 @@ export function equals(value: string, target: string) {
 export function includes(value: string, target: string) {
 	return minify(value).includes(minify(target))
 }
+export function startsWith(value: string, target: string) {
+	return minify(value).startsWith(minify(target))
+}
+export function uniqWith(values: string[]) {
+	return _.uniqWith(values, (a, b) => equals(a, b))
+}
 
 /** `accuracy.length == 0` when all of `target` is included in `value` */
 export function accuracy(value: string, target: string) {
-	let values = _.uniq(toSlug(value, { squash: true }).split('-'))
-	let targets = _.uniq(toSlug(target, { squash: true }).split('-'))
+	let values = _.uniq(toSlug(value /** , { squash: true } */).split(' '))
+	let targets = _.uniq(toSlug(target /** , { squash: true } */).split(' '))
 	return targets.filter(v => !values.includes(v))
 }
 
@@ -103,7 +109,7 @@ export function toSlug(
 	_.defaults(options, {
 		decamelize: false,
 		lowercase: options.slug != false,
-		separator: options.slug != false ? '-' : ' ',
+		separator: ' ',
 		squash: options.slug == false,
 		stops: false,
 	} as Parameters<typeof toSlug>[1])

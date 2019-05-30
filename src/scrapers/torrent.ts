@@ -22,7 +22,7 @@ export class Torrent {
 		return utils.fromBytes(this.bytes)
 	}
 	get split() {
-		return this.name.toLowerCase().split('.')
+		return this.name.toLowerCase().split(' ')
 	}
 
 	boost = 1
@@ -38,7 +38,8 @@ export class Torrent {
 	}
 
 	get short() {
-		return `[${this.boost.toFixed(2)}] [${this.size}] [${this.seeders}] ${
+		let boost = `[${this.boost.toFixed(2)}${_.isFinite(this.packs) ? ` x ${this.packs}` : ''}]`
+		return `${boost} [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
 		}${this.name} [${this.age}] [${this.providers}]`
 	}
@@ -47,6 +48,7 @@ export class Torrent {
 		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return utils.compact({
 			age: this.age,
+			boost: this.boost,
 			cached: this.cached.join(', '),
 			magnet: `magnet:?${minify}`,
 			name: this.name,
