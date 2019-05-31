@@ -221,7 +221,7 @@ export class Item {
 		// aliases = aliases.map(v => utils.toSlug(v, { squash: true }))
 		aliases = aliases.map(v => utils.unsquash(v)).flat()
 		aliases = aliases.concat(aliases.map(v => `${v} ${this.year}`))
-		this.aliases = utils.sortBy(_.uniq(aliases))
+		this.aliases = utils.byLength(_.uniq(aliases))
 		// console.log(`setAliases '${this.slug}' ->`, this.aliases)
 	}
 
@@ -251,7 +251,7 @@ export class Item {
 			}),
 			{ concurrency: 1 }
 		)).flat()
-		this.collisions = utils.sortBy(_.uniq(collisions))
+		this.collisions = utils.byLength(_.uniq(collisions))
 		// console.log(`setCollisions '${this.slug}' ->`, this.collisions)
 	}
 
@@ -264,7 +264,7 @@ export class Item {
 
 	get titles() {
 		let titles = [this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)
-		return utils.sortBy(_.uniq(titles))
+		return utils.byLength(_.uniq(titles))
 	}
 	get years() {
 		let tmdbyear: number
@@ -283,17 +283,25 @@ export class Item {
 	}
 	get slugs() {
 		let titles = this.isDaily ? [this.titles[0]] : this.titles
-		let slugs = titles.map(v => utils.unsquash(v, true)).flat()
-		return utils.sortBy(_.uniq(slugs))
+		// let slugs = titles.map(v => utils.unsquash(v, true)).flat()
+		let slugs = _.flatten(
+			titles.map(v => {
+				let [a, b] = [utils.toSlug(v, { squash: true }), utils.toSlug(v)]
+				if (a == b) return [v]
+				let words = v.split(' ').filter(v => utils.isAscii(v.slice(1, -1)))
+				return words.length >= 2 ? [words.join(' ')] : [a, b]
+			})
+		)
+		return utils.byLength(_.uniq(slugs))
 	}
 	get queries() {
 		let queries = [] as string[]
 		if (this.movie && !this.isPopular()) {
-			queries.push(this.titles[0])
+			queries.push(this.slugs[0])
 			if (this.collection.name) {
 				queries.push(this.collection.name)
 			}
-			queries = queries.map(v => utils.unsquash(v, true)).flat()
+			// queries = queries.map(v => utils.unsquash(v, true)).flat()
 		}
 		if (this.show) {
 			let next = this.seasons.find(v => v.number == this.S.n + 1)

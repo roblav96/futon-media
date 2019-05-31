@@ -45,11 +45,6 @@ export function parseInt(value: string) {
 export function parseFloat(value: string) {
 	return Number.parseFloat(value.replace(/[^\d.]/g, ''))
 }
-
-export function compact<T = any>(value: T) {
-	return (_.fromPairs(_.toPairs(value as any).filter(([k, v]) => !_.isNil(v))) as any) as T
-}
-
 export function zeroSlug(value: number) {
 	if (!_.isFinite(value)) return 'NaN'
 	if (value >= 100) return value.toString()
@@ -87,39 +82,26 @@ export function startsWith(value: string, target: string) {
 export function unique(values: string[]) {
 	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
 }
-export function sortBy(values: string[]) {
-	return _.sortBy(values).sort((a, b) => a.length - b.length)
-}
-
-export function unsquash(value: string, query = false) {
-	let [a, b] = [toSlug(value, { squash: true }), toSlug(value)]
-	if (a == b) return [a]
-	if (query == false) return [a, b]
-	let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
-	return words.length >= 2 ? [toSlug(words.join(' '))] : [a, b]
-}
 
 export function contains(value: string, target: string) {
 	let values = toSlug(value).split(' ')
 	let targets = toSlug(target).split(' ')
-	return _.uniq(targets).filter(v => !_.uniq(values).includes(v)).length == 0
-}
-export function containsAll(value: string, target: string) {
-	let values = toSlug(value).split(' ')
-	let targets = toSlug(target).split(' ')
-	let index = values.findIndex(v => v == targets[0])
-	if (index == -1) return false
+	let start = values.findIndex(v => v == targets[0])
+	if (start == -1) return false
 	for (let i = 0; i < targets.length; i++) {
-		if (!equals(targets[i], values[index + i])) return false
+		if (!equals(targets[i], values[start + i])) return false
 	}
 	return true
 }
 
-/** `accuracy.length == 0` when all of `target` is included in `value` */
-export function accuracy(value: string, target: string) {
+/** `accuracies.length == 0` when all of `target` is included in `value` */
+export function accuracies(value: string, target: string) {
 	let values = _.uniq(toSlug(value).split(' '))
 	let targets = _.uniq(toSlug(target).split(' '))
 	return targets.filter(v => !values.includes(v))
+}
+export function accuracy(value: string, target: string) {
+	return accuracies(value, target).length == 0
 }
 
 /** `leven == 0` when all of `target` is included in `value` */
@@ -130,10 +112,18 @@ export function leven(value: string, target: string) {
 }
 export { levenshtein }
 
-export function toSlug(
-	value: string,
-	options = {} as Partial<SlugifyOptions & { title: boolean; squash: boolean; stops: boolean }>
-) {
+export function unsquash(value: string, query = false) {
+	let [a, b] = [toSlug(value, { squash: true }), toSlug(value)]
+	if (a == b) return [a]
+	if (query == false) return [a, b]
+	let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
+	return words.length >= 2 ? [toSlug(words.join(' '))] : [a, b]
+}
+
+export type SlugOptions = Partial<
+	SlugifyOptions & { title: boolean; squash: boolean; stops: boolean }
+>
+export function toSlug(value: string, options = {} as SlugOptions) {
 	_.defaults(options, {
 		decamelize: false,
 		lowercase: options.title != true,
@@ -141,10 +131,10 @@ export function toSlug(
 		squash: options.title == true,
 		stops: false,
 	} as Parameters<typeof toSlug>[1])
-	value = options.squash ? squash(value) : clean(value)
-	let slug = slugify(value, { ...options, separator: ' ' })
-	let filters = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
-	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
+	value = clean(value)
+	let slug = slugify(options.squash ? squash(value) : value, { ...options, separator: ' ' })
+	let stops = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
+	let split = slug.split(' ').filter(v => !stops.includes(v.toLowerCase()))
 	return split.join(options.separator)
 }
 export { slugify }
@@ -154,6 +144,12 @@ export function isVideo(file: string) {
 	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
 }
 
+export function compact<T = any>(value: T) {
+	return (_.fromPairs(_.toPairs(value as any).filter(([k, v]) => !_.isNil(v))) as any) as T
+}
+export function byLength(values: string[]) {
+	return _.sortBy(values).sort((a, b) => a.length - b.length)
+}
 export function alphabetically(a: string, b: string) {
 	a = minify(a)
 	b = minify(b)

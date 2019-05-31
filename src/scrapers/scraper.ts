@@ -58,7 +58,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
-		let accuracy = utils.accuracy(to.name, from.name)
+		let accuracy = utils.accuracies(to.name, from.name)
 		if (accuracy.length > 0) {
 			to.name += ` ${accuracy.join(' ')}`
 		}

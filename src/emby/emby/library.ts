@@ -19,7 +19,7 @@ process.nextTick(async () => {
 
 	// let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
 	// titles = titles.filter(v => !utils.isAscii(v))
-	// console.log(`library titles ->`, titles)
+	// console.log(`library titles ->`, utils.unique(titles).sort(utils.alphabetically))
 
 	await library.setFolders()
 	// await library.setCollections()

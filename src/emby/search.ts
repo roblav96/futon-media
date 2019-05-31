@@ -11,7 +11,7 @@ import * as utils from '@/utils/utils'
 export const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
 	Rx.op.map(({ query }) => ({
-		query: utils.toSlug(query.SearchTerm, { title: true /** , stops: true */ }),
+		query: utils.toSlug(query.SearchTerm),
 		UserId: query.UserId,
 	})),
 	Rx.op.filter(({ query }) => query.length >= 3),
@@ -42,17 +42,17 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	results = trakt.uniqWith(results.filter(v => !v.person))
 	let items = results.map(v => new media.Item(v))
-	items = items.filter(v => {
-		if (v.isJunk(5)) return false
-		if (utils.equals(v.title, query)) {
-			console.log(`equals ->`, v.short)
-			return !v.isJunk(5)
+	items = items.filter(item => {
+		if (item.isJunk(5)) return false
+		if (utils.equals(item.title, query)) {
+			console.log(`equals ->`, item.short)
+			return !item.isJunk(5)
 		}
-		if (utils.includes(v.title, query)) {
-			console.log(`includes ->`, v.short)
-			return !v.isJunk(votes)
+		if (utils.contains(item.title, query)) {
+			console.log(`contains ->`, item.short)
+			return !item.isJunk(votes)
 		}
-		return !v.isJunk()
+		return !item.isJunk()
 	})
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.short).sort())
 

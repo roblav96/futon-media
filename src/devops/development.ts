@@ -20,6 +20,7 @@ if (process.DEVELOPMENT) {
 			matcher: await import('matcher'),
 			ms: await import('pretty-ms'),
 			multimatch: await import('multimatch'),
+			normalize: await import('normalize-url'),
 			path: await import('path'),
 			qs: await import('query-string'),
 			similarity: await import('string-similarity'),
