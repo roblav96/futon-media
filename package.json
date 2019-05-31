@@ -9,20 +9,30 @@
 	"_moduleAliases": {
 		"@": "dist"
 	},
+	"append": true,
+	"killSignal": "SIGTERM",
+	"killTree": true,
+	"script": "dist/index.js",
+	"uid": "futon-media",
+	"nodemonConfig": {
+		"delay": "1000",
+		"ext": "js",
+		"restartable": false,
+		"watch": "dist"
+	},
 	"scripts": {
-		"deploy": "run-s repo build restart",
+		"deploy": "redrun -s repo build restart",
 		"repo": "git pull; echo; git reset --hard",
 		"build": "tsc || true",
-		"restart": "forever stop futon-media || true; forever start forever.config.json; tail -n 0 -f ~/.forever/futon-media.log",
+		"restart": "forever stop futon-media || true; forever start package.json; tail -n 0 -f ~/.forever/futon-media.log",
 		"logs": "tail -n 1000 -f ~/.forever/futon-media.log",
 		"reset": "del dist node_modules",
-		"prepublishOnly": "del dist; tsc",
-		"start": "del dist; run-p start:*",
-		"start:tsc": "tsc --watch",
-		"start:node": "just-wait -s -p dist; sleep 1; forever -w -c 'node --inspect' forever.config.json",
-		"test": "del dist; tsc || true; node dist/index.js || true",
+		"start": "del dist; redrun -p watch:*",
+		"watch:tsc": "tsc -w -i",
+		"watch:node": "just-wait -s -p dist; sleep 1; nodemon -q --inspect",
+		"test": "del dist; redrun build; node dist/index.js || true",
 		"emby:reset": "echo data/library.db* data/collections/* data/playlists/* metadata/library/* root/default/*/poster.png",
-		"scripts:users-sync": "tsc || true; node dist/index.js --script=users-sync"
+		"scripts:users-sync": "redrun build; node dist/index.js --script=users-sync"
 	},
 	"dependencies": {
 		"@sindresorhus/slugify": "^0.9.1",
@@ -119,8 +129,8 @@
 		"forever": "^1.0.0",
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
-		"npm-run-all": "^4.1.5",
-		"sane": "^4.1.0",
+		"nodemon": "^1.19.1",
+		"redrun": "^7.1.5",
 		"typescript": "^3.5.1"
 	},
 	"keywords": [
