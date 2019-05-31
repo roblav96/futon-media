@@ -157,7 +157,7 @@ export class Scraper {
 		combos = combos.slice(0, 3)
 
 		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
-		console.log(Date.now() - t, ctor, combos.length, `\n`, ...combos)
+		console.log(Date.now() - t, ctor, combos.length, ...combos)
 		return []
 
 		let results = (await pAll(

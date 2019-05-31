@@ -87,10 +87,16 @@ export function startsWith(value: string, target: string) {
 export function unique(values: string[]) {
 	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
 }
+export function sortBy(values: string[]) {
+	return _.sortBy(values).sort((a, b) => a.length - b.length)
+}
 
-export function unsquash(value: string) {
+export function unsquash(value: string, query = false) {
 	let [a, b] = [toSlug(value, { squash: true }), toSlug(value)]
-	return a == b ? [a] : [a, b]
+	if (a == b) return [a]
+	if (query == false) return [a, b]
+	let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
+	return words.length >= 2 ? [toSlug(words.join(' '))] : [a, b]
 }
 
 export function contains(value: string, target: string) {
@@ -135,9 +141,8 @@ export function toSlug(
 		squash: options.title == true,
 		stops: false,
 	} as Parameters<typeof toSlug>[1])
-	value = clean(value)
-	// if (options.squash) value = value.replace(/[-.]/gi, '')
-	let slug = slugify(options.squash ? squash(value) : value, { ...options, separator: ' ' })
+	value = options.squash ? squash(value) : clean(value)
+	let slug = slugify(value, { ...options, separator: ' ' })
 	let filters = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
