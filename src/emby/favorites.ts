@@ -42,8 +42,11 @@ process.nextTick(() => {
 			})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
 			if (Item.Type == 'Series') {
-				if (item.isDaily || item.episodes >= 500) {
+				if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
 					return console.warn(`favorites item.isDaily || item.episodes >= 500`)
+				}
+				if (process.DEVELOPMENT) {
+					return download(item.use({ type: 'season', season: seasons[0] }))
 				}
 				queue.addAll(
 					seasons.map(season => () => download(item.use({ type: 'season', season })))

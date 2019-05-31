@@ -49,7 +49,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 			return !v.isJunk(5)
 		}
 		if (utils.includes(v.title, query)) {
-			console.log(`includes ->`, v.title)
+			console.log(`includes ->`, v.short)
 			return !v.isJunk(votes)
 		}
 		return !v.isJunk()

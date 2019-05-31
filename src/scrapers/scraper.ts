@@ -26,7 +26,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.log(`scrapeAll item.queries ->`, item.queries)
 	console.log(`scrapeAll item.aliases ->`, item.aliases)
 	console.log(`scrapeAll item.collisions ->`, item.collisions)
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
@@ -156,8 +156,9 @@ export class Scraper {
 		})
 		combos = combos.slice(0, 3)
 
-		// console.log(Date.now() - t, ctor, combos.length, fastStringify(combos))
-		// return []
+		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
+		console.log(Date.now() - t, ctor, combos.length, `\n`, ...combos)
+		return []
 
 		let results = (await pAll(
 			combos.map(([slug, sort], index) => async () => {
@@ -181,7 +182,6 @@ export class Scraper {
 		let torrents = results.map(v => new torrent.Torrent(v))
 		torrents = _.uniqWith(torrents, (a, b) => a.hash == b.hash)
 
-		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
 		console.log(Date.now() - t, ctor, torrents.length, combos.length, fastStringify(jsons))
 
 		return torrents

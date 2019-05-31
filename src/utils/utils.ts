@@ -90,11 +90,7 @@ export function unique(values: string[]) {
 
 export function unsquash(value: string) {
 	let [a, b] = [toSlug(value, { squash: true }), toSlug(value)]
-	if (a != b) {
-		let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
-		return words.length >= 2 ? [toSlug(words.join(' '))] : [a, b]
-	}
-	return [a]
+	return a == b ? [a] : [a, b]
 }
 
 export function contains(value: string, target: string) {
@@ -140,6 +136,7 @@ export function toSlug(
 		stops: false,
 	} as Parameters<typeof toSlug>[1])
 	value = clean(value)
+	// if (options.squash) value = value.replace(/[-.]/gi, '')
 	let slug = slugify(options.squash ? squash(value) : value, { ...options, separator: ' ' })
 	let filters = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
