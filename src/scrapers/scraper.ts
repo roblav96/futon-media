@@ -14,15 +14,18 @@ import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
-	console.time(`scrapeAll`)
+	console.warn(`scrapeAll ->`, item.short)
+	let t = Date.now()
 	await item.setAll()
-	console.timeEnd(`scrapeAll`)
+	console.warn(Date.now() - t, `scrapeAll item.setAll`)
 
 	// console.log(`scrapeAll item ->`, item)
-	// console.log(`scrapeAll item.aliases ->`, item.aliases)
-	// console.log(`scrapeAll item.collisions ->`, item.collisions)
 	console.log(`scrapeAll item.titles ->`, item.titles)
+	console.log(`scrapeAll item.years ->`, item.years)
 	console.log(`scrapeAll item.slugs ->`, item.slugs)
+	console.log(`scrapeAll item.queries ->`, item.queries)
+	console.log(`scrapeAll item.aliases ->`, item.aliases)
+	console.log(`scrapeAll item.collisions ->`, item.collisions)
 	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
@@ -37,13 +40,13 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/katli')).Katli,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/yts')).Yts,
@@ -66,6 +69,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		to.seeders = _.ceil(_.max([to.seeders, from.seeders]))
 		return true
 	})
+
+	torrents = torrents.filter(v => filters.torrents(v, item))
 
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach(({ split }, i) => {
@@ -122,7 +127,8 @@ export class Scraper {
 		let slugs = _.clone(this.item.slugs)
 		if (this.item.movie) return slugs
 		let queries = this.item.queries.map(v => `${slugs[0]} ${v}`)
-		return slugs.slice(this.item.seasons.length > 1 ? 1 : 0).concat(queries)
+		let seasons = this.item.seasons.filter(v => v.aired_episodes > 0)
+		return slugs.slice(seasons.length > 1 ? 1 : 0).concat(queries)
 	}
 
 	constructor(public item: media.Item) {}
@@ -186,7 +192,6 @@ export interface Result {
 	bytes: number
 	magnet: string
 	name: string
-	packs: number
 	providers: string[]
 	seeders: number
 	slugs: string[]

@@ -4,6 +4,7 @@ import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
 import * as levenshtein from 'js-levenshtein'
+import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
@@ -35,53 +36,6 @@ export function pRandom<T = void>(ms: number, value?: T): Promise<T> {
 	return pDelay(_.ceil(_.random(ms * Math.E * 0.1, ms)), { value })
 }
 
-export function isForeign(value: string) {
-	for (let i = 0; i < value.length; i++) {
-		if (value.charCodeAt(i) >= 256) return true
-	}
-	return false
-}
-export function isAscii(value: string) {
-	return /[^\w\s]/gi.test(value) == false
-}
-export function squash(value: string) {
-	return _.trim(value.replace(/[^\w\s]/gi, '').replace(/\s+/g, ' '))
-}
-export function minify(value: string) {
-	return _.trim(clean(value).replace(/[^\w]/gi, '')).toLowerCase()
-}
-export function clean(value: string) {
-	return _.trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
-}
-
-export function equals(value: string, target: string) {
-	return minify(value) == minify(target)
-}
-export function includes(value: string, target: string) {
-	return minify(value).includes(minify(target))
-}
-export function startsWith(value: string, target: string) {
-	return minify(value).startsWith(minify(target))
-}
-export function uniqWith(values: string[]) {
-	return _.uniqWith(values, (a, b) => equals(a, b))
-}
-
-/** `accuracy.length == 0` when all of `target` is included in `value` */
-export function accuracy(value: string, target: string) {
-	let values = _.uniq(toSlug(value /** , { squash: true } */).split(' '))
-	let targets = _.uniq(toSlug(target /** , { squash: true } */).split(' '))
-	return targets.filter(v => !values.includes(v))
-}
-
-/** `leven == 0` when all of `target` is included in `value` */
-export function leven(value: string, target: string) {
-	value = minify(value)
-	target = minify(target)
-	return Math.abs(value.length - target.length - levenshtein(value, target))
-}
-export { levenshtein }
-
 export function isNumeric(value: string) {
 	return !_.isEmpty(value) && !isNaN(value as any)
 }
@@ -102,20 +56,92 @@ export function zeroSlug(value: number) {
 	return (value / 100).toFixed(2).slice(-2)
 }
 
+export function isForeign(value: string) {
+	for (let i = 0; i < value.length; i++) {
+		if (value.charCodeAt(i) >= 256) return true
+	}
+	return false
+}
+export function isAscii(value: string) {
+	return /[^\w\s]/gi.test(value) == false
+}
+export function squash(value: string) {
+	return _.trim(clean(value).replace(/[^\w\s]/gi, ''))
+}
+export function minify(value: string) {
+	return _.trim(clean(value).replace(/[^\w]/gi, '')).toLowerCase()
+}
+export function clean(value: string) {
+	return _.trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+}
+
+export function equals(value: string, target: string) {
+	return minify(value) == minify(target)
+}
+export function includes(value: string, target: string) {
+	return minify(value).includes(minify(target))
+}
+export function startsWith(value: string, target: string) {
+	return minify(value).startsWith(minify(target))
+}
+export function unique(values: string[]) {
+	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
+}
+
+export function unsquash(value: string) {
+	let [a, b] = [toSlug(value, { squash: true }), toSlug(value)]
+	if (a != b) {
+		let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
+		return words.length >= 2 ? [toSlug(words.join(' '))] : [a, b]
+	}
+	return [a]
+}
+
+export function contains(value: string, target: string) {
+	let values = toSlug(value).split(' ')
+	let targets = toSlug(target).split(' ')
+	return _.uniq(targets).filter(v => !_.uniq(values).includes(v)).length == 0
+}
+export function containsAll(value: string, target: string) {
+	let values = toSlug(value).split(' ')
+	let targets = toSlug(target).split(' ')
+	let index = values.findIndex(v => v == targets[0])
+	if (index == -1) return false
+	for (let i = 0; i < targets.length; i++) {
+		if (!equals(targets[i], values[index + i])) return false
+	}
+	return true
+}
+
+/** `accuracy.length == 0` when all of `target` is included in `value` */
+export function accuracy(value: string, target: string) {
+	let values = _.uniq(toSlug(value).split(' '))
+	let targets = _.uniq(toSlug(target).split(' '))
+	return targets.filter(v => !values.includes(v))
+}
+
+/** `leven == 0` when all of `target` is included in `value` */
+export function leven(value: string, target: string) {
+	value = toSlug(value)
+	target = toSlug(target)
+	return Math.abs(value.length - target.length - levenshtein(value, target))
+}
+export { levenshtein }
+
 export function toSlug(
 	value: string,
-	options = {} as SlugifyOptions & { slug?: boolean; squash?: boolean; stops?: boolean }
+	options = {} as Partial<SlugifyOptions & { title: boolean; squash: boolean; stops: boolean }>
 ) {
 	_.defaults(options, {
 		decamelize: false,
-		lowercase: options.slug != false,
+		lowercase: options.title != true,
 		separator: ' ',
-		squash: options.slug == false,
+		squash: options.title == true,
 		stops: false,
 	} as Parameters<typeof toSlug>[1])
 	value = clean(value)
-	let slug = slugify(!options.squash ? value : squash(value), { ...options, separator: ' ' })
-	let filters = !options.stops ? [] : ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with']
+	let slug = slugify(options.squash ? squash(value) : value, { ...options, separator: ' ' })
+	let filters = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
 	let split = slug.split(' ').filter(v => !filters.includes(v.toLowerCase()))
 	return split.join(options.separator)
 }

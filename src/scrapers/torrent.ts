@@ -10,6 +10,7 @@ import * as utils from '@/utils/utils'
 export interface Torrent extends scraper.Result {}
 export class Torrent {
 	hash: string
+	packs: number
 	cached = [] as debrids.Debrids[]
 
 	get age() {

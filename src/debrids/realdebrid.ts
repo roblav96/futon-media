@@ -69,6 +69,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
 
 		if (transfer.files.length == 0) {
+			client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
 			throw new Error(`RealDebrid transfer files == 0`)
 		}
 

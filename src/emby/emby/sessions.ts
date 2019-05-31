@@ -17,7 +17,7 @@ export const sessions = {
 		return (await sessions.get()).find(v => v.UserId == UserId)
 	},
 	async byWho(UserId: string) {
-		if (!UserId) return ''
+		if (!UserId || process.DEVELOPMENT) return ''
 		let Session = await sessions.byUserId(UserId)
 		return Session ? `[${Session.short}]\n` : ''
 	},

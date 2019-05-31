@@ -27,8 +27,11 @@ export function download(torrents: torrent.Torrent[]) {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, torrent.short)
 			let success = await RealDebrid.download(torrent.magnet).catch(async error => {
-				console.error(`RealDebrid download '${torrent.magnet}' -> %O`, error)
-				return await Premiumize.download(torrent.magnet)
+				console.error(`RealDebrid download '${torrent.short}' -> %O`, error)
+				if (!torrent.cached.includes('premiumize')) {
+					await Premiumize.download(torrent.magnet)
+				}
+				return false
 			})
 			if (success) {
 				console.log(`👍 download success ->`, torrent.short)

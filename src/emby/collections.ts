@@ -80,7 +80,7 @@ async function buildSchemas() {
 	schemas.push(
 		...lists.map(list => {
 			return {
-				name: utils.toSlug(list.name, { slug: false }),
+				name: utils.toSlug(list.name, { title: true }),
 				url: `/users/${list.user.ids.slug}/lists/${list.ids.slug}/items`,
 			} as CollectionSchema
 		})

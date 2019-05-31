@@ -37,9 +37,9 @@ export class Snowfl extends scraper.Scraper {
 	slow = true
 	concurrency = 1
 
-	slugs() {
-		return super.slugs().slice(0, 2)
-	}
+	// slugs() {
+	// 	return super.slugs().slice(0, 1)
+	// }
 
 	async getResults(slug: string, sort: string) {
 		if (!process.env.CF_SNOWFL) {

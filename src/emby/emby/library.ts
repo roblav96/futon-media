@@ -26,6 +26,7 @@ process.nextTick(async () => {
 	await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
+		Rx.op.filter(({ parts }) => !parts.includes('favoriteitems')),
 		Rx.op.filter(({ query }) => [query.ItemId, query.UserId].filter(Boolean).length == 2),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
 		Rx.op.debounceTime(100),
@@ -191,12 +192,19 @@ export const library = {
 	async item(Path: string, Type: string) {
 		let type = ['Series', 'Season', 'Episode'].includes(Type) ? 'show' : Type.toLowerCase()
 		let ids = library.pathIds(Path)
-		for (let key in ids) {
-			let value = ids[key] as string
-			let results = (await trakt.client.get(`/search/${key}/${value}`, {
+		if (ids.imdb) {
+			let full = (await trakt.client.get(`/${type}s/${ids.imdb}/`, {
 				query: { type },
+				silent: true,
+			})) as trakt.Full
+			if (full) return new media.Item({ [type]: full })
+		}
+		if (ids.tmdb) {
+			let results = (await trakt.client.get(`/search/tmdb/${ids.tmdb}`, {
+				query: { type },
+				silent: true,
 			})) as trakt.Result[]
-			let result = results.find(v => trakt.toFull(v).ids[key] == value)
+			let result = results.find(v => trakt.toFull(v).ids.tmdb == ids.tmdb)
 			if (result) return new media.Item(result)
 		}
 	},
@@ -216,7 +224,7 @@ export const library = {
 		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
 			throw new Error(`library toStrmPath '${item.slug}' !library.folders`)
 		}
-		let title = utils.toSlug(item.title, { slug: false })
+		let title = utils.toSlug(item.title, { title: true })
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${title} (${item.year})`
 		if (!item.ids.imdb && !item.ids.tmdb) {

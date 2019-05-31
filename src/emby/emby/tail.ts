@@ -110,15 +110,14 @@ export const rxHttp = rxTail.pipe(
 	Rx.op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
 	Rx.op.map(({ method, url, query }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
-		let parts = new Url(url).pathname.toLowerCase().split('/')
-		parts = parts.filter(Boolean)
+		let pathname = new Url(url).pathname.toLowerCase()
+		let parts = pathname.split('/').filter(Boolean)
 		for (let i = 0; i < parts.length; i++) {
 			let [part, next] = [parts[i], parts[i + 1]]
 			if (!next) continue
 			if (part == 'users' && next.length == 32) query.UserId = next
 			if (['items', 'movies', 'shows', 'episodes', 'favoriteitems'].includes(part)) {
-				if (utils.isNumeric(next)) query.ItemId = next
-				if (next.length == 32) query.ItemId = next
+				if (utils.isNumeric(next) || next.length == 32) query.ItemId = next
 			}
 		}
 		return { method, url, parts, query }
