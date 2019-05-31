@@ -11,7 +11,6 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
-import stripAnsi from 'strip-ansi'
 import stripBom = require('strip-bom')
 
 dayjs.extend(advancedFormat)
@@ -68,6 +67,9 @@ export function minify(value: string) {
 }
 export function clean(value: string) {
 	return _.trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+}
+export function stripAnsi(value: string) {
+	return value.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, '')
 }
 
 export function equals(value: string, target: string) {
@@ -132,7 +134,9 @@ export function toSlug(value: string, options = {} as SlugOptions) {
 		stops: false,
 	} as Parameters<typeof toSlug>[1])
 	value = clean(value)
-	let slug = slugify(options.squash ? squash(value) : value, { ...options, separator: ' ' })
+	if (options.squash) value = squash(value)
+	let customReplacements = [['&', '']] as [string, string][]
+	let slug = slugify(value, { ...options, separator: ' ', customReplacements })
 	let stops = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
 	let split = slug.split(' ').filter(v => !stops.includes(v.toLowerCase()))
 	return split.join(options.separator)

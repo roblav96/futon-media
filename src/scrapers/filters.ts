@@ -30,11 +30,11 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	result.name = result.name || magnet.dn
 	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
-	result.name = utils.toSlug(result.name) // .replace(/[-.]/gi, ' '))
+	result.name = utils.toSlug(result.name)
 	if (utils.isForeign(result.name)) return // console.log(`⛔ foreign ->`, result.name)
 
-	let skips = utils.accuracy(`${item.titles} ${item.E.t}`, SKIPS.join(' '))
-	let skipped = utils.accuracy(result.name, _.trim(skips.join(' ')))
+	let skips = utils.accuracies(item.slugs.join(' '), SKIPS.join(' '))
+	let skipped = utils.accuracies(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {
 		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
 	}
@@ -43,16 +43,16 @@ export function results(result: scraper.Result, item: media.Item) {
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	let slugs = item.slugs.concat(item.titles)
-	if (!item.isDaily && !slugs.find(v => utils.accuracy(torrent.name, v).length == 0)) {
+	if (!item.isDaily && !slugs.find(v => utils.accuracies(torrent.name, v).length == 0)) {
 		return console.log(`❌ slugs ->`, torrent.name)
 	}
 
-	let collision = item.collisions.find(v => utils.accuracy(torrent.name, v).length == 0)
+	let collision = item.collisions.find(v => utils.accuracies(torrent.name, v).length == 0)
 	if (collision) return console.log(`❌ collision '${collision}' ->`, torrent.name)
 
 	if (item.movie) {
 		try {
-			let extras = utils.accuracy(`${item.title} 1080 1920 2160`, torrent.name)
+			let extras = utils.accuracies(`${item.title} 1080 1920 2160`, torrent.name)
 			let years = extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
 			if (years.length >= 2) {
