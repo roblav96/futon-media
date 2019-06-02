@@ -11,7 +11,7 @@ import * as utils from '@/utils/utils'
 export const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
 	Rx.op.map(({ query }) => ({
-		query: utils.toSlug(query.SearchTerm),
+		query: utils.toSlug(query.SearchTerm, { stops: !query.SearchTerm.includes(' ') }),
 		UserId: query.UserId,
 	})),
 	Rx.op.filter(({ query }) => query.length >= 3),
@@ -48,7 +48,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 			console.log(`equals ->`, item.short)
 			return !item.isJunk(5)
 		}
-		if (utils.contains(item.title, query)) {
+		if (utils.includes(item.title, query)) {
 			console.log(`contains ->`, item.short)
 			return !item.isJunk(votes)
 		}

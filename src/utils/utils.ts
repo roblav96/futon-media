@@ -58,6 +58,7 @@ export function isForeign(value: string) {
 }
 export function isAscii(value: string) {
 	return /[^\w\s]/gi.test(value) == false
+	// return /[^\x00-\x7F]/gi.test(value) == false
 }
 export function squash(value: string) {
 	return _.trim(clean(value).replace(/[^\w\s]/gi, ''))
@@ -119,13 +120,17 @@ export function unsquash(value: string, query = false) {
 	if (a == b) return [a]
 	if (query == false) return [a, b]
 	let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
-	return words.length >= 2 ? [toSlug(words.join(' '))] : [a, b]
+	return words.length >= 3 ? [toSlug(words.join(' '))] : [a, b]
 }
 
-export type SlugOptions = Partial<
-	SlugifyOptions & { title: boolean; squash: boolean; stops: boolean }
->
-export function toSlug(value: string, options = {} as SlugOptions) {
+export interface SlugOptions {
+	lowercase: boolean
+	separator: string
+	squash: boolean
+	stops: boolean
+	title: boolean
+}
+export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
 	_.defaults(options, {
 		decamelize: false,
 		lowercase: options.title != true,
@@ -175,9 +180,29 @@ export function chunks<T = any>(values: T[], max: number) {
 	values.forEach((v, i) => chunks[i % chunks.length].push(v))
 	return chunks
 }
+export function remove<T>(values: T[], fn: (value: T, index: number, values: T[]) => boolean) {
+	for (let i = values.length - 1; i >= 0; i--) {
+		if (fn(values[i], i, values)) values.splice(i, 1)
+	}
+	return values
+}
+export function uniqBy<T, K extends keyof T>(values: T[], key: K) {
+	let keys = new Set()
+	let uniqs = [] as T[]
+	for (let value of values) {
+		if (keys.has(value[key])) continue
+		keys.add(value[key])
+		uniqs.push(value)
+	}
+	return uniqs
+}
+// export function uniqWith<T>(values: T[], fn: (a: T, b: T) => boolean) {}
 
-export function randoms(size = 32) {
+export function randoms(size: number) {
 	return Array.from(Array(size), v => Math.random().toString())
+}
+export function fill(size: number) {
+	return Array.from(Array(size), (v, i) => i)
 }
 export function nonce() {
 	let random = Math.random().toString(36)

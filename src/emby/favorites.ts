@@ -75,6 +75,9 @@ async function download(item: media.Item) {
 	console.info(`download '${slug}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
 
 	let torrents = await scraper.scrapeAll(item)
+
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
+
 	console.log(`download all torrents ->`, torrents.length, torrents.map(v => v.short))
 
 	// let index = torrents.findIndex(({ cached }) => cached.length > 0)

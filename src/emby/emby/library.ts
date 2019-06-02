@@ -1,12 +1,11 @@
 import * as _ from 'lodash'
-import * as deepmerge from 'deepmerge'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as isIp from 'is-ip'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
-import * as pQueue from 'p-queue'
 import * as path from 'path'
+import * as pQueue from 'p-queue'
 import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as tmdb from '@/adapters/tmdb'
@@ -17,17 +16,12 @@ import db from '@/adapters/db'
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
-	console.time(`library.Items`)
-	let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
-	console.timeEnd(`library.Items`)
-	console.time(`unique`)
-	titles = utils.unique(titles.filter(v => !utils.isAscii(v))).sort(utils.alphabetically)
-	console.timeEnd(`unique`)
-	// console.time(`console`)
+	// let ansi = await import('ansi-colors')
+	// let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
+	// titles = utils.unique(titles.filter(v => !utils.isAscii(v))).sort(utils.alphabetically)
 	// titles.forEach(v =>
-	// 	console.log(v, `\n${utils.toSlug(v)}`, `\n${utils.toSlug(v, { squash: true })}`)
+	// 	console.log(ansi.bold(v), `\n${utils.toSlug(v)}`, `\n${utils.toSlug(v, { squash: true })}`)
 	// )
-	// console.timeEnd(`console`)
 
 	await library.setFolders()
 	// await library.setCollections()
