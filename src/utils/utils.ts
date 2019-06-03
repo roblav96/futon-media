@@ -76,8 +76,8 @@ export function stripAnsi(value: string) {
 export function trim(value: string) {
 	return value.replace(/\s+/g, ' ').trim()
 }
-export function nonAscii(value: string) {
-	return _.filter(value.split(/\s+/), v => isAscii(v.slice(1, -1))).join(' ')
+export function simplify(value: string) {
+	return _.filter(value.split(/\s+/), v => isAscii(clean(v).slice(1, -1))).join(' ')
 }
 
 export function equals(value: string, target: string) {

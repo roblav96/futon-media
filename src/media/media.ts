@@ -243,8 +243,8 @@ export class Item {
 	collisions: string[]
 	async setCollisions() {
 		let title = utils.byLength([...this.titles, this.collection.name].filter(Boolean))[0]
-		let non = utils.nonAscii(title)
-		let query = utils.stops(non) || non || title
+		let simple = utils.simplify(title)
+		let query = utils.stops(simple) || simple || title
 		let results = (await trakt.client.get(`/search/${this.type}`, {
 			query: { query, fields: 'title,tagline,aliases', limit: 100 },
 			// silent: true,
@@ -330,8 +330,8 @@ export class Item {
 			this.titles.map(title => {
 				let squash = utils.unsquash(title)
 				if (squash.length == 1) return squash
-				let non = utils.nonAscii(title)
-				return utils.stops(non) ? [utils.toSlug(non)] : squash
+				let simple = utils.simplify(title)
+				return utils.stops(simple) ? [utils.toSlug(simple)] : squash
 				// let words = title.split(' ').filter(v => utils.isAscii(v.slice(1, -1)))
 				// return words.length >= 2 ? [words.join(' ')] : [a, b]
 			})

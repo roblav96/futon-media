@@ -24,6 +24,8 @@ export const LINK = `https://38.rdeb.io/d/JHXH54RZIXZ6O/Mission.Impossible.Fallo
 
 export const TRAKT_LIST_ITEMS_URL = `/users/lish408/lists/4440958/items`
 
+export const SLUG = ` Cosmos: A Space · time Odyssey  WALL·E 90 Day Fiancé: What   Now? & black-ish ? é  é   `
+
 if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/mocks/mocks')))
 }

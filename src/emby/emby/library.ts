@@ -17,14 +17,17 @@ process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
 	// let ansi = await import('ansi-colors')
-	// let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
-	// titles = utils.unique(titles.filter(v => !utils.isAscii(v))).sort(utils.alphabetically)
-	// titles.forEach(v =>
+	// let names = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
+	// names = _.uniq(names).sort(utils.alphabetically)
+	// names = names.filter(v => !utils.isAscii(v))
+	// // names = names.filter(v => /[^a-z0-9\s]{2,}/gi.test(utils.clean(v)))
+	// names.forEach(v =>
 	// 	console.log(
 	// 		ansi.bold(v),
+	// 		// `\n${v.replace(/[^a-z0-9\s]{2,}/gi,'')}`,
 	// 		`\n${utils.toSlug(v)}`,
 	// 		`\n${utils.toSlug(v, { squash: true })}`,
-	// 		`\n${utils.nonAscii(v)}`,
+	// 		`\n${utils.simplify(v)}`,
 	// 		`\n${utils.stops(v)}`,
 	// 	)
 	// )
