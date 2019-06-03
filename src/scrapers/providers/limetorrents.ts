@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class LimeTorrents extends scraper.Scraper {
-	sorts = ['size', 'date', 'seeds']
+	sorts = ['size', 'date']
 	slow = true
 	concurrency = 1
 

@@ -14,7 +14,7 @@ export const rxSearch = emby.rxHttp.pipe(
 		query: utils.toSlug(query.SearchTerm, { stops: !query.SearchTerm.includes(' ') }),
 		UserId: query.UserId,
 	})),
-	Rx.op.filter(({ query }) => query.length >= 3),
+	Rx.op.filter(({ query }) => query.length >= 2),
 	Rx.op.debounceTime(1000),
 	Rx.op.distinctUntilChanged((a, b) => utils.equals(a.query, b.query))
 )
@@ -44,15 +44,11 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let items = results.map(v => new media.Item(v))
 	items = items.filter(item => {
 		if (item.isJunk(5)) return false
-		if (utils.equals(item.title, query)) {
-			console.log(`equals ->`, item.short)
-			return !item.isJunk(5)
-		}
-		if (utils.includes(item.title, query)) {
-			console.log(`contains ->`, item.short)
-			return !item.isJunk(votes)
-		}
-		return !item.isJunk()
+		if (utils.equals(item.smallests.slug, query)) return !item.isJunk(5)
+		let vts: number
+		if (!query.includes(' ') && utils.accuracy(item.smallests.slug, query)) vts = votes
+		if (query.includes(' ') && utils.includes(item.smallests.slug, query)) vts = votes
+		return !item.isJunk(vts)
 	})
 	console.log(`rxSearch '${query}' ->`, items.map(v => v.short).sort())
 

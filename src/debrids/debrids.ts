@@ -89,8 +89,8 @@ export async function getStreamUrl(
 				let title = item.title
 				if (item.movie) title += ` ${item.year}`
 				if (item.episode) title += ` S${item.S.z}E${item.E.z} ${item.E.t} ${item.E.a}`
-				let levens = files.map(file => ({ ...file, leven: utils.leven(file.name, title) }))
-				file = levens.sort((a, b) => a.leven - b.leven)[0]
+				let levens = files.map(file => ({ ...file, levens: utils.levens(file.name, title) }))
+				file = levens.sort((a, b) => a.levens - b.levens)[0]
 			}
 
 			let stream = (await debrid.streamUrl(file).catch(error => {

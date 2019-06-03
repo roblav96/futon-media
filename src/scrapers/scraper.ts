@@ -40,10 +40,10 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/katli')).Katli,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
-		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
@@ -52,52 +52,45 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
-	let torrents = (await pAll(
-		providers.map(scraper => () => new scraper(item).getTorrents())
-	)).flat()
+	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()
 
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
-
-	let length = torrents.length
-	console.time(`torrents uniqWith ${length}`)
+	console.time(`torrents.uniqWith`)
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
-		let accuracy = utils.accuracies(to.name, from.name)
-		if (accuracy.length > 0) {
-			to.name += ` ${accuracy.join(' ')}`
-		}
+		let accuracies = utils.accuracies(to.name, from.name)
+		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes]))
-		to.stamp = _.ceil(_.min([to.stamp, from.stamp]))
+		to.stamp = _.ceil(_.mean([to.stamp, from.stamp]))
 		to.seeders = _.ceil(_.max([to.seeders, from.seeders]))
 		return true
 	})
-	console.timeEnd(`torrents uniqWith ${length}`)
+	console.timeEnd(`torrents.uniqWith`)
 
-	length = torrents.length
-	console.profile(`torrents filter ${length}`)
-	console.time(`torrents filter ${length}`)
+	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => filters.torrents(v, item))
-	console.timeEnd(`torrents filter ${length}`)
-	console.profileEnd(`torrents filter ${length}`)
+	console.timeEnd(`torrents.filter`)
 
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
-	console.time(`torrents forEach ${length}`)
+	console.time(`torrents.forEach`)
 	torrents.forEach(({ split }, i) => {
 		let v = torrents[i]
-		v.cached = cacheds[i]
+		v.cached = cacheds[i] || []
+		let name = ` ${v.name} `
 		if (v.providers.includes('Yts')) v.boost *= 1.5
-		if (split.includes('720p') || split.includes('480p') || split.includes('360p')) {
-			v.boost *= 0.25
-		}
+		let defs = ['720p', '480p', '360p']
+		if (defs.find(def => name.includes(` ${def} `))) v.boost *= 0.25
 		if (!hd) return
-		if (split.includes('fgt')) v.boost *= 1.5
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
-		if (split.includes('8bit') || split.includes('10bit')) v.boost *= 0.5
+		if (utils.equals(v.name, item.smallests.slug) && v.providers.length == 1) v.boost *= 0.5
+		let bits = ['8bit', '8 bit', '10bit', '10 bit']
+		if (bits.find(bit => name.includes(` ${bit} `))) v.boost *= 0.5
+		if (split.includes('fgt')) v.boost *= 1.5
 		;[
 			'bdremux',
 			'ctrlhd',
+			'dimension',
 			'epsilon',
 			'exkinoray',
 			'grym',
@@ -110,15 +103,11 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			'sigma',
 			'sparks',
 			'trollhd',
-		].forEach(vv => split.includes(vv) && (v.boost *= 1.25))
+		].forEach(vv => name.includes(` ${vv} `) && (v.boost *= 1.25))
 	})
-	console.timeEnd(`torrents forEach ${length}`)
+	console.timeEnd(`torrents.forEach`)
 
-	console.time(`torrents sort ${length}`)
-	torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	console.timeEnd(`torrents sort ${length}`)
-
-	return torrents
+	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 }
 
 export interface Scraper {
@@ -138,6 +127,7 @@ export class Scraper {
 
 	sorts = [] as string[]
 	slow = false
+	max = Infinity
 	concurrency = 3
 
 	slugs() {
@@ -150,7 +140,7 @@ export class Scraper {
 
 	constructor(public item: media.Item) {}
 
-	async getTorrents() {
+	async scrape() {
 		let t = Date.now()
 		let ctor = this.constructor.name
 
@@ -171,10 +161,9 @@ export class Scraper {
 			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
 			sorts.forEach(sort => combos.push([slug, sort]))
 		})
-		// combos = combos.slice(0, 4)
+		combos = combos.slice(0, this.max)
 
-		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
-		console.log(ctor, combos.length, ...combos)
+		// console.log(ctor, combos.length, ...combos)
 		// return []
 
 		let results = (await pAll(
@@ -192,20 +181,14 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat() as Result[]
 
-		console.profile(`${ctor} results`)
-		console.time(`${ctor} results`)
 		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(
 			v => v && v.bytes > 0 && v.seeders >= 0 && v.stamp > 0 && filters.results(v, this.item)
 		)
-		console.timeEnd(`${ctor} results`)
-		console.profileEnd(`${ctor} results`)
 
-		let torrents = results.map(v => new torrent.Torrent(v))
-		torrents = _.uniqWith(torrents, (a, b) => a.hash == b.hash)
+		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
+		console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
 
-		console.log(Date.now() - t, ctor, torrents.length, combos.length, fastStringify(jsons))
-
-		return torrents
+		return results.map(v => new torrent.Torrent(v))
 	}
 }
 

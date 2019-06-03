@@ -181,9 +181,9 @@ export class Putio extends debrid.Debrid<Transfer> {
 		if (_.size(media_links) == 0) return
 		let levens = media_links.map(link => {
 			let base = path.basename(qs.parseUrl(link).url)
-			return { link, leven: utils.leven(base, file.name) }
+			return { link, levens: utils.levens(base, file.name) }
 		})
-		return levens.sort((a, b) => a.leven - b.leven)[0].link
+		return levens.sort((a, b) => a.levens - b.levens)[0].link
 	}
 }
 

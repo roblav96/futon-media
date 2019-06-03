@@ -10,7 +10,6 @@ import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
-import slugify, { Options as SlugifyOptions } from '@sindresorhus/slugify'
 import stripBom = require('strip-bom')
 
 dayjs.extend(advancedFormat)
@@ -57,20 +56,28 @@ export function isForeign(value: string) {
 	return false
 }
 export function isAscii(value: string) {
-	return /[^\w\s]/gi.test(value) == false
+	return /[^a-z0-9\s]/gi.test(value) == false
 	// return /[^\x00-\x7F]/gi.test(value) == false
+	// return /[^\x01-\xFF]/gi.test(value) == false
 }
 export function squash(value: string) {
-	return _.trim(clean(value).replace(/[^\w\s]/gi, ''))
+	return trim(clean(value).replace(/[^a-z0-9\s]/gi, ''))
 }
 export function minify(value: string) {
-	return _.trim(clean(value).replace(/[^\w]/gi, '')).toLowerCase()
+	value = clean(value).replace(/[^a-z0-9]/gi, '')
+	return value.toLowerCase().trim()
 }
 export function clean(value: string) {
-	return _.trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+	return trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
 }
 export function stripAnsi(value: string) {
 	return value.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, '')
+}
+export function trim(value: string) {
+	return value.replace(/\s+/g, ' ').trim()
+}
+export function nonAscii(value: string) {
+	return _.filter(value.split(/\s+/), v => isAscii(v.slice(1, -1))).join(' ')
 }
 
 export function equals(value: string, target: string) {
@@ -82,8 +89,18 @@ export function includes(value: string, target: string) {
 export function startsWith(value: string, target: string) {
 	return minify(value).startsWith(minify(target))
 }
+export function endsWith(value: string, target: string) {
+	return minify(value).endsWith(minify(target))
+}
 export function unique(values: string[]) {
 	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
+}
+export function dedupe(value: string) {
+	let words = value.split(/\s+/)
+	for (let i = words.length - 1; i >= 0; i--) {
+		if (words[i] == words[i - 1]) words.splice(i, 1)
+	}
+	return words.join(' ')
 }
 
 export function contains(value: string, target: string) {
@@ -107,20 +124,25 @@ export function accuracy(value: string, target: string) {
 	return accuracies(value, target).length == 0
 }
 
-/** `leven == 0` when all of `target` is included in `value` */
-export function leven(value: string, target: string) {
+/** `levens == 0` when all of `target` is included in `value` */
+export function levens(value: string, target: string) {
 	value = toSlug(value)
 	target = toSlug(target)
 	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
+export function leven(value: string, target: string) {
+	return levens(value, target) == 0
+}
 export { levenshtein }
 
-export function unsquash(value: string, query = false) {
-	let [a, b] = [toSlug(value, { squash: true }), toSlug(value)]
-	if (a == b) return [a]
-	if (query == false) return [a, b]
-	let words = value.split(' ').filter(v => isAscii(v.slice(1, -1)))
-	return words.length >= 3 ? [toSlug(words.join(' '))] : [a, b]
+export function unsquash(value: string) {
+	let [a, b] = [toSlug(value), toSlug(value, { squash: true })]
+	return a == b ? [a] : [a, b]
+}
+
+export const STOPS = ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with']
+export function stops(value: string) {
+	return _.filter(value.split(/\s+/), v => !STOPS.includes(minify(v))).join(' ')
 }
 
 export interface SlugOptions {
@@ -132,21 +154,19 @@ export interface SlugOptions {
 }
 export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
 	_.defaults(options, {
-		decamelize: false,
 		lowercase: options.title != true,
 		separator: ' ',
 		squash: options.title == true,
 		stops: false,
-	} as Parameters<typeof toSlug>[1])
+	} as SlugOptions)
 	value = clean(value)
 	if (options.squash) value = squash(value)
-	let customReplacements = [['&', '']] as [string, string][]
-	let slug = slugify(value, { ...options, separator: ' ', customReplacements })
-	let stops = options.stops ? ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with'] : []
-	let split = slug.split(' ').filter(v => !stops.includes(v.toLowerCase()))
-	return split.join(options.separator)
+	let slug = trim(value.replace(/[^a-z0-9\s]/gi, ' '))
+	if (options.lowercase) slug = slug.toLowerCase()
+	if (options.stops) slug = stops(slug)
+	if (options.separator != ' ') slug = slug.replace(/\s/g, options.separator)
+	return slug
 }
-export { slugify }
 
 export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 export function isVideo(file: string) {
@@ -215,7 +235,8 @@ export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]
 
 export function toStamp(value: string) {
 	let amount = parseInt(value)
-	let unit = _.trim(value.replace(/[^a-z ]/gi, '').toLowerCase())
+	let unit = value.replace(/[^a-z\s]/gi, '')
+	unit = unit.toLowerCase().trim()
 	unit = unit.split(' ').shift()
 	if (unit.endsWith('s')) unit = unit.slice(0, -1)
 	let day = dayjs().subtract(amount, unit as any)
@@ -246,10 +267,11 @@ export function toBytes(value: string) {
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
 	return _.parseInt((amount * BYTE_UNITS[unit].num) as any)
 }
-export function fromBytes(value: number, precision = 1) {
+export function fromBytes(value: number) {
 	let units = Object.entries(BYTE_UNITS).map(([k, v]) => v)
 	let unit = units.find(unit => value / unit.num < 1000)
-	return `${(value / unit.num).toFixed(precision)} ${unit.str}`
+	value = value / unit.num
+	return `${value.toFixed([2, 1, 1][value.toFixed(0).length])} ${unit.str}`
 }
 
 if (process.DEVELOPMENT) {

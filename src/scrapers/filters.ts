@@ -30,8 +30,8 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	result.name = result.name || magnet.dn
 	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
-	result.name = utils.toSlug(result.name)
 	if (utils.isForeign(result.name)) return // console.log(`⛔ foreign ->`, result.name)
+	result.name = utils.toSlug(result.name)
 
 	let skips = utils.accuracies(item.slugs.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
@@ -42,21 +42,30 @@ export function results(result: scraper.Result, item: media.Item) {
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let slugs = item.slugs.concat(item.titles)
-	if (!item.isDaily && !slugs.find(v => utils.accuracies(torrent.name, v).length == 0)) {
-		return console.log(`❌ slugs ->`, torrent.name)
+	if (!item.aliases.find(v => utils.contains(torrent.name, v))) {
+		return console.log(`❌ aliases ->`, torrent.name)
 	}
 
-	let collision = item.collisions.find(v => utils.accuracies(torrent.name, v).length == 0)
-	if (collision) return console.log(`❌ collision '${collision}' ->`, torrent.name)
+	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
+	if (collision) return console.log(`❌ collisions '${collision}' ->`, torrent.name)
 
 	if (item.movie) {
 		try {
-			let extras = utils.accuracies(`${item.title} 1080 1920 2160`, torrent.name)
+			let titles = item.titles.join(' ')
+
+			let extras = utils.accuracies(`${titles} 1080 1920 2160`, torrent.name)
 			let years = extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
-			if (years.length >= 2) {
-				return console.log(`❌ years >= 2 '${years}' ->`, torrent.name)
+			// if (years.length >= 2) {
+			// 	return console.log(`❌ years >= 2 '${years}' ->`, torrent.name)
+			// }
+
+			let packed = utils.accuracies(titles, 'collection')
+
+			if (torrent.split.includes('duology')) torrent.packs = 2
+			else if (torrent.split.includes('trilogy')) torrent.packs = 3
+			else if (years.length >= 2 || packed.find(v => torrent.split.includes(v))) {
+				torrent.packs = item.collection.fulls.length
 			}
 
 			return true
@@ -68,9 +77,8 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	if (item.show) {
 		try {
 			let slug = ` ${torrent.name} `
-			torrent.packs = 0
 			if (item.isDaily && utils.includes(slug, item.E.a)) return true
-			if (item.E.t && utils.leven(slug, item.E.t) == 0) return true
+			if (item.E.t && utils.leven(slug, item.E.t)) return true
 			if (regex.s00e00(item, slug)) return true
 
 			torrent.packs = 1

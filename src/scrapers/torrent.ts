@@ -10,7 +10,7 @@ import * as utils from '@/utils/utils'
 export interface Torrent extends scraper.Result {}
 export class Torrent {
 	hash: string
-	packs: number
+	packs = 0
 	cached = [] as debrids.Debrids[]
 
 	get age() {
@@ -23,14 +23,16 @@ export class Torrent {
 		return utils.fromBytes(this.bytes)
 	}
 	get split() {
-		return this.name.toLowerCase().split(' ')
+		return this.name.toLowerCase().split(/\s+/)
 	}
 
 	boost = 1
 	boosts(episodes?: number) {
 		let bytes = this.bytes
-		if (_.isFinite(episodes) && this.packs) {
+		if (this.packs > 0 && _.isFinite(episodes)) {
 			bytes = this.bytes / (episodes * this.packs)
+		} else if (this.packs > 1) {
+			bytes = this.bytes / this.packs
 		}
 		return {
 			bytes: _.ceil(bytes * this.boost),

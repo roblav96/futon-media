@@ -49,9 +49,9 @@ export class Item {
 		return `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
 	}
 	get smallests() {
-		let slug = _.trim(utils.toSlug(this.slug).replace(this.year.toString(), ''))
-		let smallest = utils.byLength([utils.toSlug(this.title, { title: true }), slug])[0]
-		return { slug, smallest }
+		let slug = this.slug.replace(new RegExp(`-|${this.year}$`, 'gi'), ' ').trim()
+		let titles = this.titles.map(v => utils.toSlug(v))
+		return { slug, smallest: utils.byLength([...titles, slug].filter(Boolean))[0] }
 	}
 
 	get traktId() {
@@ -87,23 +87,26 @@ export class Item {
 	get hasRuntime() {
 		return this.runtime >= 10
 	}
+	get invalid() {
+		if (!this.main.year || (this.show && !(this.show.aired_episodes > 0))) return true
+		if (!this.ids.trakt || !this.ids.slug || !this.ids.imdb || !this.ids.tmdb) return true
+		return !(this.main.votes >= 5)
+	}
 	isPopular(votes = 500) {
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
 		votes -= _.ceil(votes * 0.5 * penalty)
-		return _.has(this.main, 'votes') ? this.main.votes > votes : false
+		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
 	}
 	isJunk(votes = 1000) {
-		if (!this.main.year || (this.show && !(this.show.aired_episodes > 0))) return true
-		if (!this.ids.trakt || !this.ids.slug || !this.ids.imdb || !this.ids.tmdb) return true
-		return !(this.isEnglish && this.isReleased && this.hasRuntime && this.isPopular(votes))
+		if (this.invalid || !this.isReleased || !this.hasRuntime) return true
+		return !this.isEnglish || !this.isPopular(votes)
 	}
 
 	get isDaily() {
 		if (this.movie) return false
-		return (
-			this.main.genres.filter(v => ['news', 'game-show', 'talk-show'].includes(v)).length > 0
-		)
+		let genres = [/** 'drama', */ 'news', 'game-show', 'talk-show']
+		return this.main.genres.filter(v => genres.includes(v)).length > 0
 	}
 
 	/** season */
@@ -140,7 +143,7 @@ export class Item {
 		if (_.has(this.episode, 'title')) {
 			E.t = this.episode.title
 			if (this.isDaily) {
-				let name = utils.toSlug(E.t).split(' ')
+				let name = utils.toSlug(E.t, { lowercase: false }).split(' ')
 				E.t = `${name[0]} ${name[1]}`
 			}
 		}
@@ -155,7 +158,7 @@ export class Item {
 	async setOmdb() {
 		this.omdb = (await omdb.client.get('/', {
 			query: { i: this.ids.imdb },
-			// silent: true,
+			silent: true,
 		})) as omdb.Full
 	}
 
@@ -163,12 +166,12 @@ export class Item {
 	async setTmdb() {
 		let type = this.show ? 'tv' : 'movie'
 		this.tmdb = (await tmdb.client.get(`/${type}/${this.ids.tmdb}`, {
-			// silent: true,
+			silent: true,
 		})) as tmdb.Full
 		if (this.tmdb.belongs_to_collection) {
 			this.tmdb.belongs_to_collection = (await tmdb.client.get(
-				`/collection/${this.tmdb.belongs_to_collection.id}`
-				// { silent: true }
+				`/collection/${this.tmdb.belongs_to_collection.id}`,
+				{ silent: true }
 			)) as tmdb.Collection
 		}
 	}
@@ -181,42 +184,43 @@ export class Item {
 		})) as trakt.Season[]).filter(v => v.number > 0)
 	}
 
-	episodes: trakt.Episode[]
-	async setEpisodes() {
-		if (!this.show) return
-		this.episodes = (await Promise.all(
-			['last_episode', 'next_episode'].map(url =>
-				trakt.client.get(`/shows/${this.slug}/${url}`, {
-					// silent: true,
-				})
-			)
-		)).filter(Boolean)
-	}
+	// episodes: trakt.Episode[]
+	// async setEpisodes() {
+	// 	if (!this.show) return
+	// 	this.episodes = (await Promise.all(
+	// 		['last_episode', 'next_episode'].map(url =>
+	// 			trakt.client.get(`/shows/${this.slug}/${url}`, {
+	// 				// silent: true,
+	// 			})
+	// 		)
+	// 	)).filter(Boolean)
+	// }
 
 	aliases: string[]
-	async setAliases() {
+	async setAliases(/** quick = false */) {
+		// let aliases = [] as string[]
+		// if (quick == false) {
 		let response = (await trakt.client.get(`/${this.type}s/${this.slug}/aliases`, {
 			// silent: true,
 		})) as trakt.Alias[]
 		let trakts = response.filter(v => ['gb', 'us'].includes(v.country))
 		let { titles } = (await tmdb.client.get(
-			`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`
-			// { silent: true }
+			`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`,
+			{ silent: true }
 		)) as tmdb.AlternativeTitles
 		let tmdbs = (titles || []).filter(v => ['GB', 'US'].includes(v.iso_3166_1))
-		let aliases = [...trakts, ...tmdbs].map(v => utils.clean(v.title))
-		// console.log(`setAliases '${this.slug}' ->`, aliases)
-		// let slug = _.trim(utils.toSlug(this.slug).replace(this.year.toString(), ''))
-		// let smallest = utils.byLength([utils.toSlug(this.title, { title: true }), slug])[0]
-		let { slug, smallest } = this.smallests
+		let aliases = _.uniq([...trakts, ...tmdbs].map(v => utils.clean(v.title)))
+		// }
+		// console.log(`setAliases '${this.slug}' ->`, utils.byLength(aliases))
+
+		// let { slug, smallest } = this.smallests
+		// let skips = '3d disc disc1 disc2 edition extended imax part part1 part2 special untitled'
+		// skips = utils.accuracies(this.title, skips).join(' ')
 		_.remove(aliases, alias => {
 			if (utils.isForeign(alias)) return true
-			if (utils.contains(alias, '3d')) return true
-			if (utils.contains(alias, 'imax')) return true
-			if (utils.contains(alias, 'part')) return true
-			if (utils.contains(alias, 'untitled')) return true
-			if (utils.contains(alias, this.year.toString())) return true
-			if (alias.length < smallest.length) return true
+			// if (utils.accuracies(alias, skips).length < skips.split(' ').length) return true
+			// if (utils.contains(alias, this.year.toString())) return true
+			// if (utils.minify(alias).length < utils.minify(smallest).length) return true
 			// if (alias.split(' ').length == 1) return true
 			// if (alias.split(this.title).length > 2) return true
 			// if (utils.accuracy(this.title, alias).length <= 1) return true
@@ -224,66 +228,91 @@ export class Item {
 			// // if (!utils.equals(alias.split(' ').shift(), this.title.split(' ').shift())) return true
 			// // if (alias.length > this.title.length && !utils.includes(alias, this.title)) return true
 		})
-		aliases = aliases.concat(this.title, slug)
-		if (this.S.t) aliases.push(this.S.t)
-		if (this.E.t) aliases.push(this.E.t)
-		// aliases = aliases.filter(v => !utils.contains(v, this.year.toString()))
-		// aliases = _.flatten(aliases.map(v => utils.unsquash(v))).map(v => utils.toSlug(v))
-		// aliases = aliases.map(v => utils.toSlug(v, { squash: true }))
-		// aliases = aliases.map(v => utils.unsquash(v)).flat()
-		aliases = aliases.concat(aliases.map(v => `${v} ${this.year}`))
-		this.aliases = utils.byLength(utils.unique(aliases))
+
+		aliases.push(...this.titles)
+		aliases.push(this.smallests.slug)
+		this.collection.name && aliases.push(this.collection.name)
+
+		aliases = aliases.map(v => utils.unsquash(v)).flat()
+		aliases = aliases.map(v => [v, ...this.toYears(v)]).flat()
+
+		this.aliases = _.uniq(aliases.filter(v => v.includes(' ')))
 		// console.log(`setAliases '${this.slug}' ->`, this.aliases)
 	}
 
 	collisions: string[]
 	async setCollisions() {
-		let query = this.collection.name || this.titles[0]
+		let title = utils.byLength([...this.titles, this.collection.name].filter(Boolean))[0]
+		let non = utils.nonAscii(title)
+		let query = utils.stops(non) || non || title
 		let results = (await trakt.client.get(`/search/${this.type}`, {
 			query: { query, fields: 'title,tagline,aliases', limit: 100 },
 			// silent: true,
 		})) as trakt.Result[]
 		let items = results.map(v => new Item(v))
+		_.remove(items, v => v.invalid || v.trakt == this.trakt)
+		// items = items.filter(v => v.isPopular(5) && v.trakt != this.trakt)
 		// console.log(`setCollisions search '${this.slug}' ->`, items.map(v => v.short))
-		let junk = _.ceil(_.max([this.main.votes * 0.05, 5]))
-		items = items.filter(item => {
-			if (item.isJunk(junk) || item.trakt == this.trakt) return false
-			if (this.collection.fulls.find(v => v.id == item.ids.tmdb)) return true
-			return utils.startsWith(item.title, this.titles[0])
-		})
+		// let junk = _.ceil(_.max([this.main.votes * 0.05, 5]))
+		// items = items.filter(item => {
+		// 	if (item.trakt == this.trakt) return false
+		// 	if (this.collection.fulls.find(v => v.id == item.ids.tmdb)) return true
+		// 	if (item.isJunk(junk)) return false
+		// 	return utils.startsWith(item.title, title) || utils.endsWith(item.title, title)
+		// })
+		items = _.sortBy(items, ['slug'])
 		// console.log(`setCollisions search '${this.slug}' ->`, items.map(v => v.short))
+		// title = utils.toSlug(title)
 		let collisions = (await pAll(
 			items.map(item => async () => {
-				await item.setAliases()
-				_.remove(item.aliases, alias => {
-					let alls = this.titles.concat(this.slugs)
-					if (alls.find(v => utils.equals(v, alias))) return true
-					if (alls.find(v => utils.contains(v, alias))) return true
-				})
-				return item.aliases
+				if (
+					this.collection.fulls.find(v => v.id == item.ids.tmdb) ||
+					utils.equals(item.title, title) ||
+					utils.equals(item.smallests.slug, title) ||
+					(this.title.includes(' ') && utils.contains(item.title, title))
+					// (this.title.includes(' ') &&
+					// 	(utils.startsWith(item.title, title) || utils.endsWith(item.title, title)))
+				) {
+					await item.setAliases()
+					_.remove(item.aliases, alias => {
+						if (this.aliases.find(v => utils.equals(v, alias))) return true
+						if (this.aliases.find(v => utils.contains(v, alias))) return true
+					})
+					return item.aliases
+				}
+				let aliases = [item.title, item.smallests.slug]
+				aliases = aliases.map(v => utils.unsquash(v)).flat()
+				return _.uniq(aliases.map(v => [v, ...item.toYears(v)]).flat())
 			}),
 			{ concurrency: 1 }
 		)).flat()
-		this.collisions = utils.byLength(_.uniq(collisions))
+		this.collisions = _.uniq(collisions)
 		// console.log(`setCollisions '${this.slug}' ->`, this.collisions)
 	}
 
 	async setAll() {
-		await Promise.all([this.setEpisodes(), this.setOmdb(), this.setSeasons(), this.setTmdb()])
+		await Promise.all([this.setOmdb(), this.setSeasons(), this.setTmdb()])
 		Memoize.clear(this)
-		await Promise.all([this.setAliases(), this.setCollisions()])
+		await this.setAliases()
+		await this.setCollisions()
 		Memoize.clear(this)
 	}
 
 	get titles() {
-		let titles = [this.title, this.omdb.Title, this.tmdb.name].filter(Boolean)
-		return utils.byLength(utils.unique(titles))
+		let titles = [this.title]
+		if (_.has(this.omdb, 'Title')) titles.push(this.omdb.Title)
+		if (_.has(this.tmdb, 'name')) titles.push(this.tmdb.name)
+		return utils.byLength(utils.unique(titles.filter(Boolean)))
 	}
 	get years() {
-		let tmdbyear: number
-		if (this.tmdb.release_date) tmdbyear = dayjs(this.tmdb.release_date).year()
-		if (this.tmdb.first_air_date) tmdbyear = dayjs(this.tmdb.first_air_date).year()
-		return _.uniq([this.year, _.parseInt(this.omdb.Year), tmdbyear].filter(Boolean)).sort()
+		let years = [this.year]
+		if (_.has(this.omdb, 'Year')) years.push(_.parseInt(this.omdb.Year))
+		if (_.has(this.tmdb, 'release_date')) years.push(dayjs(this.tmdb.release_date).year())
+		if (_.has(this.tmdb, 'first_air_date')) years.push(dayjs(this.tmdb.first_air_date).year())
+		return _.uniq(years.filter(Boolean)).sort()
+	}
+	toYears(slug: string) {
+		return this.years.filter(year => !slug.endsWith(`${year}`)).map(year => `${slug} ${year}`)
 	}
 	get collection() {
 		let collection = { name: '', fulls: [] as tmdb.Movie[], titles: [] as string[] }
@@ -295,26 +324,27 @@ export class Item {
 		return collection
 	}
 	get slugs() {
-		let titles = this.isDaily ? [this.titles[0]] : this.titles
-		// let slugs = titles.map(v => utils.unsquash(v, true)).flat()
+		// let titles = this.titles.slice(0, this.isDaily ? 1 : Infinity)
+		// let slugs = titles.map(v => utils.unsquash(v)).flat()
 		let slugs = _.flatten(
-			titles.map(v => {
-				let [a, b] = [utils.toSlug(v), utils.toSlug(v, { squash: true })]
-				if (a == b) return [v]
-				let words = v.split(' ').filter(v => utils.isAscii(v.slice(1, -1)))
-				return words.length >= 3 ? [words.join(' ')] : [a, b]
+			this.titles.map(title => {
+				let squash = utils.unsquash(title)
+				if (squash.length == 1) return squash
+				let non = utils.nonAscii(title)
+				return utils.stops(non) ? [utils.toSlug(non)] : squash
+				// let words = title.split(' ').filter(v => utils.isAscii(v.slice(1, -1)))
+				// return words.length >= 2 ? [words.join(' ')] : [a, b]
 			})
 		)
+		if (this.isDaily) return [slugs[0]]
 		if (this.movie) {
-			slugs = slugs.map(v => this.years.map(vv => `${v} ${vv}`)).flat()
+			slugs = slugs.map(v => this.toYears(v)).flat()
 			if (!this.isPopular()) {
 				slugs.push(this.smallests.smallest)
-				if (this.collection.name) {
-					slugs.push(this.collection.name)
-				}
+				this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			}
 		}
-		return utils.byLength(utils.unique(slugs))
+		return _.uniq(slugs)
 	}
 	get queries() {
 		let queries = [] as string[]
@@ -332,6 +362,16 @@ export class Item {
 			packed && this.S.n && queries.push(`season ${this.S.n}`)
 		}
 		return _.uniq(queries)
+	}
+	get tests() {
+		let tests = [] as string[]
+		this.S.t && tests.push(this.S.t)
+		this.S.n && tests.push(`s${this.S.z}`)
+		this.S.n && tests.push(`season ${this.S.n}`)
+		this.E.t && tests.push(this.E.t)
+		this.E.a && tests.push(this.E.a)
+		this.E.n && tests.push(`s${this.S.z}e${this.E.z}`)
+		return tests
 	}
 
 	constructor(result: PartialDeep<trakt.Result & tmdb.Result>) {

@@ -35,7 +35,6 @@
 		"scripts:users-sync": "redrun build; node dist/index.js --script=users-sync"
 	},
 	"dependencies": {
-		"@sindresorhus/slugify": "^0.9.1",
 		"all-keys": "^3.1.0",
 		"ansi-colors": "^3.2.4",
 		"ansi-escapes": "^4.1.0",

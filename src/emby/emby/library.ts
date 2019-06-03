@@ -20,7 +20,13 @@ process.nextTick(async () => {
 	// let titles = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
 	// titles = utils.unique(titles.filter(v => !utils.isAscii(v))).sort(utils.alphabetically)
 	// titles.forEach(v =>
-	// 	console.log(ansi.bold(v), `\n${utils.toSlug(v)}`, `\n${utils.toSlug(v, { squash: true })}`)
+	// 	console.log(
+	// 		ansi.bold(v),
+	// 		`\n${utils.toSlug(v)}`,
+	// 		`\n${utils.toSlug(v, { squash: true })}`,
+	// 		`\n${utils.nonAscii(v)}`,
+	// 		`\n${utils.stops(v)}`,
+	// 	)
 	// )
 
 	await library.setFolders()
