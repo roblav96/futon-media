@@ -8,11 +8,8 @@ import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://www.premiumize.me/api',
+	query: { customer_id: process.env.PREMIUMIZE_ID, pin: process.env.PREMIUMIZE_PIN },
 	qsArrayFormat: 'bracket',
-	query: {
-		customer_id: process.env.PREMIUMIZE_ID,
-		pin: process.env.PREMIUMIZE_PIN,
-	},
 })
 
 process.nextTick(async () => {

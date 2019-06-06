@@ -29,8 +29,8 @@ export class Torrent {
 	boost = 1
 	boosts(episodes?: number) {
 		let bytes = this.bytes
-		if (this.packs > 0 && _.isFinite(episodes)) {
-			bytes = this.bytes / (episodes * this.packs)
+		if (_.isFinite(episodes)) {
+			if (this.packs > 0) bytes = this.bytes / (episodes * this.packs)
 		} else if (this.packs > 1) {
 			bytes = this.bytes / this.packs
 		}

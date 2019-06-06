@@ -45,7 +45,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		(await import('@/scrapers/providers/orion')).Orion,
 		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
@@ -54,7 +54,6 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 
 	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()
 
-	console.time(`torrents.uniqWith`)
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
 		let accuracies = utils.accuracies(to.name, from.name)
@@ -66,21 +65,19 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		to.seeders = _.ceil(_.max([to.seeders, from.seeders]))
 		return true
 	})
-	console.timeEnd(`torrents.uniqWith`)
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => filters.torrents(v, item))
 	console.timeEnd(`torrents.filter`)
 
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
-	console.time(`torrents.forEach`)
 	torrents.forEach(({ split }, i) => {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
 		if (v.providers.includes('Yts')) v.boost *= 1.5
 		let defs = ['720p', '480p', '360p']
-		if (defs.find(def => name.includes(` ${def} `))) v.boost *= 0.25
+		if (defs.find(def => name.includes(` ${def} `))) v.boost *= 0.5
 		if (!hd) return
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.smallests.slug) && v.providers.length == 1) v.boost *= 0.5
@@ -105,9 +102,9 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			'trollhd',
 		].forEach(vv => name.includes(` ${vv} `) && (v.boost *= 1.25))
 	})
-	console.timeEnd(`torrents.forEach`)
+	torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 
-	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	return torrents
 }
 
 export interface Scraper {

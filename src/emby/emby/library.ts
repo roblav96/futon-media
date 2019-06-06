@@ -204,8 +204,7 @@ export const library = {
 		let type = ['Series', 'Season', 'Episode'].includes(Type) ? 'show' : Type.toLowerCase()
 		let ids = library.pathIds(Path)
 		if (ids.imdb) {
-			let full = (await trakt.client.get(`/${type}s/${ids.imdb}/`, {
-				query: { type },
+			let full = (await trakt.client.get(`/${type}s/${ids.imdb}`, {
 				silent: true,
 			})) as trakt.Full
 			if (full) return new media.Item({ [type]: full })

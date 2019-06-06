@@ -50,10 +50,7 @@ export function zeroSlug(value: number) {
 }
 
 export function isForeign(value: string) {
-	for (let i = 0; i < value.length; i++) {
-		if (value.charCodeAt(i) >= 256) return true
-	}
-	return false
+	return /[^\x01-\xFF]/gi.test(value) == true
 }
 export function isAscii(value: string) {
 	return /[^a-z0-9\s]/gi.test(value) == false
@@ -140,7 +137,7 @@ export function unsquash(value: string) {
 	return a == b ? [a] : [a, b]
 }
 
-export const STOPS = ['a', 'an', 'and', 'in', 'of', 'the', 'to', 'with']
+export const STOPS = ['a', 'an', 'and', 'in', 'of', 'the', 'to']
 export function stops(value: string) {
 	return _.filter(value.split(/\s+/), v => !STOPS.includes(minify(v))).join(' ')
 }

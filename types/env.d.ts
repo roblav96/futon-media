@@ -13,6 +13,7 @@ interface Env {
 	EMBY_PROTO: string
 	EMBY_STRM_PORT: string
 	NODE_ENV: string
+	OFFCLOUD_KEY: string
 	OMDB_KEY: string
 	ORION_APP: string
 	ORION_KEY: string

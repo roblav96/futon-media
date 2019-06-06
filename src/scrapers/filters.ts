@@ -30,10 +30,10 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	result.name = result.name || magnet.dn
 	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
-	if (utils.isForeign(result.name)) return // console.log(`⛔ foreign ->`, result.name)
+	if (utils.isForeign(utils.clean(result.name))) return // console.log(`⛔ foreign ->`, result.name)
 	result.name = utils.toSlug(result.name)
 
-	let skips = utils.accuracies(item.slugs.join(' '), SKIPS.join(' '))
+	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {
 		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
