@@ -24,6 +24,13 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let votes = ranges[_.clamp(query.split(' ').length - 1, 0, ranges.length - 1)]
 	console.warn(`${await emby.sessions.byWho(UserId)}rxSearch '${query}' ->`, votes)
 
+	if (!query.includes(' ') && /tt\d+/.test(query)) {
+		let results = (await trakt.client.get(`/search/imdb/${query}`, {
+			// silent: true,
+		})) as trakt.Result[]
+		return emby.library.addQueue(results.map(v => new media.Item(v)))
+	}
+
 	let types = query.includes(' ') ? 'movie,show,person' : 'movie,show'
 	let fields = query.includes(' ') ? 'title,tagline,aliases,name' : 'title,tagline,aliases'
 	let results = (await trakt.client.get(`/search/${types}`, {

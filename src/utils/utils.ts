@@ -51,11 +51,11 @@ export function zeroSlug(value: number) {
 
 export function isForeign(value: string) {
 	return /[^\x01-\xFF]/gi.test(value) == true
+	// return /[^\x00-\x7F]/gi.test(value) == false
+	// return /[^\x01-\xFF]/gi.test(value) == false
 }
 export function isAscii(value: string) {
 	return /[^a-z0-9\s]/gi.test(value) == false
-	// return /[^\x00-\x7F]/gi.test(value) == false
-	// return /[^\x01-\xFF]/gi.test(value) == false
 }
 export function squash(value: string) {
 	return trim(clean(value).replace(/[^a-z0-9\s]/gi, ''))

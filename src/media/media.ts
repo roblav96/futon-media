@@ -165,6 +165,7 @@ export class Item {
 
 	tmdb: tmdb.Full
 	async setTmdb() {
+		if (!this.ids.tmdb) return
 		let type = this.show ? 'tv' : 'movie'
 		this.tmdb = (await tmdb.client.get(`/${type}/${this.ids.tmdb}`, {
 			silent: true,
@@ -199,18 +200,24 @@ export class Item {
 
 	aliases: string[]
 	async setAliases() {
+		let aliases = [] as string[]
+
 		let response = (await trakt.client.get(`/${this.type}s/${this.slug}/aliases`, {
 			// silent: true,
 		})) as trakt.Alias[]
-		let trakts = response.filter(v => ['gb', 'us'].includes(v.country))
+		let trakts = (response || []).filter(v => ['gb', 'us'].includes(v.country))
+		aliases.push(...trakts.map(v => v.title))
 
-		let { titles } = (await tmdb.client.get(
-			`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`,
-			{ silent: true }
-		)) as tmdb.AlternativeTitles
-		let tmdbs = (titles || []).filter(v => ['GB', 'US'].includes(v.iso_3166_1))
+		if (this.ids.tmdb) {
+			let { titles } = (await tmdb.client.get(
+				`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`,
+				{ silent: true }
+			)) as tmdb.AlternativeTitles
+			let tmdbs = (titles || []).filter(v => ['GB', 'US'].includes(v.iso_3166_1))
+			aliases.push(...tmdbs.map(v => v.title))
+		}
 
-		let aliases = _.uniq([...trakts, ...tmdbs].map(v => utils.clean(v.title)))
+		aliases = _.uniq(aliases.map(v => utils.clean(v)))
 		// console.log(`setAliases '${this.slug}' ->`, utils.byLength(aliases))
 
 		// let { slug, smallest } = this.smallests
@@ -238,7 +245,7 @@ export class Item {
 		aliases = utils.byLength(aliases)
 		aliases = aliases.map(v => [v, ...this.toYears(v)]).flat()
 
-		this.aliases = _.uniq(aliases /** .filter(v => v.includes(' ')) */)
+		this.aliases = _.uniq(aliases)
 		// console.log(`setAliases '${this.slug}' ->`, this.aliases)
 	}
 

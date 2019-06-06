@@ -19,13 +19,13 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll`)
 
-	// console.log(`scrapeAll item ->`, item)
-	console.log(`scrapeAll item.titles ->`, item.titles)
-	console.log(`scrapeAll item.years ->`, item.years)
-	console.log(`scrapeAll item.slugs ->`, item.slugs)
-	console.log(`scrapeAll item.queries ->`, item.queries)
-	console.log(`scrapeAll item.aliases ->`, item.aliases)
-	console.log(`scrapeAll item.collisions ->`, item.collisions)
+	// console.log(`item ->`, item)
+	console.log(`item.titles ->`, item.titles)
+	console.log(`item.years ->`, item.years)
+	console.log(`item.slugs ->`, item.slugs)
+	console.log(`item.queries ->`, item.queries)
+	console.log(`item.aliases ->`, item.aliases)
+	console.log(`item.collisions ->`, item.collisions)
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	// (await import('@/scrapers/providers/digbt')).Digbt,
@@ -76,7 +76,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
 		if (v.providers.includes('Yts')) v.boost *= 1.5
-		let defs = ['720p', '480p', '360p']
+		let defs = ['720p', '480p', '360p', '720', '480', '360']
 		if (defs.find(def => name.includes(` ${def} `))) v.boost *= 0.5
 		if (!hd) return
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
