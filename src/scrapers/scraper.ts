@@ -76,7 +76,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
 		if (v.providers.includes('Yts')) v.boost *= 1.5
-		let defs = ['720p', '480p', '360p', '720', '480', '360']
+		let defs = ['720p', '480p', '360p']
 		if (defs.find(def => name.includes(` ${def} `))) v.boost *= 0.5
 		if (!hd) return
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
@@ -89,6 +89,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			'ctrlhd',
 			'dimension',
 			'epsilon',
+			'esir',
 			'exkinoray',
 			'grym',
 			'kralimarko',
@@ -146,16 +147,14 @@ export class Scraper {
 				let sorts = _.clone(this.sorts)
 				this.sorts[0] = sorts[1]
 				this.sorts[1] = sorts[0]
-			}
-			if ((this.slow && !this.item.movie) || this.item.isDaily) {
-				this.sorts = this.sorts.slice(0, 1)
+				if (this.slow) this.sorts = [this.sorts[0]]
 			}
 		}
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
 			if (this.sorts.length == 0) return combos.push([slug] as any)
-			let sorts = i == 0 ? this.sorts : this.sorts.slice(0, 1)
+			let sorts = i == 0 ? this.sorts : [this.sorts[0]]
 			sorts.forEach(sort => combos.push([slug, sort]))
 		})
 		combos = combos.slice(0, this.max)

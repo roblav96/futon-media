@@ -8,10 +8,9 @@ import * as pQueue from 'p-queue'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import { Premiumize } from '@/debrids/premiumize'
-import { Putio } from '@/debrids/putio'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize, putio: Putio }
+export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize }
 
 export async function cached(hashes: string[]) {
 	let entries = Object.entries({ realdebrid: RealDebrid, premiumize: Premiumize })

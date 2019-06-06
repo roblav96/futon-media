@@ -56,15 +56,18 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			let extras = utils.accuracies(`${titles} 1080 1920 2160`, torrent.name)
 			let years = extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
-			// if (years.length >= 2) {
-			// 	return console.log(`❌ years >= 2 '${years}' ->`, torrent.name)
-			// }
-
-			let packed = utils.accuracies(titles, 'collection')
 
 			if (torrent.split.includes('duology')) torrent.packs = 2
 			else if (torrent.split.includes('trilogy')) torrent.packs = 3
-			else if (years.length >= 2 || packed.find(v => torrent.split.includes(v))) {
+			else if (torrent.split.includes('quadriology')) torrent.packs = 4
+			else if (torrent.split.includes('pentalogy')) torrent.packs = 5
+			else if (torrent.split.includes('hexalogy')) torrent.packs = 6
+			else if (torrent.split.includes('heptalogy')) torrent.packs = 7
+			else if (torrent.split.includes('octalogy')) torrent.packs = 8
+			else if (
+				years.length >= 2 ||
+				utils.accuracies(titles, 'collection').find(v => torrent.split.includes(v))
+			) {
 				torrent.packs = item.collection.fulls.length
 			}
 

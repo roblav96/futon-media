@@ -28,11 +28,15 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 		let results = (await trakt.client.get(`/search/imdb/${query}`, {
 			// silent: true,
 		})) as trakt.Result[]
-		return emby.library.addQueue(results.map(v => new media.Item(v)))
+		let items = results.map(v => new media.Item(v))
+		return emby.library.addQueue(items.filter(v => !v.invalid))
 	}
 
-	let types = query.includes(' ') ? 'movie,show,person' : 'movie,show'
-	let fields = query.includes(' ') ? 'title,tagline,aliases,name' : 'title,tagline,aliases'
+	let [types, fields] = ['movie,show', 'title,tagline,aliases,translations']
+	if (query.includes(' ')) {
+		types += ',person'
+		fields += ',name'
+	}
 	let results = (await trakt.client.get(`/search/${types}`, {
 		query: { query, fields, limit: 100 },
 	})) as trakt.Result[]

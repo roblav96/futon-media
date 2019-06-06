@@ -88,10 +88,11 @@ export class Item {
 		return this.runtime >= 10
 	}
 	get invalid() {
-		if (!this.main.year || (this.show && !(this.show.aired_episodes > 0))) return true
+		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
-		if (!this.ids.imdb /** || !this.ids.tmdb */) return true
-		return !(this.main.votes > 0)
+		// if (this.movie && !(this.main.votes > 0)) return true
+		if (this.show && !(this.show.aired_episodes > 0)) return true
+		return false
 	}
 	isPopular(votes = 500) {
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
@@ -101,7 +102,7 @@ export class Item {
 	}
 	isJunk(votes = 1000) {
 		if (this.invalid || !this.isReleased || !this.hasRuntime) return true
-		return !this.isEnglish || !this.isPopular(votes)
+		return !this.ids.imdb || !this.isEnglish || !this.isPopular(votes)
 	}
 
 	get isDaily() {
@@ -209,16 +210,17 @@ export class Item {
 		aliases.push(...trakts.map(v => v.title))
 
 		if (this.ids.tmdb) {
-			let { titles } = (await tmdb.client.get(
-				`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`,
-				{ silent: true }
-			)) as tmdb.AlternativeTitles
+			let { titles } = (await tmdb.client
+				.get(`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`, {
+					silent: true,
+				})
+				.catch(() => ({ titles: [] }))) as tmdb.AlternativeTitles
 			let tmdbs = (titles || []).filter(v => ['GB', 'US'].includes(v.iso_3166_1))
 			aliases.push(...tmdbs.map(v => v.title))
 		}
 
 		aliases = _.uniq(aliases.map(v => utils.clean(v)))
-		// console.log(`setAliases '${this.slug}' ->`, utils.byLength(aliases))
+		// console.log(`setAliases '${this.slug}' aliases ->`, utils.byLength(aliases))
 
 		// let { slug, smallest } = this.smallests
 		// let skips = '3d disc disc1 disc2 edition extended imax part part1 part2 special untitled'
@@ -246,7 +248,7 @@ export class Item {
 		aliases = aliases.map(v => [v, ...this.toYears(v)]).flat()
 
 		this.aliases = _.uniq(aliases)
-		// console.log(`setAliases '${this.slug}' ->`, this.aliases)
+		// console.log(`setAliases '${this.slug}' aliases ->`, this.aliases)
 	}
 
 	collisions: string[]
@@ -254,41 +256,50 @@ export class Item {
 		let title = utils.byLength([...this.titles, this.collection.name].filter(Boolean))[0]
 		let simple = utils.simplify(title)
 		let query = utils.stops(simple) || simple || title
-		let results = (await trakt.client.get(`/search/${this.type}`, {
-			query: { query, fields: 'title,tagline,aliases', limit: 100 },
-			// silent: true,
-		})) as trakt.Result[]
+		let cleaned = utils.clean(query)
+
+		let results = (await pAll(
+			(cleaned == query ? [query] : [query, cleaned]).map(query => async () =>
+				(await trakt.client.get(`/search/${this.type}`, {
+					query: { query, limit: 100 },
+					// silent: true,
+				})) as trakt.Result[]
+			)
+		)).flat()
+
 		let items = results.map(v => new Item(v))
 		_.remove(items, v => v.invalid || v.trakt == this.trakt)
-		items = _.sortBy(items, ['slug'])
-		// console.log(`setCollisions search '${this.slug}' ->`, items.map(v => v.short))
+		items = _.sortBy(_.uniqBy(items, 'slug'), ['slug'])
+		console.log(`setCollisions '${this.slug}' items ->`, items.map(v => v.short))
 
 		let collisions = [] as string[]
+		let votes = _.ceil(this.main.votes * 0.01)
 		for (let item of items) {
 			if (
 				this.collection.fulls.find(v => v.id == item.ids.tmdb) ||
-				utils.equals(item.title, title) ||
-				utils.equals(item.smallests.slug, title)
+				(utils.equals(item.title, title) && item.main.votes > votes) ||
+				(utils.equals(item.smallests.slug, title) && item.main.votes > votes)
 				// (this.title.includes(' ') && utils.contains(item.title, title))
 				// (this.title.includes(' ') &&
 				// 	(utils.startsWith(item.title, title) || utils.endsWith(item.title, title)))
 			) {
 				await item.setAliases()
-				_.remove(item.aliases, alias => {
-					if (this.aliases.find(v => utils.equals(v, alias))) return true
-					if (this.aliases.find(v => utils.contains(v, alias))) return true
-				})
 				collisions.push(...item.aliases)
 			} else {
 				let aliases = [item.title, item.smallests.slug]
 				aliases = aliases.map(v => utils.unsquash(v)).flat()
-				aliases = _.uniq(aliases.map(v => [v, ...item.toYears(v)]).flat())
+				aliases = aliases.map(v => [v, ...item.toYears(v)]).flat()
 				collisions.push(...aliases)
 			}
 		}
 
+		_.remove(collisions, collision => {
+			if (this.aliases.find(v => utils.equals(v, collision))) return true
+			if (this.aliases.find(v => utils.contains(v, collision))) return true
+		})
+
 		this.collisions = _.uniq(collisions)
-		// console.log(`setCollisions '${this.slug}' ->`, this.collisions)
+		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
 	}
 
 	async setAll() {
@@ -335,10 +346,10 @@ export class Item {
 				return [utils.toSlug(simple)]
 			})
 		)
-		if (this.isDaily) return utils.byLength(slugs).slice(0, 1)
+		if (this.isDaily) return [utils.byLength(slugs)[0]]
 		if (this.movie) {
 			slugs = slugs.map(v => this.toYears(v)).flat()
-			if (!this.isPopular()) {
+			if (!this.isPopular(1000)) {
 				slugs.push(this.smallests.smallest)
 				this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			}
@@ -361,6 +372,10 @@ export class Item {
 		packed && this.S.n && queries.push(`season ${this.S.n}`)
 		return _.uniq(queries)
 	}
+	/**
+		TODO:
+		- 
+	*/
 	get tests() {
 		let tests = [] as string[]
 		this.S.t && tests.push(this.S.t)
