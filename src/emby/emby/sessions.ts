@@ -22,7 +22,7 @@ export const sessions = {
 		return Session ? `[${Session.short}]\n` : ''
 	},
 	broadcast(message: string) {
-		sessions.get().then(exts => exts.forEach(v => v.message(message)))
+		sessions.get().then(sessions => sessions.forEach(v => v.message(message)))
 	},
 }
 
@@ -178,6 +178,18 @@ export class Session {
 
 	async getDevice() {
 		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
+	}
+
+	async command(Name: string, body: any) {
+		console.log(`command '${Name}' ->`, body)
+		let response = await emby.client.post(`/Sessions/${this.Id}/Command/LibraryChanged`, {
+			query: {
+				// messageId: utils.hash(utils.nonce(), 'md5'),
+				api_key: emby.env.ADMIN_KEY,
+			},
+			body,
+		})
+		console.log(`response ->`, response)
 	}
 
 	message(data: string | Error) {

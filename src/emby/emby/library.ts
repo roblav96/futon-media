@@ -138,18 +138,18 @@ export const library = {
 		library.folders.shows = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
 	},
 
-	async setCollections() {
-		let Roots = await library.Items({ IncludeItemTypes: ['Folder'] })
-		let Root = Roots.find(v => v.ParentId == '1' && v.Name == 'collections')
-		let Folders = await library.Items({
-			IncludeItemTypes: ['BoxSet'],
-			ParentId: Root.Id,
-		})
-		if (Folders.length > 0) return
-		for (let Name of ['Movie Collections', 'Movie Lists', 'TV Show Lists']) {
-			await emby.client.post('/Collections', { query: { Name } })
-		}
-	},
+	// async setCollections() {
+	// 	let Roots = await library.Items({ IncludeItemTypes: ['Folder'] })
+	// 	let Root = Roots.find(v => v.ParentId == '1' && v.Name == 'collections')
+	// 	let Folders = await library.Items({
+	// 		IncludeItemTypes: ['BoxSet'],
+	// 		ParentId: Root.Id,
+	// 	})
+	// 	if (Folders.length > 0) return
+	// 	for (let Name of ['Movie Collections', 'Movie Lists', 'TV Show Lists']) {
+	// 		await emby.client.post('/Collections', { query: { Name } })
+	// 	}
+	// },
 
 	async setLibraryMonitorDelay() {
 		let Configuration = (await emby.client.get('/System/Configuration', {
@@ -326,7 +326,7 @@ export const library = {
 
 		let Updates = (await pAll(items.map(v => () => library.add(v)), { concurrency: 1 })).flat()
 		Updates.sort((a, b) => utils.alphabetically(a.UpdateType, b.UpdateType))
-		// console.log(`addAll Updates ->`, Updates.length)
+		// console.log(`addAll Updates ->`, Updates.length, Updates)
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
@@ -366,6 +366,20 @@ export const library = {
 			if (pItems.length > 0) await utils.pRandom(3000)
 		}
 		console.log(Date.now() - t, `addAll ${Items.length} Items`)
+
+		// let Sessions = await emby.sessions.get()
+		// for (let Session of Sessions) {
+		// 	await Session.command('LibraryChanged', {
+		// 		CollectionFolders: [],
+		// 		FoldersAddedTo: ['4'],
+		// 		FoldersRemovedFrom: [],
+		// 		IsEmpty: false,
+		// 		ItemsAdded: [],
+		// 		ItemsRemoved: [],
+		// 		ItemsUpdated: Items.map(v => v.Id),
+		// 	})
+		// }
+
 		return Items
 	},
 }

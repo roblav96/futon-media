@@ -6,25 +6,26 @@ import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
 import exithook = require('exit-hook')
-import Sockette from '@/shims/sockette'
+import Sockette, { ISockette } from '@/shims/sockette'
 
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
+let ws: ISockette
 process.nextTick(async () => {
 	let query = { api_key: emby.env.ADMIN_KEY || emby.env.KEY }
-	let ws = new Sockette(`${emby.env.URL}/embywebsocket?${qs.stringify(query)}`, {
+	ws = new Sockette(`${emby.env.URL}/embywebsocket?${qs.stringify(query)}`, {
 		timeout: 3000,
 		maxAttempts: Infinity,
 		onerror({ error }) {
-			console.error(`emby onerror -> %O`, error)
+			console.error(`socket onerror -> %O`, error)
 		},
 		onclose({ code, reason }) {
-			console.warn(`emby onclose ->`, code, reason)
+			console.warn(`socket onclose ->`, code, reason)
 			emby.Tail.destroy()
 		},
 		onopen({ target }) {
 			let url = target.url as string
-			console.info(`emby onopen ->`, url.slice(0, url.indexOf('?')))
+			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '1000,1000' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '1000,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '1000,1000' })
@@ -32,7 +33,7 @@ process.nextTick(async () => {
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
-			if (err) return console.error(`emby onmessage -> %O`, err)
+			if (err) return console.error(`socket onmessage -> %O`, err)
 			rxSocket.next(value)
 		},
 	})
@@ -40,6 +41,11 @@ process.nextTick(async () => {
 })
 
 export const socket = {
+	send(EmbyEvent: Partial<EmbyEvent>) {
+		console.log(`socket send ->`, JSON.stringify(EmbyEvent))
+		console.log(`ws ->`, ws)
+		ws.json(EmbyEvent)
+	},
 	filter<IData>(MessageType: string) {
 		return rxSocket.pipe(
 			Rx.op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
@@ -49,13 +55,17 @@ export const socket = {
 }
 
 // rxSocket.subscribe(({ MessageType, Data }) => {
-// 	if (MessageType == 'Sessions') return
-// 	if (MessageType == 'ScheduledTasksInfo') {
-// 		let tasks = Data as emby.ScheduledTasksInfo[]
-// 		let task = tasks.find(v => v.Key == 'RefreshLibrary')
-// 		return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
+// 	if (MessageType == 'LibraryChanged') {
+// 		console.warn(`rxSocket ->`, MessageType, Data)
 // 	}
-// 	console.log(`rxSocket ->`, MessageType, Data)
+// 	// if (MessageType == 'Sessions') return
+// 	// if (MessageType == 'ScheduledTasksInfo') return
+// 	// // if (MessageType == 'ScheduledTasksInfo') {
+// 	// // 	let tasks = Data as emby.ScheduledTasksInfo[]
+// 	// // 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
+// 	// // 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
+// 	// // }
+// 	// console.log(`rxSocket ->`, MessageType, Data)
 // })
 
 export interface EmbyEvent<Data = any> {

@@ -23,7 +23,7 @@ export function duration(amount: number, unit: dayjs.OpUnitType) {
 	return day.valueOf()
 }
 
-export function hash(value: any) {
+export function hash(value: any, algo = 'sha256') {
 	if (!_.isString(value)) value = fastStringify.stable(value)
 	let sha256 = crypto.createHash('sha256').update(value)
 	return sha256.digest('hex')

@@ -410,15 +410,6 @@ export class Item {
 			if (ikey) this[ikey] = rvalue
 		}
 		Memoize.clear(this)
-
-		if (process.DEVELOPMENT) {
-			let title = utils.toSlug(this.title, { separator: '-' })
-			if (!this.slug.startsWith(title)) {
-				console.log(`slug !startsWith title ->`, this.slug, title, this)
-				throw new Error(`slug !startsWith title`)
-			}
-		}
-
 		return this
 	}
 }
