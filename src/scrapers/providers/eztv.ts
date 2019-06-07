@@ -29,7 +29,7 @@ export class Eztv extends scraper.Scraper {
 				if (this.item.E.a && utils.includes(v.title, this.item.E.a)) {
 					return true
 				}
-				if (this.item.E.t && utils.includes(v.title, this.item.E.t)) {
+				if (this.item.E.t && utils.accuracy(v.title, this.item.E.t)) {
 					return true
 				}
 				if (this.item.S.n && season && this.item.E.n && episode) {

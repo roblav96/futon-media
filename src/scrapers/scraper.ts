@@ -132,8 +132,9 @@ export class Scraper {
 		let slugs = _.clone(this.item.slugs)
 		if (this.item.movie) return slugs
 		let queries = this.item.queries.map(v => `${slugs[0]} ${v}`)
-		let seasons = this.item.seasons.filter(v => v.aired_episodes > 0)
-		return slugs.slice(seasons.length > 1 ? 1 : 0).concat(queries)
+		return slugs.concat(queries)
+		// let seasons = this.item.seasons.filter(v => v.aired_episodes > 0)
+		// return slugs.slice(seasons.length > 1 ? 1 : 0).concat(queries)
 	}
 
 	constructor(public item: media.Item) {}
@@ -142,14 +143,15 @@ export class Scraper {
 		let t = Date.now()
 		let ctor = this.constructor.name
 
-		if (this.sorts.length >= 2) {
-			if (this.item.isDaily && ctor != 'Rarbg') {
-				let sorts = _.clone(this.sorts)
-				this.sorts[0] = sorts[1]
-				this.sorts[1] = sorts[0]
-				if (this.slow) this.sorts = [this.sorts[0]]
-			}
-		}
+		// if (this.sorts.length >= 2) {
+		// 	if (this.item.isDaily && ctor != 'Rarbg') {
+		// 		let sorts = _.clone(this.sorts)
+		// 		this.sorts[0] = sorts[1]
+		// 		this.sorts[1] = sorts[0]
+		// 		if (this.slow) this.sorts = [this.sorts[0]]
+		// 	}
+		// }
+		if (this.item.isDaily) this.sorts.reverse()
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {

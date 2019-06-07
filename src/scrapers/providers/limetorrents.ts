@@ -12,7 +12,6 @@ export const client = scraper.Scraper.http({
 
 export class LimeTorrents extends scraper.Scraper {
 	sorts = ['size', 'date']
-	slow = true
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {

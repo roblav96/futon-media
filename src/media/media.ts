@@ -46,10 +46,14 @@ export class Item {
 	}
 	get short() {
 		let episodes = this.show ? ` [${this.show.aired_episodes.toLocaleString()} eps] ` : ' '
-		return `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
+		let short = `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
+		if (this.invalid) short += ' [INVALID]'
+		else if (this.isJunk(0)) short += ' [JUNK]'
+		return short
 	}
 	get smallests() {
-		let slug = this.slug.replace(new RegExp(`-|${this.year}$`, 'gi'), ' ').trim()
+		let index = this.slug.lastIndexOf(`-${this.year}`)
+		let slug = (index == -1 ? this.slug : this.slug.slice(0, index)).replace(/-/g, ' ')
 		let titles = this.titles.map(v => utils.toSlug(v))
 		return { slug, smallest: utils.byLength([...titles, slug].filter(Boolean))[0] }
 	}
@@ -90,15 +94,15 @@ export class Item {
 	get invalid() {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
-		// if (this.movie && !(this.main.votes > 0)) return true
 		if (this.show && !(this.show.aired_episodes > 0)) return true
 		return false
 	}
 	isPopular(votes = 500) {
+		if (!_.has(this.main, 'votes')) return false
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
 		votes -= _.ceil(votes * 0.5 * penalty)
-		return _.has(this.main, 'votes') ? this.main.votes >= votes : false
+		return this.main.votes >= votes
 	}
 	isJunk(votes = 1000) {
 		if (this.invalid || !this.isReleased || !this.hasRuntime) return true
@@ -145,8 +149,7 @@ export class Item {
 		if (_.has(this.episode, 'title')) {
 			E.t = this.episode.title
 			if (this.isDaily) {
-				let name = utils.toSlug(E.t, { lowercase: false }).split(' ')
-				E.t = `${name[0]} ${name[1]}`
+				E.t = _.slice(utils.stops(E.t).split(' '), 0, 2).join(' ')
 			}
 		}
 		if (_.has(this.episode, 'number')) {
@@ -220,7 +223,7 @@ export class Item {
 		}
 
 		aliases = _.uniq(aliases.map(v => utils.clean(v)))
-		// console.log(`setAliases '${this.slug}' aliases ->`, utils.byLength(aliases))
+		console.log(`setAliases '${this.slug}' aliases ->`, utils.byLength(aliases))
 
 		// let { slug, smallest } = this.smallests
 		// let skips = '3d disc disc1 disc2 edition extended imax part part1 part2 special untitled'
@@ -253,24 +256,27 @@ export class Item {
 
 	collisions: string[]
 	async setCollisions() {
-		let title = utils.byLength([...this.titles, this.collection.name].filter(Boolean))[0]
+		let titles = [...this.titles, this.collection.name].filter(Boolean)
+		let title = utils.byLength(titles)[0].toLowerCase()
 		let simple = utils.simplify(title)
-		let query = utils.stops(simple) || simple || title
-		let cleaned = utils.clean(query)
+		let stops = utils.stops(simple)
+		let query = (stops.includes(' ') && stops) || (simple.includes(' ') && simple) || title
+		let squashes = utils.unsquash(query)
+		let queries = _.uniq([query, utils.clean(query), ...squashes, utils.unisolate(squashes)])
 
 		let results = (await pAll(
-			(cleaned == query ? [query] : [query, cleaned]).map(query => async () =>
+			queries.map(query => async () =>
 				(await trakt.client.get(`/search/${this.type}`, {
-					query: { query, limit: 100 },
+					query: { query, fields: 'title,translations,aliases', limit: 100 },
 					// silent: true,
 				})) as trakt.Result[]
-			)
+			),
+			{ concurrency: 1 }
 		)).flat()
 
-		let items = results.map(v => new Item(v))
-		_.remove(items, v => v.invalid || v.trakt == this.trakt)
+		let items = results.map(v => new Item(v)).filter(v => v.trakt != this.trakt)
 		items = _.sortBy(_.uniqBy(items, 'slug'), ['slug'])
-		console.log(`setCollisions '${this.slug}' items ->`, items.map(v => v.short))
+		// console.log(`setCollisions '${this.slug}' items ->`, items.map(v => v.short))
 
 		let collisions = [] as string[]
 		let votes = _.ceil(this.main.votes * 0.01)
@@ -338,21 +344,28 @@ export class Item {
 	get slugs() {
 		let slugs = _.flatten(
 			this.titles.map(title => {
-				let squash = utils.unsquash(title)
-				if (squash.length == 1) return squash
+				let squashes = utils.unsquash(title)
+				if (squashes.length == 1) return squashes
+				squashes[0] = utils.unisolate(squashes)
 				let simple = utils.simplify(title)
-				if (!simple.includes(' ')) return squash
-				if (!utils.stops(simple).includes(' ')) return squash
+				if (!simple.includes(' ')) return squashes
+				if (!utils.stops(simple).includes(' ')) return squashes
 				return [utils.toSlug(simple)]
 			})
 		)
-		if (this.isDaily) return [utils.byLength(slugs)[0]]
+		if (this.isDaily) {
+			return [utils.byLength(_.uniq([...slugs, ...this.aliases]))[0]]
+		}
 		if (this.movie) {
 			slugs = slugs.map(v => this.toYears(v)).flat()
 			if (!this.isPopular(1000)) {
-				slugs.push(this.smallests.smallest)
+				let title = this.titles[0]
+				let semi = title.lastIndexOf(': ')
+				if (semi >= 0) title = title.slice(semi)
+				slugs.push(utils.toSlug(title))
 				this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			}
+			slugs = slugs.filter(v => utils.commons(v))
 		}
 		return _.uniq(slugs)
 	}
@@ -368,14 +381,12 @@ export class Item {
 		let next = this.seasons.find(v => v.number == this.S.n + 1)
 		let eps = [this.S.a, this.S.e].filter(v => _.isFinite(v))
 		let packed = (next && next.episode_count > 0) || (eps.length == 2 && eps[0] == eps[1])
-		packed && this.S.n && queries.push(`s${this.S.z}`)
-		packed && this.S.n && queries.push(`season ${this.S.n}`)
+		if (packed) {
+			this.S.n && queries.push(`s${this.S.z}`)
+			this.S.n && queries.push(`season ${this.S.n}`)
+		}
 		return _.uniq(queries)
 	}
-	/**
-		TODO:
-		- 
-	*/
 	get tests() {
 		let tests = [] as string[]
 		this.S.t && tests.push(this.S.t)
@@ -399,6 +410,15 @@ export class Item {
 			if (ikey) this[ikey] = rvalue
 		}
 		Memoize.clear(this)
+
+		if (process.DEVELOPMENT) {
+			let title = utils.toSlug(this.title, { separator: '-' })
+			if (!this.slug.startsWith(title)) {
+				console.log(`slug !startsWith title ->`, this.slug, title, this)
+				throw new Error(`slug !startsWith title`)
+			}
+		}
+
 		return this
 	}
 }

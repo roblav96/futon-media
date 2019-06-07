@@ -40,8 +40,7 @@ async function syncToken() {
 }
 
 export class Rarbg extends scraper.Scraper {
-	sorts = ['last', 'seeders']
-	slow = true
+	sorts = ['last' /** , 'seeders' */]
 	concurrency = 1
 
 	slugs() {

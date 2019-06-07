@@ -11,7 +11,6 @@ export const client = scraper.Scraper.http({
 
 export class SkyTorrents extends scraper.Scraper {
 	sorts = ['size', 'created']
-	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(

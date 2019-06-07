@@ -12,7 +12,6 @@ export const client = scraper.Scraper.http({
 
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size', 'date']
-	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/search', {

@@ -12,7 +12,6 @@ export const client = scraper.Scraper.http({
 
 export class ExtraTorrent extends scraper.Scraper {
 	sorts = ['size', 'added']
-	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(

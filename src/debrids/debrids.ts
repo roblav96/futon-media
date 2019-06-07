@@ -70,18 +70,17 @@ export async function getStreamUrl(
 					`S${item.S.z}E${item.E.z}`,
 					`S${item.S.z}xE${item.E.z}`,
 					`${item.S.n}x${item.E.z}`,
-					`${item.S.n}x${item.E.n}`,
 					`${item.S.n}${item.E.z}`,
-					`Episode${item.E.z}`,
+					`Episode ${item.E.z}`,
 					`Ep${item.E.z}`,
 					`E${item.E.z}`,
 					`${item.E.a}`,
-					`${item.E.t}`,
 				]
 				for (let test of tests) {
 					file = files.find(v => utils.includes(v.name, test))
 					if (file) break
 				}
+				if (!file) file = files.find(v => utils.accuracy(v.name, item.E.t))
 				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
 			}
 			if (!file) {

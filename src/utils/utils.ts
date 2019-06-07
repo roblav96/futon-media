@@ -1,3 +1,4 @@
+export * from '@/utils/constants'
 import * as _ from 'lodash'
 import * as advancedFormat from 'dayjs/plugin/advancedFormat'
 import * as crypto from 'crypto'
@@ -11,6 +12,7 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import stripBom = require('strip-bom')
+import { BYTE_UNITS, COMMONS, STOPS, VIDEOS } from '@/utils/constants'
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
@@ -74,8 +76,27 @@ export function trim(value: string) {
 	return value.replace(/\s+/g, ' ').trim()
 }
 export function simplify(value: string) {
-	return _.filter(value.split(/\s+/), v => isAscii(clean(v).slice(1, -1))).join(' ')
+	let squashes = unsquash(value)
+	if (squashes.length == 1) return value
+	return excludes(value, accuracies(squashes[0], squashes[1]))
 }
+// export function shrink(value: string) {
+// 	value = clean(value)
+// 	let simple = simplify(value)
+// 	let slug = simple.includes(' ') && toSlug(simple)
+// 	if (!slug) {
+// 		let squashes = unsquash(value)
+// 		let isolates = unisolate(squashes)
+// 		slug = toSlug(value)
+// 		// let unisolate = unisolate(slug)
+// 		// if (unisolate.includes(' ')) slug = unisolate
+// 	}
+// 	let stop = stops(slug)
+// 	if (!stop.includes(' ')) return slug
+// 	let common = commons(stop)
+// 	if (!common.includes(' ')) return stop
+// 	return common
+// }
 
 export function equals(value: string, target: string) {
 	return minify(value) == minify(target)
@@ -98,6 +119,9 @@ export function dedupe(value: string) {
 		if (words[i] == words[i - 1]) words.splice(i, 1)
 	}
 	return words.join(' ')
+}
+export function excludes(value: string, words: string[]) {
+	return _.filter(value.split(/\s+/), v => !words.includes(minify(v) || clean(v))).join(' ')
 }
 
 export function contains(value: string, target: string) {
@@ -123,8 +147,8 @@ export function accuracy(value: string, target: string) {
 
 /** `levens == 0` when all of `target` is included in `value` */
 export function levens(value: string, target: string) {
-	value = toSlug(value)
-	target = toSlug(target)
+	value = minify(value)
+	target = minify(target)
 	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
 export function leven(value: string, target: string) {
@@ -136,17 +160,15 @@ export function unsquash(value: string) {
 	let [a, b] = [toSlug(value), toSlug(value, { squash: true })]
 	return a == b ? [a] : [a, b]
 }
-
-export const STOPS = ['a', 'an', 'and', 'in', 'of', 'the', 'to']
-export function stops(value: string) {
-	return _.filter(value.split(/\s+/), v => !STOPS.includes(minify(v))).join(' ')
+export function unisolate([a, b]: string[]) {
+	return excludes(a, accuracies(b, a).filter(v => v.length == 1))
+	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
 }
 
 export interface SlugOptions {
 	lowercase: boolean
 	separator: string
 	squash: boolean
-	stops: boolean
 	title: boolean
 }
 export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
@@ -154,18 +176,22 @@ export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
 		lowercase: options.title != true,
 		separator: ' ',
 		squash: options.title == true,
-		stops: false,
 	} as SlugOptions)
 	value = clean(value)
 	if (options.squash) value = squash(value)
 	let slug = trim(value.replace(/[^a-z0-9\s]/gi, ' '))
 	if (options.lowercase) slug = slug.toLowerCase()
-	if (options.stops) slug = stops(slug)
 	if (options.separator != ' ') slug = slug.replace(/\s/g, options.separator)
 	return slug
 }
 
-export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
+export function stops(value: string) {
+	return excludes(value, STOPS)
+}
+export function commons(value: string) {
+	return excludes(value, COMMONS)
+}
+
 export function isVideo(file: string) {
 	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
 }
@@ -182,15 +208,30 @@ export function alphabetically(a: string, b: string) {
 	return a < b ? -1 : a > b ? 1 : (0 as number)
 }
 
-export function slider(value: number, min: number, max: number) {
+export function percent(to: number, from: number) {
+	if (from == 0) return 0
+	return ((to - from) / from) * 100
+}
+export function ratio(to: number, from: number) {
+	if (from == 0) return 1
+	return to / from + 1
+}
+export function osc(to: number, from: number, range = 1) {
+	if (from == 0) return 0
+	return (range - range / (1 + to / from) - range / 2) * 2
+}
+export function rsi(to: number, from: number, range = 1) {
+	if (from == 0) return 0
+	return range - range / (1 + to / from)
+}
+export function slider(value: number, min: number, max: number, range = 1) {
 	if (max - min == 0) return 0
-	return ((value - min) / (max - min)) * 100
+	return ((value - min) / (max - min)) * range
 }
 
 export function dispersed(value: number, index: number, max: number) {
 	return Math.round(Math.max(index, 0) * (value / Math.max(max, 1)))
 }
-
 export function chunks<T = any>(values: T[], max: number) {
 	let size = Math.ceil(values.length / Math.max(max, 1))
 	let chunks = Array.from(Array(size), v => []) as T[][]
@@ -240,25 +281,6 @@ export function toStamp(value: string) {
 	return day.add(1, 'minute').valueOf()
 }
 
-const BYTE_UNITS = {
-	b: { num: 1, str: 'B' },
-	kb: { num: Math.pow(1000, 1), str: 'KB' },
-	mb: { num: Math.pow(1000, 2), str: 'MB' },
-	gb: { num: Math.pow(1000, 3), str: 'GB' },
-	tb: { num: Math.pow(1000, 4), str: 'TB' },
-	pb: { num: Math.pow(1000, 5), str: 'PB' },
-	eb: { num: Math.pow(1000, 6), str: 'EB' },
-	zb: { num: Math.pow(1000, 7), str: 'ZB' },
-	yb: { num: Math.pow(1000, 8), str: 'YB' },
-	kib: { num: Math.pow(1024, 1), str: 'KiB' },
-	mib: { num: Math.pow(1024, 2), str: 'MiB' },
-	gib: { num: Math.pow(1024, 3), str: 'GiB' },
-	tib: { num: Math.pow(1024, 4), str: 'TiB' },
-	pib: { num: Math.pow(1024, 5), str: 'PiB' },
-	eib: { num: Math.pow(1024, 6), str: 'EiB' },
-	zib: { num: Math.pow(1024, 7), str: 'ZiB' },
-	yib: { num: Math.pow(1024, 8), str: 'YiB' },
-}
 export function toBytes(value: string) {
 	let amount = parseFloat(value)
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()

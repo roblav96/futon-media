@@ -23,7 +23,6 @@ export const client = scraper.Scraper.http({
 
 export class Digbt extends scraper.Scraper {
 	sorts = ['length', 'time']
-	slow = true
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {

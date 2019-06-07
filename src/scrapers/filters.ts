@@ -42,7 +42,8 @@ export function results(result: scraper.Result, item: media.Item) {
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	if (!item.aliases.find(v => utils.contains(torrent.name, v))) {
+	let aliases = item.aliases.filter(v => v.includes(' ') || utils.commons(v))
+	if (!aliases.find(v => utils.contains(torrent.name, v))) {
 		return console.log(`❌ aliases ->`, torrent.name)
 	}
 
@@ -81,7 +82,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		try {
 			let slug = ` ${torrent.name} `
 			if (item.isDaily && utils.includes(slug, item.E.a)) return true
-			if (item.E.t && utils.leven(slug, item.E.t)) return true
+			if (item.E.t && utils.accuracy(slug, item.E.t)) return true
 			if (regex.s00e00(item, slug)) return true
 
 			torrent.packs = 1

@@ -19,8 +19,8 @@ process.nextTick(async () => {
 	// let ansi = await import('ansi-colors')
 	// let names = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
 	// names = _.uniq(names).sort(utils.alphabetically)
-	// names = names.filter(v => !utils.isAscii(v))
-	// // names = names.filter(v => /[^a-z0-9\s]{2,}/gi.test(utils.clean(v)))
+	// names = names.filter(v => v.split(' ').length == 1)
+	// // names = names.filter(v => !utils.isAscii(v))
 	// names.forEach(v =>
 	// 	console.log(
 	// 		ansi.bold(v),
@@ -28,7 +28,7 @@ process.nextTick(async () => {
 	// 		`\n${utils.toSlug(v)}`,
 	// 		`\n${utils.toSlug(v, { squash: true })}`,
 	// 		`\n${utils.simplify(v)}`,
-	// 		`\n${utils.stops(v)}`,
+	// 		`\n${utils.stops(v)}`
 	// 	)
 	// )
 

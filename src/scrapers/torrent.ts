@@ -53,6 +53,7 @@ export class Torrent {
 			age: this.age,
 			boost: this.boost,
 			cached: this.cached.join(', '),
+			// magnet: this.magnet,
 			magnet: `magnet:?${minify}`,
 			name: this.name,
 			packs: this.packs,

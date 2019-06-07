@@ -10,39 +10,37 @@ import * as utils from '@/utils/utils'
 
 export const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
-	Rx.op.map(({ query }) => ({
-		query: utils.toSlug(query.SearchTerm, { stops: !query.SearchTerm.includes(' ') }),
-		UserId: query.UserId,
-	})),
+	Rx.op.map(({ query }) => {
+		let slug = utils.toSlug(query.SearchTerm, { squash: true })
+		if (!slug.includes(' ')) slug = utils.stops(slug)
+		return { query: slug, UserId: query.UserId }
+	}),
 	Rx.op.filter(({ query }) => query.length >= 2),
 	Rx.op.debounceTime(1000),
-	Rx.op.distinctUntilChanged((a, b) => utils.equals(a.query, b.query))
+	Rx.op.distinctUntilChanged((a, b) => a.query == b.query)
 )
 
 rxSearch.subscribe(async ({ query, UserId }) => {
-	let ranges = [1000, 500, 100, 25, 5]
-	let votes = ranges[_.clamp(query.split(' ').length - 1, 0, ranges.length - 1)]
-	console.warn(`${await emby.sessions.byWho(UserId)}rxSearch '${query}' ->`, votes)
+	let who = await emby.sessions.byWho(UserId)
+	console.warn(`${who}rxSearch '${query}' ->`)
 
-	if (!query.includes(' ') && /tt\d+/.test(query)) {
+	let spaces = query.includes(' ')
+	if (!spaces && /^tt\d+$/.test(query)) {
 		let results = (await trakt.client.get(`/search/imdb/${query}`, {
 			// silent: true,
 		})) as trakt.Result[]
-		let items = results.map(v => new media.Item(v))
-		return emby.library.addQueue(items.filter(v => !v.invalid))
+		let items = results.map(v => new media.Item(v)).filter(v => !v.invalid)
+		return emby.library.addQueue(items)
 	}
 
-	let [types, fields] = ['movie,show', 'title,tagline,aliases,translations']
-	if (query.includes(' ')) {
-		types += ',person'
-		fields += ',name'
-	}
+	let types = `movie,show${spaces ? ',person' : ''}`
+	let fields = `title,translations,aliases${spaces ? ',name' : ''}`
 	let results = (await trakt.client.get(`/search/${types}`, {
 		query: { query, fields, limit: 100 },
 	})) as trakt.Result[]
 
 	let person = trakt.person(results, query)
-	if (person && query.includes(' ')) {
+	if (person && spaces) {
 		results.push(...(await trakt.resultsFor(person)))
 	}
 
@@ -52,16 +50,25 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	// results.push(...(await toListsResults(query)))
 
 	results = trakt.uniqWith(results.filter(v => !v.person))
-	let items = results.map(v => new media.Item(v))
+	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(1))
+	items.sort((a, b) => b.main.votes - a.main.votes)
+	console.log(`rxSearch '${query}' items ->`, items.map(v => v.short))
+
+	let levens = items.filter(v => utils.leven(v.title, query))
+	console.log(`rxSearch '${query}' levens ->`, levens.map(v => v.short))
+	let votes = levens.map(v => v.main.votes)
+	let [mean, max] = [_.mean(votes) * 0.5, _.max(votes) * 0.05].map(v => _.ceil(v))
+	console.log(`mean ->`, mean)
+	console.log(`max ->`, max)
+
 	items = items.filter(item => {
-		if (item.isJunk(5)) return false
-		if (utils.equals(item.smallests.slug, query)) return !item.isJunk(5)
-		let vts: number
-		if (!query.includes(' ') && utils.accuracy(item.smallests.slug, query)) vts = votes
-		if (query.includes(' ') && utils.includes(item.smallests.slug, query)) vts = votes
-		return !item.isJunk(vts)
+		if (levens.length == 0) return !item.isJunk()
+		if (utils.equals(item.title, query)) return !item.isJunk(max)
+		if (!spaces && !utils.commons(query)) return false
+		// if (utils.includes(item.title, query) || utils.accuracy(item.title, query)) {
+		if (utils.leven(item.title, query)) return !item.isJunk(mean)
 	})
-	console.log(`rxSearch '${query}' ->`, items.map(v => v.short).sort())
+	console.log(`rxSearch '${query}' adding ->`, items.map(v => v.short).sort())
 
 	// for (let item of items) {
 	// 	await item.setAll()
@@ -86,7 +93,8 @@ async function toTmdbResults(query: string, tmids: number[], person: trakt.Perso
 	fulls.sort((a, b) => b.popularity - a.popularity)
 	let results = [] as trakt.Result[]
 
-	let { id } = fulls.find(v => v.media_type == 'person') || ({} as tmdb.Full)
+	let full = fulls.find(v => v.media_type == 'person' && utils.leven(v.name, query))
+	let { id } = full || ({} as any)
 	if (query.includes(' ') && id && (!person || person.ids.tmdb != id)) {
 		let result = ((await trakt.client.get(`/search/tmdb/${id}`, {
 			query: { type: 'person' },
@@ -99,7 +107,7 @@ async function toTmdbResults(query: string, tmids: number[], person: trakt.Perso
 		results.push(...(await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })))
 	}
 
-	return _.compact(results)
+	return results.filter(Boolean)
 }
 
 async function toListsResults(query: string) {

@@ -13,7 +13,6 @@ export const client = scraper.Scraper.http({
 
 export class Katli extends scraper.Scraper {
 	sorts = ['size', 'time_add']
-	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let type = this.item.show ? 'tv' : `${this.item.type}s`

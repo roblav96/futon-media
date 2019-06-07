@@ -11,7 +11,6 @@ export const client = scraper.Scraper.http({
 
 export class Magnet4You extends scraper.Scraper {
 	sorts = ['size', 'uploaded']
-	slow = true
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(

@@ -27,37 +27,35 @@ export const client = new Http({
 	},
 })
 
-export async function search(query: string, type = 'multi' as media.MainContentType) {
-	let response = (await client.get(`/search/${type}`, {
-		query: { query },
-	})) as Paginated<Full>
-	let fulls = (response.results || []).filter(v => {
-		return (
-			['movie', 'tv'].includes(v.media_type) &&
-			(v.original_language == 'en' && !v.adult && v.popularity >= 1)
-		)
-	})
-	let results = await pAll(fulls.map(result => () => toTrakt(result)), { concurrency: 1 })
-	let items = results.filter(Boolean).map(v => new media.Item(v))
-	return items.filter(v => !v.isJunk())
-}
+// export async function search(query: string, type = 'multi' as media.MainContentType) {
+// 	let response = (await client.get(`/search/${type}`, {
+// 		query: { query },
+// 	})) as Paginated<Full>
+// 	let fulls = (response.results || []).filter(v => {
+// 		return (
+// 			['movie', 'tv'].includes(v.media_type) &&
+// 			(v.original_language == 'en' && !v.adult && v.popularity >= 1)
+// 		)
+// 	})
+// 	let results = await pAll(fulls.map(result => () => toTrakt(result)), { concurrency: 1 })
+// 	let items = results.filter(Boolean).map(v => new media.Item(v))
+// 	return items.filter(v => !v.isJunk())
+// }
 
 export async function toTrakt({ id, media_type }: Full) {
-	let type = toType(media_type)
 	let results = (await trakt.client.get(`/search/tmdb/${id}`, {
-		query: { type },
+		query: { type: toType(media_type) },
 		memoize: true,
 	})) as trakt.Result[]
 	return results.find(v => trakt.toFull(v).ids.tmdb == id)
 }
 
 export function toType(media_type: string) {
-	if (!media_type) return 'movie'
 	return media_type == 'tv' ? 'show' : (media_type as media.ContentType)
 }
 
 export function toResult(full: Full) {
-	let type = full.media_type == 'tv' ? 'show' : full.media_type
+	let type = toType(full.media_type)
 	return ({ type, [type]: full } as any) as Result
 }
 

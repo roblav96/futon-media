@@ -40,13 +40,13 @@ export const RESULT_ITEM = {
 	score: 'score',
 } as Record<keyof Result, keyof media.Item>
 
-export async function search(query: string, type = 'movie,show' as media.MainContentType) {
-	let results = (await client.get(`/search/${type}`, {
-		query: { query, fields: 'title,aliases', limit: 100 },
-	})) as Result[]
-	let items = results.map(v => new media.Item(v))
-	return items.filter(v => !v.isJunk())
-}
+// export async function search(query: string, type = 'movie,show' as media.MainContentType) {
+// 	let results = (await client.get(`/search/${type}`, {
+// 		query: { query, fields: 'title,aliases', limit: 100 },
+// 	})) as Result[]
+// 	let items = results.map(v => new media.Item(v))
+// 	return items.filter(v => !v.isJunk())
+// }
 
 export function person(results: Result[], name: string) {
 	results = results.filter(v => {
@@ -82,8 +82,7 @@ export async function resultsFor(person: Person) {
 }
 
 export function toFull(result: Result) {
-	let type = media.TYPES.find(type => !!result[type])
-	return result[type] as Full
+	return result[media.TYPES.find(type => !!result[type])] as Full
 }
 
 export function uniqWith(results: Result[]) {
