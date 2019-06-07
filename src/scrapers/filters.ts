@@ -7,7 +7,7 @@ import * as utils from '@/utils/utils'
 
 export const SKIPS = [
 	'3d',
-	'avi',
+	// 'avi',
 	// 'bonus',
 	'cam',
 	'camhd',

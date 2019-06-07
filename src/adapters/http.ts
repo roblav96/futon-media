@@ -166,7 +166,7 @@ export class Http {
 		}
 
 		if (options.profile) {
-			console.log(Date.now() - t, min.url)
+			console.log(Date.now() - t, options.url) // min.url)
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)

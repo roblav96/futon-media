@@ -28,28 +28,37 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.log(`item.collisions ->`, item.collisions)
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
+	/**
+		TODO:
+		- PopcornTime | tv-v2.api-fetch.website | plugin.video.gaia
+		- PopcornTime | api.apidomain.info | tv-futon-media.paw
+		- ____ | ____ | ____
+		- ____ | ____ | ____
+		- ____ | ____ | ____
+	*/
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
-		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btbit')).BtBit,
-		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
-		(await import('@/scrapers/providers/eztv')).Eztv,
-		(await import('@/scrapers/providers/katli')).Katli,
-		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/yts')).Yts,
+		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// // (await import('@/scrapers/providers/btbit')).BtBit,
+		// (await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+		// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
+		// (await import('@/scrapers/providers/katli')).Katli,
+		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// // (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		// // (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/rarbg')).Rarbg,
+		// // (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+		// // (await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		// (await import('@/scrapers/providers/yts')).Yts,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()
@@ -76,8 +85,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
 		if (v.providers.includes('Yts')) v.boost *= 1.5
-		let defs = ['720p', '480p', '360p']
-		if (defs.find(def => name.includes(` ${def} `))) v.boost *= 0.5
+		let bads = ['720p', '480p', '360p', 'avi']
+		if (bads.find(def => name.includes(` ${def} `))) v.boost *= 0.5
 		if (!hd) return
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.smallests.slug) && v.providers.length == 1) v.boost *= 0.5

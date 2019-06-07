@@ -6,29 +6,31 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://extratorrent.si/search',
+	baseUrl: 'https://extratorrent.si',
 	query: { order: 'desc' } as Partial<Query>,
 })
 
-export class ExtraTorrent extends scraper.Scraper {
+export class ExtraTorrentSi extends scraper.Scraper {
 	sorts = ['size', 'added']
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get('/', { query: { search: slug, srt: sort } as Partial<Query> })
+			await client.get('/search/', {
+				query: { search: slug, srt: sort } as Partial<Query>,
+			})
 		)
 		let results = [] as scraper.Result[]
-		$(`.tl tr`).each((i, el) => {
+		$('.tl tr').each((i, el) => {
 			try {
 				let $el = $(el)
 				if (!$el.attr('class')) return
-				let added = $el.find(`.tli + td`).text()
 				let result = {
-					bytes: utils.toBytes($el.find(`.tli + td + td`).text()),
-					name: $el.find(`.tli > a`).text(),
-					magnet: _.trim($el.find(`a[href^="magnet:?"]`).attr('href')),
-					seeders: utils.parseInt($el.find(`.sn`).text()),
+					bytes: utils.toBytes($el.find('.tli + td + td').text()),
+					name: $el.find('.tli > a').text(),
+					magnet: _.trim($el.find('a[href^="magnet:?"]').attr('href')),
+					seeders: utils.parseInt($el.find('.sn').text()),
 				} as scraper.Result
+				let added = $el.find('.tli + td').text()
 				let day = dayjs(new Date(added))
 				if (added.startsWith('Today')) {
 					day = dayjs(added.replace('Today-', ''), 'hh:mm')
