@@ -26,16 +26,14 @@ export class Offcloud extends debrid.Debrid<Transfer> {
 				await utils.pRandom(1000)
 				let { cachedItems } = (await client
 					.post(`/torrent/check`, {
-						memoize: process.DEVELOPMENT,
 						body: { hashes: chunk },
-						profile: true,
+						memoize: process.DEVELOPMENT,
 						silent: true,
 					})
 					.catch(error => {
 						console.error(`Offcloud cache -> %O`, error)
 						return { cachedItems: [] }
 					})) as CacheResponse
-				console.log(`cachedItems ->`, cachedItems)
 				chunk.forEach(hash => {
 					if (cachedItems.includes(hash)) {
 						cached[hashes.findIndex(v => v == hash)] = true

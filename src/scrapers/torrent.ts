@@ -41,7 +41,7 @@ export class Torrent {
 	}
 
 	get short() {
-		let boost = `[${this.boost.toFixed(2)}${_.isFinite(this.packs) ? ` x ${this.packs}` : ''}]`
+		let boost = `[${this.boost.toFixed(2)} x${this.packs > 0 ? ` ${this.packs}` : ''}]`
 		return `${boost} [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
 		}${this.name} [${this.age}] [${this.providers}]`

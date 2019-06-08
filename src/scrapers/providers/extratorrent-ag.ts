@@ -13,9 +13,9 @@ export const client = scraper.Scraper.http({
 export class ExtraTorrentAg extends scraper.Scraper {
 	sorts = ['size', 'added']
 
-	async getResults(search: string, srt: string) {
+	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get('/search/', { query: { search, srt } as Partial<Query> })
+			await client.get('/search/', { query: { search: slug, srt: sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$('tr[class^="tl"]').each((i, el) => {
@@ -26,6 +26,7 @@ export class ExtraTorrentAg extends scraper.Scraper {
 					name: $el.find('td.tli a').text(),
 					magnet: _.trim($el.find('td a[href^="magnet:?"]').attr('href')),
 					seeders: utils.parseInt($el.find('td.sy').text()),
+					stamp: NaN,
 				} as scraper.Result
 				let added = $el.find('td:nth-last-of-type(5)').text()
 				if (!added.includes(' ')) return results.push(result)

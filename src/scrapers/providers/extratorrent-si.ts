@@ -13,12 +13,11 @@ export const client = scraper.Scraper.http({
 export class ExtraTorrentSi extends scraper.Scraper {
 	sorts = ['size', 'added']
 
-	async getResults(search: string, srt: string) {
+	async getResults(slug: string, sort: string) {
 		let s_cat = this.item.movie ? '4' : '8'
 		let $ = cheerio.load(
 			await client.get('/search/', {
-				query: { search, srt, s_cat } as Partial<Query>,
-				profile: true,
+				query: { search: slug, srt: sort, s_cat } as Partial<Query>,
 			})
 		)
 		let results = [] as scraper.Result[]

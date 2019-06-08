@@ -51,6 +51,9 @@ export function zeroSlug(value: number) {
 	return (value / 100).toFixed(2).slice(-2)
 }
 
+export function stripForeign(value: string) {
+	return trim(clean(value).replace(/[^\x01-\xFF]/gi, ' '))
+}
 export function isForeign(value: string) {
 	return /[^\x01-\xFF]/gi.test(value) == true
 	// return /[^\x00-\x7F]/gi.test(value) == false
