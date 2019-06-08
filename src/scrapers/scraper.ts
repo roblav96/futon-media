@@ -60,7 +60,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		// (await import('@/scrapers/providers/yts')).Yts,
-		(await import('@/scrapers/providers/zooqle')).Zooqle,
+		// (await import('@/scrapers/providers/zooqle')).Zooqle,
+		(await import('@/scrapers/providers/bitlord')).Bitlord,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()

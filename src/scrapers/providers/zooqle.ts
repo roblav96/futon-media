@@ -16,7 +16,7 @@ export class Zooqle extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let q = `${slug} category:${this.item.movie ? 'Movies' : 'TV'}`
 		let $ = cheerio.load(
-			await client.get('/search', { query: { q, s: sort } as Partial<Query>, profile: true })
+			await client.get('/search', { query: { q, s: sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$('table tr').each((i, el) => {
@@ -27,8 +27,8 @@ export class Zooqle extends scraper.Scraper {
 				let stamp = $el.find('td:nth-child(5)').text()
 				results.push({
 					bytes: !_.isFinite(utils.parseInt(bytes)) ? NaN : utils.toBytes(bytes),
-					name: utils.stripForeign($el.find('td:nth-child(2) a').text()),
 					magnet: $el.find('td a[href^="magnet:?"]').attr('href'),
+					name: utils.stripForeign($el.find('td:nth-child(2) a').text()),
 					seeders: utils.parseInt($el.find('td:nth-child(6) .prog-l').text()),
 					stamp: !stamp || stamp.includes('long') ? NaN : utils.toStamp(stamp),
 				} as scraper.Result)
