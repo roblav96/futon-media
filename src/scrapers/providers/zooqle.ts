@@ -28,7 +28,7 @@ export class Zooqle extends scraper.Scraper {
 				results.push({
 					bytes: !_.isFinite(utils.parseInt(bytes)) ? NaN : utils.toBytes(bytes),
 					magnet: $el.find('td a[href^="magnet:?"]').attr('href'),
-					name: utils.stripForeign($el.find('td:nth-child(2) a').text()),
+					name: $el.find('td:nth-child(2) a').text(),
 					seeders: utils.parseInt($el.find('td:nth-child(6) .prog-l').text()),
 					stamp: !stamp || stamp.includes('long') ? NaN : utils.toStamp(stamp),
 				} as scraper.Result)

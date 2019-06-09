@@ -62,7 +62,13 @@ process.nextTick(async () => {
 		let who = await emby.sessions.byWho(UserId)
 		if (Item.Type == 'Person') {
 			if (!Item.ProviderIds.Imdb) {
-				return console.warn(`${who}rxItem !Item.ProviderIds.Imdb ->`, Item)
+				if (!Item.ProviderIds.Tmdb) {
+					return console.warn(`${who}rxItem !Item.ProviderIds ->`, Item)
+				}
+				let person = (await tmdb.client.get(
+					`/person/${Item.ProviderIds.Tmdb}`
+				)) as tmdb.Person
+				Item.ProviderIds.Imdb = person.imdb_id
 			}
 			let person = (await trakt.client.get(
 				`/people/${Item.ProviderIds.Imdb}`

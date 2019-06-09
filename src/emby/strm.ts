@@ -52,8 +52,8 @@ async function getDebridStreamUrl(
 			if (!v.StrmPath.includes(zero)) return
 		}
 		let ids = emby.library.pathIds(v.StrmPath)
-		if (imdb) return ids.imdb == imdb
-		if (tmdb) return ids.tmdb == tmdb
+		if (ids.imdb && imdb) return ids.imdb == imdb
+		if (ids.tmdb && tmdb) return ids.tmdb == tmdb
 	}) || Session) as emby.Session
 
 	let { Quality, Channels, Codecs } = Session
@@ -129,9 +129,9 @@ fastify.get('/strm', async (request, reply) => {
 	) as emby.StrmQuery
 	let { e, s, slug, traktId, type } = query
 
-	let title = slug
-	if (type == 'show') title += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	console.log(`/strm ->`, title)
+	let strm = slug
+	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
+	console.log(`/strm ->`, strm)
 
 	let rkey = `stream:${traktId}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
