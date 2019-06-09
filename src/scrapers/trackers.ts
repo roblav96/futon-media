@@ -10,20 +10,20 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(() => {
 	// process.DEVELOPMENT && db.flush('*')
-	let job = schedule.scheduleJob('0 * * * *', () =>
-		sync().catch(error => console.error(`trackers sync -> %O`, error))
+	schedule.scheduleJob('0 * * * *', () =>
+		sync(true).catch(error => console.error(`trackers sync -> %O`, error))
 	)
-	job.invoke()
+	sync().catch(error => console.error(`trackers sync -> %O`, error))
 })
 
 export let GOOD = [] as string[]
 export let BAD = [] as string[]
 
-async function sync() {
+async function sync(force = false) {
 	GOOD = (await db.get('good')) || []
 	BAD = (await db.get('bad')) || []
 
-	if (GOOD.length == 0 || BAD.length == 0) {
+	if (force == true || GOOD.length == 0 || BAD.length == 0) {
 		let resolved = (await Promise.all([
 			http.client.get(
 				`https://raw.githubusercontent.com/ngosang/trackerslist/master/blacklist.txt`,

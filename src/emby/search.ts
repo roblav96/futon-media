@@ -29,8 +29,8 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 		let results = (await trakt.client.get(`/search/imdb/${query}`, {
 			// silent: true,
 		})) as trakt.Result[]
-		let items = results.map(v => new media.Item(v)).filter(v => !v.invalid)
-		return emby.library.addQueue(items)
+		let items = results.map(v => new media.Item(v))
+		return emby.library.addQueue(items.filter(v => !v.invalid))
 	}
 
 	let types = `movie,show${spaces ? ',person' : ''}`
