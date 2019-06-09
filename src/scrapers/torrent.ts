@@ -44,7 +44,7 @@ export class Torrent {
 		let boost = `[${this.boost.toFixed(2)} x${this.packs > 0 ? ` ${this.packs}` : ''}]`
 		return `${boost} [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => v[0].toUpperCase())}] ` : ''
-		}${this.name} [${this.age}]` // [${this.providers}]`
+		}${this.name} [${this.age}] [${this.providers}]`
 	}
 	get json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery

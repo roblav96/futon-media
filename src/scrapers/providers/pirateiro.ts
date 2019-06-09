@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 
 export class Pirateiro extends scraper.Scraper {
 	sorts = ['tamanho', 'enviado']
-	max = 2
+	max = 3
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {

@@ -26,31 +26,30 @@ export const SKIPS = [
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) return console.log(`⛔ !magnet.xt ->`, result.name)
-	if (magnet.xt.length != 49) return console.log(`⛔ magnet.xt != 49 ->`, result.name)
+	if (!_.isString(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
+	if (magnet.xt.length != 49) return // console.log(`⛔ magnet.xt != 49 ->`, result.name)
 
 	result.name = result.name || magnet.dn
-	if (!result.name) return console.log(`⛔ !result.name ->`, result.name)
-	// if (utils.isForeign(utils.clean(result.name))) return console.log(`⛔ foreign ->`, result.name)
+	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
+	// if (utils.isForeign(utils.clean(result.name))) return // console.log(`⛔ foreign ->`, result.name)
 	// result.name = utils.toSlug(result.name)
 	result.name = utils.toSlug(utils.stripForeign(result.name))
 
 	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
 	if (skipped.length < skips.length) {
-		return console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
+		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
 	}
 	return true
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let aliases = item.aliases.filter(v => v.includes(' ') || utils.commons(v))
-	if (!aliases.find(v => utils.contains(torrent.name, v))) {
-		return console.log(`❌ aliases ->`, torrent.name)
-	}
-
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
-	if (collision) return console.log(`❌ collisions '${collision}' ->`, torrent.name)
+	if (collision) return // console.log(`❌ collisions '${collision}' ->`, torrent.name)
+
+	if (!item.filters.find(v => utils.contains(torrent.name, v))) {
+		return // console.log(`❌ aliases ->`, torrent.name)
+	}
 
 	if (item.movie) {
 		try {
@@ -79,7 +78,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 			return true
 		} catch (error) {
-			return console.log(`❌ movie ${error.message} ->`, torrent.name)
+			return // console.log(`❌ movie ${error.message} ->`, torrent.name)
 		}
 	}
 
@@ -101,9 +100,9 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 				return true
 			}
 
-			return console.log(`❌ return false ->`, torrent.name)
+			return // console.log(`❌ return false ->`, torrent.name)
 		} catch (error) {
-			return console.log(`⛔ show ${error.message} ->`, torrent.name)
+			return // console.log(`⛔ show ${error.message} ->`, torrent.name)
 		}
 	}
 }

@@ -12,6 +12,7 @@ export const client = scraper.Scraper.http({
 
 export class ExtraTorrentSi extends scraper.Scraper {
 	sorts = ['size', 'added']
+	max = 3
 
 	async getResults(slug: string, sort: string) {
 		let s_cat = this.item.movie ? '4' : '8'

@@ -25,6 +25,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.log(`item.slugs ->`, item.slugs)
 	console.log(`item.queries ->`, item.queries)
 	console.log(`item.aliases ->`, item.aliases)
+	console.log(`item.filters ->`, item.filters)
 	console.log(`item.collisions ->`, item.collisions)
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
@@ -94,7 +95,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		let bits = ['8bit', '8 bit', '10bit', '10 bit']
 		if (bits.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
-		if (utils.equals(v.name, item.smallests.slug) && v.providers.length == 1) v.boost *= 0.5
+		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
 
 		if (name.includes(' fgt ')) v.boost *= 1.5
 		let uploaders = [
@@ -165,11 +166,16 @@ export class Scraper {
 		// }
 		if (this.item.isDaily) this.sorts.reverse()
 
+		/**
+			TODO:
+			- use all sorts for movies, first sorts for shows
+		*/
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
 			if (this.sorts.length == 0) return combos.push([slug] as any)
-			let sorts = i == 0 ? this.sorts : [this.sorts[0]]
-			sorts.forEach(sort => combos.push([slug, sort]))
+			combos.push([slug, this.sorts[0]])
+			// let sorts = i == 0 ? this.sorts : [this.sorts[0]]
+			// sorts.forEach(sort => combos.push([slug, sort]))
 		})
 		combos = combos.slice(0, this.max)
 
@@ -196,7 +202,9 @@ export class Scraper {
 			// v => v && v.bytes > 0 && v.seeders >= 0 && filters.results(v, this.item)
 		)
 
-		let jsons = combos.map(v => v.map(vv => (vv.startsWith('{') ? fastParse(vv).value : vv)))
+		let jsons = combos.map(v =>
+			v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv))
+		)
 		console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
 
 		return results.map(v => new torrent.Torrent(v))

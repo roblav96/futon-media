@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 
 export class Eztv extends scraper.Scraper {
 	slugs() {
-		return [this.item.ids.imdb.replace(/\D/g, '')]
+		return this.item.ids.imdb ? [this.item.ids.imdb.replace(/\D/g, '')] : []
 	}
 
 	async getResults(imdb_id: string) {

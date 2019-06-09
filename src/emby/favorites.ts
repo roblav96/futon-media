@@ -71,7 +71,7 @@ async function download(item: media.Item) {
 	let slug = item.slug
 	if (item.S.z) slug += ` S${item.S.z}`
 	if (item.E.z) slug += `E${item.E.z}`
-	let gigs = _.round((item.runtime / (item.movie ? 20 : 30)) * (item.isPopular() ? 1 : 2 / 3), 2)
+	let gigs = _.round((item.runtime / (item.movie ? 20 : 30)) * (item.isPopular() ? 1 : 0.5), 2)
 	console.info(`download '${slug}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
 
 	let torrents = await scraper.scrapeAll(item)

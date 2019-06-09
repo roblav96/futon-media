@@ -35,14 +35,12 @@ fastify.server.timeout = 60000
 
 const emitter = new Emitter<string, string>()
 
-async function getDebridStreamUrl(
-	{ e, s, imdb, slug, tmdb, traktId, tvdb, type }: emby.StrmQuery,
-	rkey: string
-) {
+async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
+	let { e, s, imdb, slug, tmdb, tvdb, type } = query
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
 
-	let UserId = await db.get(`UserId:${traktId}`)
+	let UserId = await db.get(`UserId:${query.trakt}`)
 	if (UserId) Session = Sessions.find(v => v.UserId == UserId) || Session
 
 	Session = (Sessions.find(v => {
@@ -65,14 +63,14 @@ async function getDebridStreamUrl(
 
 	console.log(`getDebridStreamUrl '${slug}' ->`, Session.json)
 
-	let full = (await trakt.client.get(`/${type}s/${traktId}`)) as trakt.Full
+	let full = (await trakt.client.get(`/${type}s/${query.trakt}`)) as trakt.Full
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
-		let seasons = (await trakt.client.get(`/shows/${traktId}/seasons`)) as trakt.Season[]
+		let seasons = (await trakt.client.get(`/shows/${query.trakt}/seasons`)) as trakt.Season[]
 		let season = seasons.find(v => v.number == s)
 		item.use({ type: 'season', season })
 		let episode = (await trakt.client.get(
-			`/shows/${traktId}/seasons/${s}/episodes/${e}`
+			`/shows/${query.trakt}/seasons/${s}/episodes/${e}`
 		)) as trakt.Episode
 		item.use({ type: 'episode', episode })
 	}
@@ -126,32 +124,32 @@ async function getDebridStreamUrl(
 fastify.get('/strm', async (request, reply) => {
 	if (_.size(request.query) == 0) return reply.redirect('/dev/null')
 	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
-		utils.isNumeric(v) && k != 'traktId' ? _.parseInt(v) : v
+		utils.isNumeric(v) ? _.parseInt(v) : v
 	) as emby.StrmQuery
-	let { e, s, slug, traktId, type } = query
+	let { e, s, slug, type } = query
 
 	let strm = slug
 	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 	console.log(`/strm ->`, strm)
 
-	let rkey = `stream:${traktId}`
+	let rkey = `stream:${query.trakt}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 	let stream = await db.get(rkey)
 	if (!stream) {
-		if (!emitter.eventNames().includes(traktId)) {
+		if (!emitter.eventNames().includes(`${query.trakt}`)) {
 			getDebridStreamUrl(query, rkey).then(
 				async stream => {
 					await db.put(rkey, stream, utils.duration(1, 'minute'))
-					emitter.emit(traktId, stream)
+					emitter.emit(`${query.trakt}`, stream)
 				},
 				async error => {
 					console.error(`getDebridStreamUrl '${slug}' -> %O`, error)
 					await db.put(rkey, '/dev/null', utils.duration(1, 'minute'))
-					emitter.emit(traktId, '/dev/null')
+					emitter.emit(`${query.trakt}`, '/dev/null')
 				}
 			)
 		}
-		stream = await emitter.toPromise(traktId)
+		stream = await emitter.toPromise(`${query.trakt}`)
 	}
 
 	reply.redirect(stream)

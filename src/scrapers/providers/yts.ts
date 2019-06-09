@@ -13,7 +13,7 @@ export class Yts extends scraper.Scraper {
 	sorts = ['date_added']
 
 	slugs() {
-		return [this.item.ids.imdb]
+		return this.item.ids.imdb ? [this.item.ids.imdb] : []
 	}
 
 	async getResults(slug: string, sort: string) {

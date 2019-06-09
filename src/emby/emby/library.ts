@@ -65,10 +65,10 @@ process.nextTick(async () => {
 				if (!Item.ProviderIds.Tmdb) {
 					return console.warn(`${who}rxItem !Item.ProviderIds ->`, Item)
 				}
-				let person = (await tmdb.client.get(
-					`/person/${Item.ProviderIds.Tmdb}`
-				)) as tmdb.Person
-				Item.ProviderIds.Imdb = person.imdb_id
+				let externals = (await tmdb.client.get(
+					`/person/${Item.ProviderIds.Tmdb}/external_ids`
+				)) as tmdb.ExternalIds
+				Item.ProviderIds.Imdb = externals.imdb_id
 			}
 			let person = (await trakt.client.get(
 				`/people/${Item.ProviderIds.Imdb}`
@@ -86,7 +86,7 @@ process.nextTick(async () => {
 			if (UserId) {
 				let entry = (await db.entries()).find(([k, v]) => v == UserId)
 				if (_.isArray(entry)) await db.del(entry[0])
-				await db.put(`UserId:${item.traktId}`, UserId, utils.duration(1, 'day'))
+				await db.put(`UserId:${item.ids.trakt}`, UserId, utils.duration(1, 'day'))
 			}
 		}
 	})
@@ -208,19 +208,13 @@ export const library = {
 
 	async item(Path: string, Type: string) {
 		let type = ['Series', 'Season', 'Episode'].includes(Type) ? 'show' : Type.toLowerCase()
-		let ids = library.pathIds(Path)
-		if (ids.imdb) {
-			let full = (await trakt.client.get(`/${type}s/${ids.imdb}`, {
-				silent: true,
-			})) as trakt.Full
-			if (full) return new media.Item({ [type]: full })
-		}
-		if (ids.tmdb) {
-			let results = (await trakt.client.get(`/search/tmdb/${ids.tmdb}`, {
+		let ids = utils.sortKeys(library.pathIds(Path))
+		for (let key in ids) {
+			let results = (await trakt.client.get(`/search/${key}/${ids[key]}`, {
 				query: { type },
 				silent: true,
 			})) as trakt.Result[]
-			let result = results.find(v => trakt.toFull(v).ids.tmdb == ids.tmdb)
+			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
 			if (result) return new media.Item(result)
 		}
 	},
@@ -243,24 +237,26 @@ export const library = {
 		let title = utils.toSlug(item.title, { title: true })
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${title} (${item.year})`
-		if (!item.ids.imdb && !item.ids.tmdb) {
-			throw new Error(`library toStrmPath '${item.slug}' !imdb && !tmdb`)
-		}
-		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
-		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
+
+		let ids = ''
+		if (item.ids.imdb) ids += ` [imdbid=${item.ids.imdb}]`
+		if (item.ids.tmdb) ids += ` [tmdbid=${item.ids.tmdb}]`
+		if (item.ids.tvdb) ids += ` [tvdbid=${item.ids.tvdb}]`
+		ids = ids.trim()
+
+		if (ids) file += ` ${ids}`
 		if (item.movie) {
 			file += `/${title} (${item.year})`
+			if (ids) file += ` ${ids}`
 		}
 		if (full == false) {
 			let Path = `${dir}${file}`
 			return item.movie ? `${Path}.strm` : Path
 		}
 		if (item.show) {
-			if (!_.isFinite(item.S.n) || !_.isFinite(item.E.n)) {
-				throw new Error(`library toStrmPath '${item.slug}' !item.S.n || !item.E.n`)
-			}
 			file += `/Season ${item.S.n}`
 			file += `/${title} S${item.S.z}E${item.E.z}`
+			if (ids) file += ` ${ids}`
 		}
 		return `${dir}${file}.strm`
 	},
@@ -269,7 +265,6 @@ export const library = {
 		if (!item) throw new Error(`library toStrmUrl !item`)
 		let query = {
 			...item.ids,
-			traktId: item.traktId,
 			type: item.type,
 			year: item.year,
 		} as StrmQuery
@@ -306,7 +301,7 @@ export const library = {
 		if (item.show) {
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
-				.get(`/shows/${item.traktId}/seasons`, { silent: true })
+				.get(`/shows/${item.ids.trakt}/seasons`, { silent: true })
 				.catch(error => {
 					console.error(`library add '${item.short}' -> %O`, error)
 					return []
@@ -395,7 +390,6 @@ export type Quality = 'SD' | 'HD' | 'UHD'
 export interface StrmQuery extends trakt.IDs {
 	e: number
 	s: number
-	traktId: string
 	type: media.MainContentType
 	year: number
 }

@@ -63,7 +63,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	items = items.filter(item => {
 		if (levens.length == 0) return !item.isJunk()
-		if (utils.equals(item.title, query)) return !item.isJunk(max)
+		if (utils.equals(item.title, query)) return true // !item.isJunk(max)
 		if (!spaces && !utils.commons(query)) return false
 		// if (utils.includes(item.title, query) || utils.accuracy(item.title, query)) {
 		if (utils.leven(item.title, query)) return !item.isJunk(mean)
