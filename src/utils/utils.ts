@@ -291,7 +291,7 @@ export function toBytes(value: string) {
 	return _.parseInt((amount * BYTE_UNITS[unit].num) as any)
 }
 export function fromBytes(value: number) {
-	if (!_.isFinite(value)) return value.toString()
+	if (!_.isFinite(value)) return 'NaN'
 	let units = Object.entries(BYTE_UNITS).map(([k, v]) => v)
 	let unit = units.find(unit => value / unit.num < 1000)
 	value = value / unit.num
