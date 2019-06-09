@@ -22,9 +22,9 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
-	get split() {
-		return this.name.toLowerCase().split(/\s+/)
-	}
+	// get split() {
+	// 	return this.name.toLowerCase().split(/\s+/)
+	// }
 
 	boost = 1
 	boosts(episodes?: number) {

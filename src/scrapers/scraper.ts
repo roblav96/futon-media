@@ -82,21 +82,22 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.timeEnd(`torrents.filter`)
 
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
-	torrents.forEach(({ split }, i) => {
+	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
+
 		if (v.providers.includes('Yts')) v.boost *= 1.5
-		let bads = ['720p', '480p', '360p', 'avi']
-		if (bads.find(def => name.includes(` ${def} `))) v.boost *= 0.5
-		if (!hd) return
+		if (['720p', '480p', '360p', 'avi'].find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		if (!hd) continue
+
+		let bits = ['8bit', '8 bit', '10bit', '10 bit']
+		if (bits.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.smallests.slug) && v.providers.length == 1) v.boost *= 0.5
-		let bits = ['8bit', '8 bit', '10bit', '10 bit']
-		if (bits.find(bit => name.includes(` ${bit} `))) v.boost *= 0.5
-		if (split.includes('fgt')) v.boost *= 1.5
-		;[
-			'bdremux',
+
+		if (name.includes(' fgt ')) v.boost *= 1.5
+		let uploaders = [
 			'ctrlhd',
 			'dimension',
 			'epsilon',
@@ -107,16 +108,17 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			'memento',
 			'publichd',
 			'rartv',
-			'remux',
 			'rovers',
 			'sigma',
 			'sparks',
+			'tasted',
 			'trollhd',
-		].forEach(vv => name.includes(` ${vv} `) && (v.boost *= 1.25))
-	})
-	torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+		]
+		if (uploaders.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+	}
 
-	return torrents
+	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 }
 
 export interface Scraper {

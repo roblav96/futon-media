@@ -60,18 +60,21 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			let years = extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
 
-			if (torrent.split.includes('duology')) torrent.packs = 2
-			else if (torrent.split.includes('trilogy')) torrent.packs = 3
-			else if (torrent.split.includes('quadriology')) torrent.packs = 4
-			else if (torrent.split.includes('pentalogy')) torrent.packs = 5
-			else if (torrent.split.includes('hexalogy')) torrent.packs = 6
-			else if (torrent.split.includes('heptalogy')) torrent.packs = 7
-			else if (torrent.split.includes('octalogy')) torrent.packs = 8
+			let name = ` ${torrent.name} `
+			if (name.includes(' duology ')) torrent.packs = 2
+			else if (name.includes(' trilogy ')) torrent.packs = 3
+			else if (name.includes(' quadriology ')) torrent.packs = 4
+			else if (name.includes(' pentalogy ')) torrent.packs = 5
+			else if (name.includes(' hexalogy ')) torrent.packs = 6
+			else if (name.includes(' heptalogy ')) torrent.packs = 7
+			else if (name.includes(' octalogy ')) torrent.packs = 8
+			else if (name.includes(' ennealogy ')) torrent.packs = 9
+			else if (name.includes(' decalogy ')) torrent.packs = 10
 			else if (
 				years.length >= 2 ||
-				utils.accuracies(titles, 'collection').find(v => torrent.split.includes(v))
+				utils.accuracies(titles, 'collection').find(v => name.includes(` ${v} `))
 			) {
-				torrent.packs = item.collection.fulls.length
+				torrent.packs = item.collection.name ? item.collection.fulls.length : years.length
 			}
 
 			return true

@@ -36,7 +36,7 @@ fastify.server.timeout = 60000
 const emitter = new Emitter<string, string>()
 
 async function getDebridStreamUrl(
-	{ e, s, imdb, slug, tmdb, traktId, type }: emby.StrmQuery,
+	{ e, s, imdb, slug, tmdb, traktId, tvdb, type }: emby.StrmQuery,
 	rkey: string
 ) {
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
@@ -54,6 +54,7 @@ async function getDebridStreamUrl(
 		let ids = emby.library.pathIds(v.StrmPath)
 		if (ids.imdb && imdb) return ids.imdb == imdb
 		if (ids.tmdb && tmdb) return ids.tmdb == tmdb
+		if (ids.tvdb && tvdb) return ids.tvdb == tvdb
 	}) || Session) as emby.Session
 
 	let { Quality, Channels, Codecs } = Session
@@ -97,8 +98,8 @@ async function getDebridStreamUrl(
 	// 	}
 	// }
 
-	torrents = torrents.filter(({ split }) => {
-		if (split.includes('2160p') || split.includes('uhd') || split.includes('4k')) {
+	torrents = torrents.filter(v => {
+		if (['2160p', 'uhd', '4k'].find(vv => ` ${v.name} `.includes(` ${vv} `))) {
 			if (Quality != 'UHD') return false
 		}
 		return true

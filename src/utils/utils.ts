@@ -199,6 +199,9 @@ export function isVideo(file: string) {
 	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
 }
 
+export function sortKeys<T = any>(value: T) {
+	return (_.fromPairs(_.sortBy(_.toPairs(value as any))) as any) as T
+}
 export function compact<T = any>(value: T) {
 	return (_.fromPairs(_.toPairs(value as any).filter(([k, v]) => !_.isNil(v))) as any) as T
 }

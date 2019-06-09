@@ -99,12 +99,7 @@ export interface Movie {
 			profile_path: string
 		}[]
 	}
-	external_ids: {
-		facebook_id: string
-		imdb_id: string
-		instagram_id: string
-		twitter_id: string
-	}
+	external_ids: ExternalIds
 	genre_ids: number[]
 	genres: {
 		id: number
@@ -300,16 +295,7 @@ export interface Show {
 		results: any[]
 	}
 	episode_run_time: number[]
-	external_ids: {
-		facebook_id: string
-		freebase_id: string
-		freebase_mid: string
-		imdb_id: string
-		instagram_id: string
-		tvdb_id: number
-		tvrage_id: number
-		twitter_id: string
-	}
+	external_ids: ExternalIds
 	first_air_date: string
 	genres: {
 		id: number
@@ -541,12 +527,7 @@ export interface Season {
 		vote_average: number
 		vote_count: number
 	}[]
-	external_ids: {
-		freebase_id: string
-		freebase_mid: string
-		tvdb_id: number
-		tvrage_id: string
-	}
+	external_ids: ExternalIds
 	id: number
 	images: {
 		posters: {
@@ -618,13 +599,7 @@ export interface Episode {
 	// 	profile_path: string
 	// }[]
 	episode_number: number
-	external_ids: {
-		freebase_id: string
-		freebase_mid: string
-		imdb_id: string
-		tvdb_id: number
-		tvrage_id: number
-	}
+	external_ids: ExternalIds
 	// guest_stars: {
 	// 	character: string
 	// 	credit_id: string
@@ -715,15 +690,7 @@ export interface Person {
 		}[]
 	}
 	deathday: string
-	external_ids: {
-		facebook_id: string
-		freebase_id: string
-		freebase_mid: string
-		imdb_id: string
-		instagram_id: string
-		tvrage_id: string
-		twitter_id: string
-	}
+	external_ids: ExternalIds
 	gender: number
 	homepage: string
 	id: number
@@ -891,4 +858,15 @@ export interface AlternativeTitle {
 	iso_3166_1: string
 	title: string
 	type: string
+}
+
+export interface ExternalIds {
+	facebook_id: string
+	freebase_id: string
+	freebase_mid: string
+	imdb_id: string
+	instagram_id: string
+	tvdb_id: number
+	tvrage_id: string
+	twitter_id: string
 }
