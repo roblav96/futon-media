@@ -71,8 +71,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.slugs = _.uniq(to.slugs.concat(from.slugs))
-		to.bytes = _.ceil(_.mean([to.bytes, from.bytes]))
-		to.seeders = _.ceil(_.mean([to.seeders, from.seeders]))
+		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
+		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
 		to.stamp = _.ceil(_.min([to.stamp, from.stamp]))
 		return true
 	})
