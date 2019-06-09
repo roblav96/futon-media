@@ -76,15 +76,6 @@ export class Item {
 		return 0
 	}
 
-	get isEnglish() {
-		return (this.main.language || '').includes('en')
-	}
-	get isReleased() {
-		return this.released.valueOf() < Date.now()
-	}
-	get hasRuntime() {
-		return this.runtime >= 10
-	}
 	get invalid() {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
@@ -100,8 +91,13 @@ export class Item {
 		return this.main.votes >= votes
 	}
 	isJunk(votes = 1000) {
-		if (this.invalid || !this.isReleased || !this.hasRuntime) return true
-		return !(this.isEnglish || !this.main.language) || !this.isPopular(votes)
+		if (this.invalid) return true
+		if (!(this.released.valueOf() < Date.now())) return true
+		if (!(this.runtime >= 10)) return true
+		if (!(!this.main.language || this.main.language.includes('en'))) return true
+		if (_.isEmpty(this.main.genres)) return true
+		if (this.movie && !this.movie.certification && !this.movie.tagline) return true
+		return !this.isPopular(votes)
 	}
 
 	get isDaily() {
@@ -353,12 +349,12 @@ export class Item {
 		}
 		if (this.movie) {
 			slugs = slugs.map(v => this.toYears(v)).flat()
+			this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			if (!this.isPopular(1000)) {
 				let title = this.titles.find(v => v.includes(':')) || this.titles[0]
 				let semi = title.lastIndexOf(': ')
 				if (semi >= 0) title = title.slice(semi)
 				slugs.push(utils.toSlug(title))
-				this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			}
 			slugs = slugs.filter(v => utils.commons(v))
 		}
@@ -382,12 +378,38 @@ export class Item {
 	}
 	get tests() {
 		let tests = [] as string[]
-		this.S.t && tests.push(this.S.t)
-		this.S.n && tests.push(`s${this.S.z}`)
-		this.S.n && tests.push(`season ${this.S.n}`)
+		if (this.S.t) tests.push(this.S.t)
+		if (this.S.n) {
+			tests.push(`s${this.S.n}`)
+			tests.push(`s${this.S.z}`)
+			tests.push(`se${this.S.n}`)
+			tests.push(`se${this.S.z}`)
+			tests.push(`season ${this.S.n}`)
+			tests.push(`season ${this.S.z}`)
+		}
 		this.E.t && tests.push(this.E.t)
 		this.E.a && tests.push(this.E.a)
-		this.E.n && tests.push(`s${this.S.z}e${this.E.z}`)
+		if (this.E.n) {
+			tests.push(`${this.E.n}of`)
+			tests.push(`${this.E.n} of`)
+			tests.push(`${this.S.n}${this.E.z}`)
+			tests.push(`s${this.S.n}e${this.E.n}`)
+			tests.push(`s${this.S.n}e${this.E.z}`)
+			tests.push(`s${this.S.z}e${this.E.n}`)
+			tests.push(`s${this.S.z}e${this.E.z}`)
+			tests.push(`se${this.S.n}ep${this.E.n}`)
+			tests.push(`se${this.S.n}ep${this.E.z}`)
+			tests.push(`se${this.S.z}ep${this.E.n}`)
+			tests.push(`se${this.S.z}ep${this.E.z}`)
+			tests.push(`${this.S.n}x${this.E.n}`)
+			tests.push(`${this.S.n}x${this.E.z}`)
+			tests.push(`${this.S.z}x${this.E.n}`)
+			tests.push(`${this.S.z}x${this.E.z}`)
+			tests.push(`s${this.S.n} e${this.E.n}`)
+			tests.push(`s${this.S.n} e${this.E.z}`)
+			tests.push(`s${this.S.z} e${this.E.n}`)
+			tests.push(`s${this.S.z} e${this.E.z}`)
+		}
 		return tests
 	}
 
