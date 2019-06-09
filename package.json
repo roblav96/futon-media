@@ -21,20 +21,20 @@
 		"watch": "dist"
 	},
 	"scripts": {
-		"deploy": "redrun -s repo build restart",
+		"deploy": "run-s repo build restart",
 		"repo": "git pull; echo; git reset --hard",
 		"build": "tsc || true",
-		"assert-build": "test ! -d dist && redrun build",
-		"restart": "redrun stop; forever start package.json; tail -n 0 -f ~/.forever/futon-media.log",
+		"assert-build": "test ! -d dist; run-s build",
+		"restart": "run-s stop; forever start package.json; tail -n 0 -f ~/.forever/futon-media.log",
 		"logs": "tail -n 1000 -f ~/.forever/futon-media.log",
 		"del": "del dist node_modules",
 		"stop": "forever stop futon-media || true",
-		"start": "del dist; redrun -p watch:*",
+		"start": "del dist; run-p watch:*",
 		"watch:tsc": "tsc -w -i",
 		"watch:node": "just-wait -s -p dist; sleep 1; nodemon -q --inspect",
-		"test": "del dist; redrun assert-build; node dist/index.js || true",
+		"test": "del dist; run-s assert-build; node dist/index.js || true",
 		"emby:del": "echo data/library.db* data/collections/* data/playlists/* metadata/library/* root/default/*/poster.png",
-		"scripts:users-sync": "redrun -s stop assert-build; node dist/index.js --script=users-sync"
+		"scripts:users-sync": "run-s stop assert-build; node dist/index.js --script=users-sync"
 	},
 	"dependencies": {
 		"all-keys": "^3.1.0",
@@ -130,7 +130,7 @@
 		"just-wait": "^1.0.11",
 		"make-dir-cli": "^2.0.0",
 		"nodemon": "^1.19.1",
-		"redrun": "^7.1.5",
+		"npm-run-all": "^4.1.5",
 		"typescript": "^3.5.1"
 	},
 	"keywords": [
