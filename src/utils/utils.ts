@@ -287,9 +287,11 @@ export function toStamp(value: string) {
 export function toBytes(value: string) {
 	let amount = parseFloat(value)
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
+	if (!BYTE_UNITS[unit]) return amount
 	return _.parseInt((amount * BYTE_UNITS[unit].num) as any)
 }
 export function fromBytes(value: number) {
+	if (!_.isFinite(value)) return value.toString()
 	let units = Object.entries(BYTE_UNITS).map(([k, v]) => v)
 	let unit = units.find(unit => value / unit.num < 1000)
 	value = value / unit.num

@@ -78,7 +78,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	})
 
 	console.time(`torrents.filter`)
-	torrents = torrents.filter(v => filters.torrents(v, item))
+	torrents = torrents.filter(v => v.bytes >= 0 && v.seeders >= 0 && filters.torrents(v, item))
 	console.timeEnd(`torrents.filter`)
 
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
