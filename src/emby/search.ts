@@ -25,11 +25,10 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let who = await emby.sessions.byWho(UserId)
 	console.warn(`${who}rxSearch '${query}' ->`)
 
-	let spaces = query.split(' ').length - 1
+	let spaces = utils.commons(query).split(' ').length - 1
+	console.log(`spaces ->`, spaces)
 	if (spaces == 0 && /^tt\d+$/.test(query)) {
-		let results = (await trakt.client.get(`/search/imdb/${query}`, {
-			// silent: true,
-		})) as trakt.Result[]
+		let results = (await trakt.client.get(`/search/imdb/${query}`)) as trakt.Result[]
 		let items = results.map(v => new media.Item(v))
 		return emby.library.addQueue(items.filter(v => !v.invalid))
 	}
@@ -62,7 +61,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	fulls = utils.uniqBy(fulls, 'id').filter(v => {
 		return utils.contains(utils.squash(v.title || v.name), squash)
 	})
-	console.log(`fulls ->`, fulls.length /** , fulls */)
+	console.log(`fulls ->`, fulls.map(v => v.title || v.name))
 	results.push(...(await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })))
 
 	results = trakt.uniqWith(results.filter(Boolean))
@@ -73,27 +72,21 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	items = items.filter(v => utils.contains(utils.squash(v.title), squash))
 	console.log(`rxSearch '${query}' matches ->`, items.map(v => v.short))
 	let votes = items.map(v => v.main.votes).filter(Boolean)
-	let harmonic = _.size(votes) ? ss.harmonicMean(votes) : 1
-	console.log(`harmonic ->`, harmonic)
-	let geometric = _.size(votes) ? ss.geometricMean(votes) : 1
-	console.log(`geometric ->`, geometric)
+	let means = []
+	if (_.size(votes)) means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
+	console.log(`means ->`, means)
+	let mean = means[_.clamp(spaces, 0, means.length - 1)]
+	console.log(`mean ->`, mean)
 
 	items = items.filter(item => {
-		if (utils.equals(item.title, squash)) return true
+		if (utils.equals(item.title, squash)) return spaces ? true : !item.isJunk(_.last(means))
 		if (spaces == 0 && !utils.commons(squash)) return false
-		if (spaces >= 2 && utils.startsWith(item.title, squash)) return true
-		return !item.isJunk(geometric)
-		// if (utils.includes(item.title, query) || utils.accuracy(item.title, query)) {
-		// if (utils.contains(item.title, query)) return !item.isJunk(_.mean(votes))
+		// if (spaces >= 2 && utils.startsWith(item.title, squash)) return true
+		return !item.isJunk(mean)
 	})
 	console.log(`rxSearch '${query}' adding ->`, items.map(v => v.short))
 
-	// for (let item of items) {
-	// 	await item.setAll()
-	// }
-
 	emby.library.addQueue(items)
-	// await toCollections(items, await emby.library.addAll(items))
 })
 
 // async function toTmdbResults(query: string, tmids: number[], person: trakt.Person) {

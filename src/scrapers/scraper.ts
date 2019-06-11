@@ -90,7 +90,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
 
-		if (['720p', '480p', '360p', 'avi'].find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		let defs = ['720p', '480p', '360p', '720', '480', '360', 'avi']
+		if (defs.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (!hd) {
 			if (v.providers.includes('Yts')) v.boost *= 2
 			continue

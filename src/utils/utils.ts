@@ -295,7 +295,7 @@ export function fromBytes(value: number) {
 	return `${value.toFixed([2, 1, 1][value.toFixed(0).length])} ${unit.str}`
 }
 
-export const NSFWS = _.sortBy(_.uniq((badwords as string[]).map(v => toSlug(v))).filter(Boolean))
+export const NSFWS = _.sortBy(_.uniq((badwords as string[]).map(v => minify(v))).filter(Boolean))
 
 if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/utils/utils')))

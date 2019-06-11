@@ -94,8 +94,9 @@ export class Item {
 		if (this.invalid) return true
 		if (!(this.released.valueOf() < Date.now())) return true
 		if (!(this.runtime >= 10)) return true
+		if (!this.main.overview) return true
 		if (!this.main.country) return true
-		if (!(!this.main.language || this.main.language.includes('en'))) return true
+		// if (!(!this.main.language || this.main.language.includes('en'))) return true
 		if (_.isEmpty(this.main.genres)) return true
 		if (this.movie && !this.ids.imdb) return true
 		if (this.show && !this.ids.tvdb) return true
@@ -142,9 +143,9 @@ export class Item {
 		}
 		if (_.has(this.episode, 'title')) {
 			E.t = this.episode.title
-			if (this.isDaily) {
-				E.t = _.slice(utils.stops(E.t).split(' '), 0, 2).join(' ')
-			}
+			// if (this.isDaily) {
+			// 	E.t = _.slice(utils.stops(E.t).split(' '), 0, 2).join(' ')
+			// }
 		}
 		if (_.has(this.episode, 'number')) {
 			E.n = this.episode.number
@@ -382,8 +383,8 @@ export class Item {
 		if (this.movie) return queries
 		if (this.isDaily && this.E.a) queries.push(this.E.a)
 		this.E.n && queries.push(`s${this.S.z}e${this.E.z}`)
-		this.E.t && queries.push(this.E.t)
-		this.S.t && queries.push(this.S.t)
+		this.E.t && queries.push(utils.toSlug(this.E.t))
+		this.S.t && queries.push(utils.toSlug(this.S.t))
 		let next = this.seasons.find(v => v.number == this.S.n + 1)
 		let eps = [this.S.a, this.S.e].filter(v => _.isFinite(v))
 		let packable = (next && next.episode_count > 0) || (eps.length == 2 && eps[0] == eps[1])
