@@ -73,7 +73,7 @@ export class Item {
 		if (_.has(this.movie, 'runtime')) return this.movie.runtime
 		// if (_.has(this.episode, 'runtime')) return this.episode.runtime
 		if (_.has(this.show, 'runtime')) return this.show.runtime
-		return 0
+		return 1
 	}
 
 	get invalid() {
@@ -87,7 +87,7 @@ export class Item {
 		if (!_.has(this.main, 'votes')) return false
 		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
 		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
-		votes -= _.ceil(votes * 0.5 * penalty)
+		votes -= _.floor(votes * 0.5 * penalty)
 		return this.main.votes >= votes
 	}
 	isJunk(votes = 1000) {
@@ -224,7 +224,7 @@ export class Item {
 
 		aliases.push(...this.titles)
 		if (this.movie) {
-			if (this.collection.name) aliases.push(this.collection.name)
+			// if (this.collection.name) aliases.push(this.collection.name)
 		}
 		if (this.show) {
 			if (this.S.t) aliases.push(this.S.t)
@@ -232,6 +232,7 @@ export class Item {
 			aliases = aliases.map(v => [v, `${this.main.network} ${v}`]).flat()
 		}
 
+		aliases = aliases.map(v => this.toColons(v)).flat()
 		aliases = aliases.map(v => utils.unsquash(v)).flat()
 		aliases = utils.byLength(aliases)
 		aliases = aliases.map(v => [v, ...this.toYears(v)]).flat()
@@ -241,6 +242,7 @@ export class Item {
 	}
 	get filters() {
 		return this.aliases.filter(v => {
+			if (utils.equals(v, this.collection.name)) return false
 			if (!isNaN(v.split(' ').pop() as any)) return true
 			return utils.stops(v).includes(' ')
 		})
@@ -290,7 +292,9 @@ export class Item {
 			}
 		}
 
+		collisions = collisions.map(v => this.toColons(v)).flat()
 		_.remove(collisions, collision => {
+			if (utils.equals(this.collection.name, collision)) return true
 			if (this.aliases.find(v => utils.equals(v, collision))) return true
 			if (this.aliases.find(v => utils.contains(v, collision))) return true
 		})
@@ -322,6 +326,16 @@ export class Item {
 	}
 	toYears(slug: string) {
 		return this.years.filter(year => !slug.endsWith(`${year}`)).map(year => `${slug} ${year}`)
+	}
+	toColons(slug: string) {
+		let colons = [slug]
+		if (!slug.includes(': ')) return colons
+		let first = slug.slice(0, slug.indexOf(': '))
+		let last = slug.slice(slug.indexOf(': ') + 2)
+		colons.push(last)
+		let split = last.split(' ')
+		if (!utils.stops(split.shift())) colons.push(split.join(' '))
+		return colons
 	}
 	get collection() {
 		let collection = { name: '', fulls: [] as tmdb.Movie[], titles: [] as string[] }

@@ -47,9 +47,19 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
 	if (collision) return // console.log(`❌ collisions '${collision}' ->`, torrent.name)
 
+	// let filters = item.filters.concat(item.collection.name ? [item.collection.name] : [])
+	let packed = false
 	if (!item.filters.find(v => utils.contains(torrent.name, v))) {
-		return // console.log(`❌ aliases ->`, torrent.name)
+		if (!item.collection.name || !utils.contains(torrent.name, item.collection.name)) {
+			return // console.log(`❌ aliases ->`, torrent.name)
+		}
+		packed = true
 	}
+	
+	/**
+		TODO:
+		- check for age of torrent with item release date
+	*/
 
 	if (item.movie) {
 		try {
@@ -62,6 +72,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			let name = ` ${torrent.name} `
 			if (name.includes(' duology ')) torrent.packs = 2
 			else if (name.includes(' trilogy ')) torrent.packs = 3
+			else if (name.includes(' triology ')) torrent.packs = 3
 			else if (name.includes(' quadriology ')) torrent.packs = 4
 			else if (name.includes(' pentalogy ')) torrent.packs = 5
 			else if (name.includes(' hexalogy ')) torrent.packs = 6
@@ -70,10 +81,17 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			else if (name.includes(' ennealogy ')) torrent.packs = 9
 			else if (name.includes(' decalogy ')) torrent.packs = 10
 			else if (
+				packed == true ||
 				years.length >= 2 ||
 				utils.accuracies(titles, 'collection').find(v => name.includes(` ${v} `))
 			) {
 				torrent.packs = item.collection.name ? item.collection.fulls.length : years.length
+				// } else if (
+				// 	item.collection.name &&
+				// 	!utils.equals(item.title, item.collection.name) &&
+				// 	utils.includes(torrent.name, item.collection.name)
+				// ) {
+				// 	torrent.packs = item.collection.fulls.length
 			}
 
 			return true

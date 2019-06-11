@@ -4,6 +4,7 @@ import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as Rx from '@/shims/rxjs'
+import * as ss from 'simple-statistics'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
@@ -15,7 +16,7 @@ export const rxSearch = emby.rxHttp.pipe(
 		if (!slug.includes(' ')) slug = utils.stops(slug)
 		return { query: slug, UserId: query.UserId }
 	}),
-	Rx.op.filter(({ query }) => query.length >= 2),
+	Rx.op.filter(({ query }) => query.length > 1),
 	Rx.op.debounceTime(1000),
 	Rx.op.distinctUntilChanged((a, b) => a.query == b.query)
 )
@@ -54,19 +55,19 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	items.sort((a, b) => b.main.votes - a.main.votes)
 	console.log(`rxSearch '${query}' items ->`, items.map(v => v.short))
 
-	let levens = items.filter(v => utils.leven(v.title, query))
-	console.log(`rxSearch '${query}' levens ->`, levens.map(v => v.short))
-	let votes = levens.map(v => v.main.votes)
+	let matches = items.filter(v => utils.accuracy(utils.squash(v.title), query))
+	console.log(`rxSearch '${query}' matches ->`, matches.map(v => v.short))
+	let votes = matches.map(v => v.main.votes)
 	let [mean, max] = [_.mean(votes) * 0.5, _.max(votes) * 0.05].map(v => _.ceil(v))
-	console.log(`mean ->`, mean)
-	console.log(`max ->`, max)
+	process.DEVELOPMENT && console.log(`mean ->`, mean)
+	process.DEVELOPMENT && console.log(`max ->`, max)
 
 	items = items.filter(item => {
-		if (levens.length == 0) return !item.isJunk()
-		if (utils.equals(item.title, query)) return true // !item.isJunk(max)
+		// if (matches.length == 0) return !item.isJunk()
+		if (utils.equals(item.title, query)) return true
 		if (!spaces && !utils.commons(query)) return false
 		// if (utils.includes(item.title, query) || utils.accuracy(item.title, query)) {
-		if (utils.leven(item.title, query)) return !item.isJunk(mean)
+		if (utils.accuracy(item.title, query)) return !item.isJunk(mean)
 	})
 	console.log(`rxSearch '${query}' adding ->`, items.map(v => v.short).sort())
 

@@ -79,7 +79,9 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	})
 
 	console.time(`torrents.filter`)
-	torrents = torrents.filter(v => v.bytes >= 0 && v.seeders >= 0 && filters.torrents(v, item))
+	torrents = torrents.filter(
+		v => v.stamp >= 0 && v.bytes >= 0 && v.seeders >= 0 && filters.torrents(v, item)
+	)
 	console.timeEnd(`torrents.filter`)
 
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
@@ -88,9 +90,11 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
 
-		if (v.providers.includes('Yts')) v.boost *= 1.5
 		if (['720p', '480p', '360p', 'avi'].find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
-		if (!hd) continue
+		if (!hd) {
+			if (v.providers.includes('Yts')) v.boost *= 2
+			continue
+		}
 
 		let bits = ['8bit', '8 bit', '10bit', '10 bit']
 		if (bits.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5

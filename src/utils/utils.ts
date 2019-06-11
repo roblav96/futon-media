@@ -128,14 +128,15 @@ export function excludes(value: string, words: string[]) {
 }
 
 export function contains(value: string, target: string) {
-	let values = toSlug(value).split(' ')
-	let targets = toSlug(target).split(' ')
-	let start = values.findIndex(v => v == targets[0])
-	if (start == -1) return false
-	for (let i = 0; i < targets.length; i++) {
-		if (!equals(targets[i], values[start + i])) return false
-	}
-	return true
+	return ` ${toSlug(value)} `.includes(` ${toSlug(target)} `)
+	// let values = toSlug(value).split(' ')
+	// let targets = toSlug(target).split(' ')
+	// let start = values.findIndex(v => v == targets[0])
+	// if (start == -1) return false
+	// for (let i = 0; i < targets.length; i++) {
+	// 	if (!equals(targets[i], values[start + i])) return false
+	// }
+	// return true
 }
 
 /** `accuracies.length == 0` when all of `target` is included in `value` */

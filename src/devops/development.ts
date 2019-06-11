@@ -24,6 +24,7 @@ if (process.DEVELOPMENT) {
 			path: await import('path'),
 			qs: await import('query-string'),
 			similarity: await import('string-similarity'),
+			ss: await import('simple-statistics'),
 			Url: await import('url-parse'),
 		})
 	})

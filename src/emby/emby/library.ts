@@ -238,16 +238,12 @@ export const library = {
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${title} (${item.year})`
 
-		let ids = ''
-		if (item.ids.imdb) ids += ` [imdbid=${item.ids.imdb}]`
-		if (item.ids.tmdb) ids += ` [tmdbid=${item.ids.tmdb}]`
-		if (item.ids.tvdb) ids += ` [tvdbid=${item.ids.tvdb}]`
-		ids = ids.trim()
+		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
+		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
+		if (item.ids.tvdb) file += ` [tvdbid=${item.ids.tvdb}]`
 
-		if (ids) file += ` ${ids}`
 		if (item.movie) {
 			file += `/${title} (${item.year})`
-			if (ids) file += ` ${ids}`
 		}
 		if (full == false) {
 			let Path = `${dir}${file}`
@@ -256,7 +252,6 @@ export const library = {
 		if (item.show) {
 			file += `/Season ${item.S.n}`
 			file += `/${title} S${item.S.z}E${item.E.z}`
-			if (ids) file += ` ${ids}`
 		}
 		return `${dir}${file}.strm`
 	},
