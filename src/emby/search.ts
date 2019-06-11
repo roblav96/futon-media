@@ -25,9 +25,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let who = await emby.sessions.byWho(UserId)
 	console.warn(`${who}rxSearch '${query}' ->`)
 
-	let spaces = utils.commons(query).split(' ').length - 1
-	console.log(`spaces ->`, spaces)
-	if (spaces == 0 && /^tt\d+$/.test(query)) {
+	if (!query.includes(' ') && /^tt\d+$/.test(query)) {
 		let results = (await trakt.client.get(`/search/imdb/${query}`)) as trakt.Result[]
 		let items = results.map(v => new media.Item(v))
 		return emby.library.addQueue(items.filter(v => !v.invalid))
@@ -71,16 +69,20 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	items = items.filter(v => utils.contains(utils.squash(v.title), squash))
 	console.log(`rxSearch '${query}' matches ->`, items.map(v => v.short))
+
 	let votes = items.map(v => v.main.votes).filter(Boolean)
-	let means = []
+	let means = [] as number[]
 	if (_.size(votes)) means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
 	console.log(`means ->`, means)
-	let mean = means[_.clamp(spaces, 0, means.length - 1)]
+
+	let spaces = [query.split(' ').length - 1, utils.commons(query).split(' ').length - 1]
+	console.log(`spaces ->`, spaces)
+	let mean = means[_.clamp(spaces[0], 0, means.length - 1)]
 	console.log(`mean ->`, mean)
 
 	items = items.filter(item => {
-		if (utils.equals(item.title, squash)) return spaces ? true : !item.isJunk(_.last(means))
-		if (spaces == 0 && !utils.commons(squash)) return false
+		if (utils.equals(item.title, squash)) return spaces[1] ? true : !item.isJunk(_.last(means))
+		if (!query.includes(' ') && !utils.commons(squash)) return false
 		// if (spaces >= 2 && utils.startsWith(item.title, squash)) return true
 		return !item.isJunk(mean)
 	})

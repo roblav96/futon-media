@@ -107,7 +107,7 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 
 	if (Quality == 'SD' || Channels == 2) {
-		torrents.sort((a, b) => b.seeders * b.boost - a.seeders * a.boost)
+		torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 	}
 
 	// if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)

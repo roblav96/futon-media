@@ -81,8 +81,19 @@ export class Item {
 		if (!this.ids.trakt || !this.ids.slug) return true
 		if (!this.ids.imdb && !this.ids.tmdb && !this.ids.tvdb) return true
 		if (this.ids.imdb && this.ids.imdb.startsWith('http')) return true
-		if (this.show && !(this.show.aired_episodes > 0)) return true
 		return false
+	}
+	isJunk(votes = 1000) {
+		if (this.invalid) return true
+		if (!this.main.country || !this.main.overview) return true
+		if (!(this.runtime >= 10)) return true
+		if (!(this.released.valueOf() < Date.now())) return true
+		// if (!(!this.main.language || this.main.language.includes('en'))) return true
+		if (_.isEmpty(this.main.genres)) return true
+		if (this.movie && (!this.ids.imdb || !this.ids.tmdb)) return true
+		if (this.show && !this.ids.tvdb) return true
+		if (this.show && !(this.show.aired_episodes > 0)) return true
+		return !this.isPopular(votes)
 	}
 	isPopular(votes = 500) {
 		if (!_.has(this.main, 'votes')) return false
@@ -90,19 +101,6 @@ export class Item {
 		let penalty = 1 - _.clamp(months, 1, 12) / 12
 		votes = votes - votes * penalty * 0.75
 		return this.main.votes >= _.round(votes)
-	}
-	isJunk(votes = 1000) {
-		if (this.invalid) return true
-		if (!(this.released.valueOf() < Date.now())) return true
-		if (!(this.runtime >= 10)) return true
-		if (!this.main.overview) return true
-		if (!this.main.country) return true
-		// if (!(!this.main.language || this.main.language.includes('en'))) return true
-		if (_.isEmpty(this.main.genres)) return true
-		if (this.movie && !this.ids.imdb) return true
-		if (this.show && !this.ids.tvdb) return true
-		if (this.movie && !this.movie.certification && !this.movie.tagline) return true
-		return !this.isPopular(votes)
 	}
 
 	get isDaily() {
@@ -142,12 +140,7 @@ export class Item {
 		if (_.has(this.episode, 'first_aired')) {
 			E.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
 		}
-		if (_.has(this.episode, 'title')) {
-			E.t = this.episode.title
-			// if (this.isDaily) {
-			// 	E.t = _.slice(utils.stops(E.t).split(' '), 0, 2).join(' ')
-			// }
-		}
+		if (_.has(this.episode, 'title')) E.t = this.episode.title
 		if (_.has(this.episode, 'number')) {
 			E.n = this.episode.number
 			E.z = utils.zeroSlug(E.n)
