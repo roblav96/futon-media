@@ -80,6 +80,7 @@ export class Item {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
 		if (!this.ids.imdb && !this.ids.tmdb && !this.ids.tvdb) return true
+		if (this.ids.imdb && this.ids.imdb.startsWith('http')) return true
 		if (this.show && !(this.show.aired_episodes > 0)) return true
 		return false
 	}
