@@ -1,6 +1,7 @@
 export * from '@/utils/constants'
 import * as _ from 'lodash'
 import * as advancedFormat from 'dayjs/plugin/advancedFormat'
+import * as badwords from 'badwords/array'
 import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
@@ -129,14 +130,6 @@ export function excludes(value: string, words: string[]) {
 
 export function contains(value: string, target: string) {
 	return ` ${toSlug(value)} `.includes(` ${toSlug(target)} `)
-	// let values = toSlug(value).split(' ')
-	// let targets = toSlug(target).split(' ')
-	// let start = values.findIndex(v => v == targets[0])
-	// if (start == -1) return false
-	// for (let i = 0; i < targets.length; i++) {
-	// 	if (!equals(targets[i], values[start + i])) return false
-	// }
-	// return true
 }
 
 /** `accuracies.length == 0` when all of `target` is included in `value` */
@@ -301,6 +294,8 @@ export function fromBytes(value: number) {
 	value = value / unit.num
 	return `${value.toFixed([2, 1, 1][value.toFixed(0).length])} ${unit.str}`
 }
+
+export const NSFWS = _.sortBy(_.uniq((badwords as string[]).map(v => toSlug(v))).filter(Boolean))
 
 if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/utils/utils')))

@@ -101,8 +101,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
 
-		if (name.includes(' fgt ')) v.boost *= 1.5
 		let uploaders = [
+			'amiable',
 			'ctrlhd',
 			'dimension',
 			'epsilon',
@@ -119,7 +119,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 			'tasted',
 			'trollhd',
 		]
-		if (uploaders.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (name.includes(' fgt ')) v.boost *= 1.5
+		else if (uploaders.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 	}
 

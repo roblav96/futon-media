@@ -77,7 +77,7 @@ export const EPISODES = {
 			votes: 8,
 			year: 2017,
 		},
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'the-big-bang-theory': {
 		episode: {
@@ -154,7 +154,7 @@ export const EPISODES = {
 			votes: 51407,
 			year: 2007,
 		},
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'westworld': {
 		episode: {
@@ -231,7 +231,7 @@ export const EPISODES = {
 			votes: 14357,
 			year: 2016,
 		},
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'game-of-thrones': {
 		episode: {
@@ -308,11 +308,11 @@ export const EPISODES = {
 			votes: 90247,
 			year: 2011,
 		},
-	} as trakt.Result & tmdb.Result,
+	},
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	// '____': {____},
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	// '____': {____},
 }
 
 export const SEASONS = _.mapValues(EPISODES, v => _.omit(v, 'episode')) as typeof EPISODES

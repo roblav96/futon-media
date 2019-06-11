@@ -75,8 +75,8 @@ process.nextTick(async () => {
 			)) as trakt.Person
 			let items = (await trakt.resultsFor(person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.isJunk())
-			let shorts = items.map(v => v.short).sort()
-			console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, shorts)
+			items.sort((a, b) => b.main.votes - a.main.votes)
+			console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.short))
 			library.addQueue(items)
 		}
 		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {

@@ -85,7 +85,7 @@ export const MOVIES = {
 			year: 2018,
 		},
 		score: 834.1143,
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'she-s-out-of-my-league-2010': {
 		movie: {
@@ -151,7 +151,7 @@ export const MOVIES = {
 			year: 2010,
 		},
 		score: 7.8510184,
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'how-to-train-your-dragon-the-hidden-world-2019': {
 		movie: {
@@ -226,7 +226,7 @@ export const MOVIES = {
 			year: 2019,
 		},
 		score: 792.8125,
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'the-lego-movie-2014': {
 		movie: {
@@ -309,7 +309,7 @@ export const MOVIES = {
 			year: 2014,
 		},
 		score: 479.08286,
-	} as trakt.Result & tmdb.Result,
+	},
 
 	'ready-player-one-2018': {
 		movie: {
@@ -366,9 +366,9 @@ export const MOVIES = {
 			year: 2018,
 		},
 		score: 446.413,
-	} as trakt.Result & tmdb.Result,
+	},
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	// '____': {____},
 
-	// '____': {____} as trakt.Result & tmdb.Result,
+	// '____': {____},
 }

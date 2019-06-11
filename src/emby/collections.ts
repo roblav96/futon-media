@@ -4,9 +4,11 @@ import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as http from '@/adapters/http'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
 import * as path from 'path'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
+import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
@@ -176,6 +178,24 @@ async function syncCollections() {
 
 	await emby.library.refresh()
 	console.log(Date.now() - t, `syncCollections ${mIds.size} Items ->`, 'DONE')
+}
+
+async function toCollections(items: media.Item[], Items: emby.Item[]) {
+	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	let tmcolids = _.uniq(Items.map(v => v.ProviderIds.TmdbCollection).filter(Boolean))
+	for (let tmcolid of tmcolids) {
+		let { name, parts } = (await tmdb.client.get(`/collection/${tmcolid}`)) as tmdb.Collection
+		console.log(`Collection ->`, name)
+		let cresults = await pAll(parts.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
+		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk())
+		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()
+		let Collection = Collections.find(v => v.Name == name)
+		if (Collection) {
+			await emby.client.post(`/Collections/${Collection.Id}/Items`, { query: { Ids } })
+		} else {
+			await emby.client.post('/Collections', { query: { Ids, Name: name } })
+		}
+	}
 }
 
 export interface CollectionSchema {

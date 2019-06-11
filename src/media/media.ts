@@ -85,17 +85,20 @@ export class Item {
 	}
 	isPopular(votes = 500) {
 		if (!_.has(this.main, 'votes')) return false
-		let months = (Date.now() - this.released.valueOf()) / utils.duration(1, 'month')
-		let penalty = 1 - _.clamp(_.ceil(months), 1, 12) / 12
-		votes -= _.floor(votes * 0.5 * penalty)
-		return this.main.votes >= votes
+		let months = _.ceil((Date.now() - this.released.valueOf()) / utils.duration(1, 'month'))
+		let penalty = 1 - _.clamp(months, 1, 12) / 12
+		votes = votes - votes * penalty * 0.75
+		return this.main.votes >= _.round(votes)
 	}
 	isJunk(votes = 1000) {
 		if (this.invalid) return true
 		if (!(this.released.valueOf() < Date.now())) return true
 		if (!(this.runtime >= 10)) return true
+		if (!this.main.country) return true
 		if (!(!this.main.language || this.main.language.includes('en'))) return true
 		if (_.isEmpty(this.main.genres)) return true
+		if (this.movie && !this.ids.imdb) return true
+		if (this.show && !this.ids.tvdb) return true
 		if (this.movie && !this.movie.certification && !this.movie.tagline) return true
 		return !this.isPopular(votes)
 	}

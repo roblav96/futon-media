@@ -10,16 +10,14 @@ export const client = scraper.Scraper.http({
 })
 
 export class Yts extends scraper.Scraper {
-	sorts = ['date_added']
-
 	slugs() {
 		return this.item.ids.imdb ? [this.item.ids.imdb] : []
 	}
 
-	async getResults(slug: string, sort: string) {
+	async getResults(slug: string) {
 		if (!this.item.movie) return []
 		let response = (await client.get('/list_movies.json', {
-			query: { sort_by: sort, query_term: slug } as Partial<Query>,
+			query: { sort_by: 'date_added', query_term: slug } as Partial<Query>,
 		})) as Response
 		let results = ((response.data && response.data.movies) || []).map(result =>
 			result.torrents.map((v, i) => {
