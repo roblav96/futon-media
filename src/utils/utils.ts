@@ -84,6 +84,10 @@ export function simplify(value: string) {
 	if (squashes.length == 1) return value
 	return excludes(value, accuracies(squashes[0], squashes[1]))
 }
+export function colons(value: string) {
+	let index = value.indexOf(': ')
+	return index == -1 ? [value] : [value, value.slice(index + 2)]
+}
 // export function shrink(value: string) {
 // 	value = clean(value)
 // 	let simple = simplify(value)
@@ -193,11 +197,14 @@ export function isVideo(file: string) {
 	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
 }
 
-export function sortKeys<T = any>(value: T) {
+export function sortKeys<T>(value: T) {
 	return (_.fromPairs(_.sortBy(_.toPairs(value as any))) as any) as T
 }
-export function compact<T = any>(value: T) {
+export function compact<T>(value: T) {
 	return (_.fromPairs(_.toPairs(value as any).filter(([k, v]) => !_.isNil(v))) as any) as T
+}
+export function orderBy<T, K extends keyof T>(values: T[], key: K, order?: 'asc' | 'desc') {
+	return _.orderBy(values, [key], [order || 'desc'])
 }
 export function byLength(values: string[]) {
 	return _.sortBy(values).sort((a, b) => a.length - b.length)
@@ -232,7 +239,7 @@ export function slider(value: number, min: number, max: number, range = 1) {
 export function dispersed(value: number, index: number, max: number) {
 	return Math.round(Math.max(index, 0) * (value / Math.max(max, 1)))
 }
-export function chunks<T = any>(values: T[], max: number) {
+export function chunks<T>(values: T[], max: number) {
 	let size = Math.ceil(values.length / Math.max(max, 1))
 	let chunks = Array.from(Array(size), v => []) as T[][]
 	values.forEach((v, i) => chunks[i % chunks.length].push(v))

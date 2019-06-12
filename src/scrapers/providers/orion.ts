@@ -54,7 +54,6 @@ export class Orion extends scraper.Scraper {
 				name: stream.magnet.dn || stream.file.name,
 				seeders: stream.stream.seeds,
 				stamp: new Date((stream.time.added || stream.time.updated) * 1000).valueOf(),
-				slugs: _.compact(_.values(_.pick(JSON.parse(slug), 'idimdb', 'query'))),
 			} as scraper.Result
 		})
 	}

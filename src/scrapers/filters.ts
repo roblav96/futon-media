@@ -6,7 +6,7 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
 export const SKIPS = [
-	...utils.NSFWS,
+	// ...utils.NSFWS,
 	'3d',
 	// 'avi',
 	// 'bonus',
@@ -35,13 +35,28 @@ export function results(result: scraper.Result, item: media.Item) {
 
 	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
-	if (skipped.length < skips.length) {
+	if (skips.length - skipped.length >= 1) {
 		return console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
 	}
+
 	return true
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
+	let nsfws = utils.accuracies(item.titles.join(' '), utils.NSFWS.join(' '))
+	let nsfwed = utils.accuracies(torrent.name, nsfws.join(' '))
+	if (nsfws.length - nsfwed.length >= 2) {
+		return console.log(`❌ nsfw '${_.difference(nsfws, nsfwed)}' ->`, torrent.name)
+	}
+
+	if (utils.toBytes(`${item.runtime} MB`) > torrent.bytes) {
+		return console.log(`⛔ bytes '${torrent.size}' ->`, torrent.name)
+	}
+
+	if (item.released.valueOf() - utils.duration(1, 'day') > torrent.stamp) {
+		return console.log(`⛔ released '${torrent.age}' ->`, torrent.name)
+	}
+
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
 	if (collision) return console.log(`❌ collisions '${collision}' ->`, torrent.name)
 
@@ -53,11 +68,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		}
 		packed = true
 	}
-
-	/**
-		TODO:
-		- check for age of torrent with item release date
-	*/
 
 	if (item.movie) {
 		try {

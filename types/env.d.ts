@@ -22,6 +22,8 @@ interface Env {
 	PUTIO_TOKEN: string
 	REALDEBRID_ID: string
 	REALDEBRID_SECRET: string
+	SIMKL_ID: string
+	SIMKL_SECRET: string
 	TMDB_KEY: string
 	TRAKT_KEY: string
 	TRAKT_SECRET: string

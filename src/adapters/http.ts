@@ -161,7 +161,7 @@ export class Http {
 			)
 			if (options.memoize) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
-				await db.put(mkey, _.omit(response, omits), utils.duration(3, 'hour'))
+				await db.put(mkey, _.omit(response, omits), utils.duration(1, 'hour'))
 			}
 		}
 

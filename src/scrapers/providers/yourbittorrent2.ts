@@ -16,7 +16,9 @@ export class YourBittorrent2 extends scraper.Scraper {
 
 	async getResults(slug: string) {
 		let c = this.item.show ? 'television' : this.item.type
-		let $ = cheerio.load(await client.get('/', { query: { c, q: slug } as Partial<Query> }))
+		let $ = cheerio.load(
+			await client.get('/', { query: { c, q: slug } as Partial<Query> })
+		)
 		let results = [] as scraper.Result[]
 		$('table tr:has(a[href^="magnet:?"])').each((i, el) => {
 			try {

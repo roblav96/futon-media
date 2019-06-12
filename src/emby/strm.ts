@@ -97,7 +97,7 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
 	// }
 
 	torrents = torrents.filter(v => {
-		if (['2160p', 'uhd', '4k'].find(vv => ` ${v.name} `.includes(` ${vv} `))) {
+		if (['2160p', '2160', 'uhd', '4k'].find(vv => ` ${v.name} `.includes(` ${vv} `))) {
 			if (Quality != 'UHD') return false
 		}
 		return true
@@ -112,6 +112,8 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
 
 	// if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
 	console.log(`strm torrents ->`, torrents.length, torrents.map(v => v.short))
+
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)

@@ -10,10 +10,8 @@ export const client = scraper.Scraper.http({
 })
 
 export class ThePirateBay extends scraper.Scraper {
-	// size, date, seeds
-	sorts = ['5', '3' /** , '7' */]
-	concurrency = 1
-	max = 3
+	// size, date
+	sorts = ['5', '3']
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(await client.get(`/search/${slug}/0/${sort}/200`))

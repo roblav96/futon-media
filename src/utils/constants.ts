@@ -20,6 +20,25 @@ export const BYTE_UNITS = {
 	yib: { num: Math.pow(1024, 8), str: 'YiB' },
 }
 
+export const UPLOADERS = [
+	'amiable',
+	'ctrlhd',
+	'dimension',
+	'epsilon',
+	'esir',
+	'exkinoray',
+	'grym',
+	'kralimarko',
+	'memento',
+	'publichd',
+	'rartv',
+	'rovers',
+	'sigma',
+	'sparks',
+	'tasted',
+	'trollhd',
+]
+
 export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']
 
 export const STOPS = ['&', 'a', 'an', 'and', 'in', 'of', 'the', 'to']

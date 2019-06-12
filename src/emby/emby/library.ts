@@ -305,7 +305,7 @@ export const library = {
 			for (let season of seasons) {
 				item.use({ season })
 				for (let i = 1; i <= item.S.e; i++) {
-					item.use({ episode: { number: i, season: season.number } })
+					item.use({ episode: { number: i, season: season.number } as trakt.Episode })
 					Updates.push(await library.toStrmFile(item))
 				}
 			}

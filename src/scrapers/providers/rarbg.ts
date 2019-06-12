@@ -40,7 +40,7 @@ async function syncToken() {
 }
 
 export class Rarbg extends scraper.Scraper {
-	sorts = ['last' /** , 'seeders' */]
+	sorts = ['last']
 	concurrency = 1
 
 	slugs() {
@@ -64,7 +64,6 @@ export class Rarbg extends scraper.Scraper {
 				name: v.title,
 				seeders: v.seeders,
 				stamp: new Date(v.pubdate).valueOf(),
-				slugs: _.compact(_.values(JSON.parse(slug))),
 			} as scraper.Result
 		})
 	}

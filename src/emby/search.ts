@@ -59,34 +59,38 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	fulls = utils.uniqBy(fulls, 'id').filter(v => {
 		return utils.contains(utils.squash(v.title || v.name), squash)
 	})
-	console.log(`fulls ->`, fulls.map(v => v.title || v.name))
+	console.log(`tmdb fulls ->`, fulls.map(v => v.title || v.name))
 	results.push(...(await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })))
 
 	results = trakt.uniqWith(results.filter(Boolean))
 	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(1))
 	items.sort((a, b) => b.main.votes - a.main.votes)
-	console.log(`rxSearch '${query}' results ->`, items.map(v => v.short))
+	console.log(`results ->`, items.map(v => v.short))
 
 	items = items.filter(v => utils.contains(utils.squash(v.title), squash))
-	console.log(`rxSearch '${query}' matches ->`, items.map(v => v.short))
+	console.log(`matches ->`, items.map(v => v.short))
 
 	let votes = items.map(v => v.main.votes).filter(Boolean)
 	let means = [] as number[]
-	if (_.size(votes)) means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
+	if (votes.length > 0) {
+		means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
+	}
 	console.log(`means ->`, means)
 
-	let spaces = [query.split(' ').length - 1, utils.commons(query).split(' ').length - 1]
-	console.log(`spaces ->`, spaces)
-	let mean = means[_.clamp(spaces[0], 0, means.length - 1)]
+	let index = _.clamp(query.split(' ').length - 1, 0, means.length - 1)
+	let mean = means[index]
+	if (index == 0 && mean > 2000) mean *= 0.5
 	console.log(`mean ->`, mean)
 
 	items = items.filter(item => {
-		if (utils.equals(item.title, squash)) return spaces[1] ? true : !item.isJunk(_.last(means))
-		if (!query.includes(' ') && !utils.commons(squash)) return false
-		// if (spaces >= 2 && utils.startsWith(item.title, squash)) return true
+		if (utils.equals(item.title, query)) {
+			return !utils.commons(query) ? !item.isJunk(_.last(means)) : true
+		}
+		if (!query.includes(' ') && !utils.commons(query)) return false
+		// if (spaces >= 2 && utils.startsWith(item.title, query)) return true
 		return !item.isJunk(mean)
 	})
-	console.log(`rxSearch '${query}' adding ->`, items.map(v => v.short))
+	console.log(`adding ->`, items.map(v => v.short))
 
 	emby.library.addQueue(items)
 })

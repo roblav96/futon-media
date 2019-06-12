@@ -12,6 +12,7 @@ import * as qs from 'query-string'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
+import { UPLOADERS } from '@/utils/constants'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
 	console.warn(`scrapeAll ->`, item.short)
@@ -19,7 +20,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll`)
 
-	// console.log(`item ->`, item)
+	console.log(`item ->`, ((global as any).item = item))
 	console.log(`item.titles ->`, item.titles)
 	console.log(`item.years ->`, item.years)
 	console.log(`item.slugs ->`, item.slugs)
@@ -27,6 +28,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.log(`item.aliases ->`, item.aliases)
 	console.log(`item.filters ->`, item.filters)
 	console.log(`item.collisions ->`, item.collisions)
+	console.log(`item.matches ->`, item.matches)
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	/**
@@ -37,31 +39,31 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	*/
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
-	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
-		(await import('@/scrapers/providers/bitlord')).Bitlord,
+		// (await import('@/scrapers/providers/bitlord')).Bitlord,
 		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		(await import('@/scrapers/providers/btbit')).BtBit,
+		// (await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		(await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
-		(await import('@/scrapers/providers/eztv')).Eztv,
-		(await import('@/scrapers/providers/glotorrents')).GloTorrents,
-		(await import('@/scrapers/providers/idope')).iDope,
-		(await import('@/scrapers/providers/katli')).Katli,
-		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
-		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+		// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
+		// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
+		// (await import('@/scrapers/providers/idope')).iDope,
+		// (await import('@/scrapers/providers/katli')).Katli,
+		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/yts')).Yts,
-		(await import('@/scrapers/providers/zooqle')).Zooqle,
+		// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+		// (await import('@/scrapers/providers/yts')).Yts,
+		// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()
@@ -71,16 +73,15 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		let accuracies = utils.accuracies(to.name, from.name)
 		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
 		to.providers = _.uniq(to.providers.concat(from.providers))
-		to.slugs = _.uniq(to.slugs.concat(from.slugs))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
-		to.stamp = _.ceil(_.min([to.stamp, from.stamp]))
+		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(
-		v => v.stamp >= 0 && v.bytes >= 0 && v.seeders >= 0 && filters.torrents(v, item)
+		v => v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0 && filters.torrents(v, item)
 	)
 	console.timeEnd(`torrents.filter`)
 
@@ -89,39 +90,18 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
-
 		let defs = ['720p', '480p', '360p', '720', '480', '360', 'avi']
 		if (defs.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (!hd) {
 			if (v.providers.includes('Yts')) v.boost *= 2
 			continue
 		}
-
 		let bits = ['8bit', '8 bit', '10bit', '10 bit']
 		if (bits.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
-
-		let uploaders = [
-			'amiable',
-			'ctrlhd',
-			'dimension',
-			'epsilon',
-			'esir',
-			'exkinoray',
-			'grym',
-			'kralimarko',
-			'memento',
-			'publichd',
-			'rartv',
-			'rovers',
-			'sigma',
-			'sparks',
-			'tasted',
-			'trollhd',
-		]
 		if (name.includes(' fgt ')) v.boost *= 1.5
-		else if (uploaders.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		else if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 	}
 
@@ -148,12 +128,9 @@ export class Scraper {
 	concurrency = 3
 
 	slugs() {
-		let slugs = _.clone(this.item.slugs)
-		if (this.item.movie) return slugs
-		let queries = this.item.queries.map(v => `${slugs[0]} ${v}`)
-		return slugs.concat(queries)
-		// let seasons = this.item.seasons.filter(v => v.aired_episodes > 0)
-		// return slugs.slice(seasons.length > 1 ? 1 : 0).concat(queries)
+		if (this.item.movie) return this.item.slugs
+		let queries = this.item.queries.map(v => `${this.item.slugs[0]} ${v}`)
+		return this.item.slugs.concat(queries)
 	}
 
 	constructor(public item: media.Item) {}
@@ -162,26 +139,10 @@ export class Scraper {
 		let t = Date.now()
 		let ctor = this.constructor.name
 
-		// if (this.sorts.length >= 2) {
-		// 	if (this.item.isDaily && ctor != 'Rarbg') {
-		// 		let sorts = _.clone(this.sorts)
-		// 		this.sorts[0] = sorts[1]
-		// 		this.sorts[1] = sorts[0]
-		// 		if (this.slow) this.sorts = [this.sorts[0]]
-		// 	}
-		// }
-		if (this.item.isDaily) this.sorts.reverse()
-
-		/**
-			TODO:
-			- use all sorts for movies, first sorts for shows
-		*/
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
 			if (this.sorts.length == 0) return combos.push([slug] as any)
 			combos.push([slug, this.sorts[0]])
-			// let sorts = i == 0 ? this.sorts : [this.sorts[0]]
-			// sorts.forEach(sort => combos.push([slug, sort]))
 		})
 		combos = combos.slice(0, this.max)
 
@@ -194,18 +155,13 @@ export class Scraper {
 				return (await this.getResults(slug, sort).catch(error => {
 					console.error(`${ctor} getResults -> %O`, error)
 					return [] as Result[]
-				})).map(result => ({
-					providers: [ctor],
-					slugs: [slug],
-					...result,
-				}))
+				})).map(result => ({ providers: [ctor], ...result } as Result))
 			}),
 			{ concurrency: this.concurrency }
-		)).flat() as Result[]
+		)).flat()
 
 		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(
 			v => v && filters.results(v, this.item)
-			// v => v && v.bytes > 0 && v.seeders >= 0 && filters.results(v, this.item)
 		)
 
 		let jsons = combos.map(v =>
@@ -223,7 +179,6 @@ export interface Result {
 	name: string
 	providers: string[]
 	seeders: number
-	slugs: string[]
 	stamp: number
 }
 

@@ -22,9 +22,6 @@ export class Torrent {
 	get size() {
 		return utils.fromBytes(this.bytes)
 	}
-	// get split() {
-	// 	return this.name.toLowerCase().split(/\s+/)
-	// }
 
 	boost = 1
 	boosts(episodes?: number) {
@@ -36,7 +33,7 @@ export class Torrent {
 		}
 		return {
 			bytes: _.ceil(bytes * this.boost),
-			seeders: _.ceil(this.seeders * this.boost),
+			seeders: _.ceil(this.seeders * this.boost * this.providers.length),
 		}
 	}
 
