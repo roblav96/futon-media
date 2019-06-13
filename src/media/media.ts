@@ -264,8 +264,6 @@ export class Item {
 		console.log(`queries ->`, queries)
 
 		let simkls = await simkl.results(queries.map(v => [v, ...Item.years(v, this.years)]).flat())
-		console.log(`this.years ->`, this.years)
-		console.warn(`simkls ->`, simkls)
 		simkls.forEach(v => collisions.push(...Item.aliases(v.title, v.year)))
 
 		let results = (await pAll(
