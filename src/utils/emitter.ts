@@ -1,24 +1,16 @@
 import * as EventEmitter3 from 'eventemitter3'
 
-export default class Emitter<Names extends string = string, Data = any> extends EventEmitter3<
-	Names,
-	Data
-> {
+export default class Emitter<Names extends string, Data = any> extends EventEmitter3<Names, Data> {
 	get events() {
 		return this._events
 	}
 
 	hasListener(listener: EventEmitter3.Listener<Data>, context?: any, once?: boolean) {
 		let names = Object.keys(this.events)
-		let i: number,
-			len = names.length
-		for (i = 0; i < len; i++) {
-			let name = names[i]
-			let events = this.events[name] as EventEmitter3.Event<Data>[]
+		for (let i = 0; i < names.length; i++) {
+			let events = this.events[names[i]] as EventEmitter3.Event<Data>[]
 			if (!Array.isArray(events)) events = [events]
-			let ii: number,
-				lenn = events.length
-			for (ii = 0; ii < lenn; ii++) {
+			for (let ii = 0; ii < events.length; ii++) {
 				let event = events[ii]
 				if (arguments.length == 1) {
 					if (listener == event.fn) {
@@ -40,9 +32,7 @@ export default class Emitter<Names extends string = string, Data = any> extends 
 
 	isListening<Name extends Names>(name: Name, listener: EventEmitter3.Listener<Data>) {
 		let listeners = this.listeners(name)
-		let i: number,
-			len = listeners.length
-		for (i = 0; i < len; i++) {
+		for (let i = 0; i < listeners.length; i++) {
 			if (listener == listeners[i]) return true
 		}
 		return false

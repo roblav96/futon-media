@@ -1,13 +1,15 @@
+import '@/mocks/mocks'
 import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 
 export const env = {
-	ADMIN_ID: process.env.EMBY_ADMIN_ID,
-	ADMIN_KEY: process.env.EMBY_ADMIN_KEY,
+	ADMIN_ID: process.env.EMBY_ADMIN_USER_ID,
+	ADMIN_KEY: process.env.EMBY_ADMIN_USER_TOKEN,
 	HOST: process.env.EMBY_HOST,
-	KEY: process.env.EMBY_KEY,
+	KEY: process.env.EMBY_API_KEY,
 	PORT: _.parseInt(process.env.EMBY_PORT),
 	PROTO: process.env.EMBY_PROTO,
+	PROXY_PORT: process.env.EMBY_PROXY_PORT,
 	STRM_PORT: process.env.EMBY_STRM_PORT,
 	URL: `${process.env.EMBY_PROTO}//${process.env.EMBY_HOST}:${process.env.EMBY_PORT}`,
 }
@@ -80,32 +82,44 @@ export interface SystemConfiguration {
 	IsRemoteIPFilterBlacklist: boolean
 	IsStartupWizardCompleted: boolean
 	LibraryMonitorDelay: number
-	LocalNetworkAddresses: any[]
-	LocalNetworkSubnets: any[]
+	LocalNetworkAddresses: string
+	LocalNetworkSubnets: string
 	LogAllQueryTimes: boolean
 	LogFileRetentionDays: number
 	MetadataCountryCode: string
 	MetadataNetworkPath: string
 	MetadataPath: string
-	PathSubstitutions: any[]
+	PathSubstitutions: string
 	PreferredMetadataLanguage: string
 	PublicHttpsPort: number
 	PublicPort: number
 	RemoteClientBitrateLimit: number
-	RemoteIPFilter: any[]
+	RemoteIPFilter: string
 	RequireHttps: boolean
 	RunAtStartup: boolean
 	SaveMetadataHidden: boolean
 	SchemaVersion: number
 	ServerName: string
 	SkipDeserializationForBasicTypes: boolean
-	SortRemoveCharacters: string[]
-	SortRemoveWords: string[]
-	SortReplaceCharacters: string[]
+	SortRemoveCharacters: {
+		string: string[]
+	}
+	SortRemoveWords: {
+		string: string[]
+	}
+	SortReplaceCharacters: {
+		string: string[]
+	}
 	SubtitlePermissionsUpgraded: boolean
 	UICulture: string
-	UninstalledPlugins: any[]
+	UninstalledPlugins: {
+		string: string[]
+	}
 	WanDdns: string
+}
+
+export interface SystemXml {
+	ServerConfiguration: SystemConfiguration
 }
 
 export interface SystemLog {

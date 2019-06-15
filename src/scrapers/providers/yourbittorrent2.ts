@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio'
 import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
 import * as path from 'path'
-import * as qs from 'query-string'
+import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 

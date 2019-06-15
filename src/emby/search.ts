@@ -84,7 +84,8 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	items = items.filter(item => {
 		if (utils.equals(item.title, query)) {
-			return !utils.commons(query) ? !item.isJunk(_.last(means)) : true
+			return utils.equals(item.slug, query) ? true : !item.isJunk(_.last(means))
+			// return !utils.commons(query) ? !item.isJunk(_.last(means)) : true
 		}
 		if (!query.includes(' ') && !utils.commons(query)) return false
 		// if (spaces >= 2 && utils.startsWith(item.title, query)) return true

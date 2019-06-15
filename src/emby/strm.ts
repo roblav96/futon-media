@@ -1,10 +1,8 @@
 import * as _ from 'lodash'
 import * as debrids from '@/debrids/debrids'
 import * as emby from '@/emby/emby'
-import * as Fastify from 'fastify'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
-import * as qs from 'query-string'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as scraper from '@/scrapers/scraper'
@@ -13,26 +11,10 @@ import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
-import Emitter from '@/shims/emitter'
-import exithook = require('exit-hook')
+import Emitter from '@/utils/emitter'
+import Fastify from '@/adapters/fastify'
 
-process.nextTick(() => {
-	process.DEVELOPMENT && db.flush('stream:*')
-	fastify.listen(emby.env.STRM_PORT).then(
-		address => {
-			console.info(`fastify address ->`, address)
-			exithook(() => fastify.close())
-		},
-		error => console.error(`fastify listen -> %O`, error)
-	)
-})
-
-const fastify = Fastify({ querystringParser: query => qs.parse(query) })
-
-fastify.server.headersTimeout = 30000
-fastify.server.keepAliveTimeout = 25000
-fastify.server.timeout = 60000
-
+const fastify = Fastify(process.env.EMBY_STRM_PORT)
 const emitter = new Emitter<string, string>()
 
 async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
@@ -67,8 +49,7 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
 	let item = new media.Item({ type, [type]: full })
 	if (type == 'show') {
 		let seasons = (await trakt.client.get(`/shows/${query.trakt}/seasons`)) as trakt.Season[]
-		let season = seasons.find(v => v.number == s)
-		item.use({ type: 'season', season })
+		item.use({ type: 'season', season: seasons.find(v => v.number == s) })
 		let episode = (await trakt.client.get(
 			`/shows/${query.trakt}/seasons/${s}/episodes/${e}`
 		)) as trakt.Episode
@@ -103,7 +84,7 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
 		return true
 	})
 
-	torrents = torrents.filter(({ cached }) => cached.length > 0)
+	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
 
 	if (Quality == 'SD' || Channels == 2) {

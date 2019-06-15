@@ -3,7 +3,7 @@ import * as emby from '@/emby/emby'
 import * as execa from 'execa'
 import * as fs from 'fs-extra'
 import * as path from 'path'
-import * as qs from 'query-string'
+import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as Url from 'url-parse'
@@ -104,8 +104,7 @@ export const rxHttp = rxTail.pipe(
 	}),
 	Rx.op.filter(matches => matches.filter(Boolean).length == 2),
 	Rx.op.map(matches => {
-		let parsed = qs.parseUrl(matches[1]) as { url: string; query: Record<string, string> }
-		return { ...parsed, method: matches[0] as 'GET' | 'POST' | 'DELETE' }
+		return { ...qs.parseUrl(matches[1]), method: matches[0] as 'GET' | 'POST' | 'DELETE' }
 	}),
 	Rx.op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
 	Rx.op.map(({ method, url, query }) => {

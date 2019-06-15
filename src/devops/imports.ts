@@ -1,21 +1,13 @@
-import * as dts from 'dts-generate'
+import * as _ from 'lodash'
 
 if (process.DEVELOPMENT) {
-	let stdout = (console as any)._stdout as NodeJS.WriteStream
-	if (stdout.isTTY) {
-		stdout.isTTY = false as any
-		process.nextTick(() => (stdout.isTTY = true))
-	}
-	console.clear()
-
 	process.nextTick(async () => {
-		Object.assign(global, {
+		_.defaults(global, {
 			_: await import('lodash'),
 			crypto: await import('crypto'),
 			dayjs: await import('dayjs'),
 			deepdiff: await import('deep-diff'),
 			deepmerge: await import('deepmerge'),
-			dts: await import('dts-generate'),
 			httperrors: await import('http-errors'),
 			matcher: await import('matcher'),
 			ms: await import('pretty-ms'),
@@ -28,12 +20,4 @@ if (process.DEVELOPMENT) {
 			Url: await import('url-parse'),
 		})
 	})
-}
-
-declare global {
-	namespace NodeJS {
-		interface Global {
-			dts: typeof dts
-		}
-	}
 }

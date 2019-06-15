@@ -1,25 +1,16 @@
+setInterval(Function, 1 << 30) // prevent process from exiting
+
 import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
-import '@/devops/logs'
-import '@/devops/development'
-import * as config from '@/emby/config'
-import * as mri from 'mri'
-import * as pDelay from 'delay'
+import '@/devops/devops'
 
 async function start() {
-	await config.setup()
-
-	process.DEVELOPMENT && (await pDelay(1000)) // wait for 'Debugger attached'
-
-	await import('@/mocks/mocks')
+	await (await import('@/emby/config')).setup()
 	await import('@/emby/emby')
-
-	let argv = mri(process.argv.slice(2))
-	if (argv.script) return await import(`@/scripts/${argv.script}`)
-
 	await import('@/emby/collections')
 	await import('@/emby/favorites')
+	await import('@/emby/proxy')
 	await import('@/emby/search')
 	await import('@/emby/strm')
 }

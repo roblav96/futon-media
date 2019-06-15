@@ -185,7 +185,7 @@ export class Session {
 		let response = await emby.client.post(`/Sessions/${this.Id}/Command/LibraryChanged`, {
 			query: {
 				// messageId: utils.hash(utils.nonce(), 'md5'),
-				api_key: emby.env.ADMIN_KEY,
+				api_key: emby.env.KEY,
 			},
 			body,
 		})

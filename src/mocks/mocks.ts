@@ -2,8 +2,6 @@ export * from '@/mocks/movies'
 export * from '@/mocks/shows'
 export * from '@/mocks/people'
 import * as _ from 'lodash'
-import * as tmdb from '@/adapters/tmdb'
-import * as trakt from '@/adapters/trakt'
 
 export const LINKS = [
 	'https://35.rdeb.io/d/7CEX2QMZJETDY/Westworld.S02E01.Journey.Into.Night.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv',

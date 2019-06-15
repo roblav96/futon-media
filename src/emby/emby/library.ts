@@ -6,7 +6,7 @@ import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as pQueue from 'p-queue'
-import * as qs from 'query-string'
+import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
@@ -34,7 +34,7 @@ process.nextTick(async () => {
 
 	await library.setFolders()
 	// await library.setCollections()
-	await library.setLibraryMonitorDelay()
+	if (emby.env.ADMIN_KEY) await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
 		Rx.op.filter(({ parts }) => !parts.includes('favoriteitems')),
@@ -63,7 +63,13 @@ process.nextTick(async () => {
 		if (Item.Type == 'Person') {
 			if (!Item.ProviderIds.Imdb) {
 				if (!Item.ProviderIds.Tmdb) {
-					return console.warn(`${who}rxItem !Item.ProviderIds ->`, Item)
+					if (!Item.Name) return console.warn(`${who}rxItem !Item.Name ->`, Item)
+					let results = ((await tmdb.client.get('/search/person', {
+						query: { query: Item.Name },
+					})) as tmdb.Paginated<tmdb.Person>).results
+					results.sort((a, b) => b.popularity - a.popularity)
+					if (!results[0]) return console.warn(`${who}rxItem !Item.Tmdb ->`, Item)
+					Item.ProviderIds.Tmdb = results[0].id.toString()
 				}
 				let externals = (await tmdb.client.get(
 					`/person/${Item.ProviderIds.Tmdb}/external_ids`
@@ -161,7 +167,7 @@ export const library = {
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			silent: true,
 		})) as emby.SystemConfiguration
-		if (Configuration.LibraryMonitorDelay != 1 && emby.env.ADMIN_KEY) {
+		if (Configuration.LibraryMonitorDelay != 1) {
 			Configuration.LibraryMonitorDelay = 1
 			console.warn(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
 			await emby.client.post('/System/Configuration', {

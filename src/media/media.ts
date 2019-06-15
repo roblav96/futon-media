@@ -53,7 +53,7 @@ export class Item {
 		let episodes = this.show ? ` [${this.show.aired_episodes.toLocaleString()} eps] ` : ' '
 		let short = `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
 		if (this.invalid) short += ' [INVALID]'
-		else if (this.isJunk(0)) short += ' [JUNK]'
+		else if (this.isJunk(1)) short += ' [JUNK]'
 		return short
 	}
 
@@ -384,26 +384,27 @@ export class Item {
 		let matches = [
 			this.E.t && ` ${utils.toSlug(this.E.t)} `,
 			this.E.a && ` ${utils.toSlug(this.E.a)} `,
-			` s${this.S.n}e${this.E.n} `,
-			` s${this.S.n}e${this.E.z} `,
-			` s${this.S.z}e${this.E.n} `,
-			` s${this.S.z}e${this.E.z} `,
-			` se${this.S.n}ep${this.E.n} `,
-			` se${this.S.n}ep${this.E.z} `,
-			` se${this.S.z}ep${this.E.n} `,
-			` se${this.S.z}ep${this.E.z} `,
-			` ${this.S.n}x${this.E.n} `,
-			` ${this.S.n}x${this.E.z} `,
-			` ${this.S.z}x${this.E.n} `,
-			` ${this.S.z}x${this.E.z} `,
-			` ${this.S.n} x ${this.E.n} `,
-			` ${this.S.n} x ${this.E.z} `,
-			` ${this.S.z} x ${this.E.n} `,
-			` ${this.S.z} x ${this.E.z} `,
-			` s${this.S.n} e${this.E.n} `,
-			` s${this.S.n} e${this.E.z} `,
-			` s${this.S.z} e${this.E.n} `,
-			` s${this.S.z} e${this.E.z} `,
+			..._.flatten(
+				[
+					' s${s}e${e} ',
+					' s${s} e${e} ',
+					' s ${s} e ${e} ',
+					' se${s}ep${e} ',
+					' se${s} ep${e} ',
+					' se ${s} ep ${e} ',
+					' season${s}episode${e} ',
+					' season${s} episode${e} ',
+					' season ${s} episode ${e} ',
+					' ${s}${e} ',
+					' ${s}x${e} ',
+					' ${s} x ${e} ',
+				].map(v => [
+					_.template(v)({ s: this.S.z, e: this.E.z }),
+					_.template(v)({ s: this.S.z, e: this.E.n }),
+					_.template(v)({ s: this.S.n, e: this.E.z }),
+					_.template(v)({ s: this.S.n, e: this.E.n }),
+				])
+			),
 			` ${this.E.n}of`,
 			` ${this.E.n} of`,
 			` ch${this.E.n}`,
@@ -411,23 +412,8 @@ export class Item {
 			` chapter ${this.E.n}`,
 			` ${this.S.n}${this.E.z} `,
 			` ${this.E.z} `,
-			// ..._.flatten(
-			// 	[
-			// 		[' s', 'e', ' '],
-			// 		[' s', ' e', ' '],
-			// 		[' se', 'ep', ' '],
-			// 		[' se', ' ep', ' '],
-			// 		[' ', 'x', ' '],
-			// 		[' ', ' x ', ' '],
-			// 	].map(v => [
-			// 		`${v[0]}${this.S.z}${v[1]}${this.E.z}${v[2]}`,
-			// 		`${v[0]}${this.S.z}${v[1]}${this.E.n}${v[2]}`,
-			// 		`${v[0]}${this.S.n}${v[1]}${this.E.z}${v[2]}`,
-			// 		`${v[0]}${this.S.n}${v[1]}${this.E.n}${v[2]}`,
-			// 	])
-			// ),
 		]
-		return _.uniq(matches.filter(Boolean))
+		return matches.filter(Boolean)
 	}
 
 	constructor(result: Partial<trakt.Result>) {

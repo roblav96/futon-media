@@ -2,7 +2,7 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as fastParse from 'fast-json-parse'
-import * as qs from 'query-string'
+import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
 import exithook = require('exit-hook')
@@ -10,35 +10,37 @@ import Sockette, { ISockette } from '@/shims/sockette'
 
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
-let ws: ISockette
-process.nextTick(async () => {
-	let query = { api_key: emby.env.ADMIN_KEY || emby.env.KEY }
-	ws = new Sockette(`${emby.env.URL}/embywebsocket?${qs.stringify(query)}`, {
-		timeout: 3000,
-		maxAttempts: Infinity,
-		onerror({ error }) {
-			console.error(`socket onerror -> %O`, error)
-		},
-		onclose({ code, reason }) {
-			console.warn(`socket onclose ->`, code, reason)
-			emby.Tail.destroy()
-		},
-		onopen({ target }) {
-			let url = target.url as string
-			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
-			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
-			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
-			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
-			emby.Tail.connect()
-		},
-		onmessage({ data }) {
-			let { err, value } = fastParse(data)
-			if (err) return console.error(`socket onmessage -> %O`, err)
-			rxSocket.next(value)
-		},
-	})
+// let ws: ISockette
+// process.nextTick(async () => {
+	let ws = new Sockette(
+		`${process.env.EMBY_URL}/embywebsocket?${qs.stringify({ api_key: process.env.EMBY_API_KEY })}`,
+		{
+			timeout: 3000,
+			maxAttempts: Infinity,
+			onerror({ error }) {
+				console.error(`socket onerror -> %O`, error)
+			},
+			onclose({ code, reason }) {
+				console.warn(`socket onclose ->`, code, reason)
+				emby.Tail.destroy()
+			},
+			onopen({ target }) {
+				let url = target.url as string
+				console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
+				ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
+				ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
+				ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
+				emby.Tail.connect()
+			},
+			onmessage({ data }) {
+				let { err, value } = fastParse(data)
+				if (err) return console.error(`socket onmessage -> %O`, err)
+				rxSocket.next(value)
+			},
+		}
+	)
 	exithook(() => ws.close())
-})
+// })
 
 export const socket = {
 	send(EmbyEvent: Partial<EmbyEvent>) {
@@ -46,10 +48,10 @@ export const socket = {
 		console.log(`ws ->`, ws)
 		ws.json(EmbyEvent)
 	},
-	filter<IData>(MessageType: string) {
+	filter<Data>(MessageType: string) {
 		return rxSocket.pipe(
 			Rx.op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
-			Rx.op.map(({ Data }) => Data as IData)
+			Rx.op.map(({ Data }) => Data as Data)
 		)
 	},
 }

@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
 import * as media from '@/media/media'
-import * as qs from 'query-string'
+import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'

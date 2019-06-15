@@ -4,7 +4,6 @@ import * as http from '@/adapters/http'
 import * as magneturi from 'magnet-uri'
 import * as pAll from 'p-all'
 import * as path from 'path'
-import * as qs from 'query-string'
 import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
 

@@ -4,15 +4,17 @@ interface Env {
 	CF_KATCR: string
 	CF_SNOWFL: string
 	CF_UA: string
-	EMBY_ADMIN_ID: string
-	EMBY_ADMIN_KEY: string
+	EMBY_ADMIN_USER_ID: string
+	EMBY_ADMIN_USER_TOKEN: string
+	EMBY_API_KEY: string
 	EMBY_DATA: string
 	EMBY_HOST: string
-	EMBY_KEY: string
 	EMBY_PORT: string
 	EMBY_PROTO: string
-	EMBY_STRM_PORT: string
+	EMBY_URL: string
+	EMBY_WAN: string
 	NODE_ENV: string
+	NODE_PORT: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string
 	ORION_APP: string
