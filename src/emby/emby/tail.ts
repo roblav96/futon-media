@@ -38,8 +38,7 @@ export class Tail {
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
 		console.info(`new Tail ->`, path.basename(logfile))
-
-		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGTERM' })
+		this.child = execa('tail', ['-f', '-n', '0', logfile], { killSignal: 'SIGKILL' })
 		this.child.stdout.on('data', (chunk: string) => {
 			chunk = `\n${_.trim((chunk || '').toString())}`
 			let lines = chunk.split(/\n\d{4}-\d{2}-\d{2}\s/g)
@@ -48,46 +47,12 @@ export class Tail {
 				line && rxTail.next(line)
 			}
 		})
-		this.child.stdout.once('error', error => {
-			console.error(`Tail child stdout error -> %O`, error)
-			this.destroy()
-		})
-		this.child.stderr.once('error', error => {
-			console.error(`Tail child stderr error -> %O`, error)
-			this.destroy()
-		})
-		this.child.stderr.once('data', (chunk: string) => {
-			console.error(`Tail child stderr -> %O`, _.trim((chunk || '').toString()))
-			this.destroy()
-		})
-		this.child.once('message', message => {
-			console.log(`Tail child message ->`, message)
-		})
-		this.child.once('error', error => {
-			console.error(`Tail child error -> %O`, error)
-			this.destroy()
-		})
-		this.child.once('close', (code, signal) => {
-			console.warn(`Tail child close ->`, code, signal)
-			this.destroy()
-		})
-		this.child.once('disconnect', () => {
-			console.warn(`Tail child disconnect`)
-			this.destroy()
-		})
-		this.child.once('exit', (code, signal) => {
-			console.error(`Tail child exit ->`, code, signal)
-			this.destroy()
-		})
 	}
 
 	destroy = _.once(() => {
-		this.child.kill('SIGTERM')
-		process.nextTick(() => {
-			this.child.removeAllListeners()
-			this.child.stdout.removeAllListeners()
-			this.child.stderr.removeAllListeners()
-		})
+		this.child.stdout.removeAllListeners()
+		this.child.removeAllListeners()
+		this.child.kill('SIGKILL')
 		Tail.reconnect()
 	})
 }

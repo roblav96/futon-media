@@ -4,23 +4,17 @@ interface Env {
 	CF_KATCR: string
 	CF_SNOWFL: string
 	CF_UA: string
-	EMBY_ADMIN_USER_ID: string
-	EMBY_ADMIN_USER_TOKEN: string
+	EMBY_ADMIN_ID: string
+	EMBY_ADMIN_TOKEN: string
 	EMBY_API_KEY: string
-	EMBY_DATA: string
-	EMBY_HOST: string
-	EMBY_PORT: string
-	EMBY_PROTO: string
-	EMBY_URL: string
-	EMBY_WAN: string
-	EMBY_WAN_ADDRESS: string
-	NODE_PORT: string
+	EMBY_REMOTE_WAN: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string
 	ORION_APP: string
 	ORION_KEY: string
 	PREMIUMIZE_ID: string
 	PREMIUMIZE_PIN: string
+	PROXY_PORT: string
 	PUTIO_TOKEN: string
 	REALDEBRID_ID: string
 	REALDEBRID_SECRET: string

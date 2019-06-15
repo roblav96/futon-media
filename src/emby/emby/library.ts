@@ -34,7 +34,7 @@ process.nextTick(async () => {
 
 	await library.setFolders()
 	// await library.setCollections()
-	if (emby.env.ADMIN_KEY) await library.setLibraryMonitorDelay()
+	await library.setLibraryMonitorDelay()
 
 	let rxItem = emby.rxHttp.pipe(
 		Rx.op.filter(({ parts }) => !parts.includes('favoriteitems')),
@@ -164,6 +164,7 @@ export const library = {
 	// },
 
 	async setLibraryMonitorDelay() {
+		if (!process.env.EMBY_ADMIN_TOKEN) return
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			silent: true,
 		})) as emby.SystemConfiguration
@@ -171,7 +172,7 @@ export const library = {
 			Configuration.LibraryMonitorDelay = 1
 			console.warn(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
 			await emby.client.post('/System/Configuration', {
-				query: { api_key: emby.env.ADMIN_KEY },
+				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 				body: Configuration,
 			})
 		}
@@ -236,10 +237,6 @@ export const library = {
 	},
 
 	toStrmPath(item: media.Item, full = false) {
-		if (!item) throw new Error(`library toStrmPath !item`)
-		if (_.values(library.folders).filter(Boolean).length != _.size(library.folders)) {
-			throw new Error(`library toStrmPath '${item.slug}' !library.folders`)
-		}
 		let title = utils.toSlug(item.title, { title: true })
 		let dir = library.folders[`${item.type}s`]
 		let file = `/${title} (${item.year})`
@@ -263,7 +260,6 @@ export const library = {
 	},
 
 	toStrmQuery(item: media.Item) {
-		if (!item) throw new Error(`library toStrmUrl !item`)
 		let query = {
 			...item.ids,
 			type: item.type,
@@ -275,16 +271,11 @@ export const library = {
 	},
 
 	toStrmUrl(item: media.Item) {
-		if (!item) throw new Error(`library toStrmUrl !item`)
 		let query = library.toStrmQuery(item)
-		let host = process.DEVELOPMENT ? '127.0.0.1' : emby.env.HOST
-		let url = `${emby.env.PROTO}//${host}`
-		if (isIp(host)) url += `:${emby.env.STRM_PORT}`
-		return `${url}/strm?${qs.stringify(query as any)}`
+		return `${process.env.EMBY_REMOTE_WAN}/strm?${qs.stringify(query as any)}`
 	},
 
 	async toStrmFile(item: media.Item) {
-		if (!item) throw new Error(`library toStrmFile !item`)
 		let Path = library.toStrmPath(item, true)
 		let Updated = { Path, UpdateType: 'Modified' } as emby.MediaUpdated
 		if (await fs.pathExists(Path)) return Updated
@@ -294,7 +285,6 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
-		if (!item) throw new Error(`library add !item`)
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
 			Updates.push(await library.toStrmFile(item))

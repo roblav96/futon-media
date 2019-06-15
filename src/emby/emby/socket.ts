@@ -10,37 +10,37 @@ import Sockette, { ISockette } from '@/shims/sockette'
 
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
-// let ws: ISockette
-// process.nextTick(async () => {
-	let ws = new Sockette(
-		`${process.env.EMBY_URL}/embywebsocket?${qs.stringify({ api_key: process.env.EMBY_API_KEY })}`,
-		{
-			timeout: 3000,
-			maxAttempts: Infinity,
-			onerror({ error }) {
-				console.error(`socket onerror -> %O`, error)
-			},
-			onclose({ code, reason }) {
-				console.warn(`socket onclose ->`, code, reason)
-				emby.Tail.destroy()
-			},
-			onopen({ target }) {
-				let url = target.url as string
-				console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
-				ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
-				ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
-				ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
-				emby.Tail.connect()
-			},
-			onmessage({ data }) {
-				let { err, value } = fastParse(data)
-				if (err) return console.error(`socket onmessage -> %O`, err)
-				rxSocket.next(value)
-			},
-		}
-	)
+let ws: ISockette
+process.nextTick(async () => {
+	let url = `${process.env.EMBY_REMOTE_WAN}/embywebsocket?${qs.stringify({
+		api_key: process.env.EMBY_API_KEY,
+	})}`
+	ws = new Sockette(url, {
+		timeout: 3000,
+		maxAttempts: Infinity,
+		onerror({ error }) {
+			console.error(`socket onerror -> %O`, error)
+		},
+		onclose({ code, reason }) {
+			console.warn(`socket onclose ->`, code, reason)
+			emby.Tail.destroy()
+		},
+		onopen({ target }) {
+			let url = target.url as string
+			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
+			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
+			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
+			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
+			emby.Tail.connect()
+		},
+		onmessage({ data }) {
+			let { err, value } = fastParse(data)
+			if (err) return console.error(`socket onmessage -> %O`, err)
+			rxSocket.next(value)
+		},
+	})
 	exithook(() => ws.close())
-// })
+})
 
 export const socket = {
 	send(EmbyEvent: Partial<EmbyEvent>) {

@@ -14,7 +14,7 @@ import db from '@/adapters/db'
 import Emitter from '@/utils/emitter'
 import Fastify from '@/adapters/fastify'
 
-const fastify = Fastify(process.env.EMBY_STRM_PORT)
+const fastify = Fastify(process.env.PROXY_PORT)
 const emitter = new Emitter<string, string>()
 
 async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {

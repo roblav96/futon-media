@@ -82,10 +82,10 @@ process.nextTick(async () => {
 	// process.DEVELOPMENT && devops().catch(error => console.error(`db devops -> %O`, error))
 })
 
-async function devops() {
-	let mocks = await import('@/mocks/mocks')
-	await db.put(`UserId:${Math.random().toString()}`, Math.random().toString())
-	await db.put('mocks:ant-man-and-the-wasp-2018', mocks.MOVIES['ant-man-and-the-wasp-2018'])
-	let entries = await db.entries()
-	console.log(`db entriess ->`, entries)
-}
+// async function devops() {
+// 	let mocks = await import('@/mocks/mocks')
+// 	await db.put(`UserId:${Math.random().toString()}`, Math.random().toString())
+// 	await db.put('mocks:ant-man-and-the-wasp-2018', mocks.MOVIES['ant-man-and-the-wasp-2018'])
+// 	let entries = await db.entries()
+// 	console.log(`db entriess ->`, entries)
+// }

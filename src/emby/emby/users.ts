@@ -20,16 +20,16 @@ export class User {
 	}
 
 	async setConfiguration(Configuration: UserConfiguration) {
-		if (!emby.env.ADMIN_KEY) return
+		if (!process.env.EMBY_ADMIN_TOKEN) return
 		await emby.client.post(`/Users/${this.Id}/Configuration`, {
-			query: { api_key: emby.env.ADMIN_KEY },
+			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: Configuration,
 		})
 	}
 	async setPolicy(Policy: Policy) {
-		if (!emby.env.ADMIN_KEY) return
+		if (!process.env.EMBY_ADMIN_TOKEN) return
 		await emby.client.post(`/Users/${this.Id}/Policy`, {
-			query: { api_key: emby.env.ADMIN_KEY },
+			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: Policy,
 		})
 	}
@@ -40,9 +40,9 @@ export class User {
 		})) as DisplayPreferences
 	}
 	async setDisplayPreferences(DisplayPreferences: DisplayPreferences) {
-		if (!emby.env.ADMIN_KEY) return
+		if (!process.env.EMBY_ADMIN_TOKEN) return
 		await emby.client.post(`/DisplayPreferences/usersettings`, {
-			query: { client: 'emby', userId: this.Id, api_key: emby.env.ADMIN_KEY },
+			query: { client: 'emby', userId: this.Id, api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: DisplayPreferences,
 		})
 	}
