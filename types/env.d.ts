@@ -13,7 +13,7 @@ interface Env {
 	EMBY_PROTO: string
 	EMBY_URL: string
 	EMBY_WAN: string
-	NODE_ENV: string
+	EMBY_WAN_ADDRESS: string
 	NODE_PORT: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string
