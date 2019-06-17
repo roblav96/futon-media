@@ -38,7 +38,7 @@ export class Tail {
 	child: execa.ExecaChildProcess
 	constructor(logfile: string) {
 		console.info(`new Tail ->`, path.basename(logfile))
-		this.child = execa('tail', ['-f', '-n', '0', logfile], { killSignal: 'SIGKILL' })
+		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGKILL' })
 		this.child.stdout.on('data', (chunk: string) => {
 			chunk = `\n${_.trim((chunk || '').toString())}`
 			let lines = chunk.split(/\n\d{4}-\d{2}-\d{2}\s/g)
@@ -50,6 +50,7 @@ export class Tail {
 	}
 
 	destroy = _.once(() => {
+		this.child.cancel()
 		this.child.stdout.removeAllListeners()
 		this.child.removeAllListeners()
 		this.child.kill('SIGKILL')
