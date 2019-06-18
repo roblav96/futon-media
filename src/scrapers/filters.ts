@@ -26,17 +26,17 @@ export const SKIPS = [
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) return console.log(`⛔ !magnet.xt ->`, result.name)
-	if (magnet.xt.length != 49) return console.log(`⛔ magnet.xt != 49 ->`, result.name)
+	if (!_.isString(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
+	if (magnet.xt.length != 49) return // console.log(`⛔ magnet.xt != 49 ->`, result.name)
 
 	result.name = result.name || magnet.dn
-	if (!result.name) return console.log(`⛔ !result.name ->`, result.name)
+	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
 	result.name = utils.toSlug(utils.stripForeign(result.name))
 
 	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
 	if (skips.length - skipped.length >= 1) {
-		return console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
+		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
 	}
 
 	return true
@@ -50,11 +50,11 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	}
 
 	if (utils.toBytes(`${item.runtime} MB`) > torrent.bytes) {
-		return console.log(`⛔ bytes '${torrent.size}' ->`, torrent.name)
+		return // console.log(`⛔ bytes '${torrent.size}' ->`, torrent.name)
 	}
 
 	if (item.released.valueOf() - utils.duration(1, 'day') > torrent.stamp) {
-		return console.log(`⛔ released '${torrent.age}' ->`, torrent.name)
+		return // console.log(`⛔ released '${torrent.age}' ->`, torrent.name)
 	}
 
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
@@ -68,16 +68,16 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		}
 		packed = true
 	}
+	let name = ` ${torrent.name} `
 
 	if (item.movie) {
 		try {
 			let titles = item.titles.join(' ')
 
-			let extras = utils.accuracies(`${titles} 1080 1920 2160`, torrent.name)
+			let extras = utils.accuracies(`${titles} 1080 1920 2160`, name)
 			let years = extras.filter(v => v.length == 4 && /\d{4}/.test(v)).map(v => _.parseInt(v))
 			years = _.uniq(years.filter(v => _.inRange(v, 1900, new Date().getFullYear() + 1)))
 
-			let name = ` ${torrent.name} `
 			if (name.includes(' duology ')) torrent.packs = 2
 			else if (name.includes(' trilogy ')) torrent.packs = 3
 			else if (name.includes(' triology ')) torrent.packs = 3
@@ -94,12 +94,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 				utils.accuracies(titles, 'collection').find(v => name.includes(` ${v} `))
 			) {
 				torrent.packs = item.collection.name ? item.collection.fulls.length : years.length
-				// } else if (
-				// 	item.collection.name &&
-				// 	!utils.equals(item.title, item.collection.name) &&
-				// 	utils.includes(torrent.name, item.collection.name)
-				// ) {
-				// 	torrent.packs = item.collection.fulls.length
 			}
 
 			return true
@@ -110,48 +104,45 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 	if (item.show) {
 		try {
-			let slug = ` ${torrent.name} `
-			if (item.isDaily && utils.includes(slug, item.E.a)) return true
-			if (item.E.t && utils.accuracy(slug, item.E.t)) return true
-			if (regex.s00e00(item, slug)) return true
+			let match = item.matches.find(v => utils.accuracy(name, v))
+			if (match) return true
+
+			let s00e00s = item.s00e00.map(v => name.match(v)).filter(v => v && v.length == 3)
+			let s00e00 = s00e00s.find(v => {
+				if (_.isEqual([item.S.n, item.E.n], [v[1], v[2]].map(utils.parseInt))) return true
+				throw new Error(`'${v[0].trim()}'`)
+			})
+			if (s00e00) return true
+
+			let e00s = item.e00.map(v => name.match(v)).filter(v => v && v.length == 2)
+			let e00 = e00s.find(v => {
+				if (_.isEqual([item.E.n], [v[1]].map(utils.parseInt))) return true
+				throw new Error(`'${v[0].trim()}'`)
+			})
+			if (e00) return true
 
 			torrent.packs = 1
-			if (regex.nthseason(item, slug)) return true
-			if (regex.season(item, slug)) return true
+			if (regex.nthseason(item, name)) return true
+			if (regex.season(item, name)) return true
 			if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) return true
 
-			let seasons0to = regex.seasons0to(item, slug)
+			let seasons0to = regex.seasons0to(item, name)
 			if (_.isFinite(seasons0to)) {
 				torrent.packs = seasons0to
 				return true
 			}
 
-			return console.log(`❌ return false ->`, torrent.name)
+			let straggler = item.stragglers.find(v => utils.accuracy(name, v))
+			if (straggler) return true
+
+			return // console.log(`⛔ show return false ->`, torrent.name)
 		} catch (error) {
-			return console.log(`⛔ show ${error.message} ->`, torrent.name)
+			return // console.log(`⛔ show ${error.message} ->`, torrent.name)
 		}
 	}
 }
 
 export const regex = {
-	/** `s00e00` `season 1 episode 1` */
-	s00e00(item: media.Item, slug: string) {
-		let matches = [
-			slug.match(/\ss\d{1,2}e\d{1,3}\s/gi) || [],
-			slug.match(/\ss(eason)?\s?\d{1,2}\se(pisode)?\s?\d{1,3}\s/gi) || [],
-		].flat()
-		matches = (matches || []).map(v => v.trim())
-		matches = matches.map(v => {
-			let zeros = _.split(v.match(/(\d).*(\d)/gi)[0], 'e').map(utils.parseInt)
-			let [s, e] = zeros.filter(Boolean)
-			return `s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-		})
-		if (matches.length == 0) return
-		if (!item.episode) throw new Error(`regex !item.episode`)
-		let target = `s${item.S.z}e${item.E.z}`
-		if (matches.includes(target)) return true
-		throw new Error(`regex '${matches}' != '${target}'`)
-	},
 	/** `1st season` */
 	nthseason(item: media.Item, slug: string) {
 		let matches = slug.match(/\s\d{1,2}[a-z]{2}\sseason\s/gi)

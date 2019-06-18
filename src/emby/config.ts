@@ -23,7 +23,7 @@ export async function setup() {
 	_.defaults(process.env, {
 		EMBY_DATA_PATH: Info.ProgramDataPath,
 		EMBY_HTTP_PORT: `${Info.HttpServerPortNumber}`,
-		EMBY_LOCAL_ADDRESS: Info.LocalAddress || `http://127.0.0.1:${Info.HttpServerPortNumber}`,
+		EMBY_LOCAL_ADDRESS: `http://127.0.0.1:${Info.HttpServerPortNumber}`,
 		EMBY_REMOTE_ADDRESS: Info.WanAddress,
 		PROXY_PORT: `${Info.HttpServerPortNumber + 3}`,
 	} as Env)

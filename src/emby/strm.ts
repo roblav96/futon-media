@@ -16,8 +16,10 @@ import Fastify from '@/adapters/fastify'
 
 const fastify = Fastify(process.env.PROXY_PORT)
 const emitter = new Emitter<string, string>()
+process.nextTick(() => process.DEVELOPMENT && db.flush('stream:*'))
 
 async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
+	let t = Date.now()
 	let { e, s, imdb, slug, tmdb, tvdb, type } = query
 	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
 	let Session = Sessions[0]
@@ -94,13 +96,13 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string) {
 	// if (!process.DEVELOPMENT) console.log(`torrents ->`, torrents.length)
 	console.log(`strm torrents ->`, torrents.length, torrents.map(v => v.short))
 
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
 	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${slug}'`)
 	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 
-	console.log(`👍 streamUrl '${slug}' ->`, streamUrl)
+	console.log(Date.now() - t, `👍 streamUrl '${slug}' ->`, streamUrl)
 	return streamUrl
 }
 

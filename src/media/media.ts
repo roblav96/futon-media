@@ -17,11 +17,11 @@ export const MAIN_TYPESS = ['movies', 'shows'] as MainContentTypes[]
 export interface Item extends trakt.Extras {}
 @Memoize.Class
 export class Item {
-	movie: trakt.Movie // & tmdb.Movie
-	show: trakt.Show // & tmdb.Show
-	season: trakt.Season // & tmdb.Season
-	episode: trakt.Episode // & tmdb.Episode
-	person: trakt.Person // & tmdb.Person
+	movie: trakt.Movie
+	show: trakt.Show
+	season: trakt.Season
+	episode: trakt.Episode
+	person: trakt.Person
 
 	get full() {
 		return _.merge({}, ...TYPES.map(v => this[v])) as Full
@@ -133,7 +133,7 @@ export class Item {
 			E.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
 		}
 		if (_.has(this.episode, 'title') && !this.episode.title.startsWith('Episode')) {
-			E.t = this.episode.title.split(',').shift()
+			E.t = this.episode.title.split(',')[0]
 		}
 		if (_.has(this.episode, 'number')) {
 			E.n = this.episode.number
@@ -190,9 +190,10 @@ export class Item {
 	}
 	static aliases(title: string, year: number) {
 		let aliases = [title]
+		aliases = aliases.map(v => [v, ...utils.colons(v)]).flat()
 		aliases = aliases.map(v => utils.unsquash(v)).flat()
 		aliases = aliases.map(v => [v, ...Item.years(v, [year])]).flat()
-		return aliases
+		return _.uniq(aliases.filter(Boolean))
 	}
 
 	aliases: string[]
@@ -203,7 +204,6 @@ export class Item {
 			// silent: true,
 		})) as trakt.Alias[]
 		let trakts = (response || []).filter(v => ['gb', 'nl', 'us'].includes(v.country))
-		// let trakts = (response || []).filter(v => v.title)
 		aliases.push(...trakts.map(v => v.title))
 
 		if (this.ids.tmdb) {
@@ -213,7 +213,6 @@ export class Item {
 				})
 				.catch(() => ({ titles: [] }))) as tmdb.AlternativeTitles
 			let tmdbs = (titles || []).filter(v => ['GB', 'NL', 'US'].includes(v.iso_3166_1))
-			// let tmdbs = (titles || []).filter(v => v.title)
 			aliases.push(...tmdbs.map(v => v.title))
 		}
 
@@ -234,12 +233,12 @@ export class Item {
 			aliases = aliases.map(v => [v, `${this.main.network.split(' ')[0]} ${v}`]).flat()
 		}
 
-		aliases = aliases.map(v => utils.colons(v)).flat()
+		aliases = aliases.map(v => [v, _.last(utils.colons(v))]).flat()
 		aliases = aliases.map(v => utils.unsquash(v)).flat()
 		aliases = utils.byLength(aliases)
 		aliases = aliases.map(v => [v, ...Item.years(v, this.years)]).flat()
 
-		this.aliases = _.uniq(aliases)
+		this.aliases = _.uniq(aliases.filter(Boolean))
 		// console.log(`setAliases '${this.slug}' aliases ->`, this.aliases)
 	}
 	get filters() {
@@ -256,15 +255,17 @@ export class Item {
 		let collisions = [] as string[]
 		let titles = [...this.titles, this.collection.name].filter(Boolean)
 		let title = utils.byLength(titles)[0].toLowerCase()
+		title = _.last(utils.colons(title))
 		let simple = utils.simplify(title)
 		let stops = utils.stops(simple)
 		let query = (stops.includes(' ') && stops) || (simple.includes(' ') && simple) || title
 		let squashes = utils.unsquash(query)
 		let queries = _.uniq([query, utils.clean(query), ...squashes, utils.unisolate(squashes)])
-		console.log(`queries ->`, queries)
+		// console.log(`queries ->`, queries)
 
 		let simkls = await simkl.results(queries.map(v => [v, ...Item.years(v, this.years)]).flat())
 		simkls.forEach(v => collisions.push(...Item.aliases(v.title, v.year)))
+		// console.log(`collisions ->`, collisions)
 
 		let results = (await pAll(
 			queries.map(query => async () =>
@@ -272,8 +273,8 @@ export class Item {
 					query: { query, fields: 'title,translations,aliases', limit: 100 },
 					silent: true,
 				})) as trakt.Result[]
-			),
-			{ concurrency: 1 }
+			)
+			// { concurrency: 1 }
 		)).flat()
 
 		let items = results.map(v => new Item(v)).filter(v => v.trakt != this.trakt)
@@ -296,14 +297,13 @@ export class Item {
 			}
 		}
 
-		collisions = collisions.map(v => utils.colons(v)).flat()
 		_.remove(collisions, collision => {
 			if (utils.equals(this.collection.name, collision)) return true
 			if (this.aliases.find(v => utils.equals(v, collision))) return true
 			if (this.aliases.find(v => utils.contains(v, collision))) return true
 		})
 
-		this.collisions = _.uniq(collisions)
+		this.collisions = _.uniq(collisions.filter(Boolean))
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
 	}
 
@@ -356,20 +356,20 @@ export class Item {
 			return [utils.byLength(_.uniq([...slugs, ...this.aliases]))[0]]
 		}
 		if (this.movie) {
-			slugs = slugs.map(v => utils.colons(v)).flat()
+			slugs = slugs.map(v => [v, _.last(utils.colons(v))]).flat()
 			slugs = slugs.map(v => Item.years(v, this.years)).flat()
 			this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			slugs = slugs.filter(v => utils.commons(v))
 		}
-		return _.uniq(slugs)
+		return _.uniq(slugs.filter(Boolean))
 	}
 	get queries() {
 		let queries = [] as string[]
 		if (this.movie) return queries
 		if (this.isDaily && this.E.a) queries.push(this.E.a)
 		this.E.n && queries.push(`s${this.S.z}e${this.E.z}`)
-		this.E.t && queries.push(this.E.t)
-		this.S.t && queries.push(this.S.t)
+		this.E.t && queries.push(utils.simplify(this.E.t))
+		this.S.t && queries.push(utils.simplify(this.S.t))
 		let next = this.seasons.find(v => v.number == this.S.n + 1)
 		let eps = [this.S.a, this.S.e].filter(v => _.isFinite(v))
 		let packable = (next && next.episode_count > 0) || (eps.length == 2 && eps[0] == eps[1])
@@ -377,43 +377,59 @@ export class Item {
 			this.S.n && queries.push(`s${this.S.z}`)
 			this.S.n && queries.push(`season ${this.S.n}`)
 		}
-		return _.uniq(queries.map(v => utils.toSlug(v)))
+		return _.uniq(queries.filter(Boolean).map(v => utils.toSlug(v)))
+	}
+
+	get s00e00() {
+		if (!this.episode) return []
+		let regexes = [
+			` s(\\d+)e(\\d+) `,
+			` s(\\d+) e(\\d+) `,
+			` s (\\d+) e (\\d+) `,
+			` se(\\d+)ep(\\d+) `,
+			` se(\\d+) ep(\\d+) `,
+			` se (\\d+) ep (\\d+) `,
+			` season(\\d+)episode(\\d+) `,
+			` season(\\d+) episode(\\d+) `,
+			` season (\\d+) episode (\\d+) `,
+			` (\\d+)x(\\d+) `,
+			` (\\d+) x (\\d+) `,
+			` (\\d+) (\\d+) `,
+			` series (\\d+) (\\d+)of`,
+			//
+		]
+		return _.uniq(regexes.filter(Boolean)).map(v => new RegExp(v, 'i'))
+	}
+	get e00() {
+		if (!this.episode) return []
+		let regexes = [
+			` (\\d+)of`,
+			` (\\d+) of`,
+			` ch(\\d+)`,
+			` ch (\\d+)`,
+			` chapter (\\d+)`,
+			//
+		]
+		return _.uniq(regexes.filter(Boolean)).map(v => new RegExp(v, 'i'))
 	}
 	get matches() {
 		if (!this.episode) return []
 		let matches = [
-			this.E.t && ` ${utils.toSlug(this.E.t)} `,
+			...(this.E.t ? utils.unsquash(this.E.t).map(v => ` ${v} `) : []),
 			this.E.a && ` ${utils.toSlug(this.E.a)} `,
-			..._.flatten(
-				[
-					' s${s}e${e} ',
-					' s${s} e${e} ',
-					' s ${s} e ${e} ',
-					' se${s}ep${e} ',
-					' se${s} ep${e} ',
-					' se ${s} ep ${e} ',
-					' season${s}episode${e} ',
-					' season${s} episode${e} ',
-					' season ${s} episode ${e} ',
-					' ${s}${e} ',
-					' ${s}x${e} ',
-					' ${s} x ${e} ',
-				].map(v => [
-					_.template(v)({ s: this.S.z, e: this.E.z }),
-					_.template(v)({ s: this.S.z, e: this.E.n }),
-					_.template(v)({ s: this.S.n, e: this.E.z }),
-					_.template(v)({ s: this.S.n, e: this.E.n }),
-				])
-			),
-			` ${this.E.n}of`,
-			` ${this.E.n} of`,
-			` ch${this.E.n}`,
-			` ch ${this.E.n}`,
-			` chapter ${this.E.n}`,
+			//
+		]
+		return _.uniq(matches.filter(Boolean))
+	}
+	get stragglers() {
+		if (!this.episode) return []
+		let stragglers = [
 			` ${this.S.n}${this.E.z} `,
 			` ${this.E.z} `,
+			` ${this.E.n} `,
+			//
 		]
-		return matches.filter(Boolean)
+		return _.uniq(stragglers.filter(Boolean))
 	}
 
 	constructor(result: Partial<trakt.Result>) {

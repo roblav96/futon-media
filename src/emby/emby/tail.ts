@@ -39,6 +39,7 @@ export class Tail {
 	constructor(logfile: string) {
 		console.info(`new Tail ->`, path.basename(logfile))
 		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGKILL' })
+		this.child.catch(error => this.destroy())
 		this.child.stdout.on('data', (chunk: string) => {
 			chunk = `\n${_.trim((chunk || '').toString())}`
 			let lines = chunk.split(/\n\d{4}-\d{2}-\d{2}\s/g)
@@ -50,10 +51,8 @@ export class Tail {
 	}
 
 	destroy = _.once(() => {
-		this.child.cancel()
-		this.child.stdout.removeAllListeners()
-		this.child.stderr.removeAllListeners()
-		this.child.removeAllListeners()
+		console.warn(`tail destroy ->`, 'SIGKILL')
+		this.child.kill('SIGKILL')
 		Tail.reconnect()
 	})
 }
@@ -62,6 +61,7 @@ exithook(() => Tail.destroy())
 
 export const rxHttp = rxTail.pipe(
 	Rx.op.filter(line => !!line.match(/Info HttpServer: HTTP [DGP]/)),
+	Rx.op.filter(line => !line.includes(emby.client.config.headers['user-agent'].toString())),
 	Rx.op.map(line => {
 		let matches = (line.match(/\b([DGP].*)\s(http.*)\.\s\b/) || []) as string[]
 		return [matches[1], matches[2]]
@@ -70,10 +70,10 @@ export const rxHttp = rxTail.pipe(
 	Rx.op.map(matches => {
 		return { ...qs.parseUrl(matches[1]), method: matches[0] as 'GET' | 'POST' | 'DELETE' }
 	}),
-	Rx.op.filter(({ url }) => url.toLowerCase().includes('/emby/')),
-	// Rx.op.filter(({ url }) => {
-	// 	return !['/bower_components/', '/images/', '/web/'].find(v => url.toLowerCase().includes(v))
-	// }),
+	Rx.op.filter(({ url }) => {
+		let lower = url.toLowerCase()
+		return lower.includes('/emby/') && !lower.includes('/images/')
+	}),
 	Rx.op.map(({ method, url, query }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
 		let pathname = new Url(url).pathname.toLowerCase()
@@ -86,13 +86,14 @@ export const rxHttp = rxTail.pipe(
 				if (utils.isNumeric(next) || next.length == 32) query.ItemId = next
 			}
 		}
+		// if (query.PersonIds && !query.ItemId) query.ItemId = query.PersonIds
 		return { method, url, parts, query }
 	})
 )
 
-rxHttp.subscribe(({ method, url, query }) => {
-	console.log(`rxHttp ->`, method, url, query)
-})
+// rxHttp.subscribe(({ method, url, query }) => {
+// 	console.log(`rxHttp ->`, method, url, query)
+// })
 
 // export interface TailHttp {
 // 	method: 'GET' | 'POST' | 'DELETE'

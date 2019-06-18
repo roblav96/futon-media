@@ -2,22 +2,23 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as ffprobe from '@/adapters/ffprobe'
+import * as filters from '@/scrapers/filters'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as pQueue from 'p-queue'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
+// import { Offcloud } from '@/debrids/offcloud'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
-import { Offcloud } from '@/debrids/offcloud'
 
-export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize, offcloud: Offcloud }
+export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize /** offcloud: Offcloud */ }
 
 export async function cached(hashes: string[]) {
 	let entries = Object.entries({
 		realdebrid: RealDebrid,
 		premiumize: Premiumize,
-		offcloud: Offcloud,
+		// offcloud: Offcloud,
 	})
 	let resolved = await Promise.all(entries.map(([k, v]) => v.cached(hashes)))
 	return hashes.map((v, index) => {
@@ -55,13 +56,16 @@ export async function getStreamUrl(
 		let next = false
 		for (let cached of torrent.cached) {
 			if (next) continue
-			console.log(`getStreamUrl '${cached}' torrent ->`, torrent.json)
+			console.info(`getStreamUrl '${cached}' torrent ->`, torrent.json)
 			let debrid = new debrids[cached]().use(torrent.magnet)
 
 			let files = (await debrid.getFiles().catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
-			if (!files) continue
+			if (!files) {
+				console.warn(`!files ->`, torrent.short)
+				continue
+			}
 			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, torrent.short)
@@ -69,35 +73,16 @@ export async function getStreamUrl(
 				continue
 			}
 
-			let file: debrid.File
-			if (item.show) {
-				let tests = [
-					`S${item.S.z}E${item.E.z}`,
-					`S${item.S.z}xE${item.E.z}`,
-					`${item.S.n}x${item.E.z}`,
-					`${item.S.n}${item.E.z}`,
-					`Episode ${item.E.z}`,
-					`Ep${item.E.z}`,
-					`E${item.E.z}`,
-					`${item.E.a}`,
-				]
-				for (let test of tests) {
-					file = files.find(v => utils.includes(v.name, test))
-					if (file) break
-				}
-				if (!file) file = files.find(v => utils.accuracy(v.name, item.E.t))
-				if (!file) console.warn(`!show file ->`, files.map(v => v.name).sort())
-			}
+			console.log(`files ->`, files)
+			let file = files.find(v => {
+				let torrent = { name: utils.toSlug(v.name), packs: 0 } as torrent.Torrent
+				return filters.torrents(torrent, item) && torrent.packs == 0
+			})
 			if (!file) {
-				let title = item.title
-				if (item.movie) title += ` ${item.year}`
-				if (item.episode) title += ` S${item.S.z}E${item.E.z} ${item.E.t} ${item.E.a}`
-				let levens = files.map(file => ({
-					...file,
-					levens: utils.levens(file.name, title),
-				}))
-				file = levens.sort((a, b) => a.levens - b.levens)[0]
+				console.warn(`!file ->`, torrent.short, files)
+				continue
 			}
+			console.log(`file ->`, file)
 
 			let stream = (await debrid.streamUrl(file).catch(error => {
 				console.error(`debrid.streamUrl -> %O`, error)

@@ -19,8 +19,8 @@ export async function results(queries: string[]) {
 					silent: true,
 				})
 			) as Record<string, Result>)
-		),
-		{ concurrency: 1 }
+		)
+		// { concurrency: 1 }
 	)).flat()
 	results.sort((a, b) => utils.alphabetically(a.titles.m, b.titles.m))
 	results = utils.uniqBy(results, 'id').filter(v => v.year)

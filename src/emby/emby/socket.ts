@@ -5,6 +5,7 @@ import * as fastParse from 'fast-json-parse'
 import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
+import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 import Sockette, { ISockette } from '@/shims/sockette'
 
@@ -16,10 +17,11 @@ process.nextTick(async () => {
 		api_key: process.env.EMBY_API_KEY,
 	})}`
 	ws = new Sockette(url, {
-		timeout: 3000,
+		timeout: utils.duration(4, 'second'),
 		maxAttempts: Infinity,
 		onerror({ error }) {
 			console.error(`socket onerror -> %O`, error)
+			emby.Tail.destroy()
 		},
 		onclose({ code, reason }) {
 			console.warn(`socket onclose ->`, code, reason)

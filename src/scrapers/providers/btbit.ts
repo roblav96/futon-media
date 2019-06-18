@@ -18,7 +18,7 @@ export const client = scraper.Scraper.http({
 
 export class BtBit extends scraper.Scraper {
 	sorts = ['2', '1']
-	concurrency = 1
+	concurrency = 2
 
 	async getResults(slug: string, sort: string) {
 		if (!process.env.CF_BTBIT) {

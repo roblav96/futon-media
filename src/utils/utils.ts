@@ -48,6 +48,7 @@ export function parseFloat(value: string) {
 }
 export function zeroSlug(value: number) {
 	if (!_.isFinite(value)) return 'NaN'
+	if (value == 0) return '00'
 	if (value >= 100) return value.toString()
 	return (value / 100).toFixed(2).slice(-2)
 }
@@ -86,8 +87,12 @@ export function simplify(value: string) {
 }
 export function colons(value: string) {
 	let index = value.indexOf(': ')
-	return index == -1 ? [value] : [value, value.slice(index + 2)]
+	return index == -1 ? [value] : [value, value.slice(0, index), value.slice(index + 2)]
 }
+// export function uncolons(value: string) {
+// 	let index = value.indexOf(': ')
+// 	return index == -1 ? [value] : [value, value.slice(0, index)]
+// }
 // export function shrink(value: string) {
 // 	value = clean(value)
 // 	let simple = simplify(value)

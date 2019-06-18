@@ -26,6 +26,7 @@ export const UPLOADERS = [
 	'dimension',
 	'epsilon',
 	'esir',
+	'etrg',
 	'exkinoray',
 	'grym',
 	'kralimarko',

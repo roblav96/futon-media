@@ -19,7 +19,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll`)
 
-	console.log(`item ->`, ((global as any).item = item))
+	// console.log(`item ->`, ((global as any).item = item))
 	console.log(`item.titles ->`, item.titles)
 	console.log(`item.years ->`, item.years)
 	console.log(`item.slugs ->`, item.slugs)
@@ -27,6 +27,8 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.log(`item.aliases ->`, item.aliases)
 	console.log(`item.filters ->`, item.filters)
 	console.log(`item.collisions ->`, item.collisions)
+	console.log(`item.s00e00 ->`, item.s00e00)
+	console.log(`item.e00 ->`, item.e00)
 	console.log(`item.matches ->`, item.matches)
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
@@ -78,15 +80,14 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
-
-	// console.log(`scrapeAll torrents ->`, torrents.length, torrents.map(v => v.short))
+	torrents = torrents.filter(v => v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
+	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
 
 	console.time(`torrents.filter`)
-	torrents = torrents.filter(
-		v => v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0 && filters.torrents(v, item)
-	)
+	torrents = torrents.filter(v => filters.torrents(v, item))
 	console.timeEnd(`torrents.filter`)
 
+	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
@@ -106,6 +107,7 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		else if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 	}
+	console.timeEnd(`torrents.cached`)
 
 	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 }
