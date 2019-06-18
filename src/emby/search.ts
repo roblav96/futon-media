@@ -79,7 +79,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	let index = _.clamp(query.split(' ').length - 1, 0, means.length - 1)
 	let mean = means[index]
-	if (index == 0 && mean > 2000) mean *= 0.5
+	if (mean > 2000) mean *= 0.5
 	console.log(`mean ->`, mean)
 
 	items = items.filter(item => {
