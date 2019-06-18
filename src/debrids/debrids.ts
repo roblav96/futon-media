@@ -111,19 +111,6 @@ export async function getStreamUrl(
 				['video', 'audio'].includes(codec_type)
 			)
 
-			// let tags = {} as Record<string, string>
-			// _.defaults(tags, probe.format.tags, ...probe.streams.map(v => v.tags))
-			// tags = _.pick(tags, _.keys(tags).filter(v => v.includes('date') || v.includes('time')))
-			// let creation = _.size(tags) > 0 && dayjs(_.values(tags)[0])
-			// if (creation && creation.subtract(1, 'day').valueOf() < item.released) {
-			// 	console.warn(
-			// 		`probe !creation ->`,
-			// 		creation.toLocaleString(),
-			// 		dayjs(item.released).toLocaleString()
-			// 	)
-			// 	continue
-			// }
-
 			let videos = probe.streams.filter(({ codec_name, codec_type, tags }) => {
 				if (codec_type != 'video') return false
 				if (codec_name == 'mjpeg') return false
