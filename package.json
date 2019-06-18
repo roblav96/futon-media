@@ -21,7 +21,7 @@
 		"repo": "git pull; echo; git reset --hard",
 		"build": "tsc || true",
 		"assert:build": "test ! -d dist; run-s build",
-		"restart": "run-s stop; forever start forever.json; tail −−lines 0 −−follow ~/.forever/futon-media.log",
+		"restart": "run-s stop; forever start forever.json; tail -fn0 ~/.forever/futon-media.log",
 		"logs": "tail −−lines 1000 −−follow ~/.forever/futon-media.log",
 		"del": "del dist node_modules",
 		"stop": "forever stop futon-media || true",
