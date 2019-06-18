@@ -72,7 +72,7 @@ export const rxHttp = rxTail.pipe(
 	}),
 	Rx.op.filter(({ url }) => {
 		let lower = url.toLowerCase()
-		return lower.includes('/emby/') && !lower.includes('/images/')
+		return lower.includes('/emby/') && !lower.includes('/images/') && !lower.includes('/web/')
 	}),
 	Rx.op.map(({ method, url, query }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
