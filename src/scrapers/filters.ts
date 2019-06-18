@@ -71,6 +71,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	let name = ` ${torrent.name} `
 
 	if (item.movie) {
+		if (torrent.packs == undefined) return true
 		try {
 			let titles = item.titles.join(' ')
 
@@ -121,15 +122,17 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			})
 			if (e00) return true
 
-			torrent.packs = 1
-			if (regex.nthseason(item, name)) return true
-			if (regex.season(item, name)) return true
-			if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) return true
+			if (torrent.packs != undefined) {
+				torrent.packs = 1
+				if (regex.nthseason(item, name)) return true
+				if (regex.season(item, name)) return true
+				if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) return true
 
-			let seasons0to = regex.seasons0to(item, name)
-			if (_.isFinite(seasons0to)) {
-				torrent.packs = seasons0to
-				return true
+				let seasons0to = regex.seasons0to(item, name)
+				if (_.isFinite(seasons0to)) {
+					torrent.packs = seasons0to
+					return true
+				}
 			}
 
 			let straggler = item.stragglers.find(v => utils.accuracy(name, v))

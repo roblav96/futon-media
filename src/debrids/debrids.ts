@@ -73,10 +73,9 @@ export async function getStreamUrl(
 				continue
 			}
 
-			let file = files.find(v => {
-				let torrent = { name: utils.toSlug(v.name), packs: 0 } as torrent.Torrent
-				return filters.torrents(torrent, item) && torrent.packs == 0
-			})
+			let file = files.find(v =>
+				filters.torrents({ name: utils.toSlug(v.name) } as any, item)
+			)
 			if (!file) {
 				console.warn(`!file ->`, torrent.short, files)
 				continue
