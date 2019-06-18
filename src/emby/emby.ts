@@ -2,7 +2,7 @@ import '@/mocks/mocks'
 import * as http from '@/adapters/http'
 
 export const client = new http.Http({
-	baseUrl: `${process.env.EMBY_REMOTE_WAN}/emby`,
+	baseUrl: `${process.env.EMBY_LOCAL_ADDRESS}/emby`,
 	query: { api_key: process.env.EMBY_API_KEY },
 })
 

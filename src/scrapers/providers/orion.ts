@@ -3,7 +3,6 @@ import * as http from '@/adapters/http'
 import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://api.orionoid.com',

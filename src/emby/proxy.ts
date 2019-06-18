@@ -17,6 +17,6 @@ fastify.all('/emby/*', async (request, reply) => {
 		url,
 		method: request.raw.method.toUpperCase() as any,
 	})
-	console.log(`response ->`, response)
-	reply.redirect(301, `${process.env.EMBY_REMOTE_WAN}${request.raw.url}`)
+	console.log(`response ->`, response.data)
+	reply.redirect(301, `${process.env.EMBY_LOCAL_ADDRESS}${request.raw.url}`)
 })

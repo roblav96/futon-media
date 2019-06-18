@@ -5,7 +5,9 @@ import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
+import { Db } from '@/adapters/db'
+
+const db = new Db(__filename)
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',

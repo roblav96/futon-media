@@ -7,9 +7,10 @@ interface Env {
 	EMBY_ADMIN_ID: string
 	EMBY_ADMIN_TOKEN: string
 	EMBY_API_KEY: string
-	EMBY_HOME_LAN: string
+	EMBY_DATA_PATH: string
+	EMBY_LOCAL_ADDRESS: string
 	EMBY_HTTP_PORT: string
-	EMBY_REMOTE_WAN: string
+	EMBY_REMOTE_ADDRESS: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string
 	ORION_APP: string

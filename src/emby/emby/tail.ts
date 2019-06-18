@@ -52,15 +52,13 @@ export class Tail {
 	destroy = _.once(() => {
 		this.child.cancel()
 		this.child.stdout.removeAllListeners()
+		this.child.stderr.removeAllListeners()
 		this.child.removeAllListeners()
-		this.child.kill('SIGKILL')
 		Tail.reconnect()
 	})
 }
 
 exithook(() => Tail.destroy())
-
-const JUNK = ['/bower_components/', '/images/', '/web/']
 
 export const rxHttp = rxTail.pipe(
 	Rx.op.filter(line => !!line.match(/Info HttpServer: HTTP [DGP]/)),
@@ -72,7 +70,10 @@ export const rxHttp = rxTail.pipe(
 	Rx.op.map(matches => {
 		return { ...qs.parseUrl(matches[1]), method: matches[0] as 'GET' | 'POST' | 'DELETE' }
 	}),
-	Rx.op.filter(({ url }) => !JUNK.find(v => url.toLowerCase().includes(v))),
+	Rx.op.filter(({ url }) => url.toLowerCase().includes('/emby/')),
+	// Rx.op.filter(({ url }) => {
+	// 	return !['/bower_components/', '/images/', '/web/'].find(v => url.toLowerCase().includes(v))
+	// }),
 	Rx.op.map(({ method, url, query }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
 		let pathname = new Url(url).pathname.toLowerCase()
@@ -89,9 +90,9 @@ export const rxHttp = rxTail.pipe(
 	})
 )
 
-// rxHttp.subscribe(({ method, url, parts, query }) => {
-// 	console.log(`rxHttp ->`, method, url, parts, query)
-// })
+rxHttp.subscribe(({ method, url, query }) => {
+	console.log(`rxHttp ->`, method, url, query)
+})
 
 // export interface TailHttp {
 // 	method: 'GET' | 'POST' | 'DELETE'

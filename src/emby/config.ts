@@ -1,25 +1,36 @@
 import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 import * as normalize from 'normalize-url'
-import * as Url from 'url-parse'
+import * as path from 'path'
 import lang from '@/lang/en-US'
 
 export async function setup() {
 	if (!process.env.EMBY_API_KEY) throw new Error(lang['!process.env.EMBY_API_KEY'])
-	if (!process.env.EMBY_REMOTE_WAN) throw new Error(lang['!process.env.EMBY_REMOTE_WAN'])
 
-	process.env.EMBY_REMOTE_WAN = normalize(process.env.EMBY_REMOTE_WAN)
-	if (process.env.PROXY_PORT) return
+	let Info: SystemInfo
+	let ports = _.uniq([process.env.EMBY_HTTP_PORT, '8096', '18096']).filter(Boolean)
+	for (let port of ports) {
+		try {
+			Info = await http.client.get(`http://127.0.0.1:${port}/emby/System/Info`, {
+				query: { api_key: process.env.EMBY_API_KEY },
+				silent: true,
+			})
+			break
+		} catch {}
+	}
+	if (!Info) throw new Error(`!SystemInfo -> Could not find emby server on any ports '${ports}'`)
 
-	let Info = (await http.client.get(`${process.env.EMBY_REMOTE_WAN}/emby/System/Info`, {
-		query: { api_key: process.env.EMBY_API_KEY },
-		silent: true,
-	})) as SystemInfo
-	process.env.PROXY_PORT = `${Info.HttpServerPortNumber + 3}`
+	_.defaults(process.env, {
+		EMBY_DATA_PATH: Info.ProgramDataPath,
+		EMBY_HTTP_PORT: `${Info.HttpServerPortNumber}`,
+		EMBY_LOCAL_ADDRESS: Info.LocalAddress || `http://127.0.0.1:${Info.HttpServerPortNumber}`,
+		EMBY_REMOTE_ADDRESS: Info.WanAddress,
+		PROXY_PORT: `${Info.HttpServerPortNumber + 3}`,
+	} as Env)
 
-	// let url = Url(process.env.EMBY_REMOTE_WAN)
-	// let port = _.parseInt(url.port) || (url.protocol == 'https:' && 443) || 80
-	// process.env.PROXY_PORT = `${port + 3}`
+	process.env.EMBY_DATA_PATH = path.normalize(process.env.EMBY_DATA_PATH)
+	process.env.EMBY_LOCAL_ADDRESS = normalize(process.env.EMBY_LOCAL_ADDRESS)
+	process.env.EMBY_REMOTE_ADDRESS = normalize(process.env.EMBY_REMOTE_ADDRESS)
 }
 
 export interface SystemInfo {

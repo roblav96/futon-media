@@ -7,7 +7,6 @@ import '@/devops/devops'
 
 async function start() {
 	await (await import('@/emby/config')).setup()
-	await import('@/emby/emby')
 	await import('@/emby/collections')
 	await import('@/emby/favorites')
 	await import('@/emby/proxy')
