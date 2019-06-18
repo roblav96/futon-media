@@ -18,10 +18,10 @@ process.nextTick(() => {
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId }) => {
 		let Session = await emby.sessions.byUserId(UserId)
-		if (!Session.isHD) return
+		// if (!Session.isHD) return
 
 		let Item = await emby.library.byItemId(ItemId)
-		if (!Item || !['Movie', 'Series', 'Episode'].includes(Item.Type)) return
+		if (!Item || !['Movie', /** 'Series', */ 'Episode'].includes(Item.Type)) return
 
 		let actives = (await realdebrid.client.get('/torrents/activeCount', {
 			silent: true,
@@ -33,10 +33,10 @@ process.nextTick(() => {
 		let item = await emby.library.item(Item.Path, Item.Type)
 
 		if (Item.Type == 'Movie') {
-			queue.add(() => download(item))
+			queue.add(() => download(item, Session.isSD))
 		}
 
-		if (['Series', 'Episode'].includes(Item.Type)) {
+		if ([/** 'Series', */ 'Episode'].includes(Item.Type)) {
 			let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
 				silent: true,
 			})) as trakt.Season[]
@@ -46,10 +46,12 @@ process.nextTick(() => {
 					return console.warn(`favorites item.isDaily || item.episodes >= 500`)
 				}
 				if (process.DEVELOPMENT) {
-					return download(item.use({ type: 'season', season: seasons[0] }))
+					return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
 				}
 				queue.addAll(
-					seasons.map(season => () => download(item.use({ type: 'season', season })))
+					seasons.map(season => () =>
+						download(item.use({ type: 'season', season }), Session.isSD)
+					)
 				)
 			}
 			if (Item.Type == 'Episode') {
@@ -60,22 +62,22 @@ process.nextTick(() => {
 					{ silent: true }
 				)) as trakt.Episode
 				item.use({ type: 'episode', episode })
-				queue.add(() => download(item))
+				queue.add(() => download(item, Session.isSD))
 			}
 		}
 	})
 })
 
 let queue = new pQueue({ concurrency: 1 })
-async function download(item: media.Item) {
-	let slug = item.slug
-	if (item.S.z) slug += ` S${item.S.z}`
-	if (item.E.z) slug += `E${item.E.z}`
+async function download(item: media.Item, sd: boolean) {
+	let strm = item.slug
+	if (item.S.z) strm += ` S${item.S.z}`
+	if (item.E.z) strm += `E${item.E.z}`
 	let gigs = _.round((item.runtime / (item.movie ? 30 : 40)) * (item.isPopular() ? 1 : 0.5), 2)
-	console.info(`download '${slug}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
+	console.info(`download '${strm}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
 
-	let torrents = await scraper.scrapeAll(item)
-	console.log(`download all torrents ->`, torrents.length, torrents.map(v => v.short))
+	let torrents = await scraper.scrapeAll(item, sd)
+	console.log(`download all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
 
 	// let index = torrents.findIndex(({ cached }) => cached.length > 0)
 	// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
@@ -87,11 +89,11 @@ async function download(item: media.Item) {
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gigs} GB`)) return false
 		return v.seeders >= 3 // || v.cached.length > 0
 	})
-	console.log(`download torrents ->`, torrents.length, torrents.map(v => v.short))
+	console.log(`download torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
 
 	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
 	await debrids.download(torrents)
-	console.info(`download '${slug}' ->`, 'DONE')
+	console.info(`download '${strm}' ->`, 'DONE')
 }

@@ -40,7 +40,6 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 	}) || Session) as emby.Session
 
 	let { Quality, Channels, Codecs } = Session
-
 	let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.audio, Codecs.video])}`
 	let streamUrl = await db.get(skey)
 	if (streamUrl) return streamUrl
@@ -58,7 +57,7 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 		item.use({ type: 'episode', episode })
 	}
 
-	let torrents = await scraper.scrapeAll(item, Quality == 'SD' || Channels == 2)
+	let torrents = await scraper.scrapeAll(item, Session.isSD)
 
 	// if (!process.DEVELOPMENT) console.log(`all torrents '${strm}' ->`, torrents.length)
 	console.log(`all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
