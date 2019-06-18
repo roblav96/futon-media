@@ -14,10 +14,9 @@ import fastStringify from 'fast-safe-stringify'
 import { UPLOADERS } from '@/utils/constants'
 
 export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
-	console.warn(`scrapeAll ->`, item.short)
 	let t = Date.now()
 	await item.setAll()
-	console.warn(Date.now() - t, `scrapeAll item.setAll`)
+	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
 	// console.log(`item ->`, ((global as any).item = item))
 	console.log(`item.titles ->`, item.titles)
@@ -27,9 +26,9 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 	console.log(`item.aliases ->`, item.aliases)
 	console.log(`item.filters ->`, item.filters)
 	console.log(`item.collisions ->`, item.collisions)
-	console.log(`item.s00e00 ->`, item.s00e00)
-	console.log(`item.e00 ->`, item.e00)
-	console.log(`item.matches ->`, item.matches)
+	// console.log(`item.s00e00 ->`, item.s00e00)
+	// console.log(`item.e00 ->`, item.e00)
+	// console.log(`item.matches ->`, item.matches)
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	/**

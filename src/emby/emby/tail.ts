@@ -91,9 +91,9 @@ export const rxHttp = rxTail.pipe(
 	})
 )
 
-// rxHttp.subscribe(({ method, url, query }) => {
-// 	console.log(`rxHttp ->`, method, url, query)
-// })
+rxHttp.subscribe(({ method, url, query }) => {
+	console.log(`rxHttp ->`, method, url, query)
+})
 
 // export interface TailHttp {
 // 	method: 'GET' | 'POST' | 'DELETE'

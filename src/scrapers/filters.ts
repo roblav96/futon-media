@@ -46,7 +46,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	let nsfws = utils.accuracies(item.titles.join(' '), utils.NSFWS.join(' '))
 	let nsfwed = utils.accuracies(torrent.name, nsfws.join(' '))
 	if (nsfws.length - nsfwed.length >= 2) {
-		return console.log(`❌ nsfw '${_.difference(nsfws, nsfwed)}' ->`, torrent.name)
+		return // console.log(`❌ nsfw '${_.difference(nsfws, nsfwed)}' ->`, torrent.name)
 	}
 
 	if (utils.toBytes(`${item.runtime} MB`) > torrent.bytes) {
@@ -58,13 +58,13 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	}
 
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
-	if (collision) return console.log(`❌ collisions '${collision}' ->`, torrent.name)
+	if (collision) return // console.log(`❌ collisions '${collision}' ->`, torrent.name)
 
 	// let filters = item.filters.concat(item.collection.name ? [item.collection.name] : [])
 	let packed = false
 	if (!item.filters.find(v => utils.contains(torrent.name, v))) {
 		if (!item.collection.name || !utils.contains(torrent.name, item.collection.name)) {
-			return console.log(`❌ aliases ->`, torrent.name)
+			return // console.log(`❌ aliases ->`, torrent.name)
 		}
 		packed = true
 	}
@@ -99,7 +99,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 			return true
 		} catch (error) {
-			return console.log(`❌ movie ${error.message} ->`, torrent.name)
+			return // console.log(`❌ movie ${error.message} ->`, torrent.name)
 		}
 	}
 
