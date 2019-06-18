@@ -13,7 +13,7 @@ import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 import { UPLOADERS } from '@/utils/constants'
 
-export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], hd = true) {
+export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], sd = false) {
 	let t = Date.now()
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
@@ -94,7 +94,9 @@ export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], 
 		let name = ` ${v.name} `
 		let defs = ['720p', '480p', '360p', '720', '480', '360', 'avi']
 		if (defs.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
-		if (!hd) {
+		if (sd) {
+			let uhds = ['2160p', '2160', 'uhd', '4k']
+			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 			if (v.providers.includes('Yts')) v.boost *= 2
 			continue
 		}

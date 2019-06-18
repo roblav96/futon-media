@@ -58,40 +58,13 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 		item.use({ type: 'episode', episode })
 	}
 
-	let torrents = await scraper.scrapeAll(item, Quality.includes('HD'))
+	let torrents = await scraper.scrapeAll(item, Quality == 'SD' || Channels == 2)
 
-	if (!process.DEVELOPMENT) console.log(`all torrents '${strm}' ->`, torrents.length)
-	else console.log(`all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
-
-	// if (Quality.includes('HD') && Channels >= 6 && !process.DEVELOPMENT) {
-	// 	let index = torrents.findIndex(({ cached }) => cached.length > 0)
-	// 	let putios = torrents.slice(0, index)
-	// 	putios = putios.filter(({ seeders }) => seeders >= 3)
-	// 	putios = putios.slice(0, 10)
-	// 	if (putios.length > 0) {
-	// 		// if (item.movie) emitter.once(traktId, () => debrids.download(putios))
-	// 		let cached = await putio.Putio.cached(putios.map(v => v.magnet))
-	// 		cached.forEach(({ magnet }) => {
-	// 			let torrent = torrents.find(v => v.magnet == magnet)
-	// 			torrent.cached.push('putio')
-	// 			console.warn(`Putio cached ->`, torrent.short)
-	// 		})
-	// 	}
-	// }
-
-	torrents = torrents.filter(v => {
-		if (['2160p', '2160', 'uhd', '4k'].find(vv => ` ${v.name} `.includes(` ${vv} `))) {
-			if (Quality != 'UHD') return false
-		}
-		return true
-	})
+	// if (!process.DEVELOPMENT) console.log(`all torrents '${strm}' ->`, torrents.length)
+	console.log(`all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
 
 	torrents = torrents.filter(v => v.cached.length > 0)
 	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
-
-	if (Quality == 'SD' || Channels == 2) {
-		torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
-	}
 
 	// if (!process.DEVELOPMENT) console.log(`strm torrents '${strm}' ->`, torrents.length)
 	console.log(`strm torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
