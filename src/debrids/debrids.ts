@@ -12,14 +12,14 @@ import * as utils from '@/utils/utils'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
 
-export const debrids = { realdebrid: RealDebrid, premiumize: Premiumize /** offcloud: Offcloud */ }
+export const debrids = {
+	premiumize: Premiumize,
+	realdebrid: RealDebrid,
+	// offcloud: Offcloud,
+}
 
 export async function cached(hashes: string[]) {
-	let entries = Object.entries({
-		realdebrid: RealDebrid,
-		premiumize: Premiumize,
-		// offcloud: Offcloud,
-	})
+	let entries = Object.entries(debrids)
 	let resolved = await Promise.all(entries.map(([k, v]) => v.cached(hashes)))
 	return hashes.map((v, index) => {
 		return entries.map(([key], i) => resolved[i][index] && key).filter(Boolean)

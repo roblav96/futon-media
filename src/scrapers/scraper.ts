@@ -13,7 +13,7 @@ import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 import { UPLOADERS } from '@/utils/constants'
 
-export async function scrapeAll(item: ConstructorParameters<typeof Scraper>[0], sd: boolean) {
+export async function scrapeAll(item: media.Item, sd: boolean) {
 	let t = Date.now()
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
