@@ -34,7 +34,7 @@ export function download(torrents: torrent.Torrent[]) {
 			let success = await RealDebrid.download(torrent.magnet).catch(async error => {
 				console.error(`RealDebrid download '${torrent.short}' -> %O`, error)
 				if (!torrent.cached.includes('premiumize')) {
-					await Premiumize.download(torrent.magnet)
+					// await Premiumize.download(torrent.magnet)
 				}
 				return false
 			})
