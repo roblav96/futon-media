@@ -65,6 +65,9 @@ export class Session {
 				v.startsWith('-') ? utils.minify(v) : v
 			),
 		}
+		if (Codecs.audio.includes('ac3')) {
+			Codecs.audio.push('eac3') && Codecs.audio.sort()
+		}
 		if (Codecs.audio.includes('dts') && this.isHD) {
 			Codecs.audio.push('truehd') && Codecs.audio.sort()
 		}

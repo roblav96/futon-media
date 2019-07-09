@@ -94,6 +94,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		let name = ` ${v.name} `
 		let defs = ['720p', '480p', '360p', '720', '480', '360', 'avi']
 		if (defs.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		if (name.includes(' proper ')) v.boost *= 1.25
 		if (sd) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
@@ -107,11 +108,13 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		if (name.includes(' fgt ')) v.boost *= 1.5
 		else if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
-		if (name.includes(' proper ')) v.boost *= 1.25
 	}
 	console.timeEnd(`torrents.cached`)
 
-	return torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	if (sd) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
+	else torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+
+	return torrents
 }
 
 export interface Scraper {
