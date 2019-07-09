@@ -107,6 +107,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		if (name.includes(' fgt ')) v.boost *= 1.5
 		else if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (name.includes(' proper ')) v.boost *= 1.25
 	}
 	console.timeEnd(`torrents.cached`)
 
