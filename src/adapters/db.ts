@@ -19,6 +19,7 @@ export class Db {
 		name = path.basename(name)
 		let pkg = pkgup.sync({ cwd: __dirname })
 		let location = path.join(xdgBasedir.cache, pkg.package.name, name)
+		fs.ensureDirSync(path.dirname(location))
 		let db = level(`${location}.db`, {
 			valueEncoding: 'json',
 		} as Partial<leveldown.LevelDownOpenOptions & levelcodec.CodecOptions>)

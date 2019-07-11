@@ -87,7 +87,7 @@ async function download(item: media.Item, sd: boolean) {
 		if (v.cached.length > 0) return true
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gigs} GB`)) return false
-		return v.seeders >= 3 // || v.cached.length > 0
+		return v.seeders * v.providers.length >= 5
 	})
 	console.log(`download torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
 
