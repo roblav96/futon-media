@@ -7,7 +7,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import Fastify from '@/adapters/fastify'
 
-const fastify = Fastify(process.env.PROXY_PORT)
+const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 
 fastify.all('/emby/*', async (request, reply) => {
 	console.warn(`/emby ->`, request.raw.url)
@@ -18,5 +18,5 @@ fastify.all('/emby/*', async (request, reply) => {
 		method: request.raw.method.toUpperCase() as any,
 	})
 	console.log(`response ->`, response.data)
-	reply.redirect(301, `${process.env.EMBY_LOCAL_ADDRESS}${request.raw.url}`)
+	reply.redirect(301, `${process.env.EMBY_LAN_ADDRESS}${request.raw.url}`)
 })

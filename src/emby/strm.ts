@@ -14,7 +14,7 @@ import db from '@/adapters/db'
 import Emitter from '@/utils/emitter'
 import Fastify from '@/adapters/fastify'
 
-const fastify = Fastify(process.env.PROXY_PORT)
+const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
 process.nextTick(() => process.DEVELOPMENT && db.flush('stream:*'))
 

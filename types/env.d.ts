@@ -8,16 +8,16 @@ interface Env {
 	EMBY_ADMIN_TOKEN: string
 	EMBY_API_KEY: string
 	EMBY_DATA_PATH: string
-	EMBY_LOCAL_ADDRESS: string
 	EMBY_HTTP_PORT: string
-	EMBY_REMOTE_ADDRESS: string
+	EMBY_LAN_ADDRESS: string
+	EMBY_PROXY_PORT: string
+	EMBY_WAN_ADDRESS: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string
 	ORION_APP: string
 	ORION_KEY: string
 	PREMIUMIZE_ID: string
 	PREMIUMIZE_PIN: string
-	PROXY_PORT: string
 	PUTIO_TOKEN: string
 	REALDEBRID_ID: string
 	REALDEBRID_SECRET: string

@@ -8,14 +8,12 @@ export default mem((port: string) => {
 	fastify.server.headersTimeout = 60000
 	fastify.server.keepAliveTimeout = 25000
 	fastify.server.timeout = 60000
-	process.nextTick(() => {
-		fastify.listen(port).then(
-			address => {
-				console.info(`proxy listening ->`, address)
-				exithook(() => fastify.close())
-			},
-			error => console.error(`proxy listen '${port}' -> %O`, error)
-		)
-	})
+	fastify.listen(port).then(
+		address => {
+			console.info(`fastify listen ->`, address)
+			exithook(() => fastify.close())
+		},
+		error => console.error(`fastify listen '${port}' -> %O`, error)
+	)
 	return fastify
 })

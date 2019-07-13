@@ -13,7 +13,7 @@ export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 let ws: ISockette
 process.nextTick(async () => {
-	let url = `${process.env.EMBY_LOCAL_ADDRESS}/embywebsocket?${qs.stringify({
+	let url = `${process.env.EMBY_LAN_ADDRESS}/embywebsocket?${qs.stringify({
 		api_key: process.env.EMBY_API_KEY,
 	})}`
 	ws = new Sockette(url, {

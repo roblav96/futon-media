@@ -8,7 +8,7 @@ export async function setup() {
 	if (!process.env.EMBY_API_KEY) throw new Error(lang['!process.env.EMBY_API_KEY'])
 
 	let Info: SystemInfo
-	let ports = _.uniq([process.env.EMBY_HTTP_PORT, '8096', '18096']).filter(Boolean)
+	let ports = _.compact(_.uniq([process.env.EMBY_HTTP_PORT, '8096', '18096']))
 	for (let port of ports) {
 		try {
 			Info = await http.client.get(`http://127.0.0.1:${port}/emby/System/Info`, {
@@ -23,14 +23,21 @@ export async function setup() {
 	_.defaults(process.env, {
 		EMBY_DATA_PATH: Info.ProgramDataPath,
 		EMBY_HTTP_PORT: `${Info.HttpServerPortNumber}`,
-		EMBY_LOCAL_ADDRESS: `http://127.0.0.1:${Info.HttpServerPortNumber}`,
-		EMBY_REMOTE_ADDRESS: Info.WanAddress,
-		PROXY_PORT: `${Info.HttpServerPortNumber + 3}`,
+		EMBY_LAN_ADDRESS: `http://127.0.0.1:${Info.HttpServerPortNumber}`,
+		EMBY_WAN_ADDRESS: Info.WanAddress,
+		EMBY_PROXY_PORT: `${Info.HttpServerPortNumber + 3}`,
 	} as Env)
 
 	process.env.EMBY_DATA_PATH = path.normalize(process.env.EMBY_DATA_PATH)
-	process.env.EMBY_LOCAL_ADDRESS = normalize(process.env.EMBY_LOCAL_ADDRESS)
-	process.env.EMBY_REMOTE_ADDRESS = normalize(process.env.EMBY_REMOTE_ADDRESS)
+	process.env.EMBY_LAN_ADDRESS = normalize(process.env.EMBY_LAN_ADDRESS)
+	process.env.EMBY_WAN_ADDRESS = normalize(process.env.EMBY_WAN_ADDRESS)
+
+	let config = Object.fromEntries(
+		Object.entries(process.env).filter(
+			([k, v]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
+		)
+	)
+	console.info(`emby config ->`, config)
 }
 
 export interface SystemInfo {

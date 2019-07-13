@@ -272,7 +272,7 @@ export const library = {
 
 	toStrmUrl(item: media.Item) {
 		let query = library.toStrmQuery(item)
-		return `${process.env.EMBY_REMOTE_ADDRESS}/strm?${qs.stringify(query as any)}`
+		return `${process.env.EMBY_WAN_ADDRESS}/strm?${qs.stringify(query)}`
 	},
 
 	async toStrmFile(item: media.Item) {
