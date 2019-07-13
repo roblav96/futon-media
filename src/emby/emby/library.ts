@@ -168,12 +168,13 @@ export const library = {
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			silent: true,
 		})) as emby.SystemConfiguration
-		if (Configuration.LibraryMonitorDelay != 1) {
-			Configuration.LibraryMonitorDelay = 1
-			console.warn(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
+		if (Configuration.LibraryMonitorDelay != 3600) {
+			Configuration.LibraryMonitorDelay = 3600
+			console.info(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
 			await emby.client.post('/System/Configuration', {
 				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 				body: Configuration,
+				silent: true,
 			})
 		}
 	},
