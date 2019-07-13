@@ -8,7 +8,7 @@ export async function setup() {
 	if (!process.env.EMBY_API_KEY) throw new Error(lang['!process.env.EMBY_API_KEY'])
 
 	let Info: SystemInfo
-	let ports = _.compact(_.uniq([process.env.EMBY_HTTP_PORT, '8096', '18096']))
+	let ports = _.uniq([process.env.EMBY_HTTP_PORT, '18096', '8096']).filter(Boolean)
 	for (let port of ports) {
 		try {
 			Info = await http.client.get(`http://127.0.0.1:${port}/emby/System/Info`, {

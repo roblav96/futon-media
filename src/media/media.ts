@@ -89,10 +89,12 @@ export class Item {
 		if (this.invalid) return true
 		if (_.isEmpty(this.main.genres)) return true
 		if (!this.main.country) return true
+		if (!this.main.overview) return true
 		if (!(this.runtime >= 10)) return true
 		if (!(this.released.valueOf() < Date.now())) return true
-		if (this.movie && (!this.ids.imdb || !this.ids.tmdb || !this.main.overview)) return true
+		if (this.movie && (!this.ids.imdb || !this.ids.tmdb)) return true
 		if (this.show && !this.ids.tvdb) return true
+		if (this.show && !this.show.first_aired) return true
 		if (this.show && !(this.show.aired_episodes > 0)) return true
 		return !this.isPopular(votes)
 	}
