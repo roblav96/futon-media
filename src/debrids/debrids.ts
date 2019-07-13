@@ -27,7 +27,19 @@ export async function cached(hashes: string[]) {
 }
 
 let queue = new pQueue({ concurrency: 1 })
-export function download(torrents: torrent.Torrent[]) {
+export function download(torrents: torrent.Torrent[], item: media.Item) {
+	torrents = torrents.filter(v => {
+		if (v.cached.length > 0) return true
+		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
+		if (v.boosts(item.S.e).bytes < utils.toBytes(`${item.gigs} GB`)) return false
+		return v.seeders * v.providers.length >= 5
+	})
+	console.log(`download torrents '${item.strm}' ->`, torrents.length, torrents.map(v => v.short))
+
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
+
+	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
+
 	return queue.add(async () => {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, torrent.short)

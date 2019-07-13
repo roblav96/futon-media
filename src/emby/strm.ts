@@ -62,14 +62,20 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 	// if (!process.DEVELOPMENT) console.log(`all torrents '${strm}' ->`, torrents.length)
 	console.log(`all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
 
-	torrents = torrents.filter(v => v.cached.length > 0)
-	if (torrents.length == 0) throw new Error(`torrents.length == 0`)
+	let cacheds = torrents.filter(v => v.cached.length > 0)
+	if (cacheds.length == 0) {
+		debrids.download(torrents, item)
+		throw new Error(`cacheds.length == 0`)
+	}
 
-	// if (!process.DEVELOPMENT) console.log(`strm torrents '${strm}' ->`, torrents.length)
-	console.log(`strm torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
+	// if (!process.DEVELOPMENT) console.log(`strm cacheds '${strm}' ->`, cacheds.length)
+	console.log(`strm cacheds '${strm}' ->`, cacheds.length, cacheds.map(v => v.short))
 
-	streamUrl = await debrids.getStreamUrl(torrents, item, Channels, Codecs)
-	if (!streamUrl) throw new Error(`getDebridStreamUrl !streamUrl -> '${strm}'`)
+	streamUrl = await debrids.getStreamUrl(cacheds, item, Channels, Codecs)
+	if (!streamUrl) {
+		debrids.download(torrents, item)
+		throw new Error(`getDebridStreamUrl !streamUrl -> '${strm}'`)
+	}
 	await db.put(skey, streamUrl, utils.duration(1, 'day'))
 
 	console.log(Date.now() - t, `👍 streamUrl '${strm}' ->`, streamUrl)

@@ -36,7 +36,7 @@ export class Session {
 		return Session.HDUsers.includes(this.UserName.toLowerCase())
 	}
 	get isSD() {
-		return this.Quality == 'SD' || this.Channels == 2
+		return this.Quality == 'SD'
 	}
 	isDevice(device: string) {
 		return utils.includes(`${this.Client} ${this.DeviceName}`, device)

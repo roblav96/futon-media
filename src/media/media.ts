@@ -56,6 +56,15 @@ export class Item {
 		else if (this.isJunk(1)) short += ' [JUNK]'
 		return short
 	}
+	get strm() {
+		let strm = this.slug
+		if (this.S.z) strm += ` S${this.S.z}`
+		if (this.E.z) strm += `E${this.E.z}`
+		return strm
+	}
+	get gigs() {
+		return _.round((this.runtime / (this.movie ? 30 : 40)) * (this.isPopular() ? 1 : 0.5), 2)
+	}
 
 	get released() {
 		if (this.movie && this.movie.released) return new Date(this.movie.released)

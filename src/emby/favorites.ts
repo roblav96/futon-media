@@ -70,30 +70,15 @@ process.nextTick(() => {
 
 let queue = new pQueue({ concurrency: 1 })
 async function download(item: media.Item, sd: boolean) {
-	let strm = item.slug
-	if (item.S.z) strm += ` S${item.S.z}`
-	if (item.E.z) strm += `E${item.E.z}`
-	let gigs = _.round((item.runtime / (item.movie ? 30 : 40)) * (item.isPopular() ? 1 : 0.5), 2)
-	console.info(`download '${strm}' ->`, utils.fromBytes(utils.toBytes(`${gigs} GB`)))
+	console.info(`download '${item.strm}' ->`, utils.fromBytes(utils.toBytes(`${item.gigs} GB`)))
 
 	let torrents = await scraper.scrapeAll(item, sd)
-	console.log(`download all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
+	console.log(`download all torrents '${item.strm}' ->`, torrents.map(v => v.short))
 
 	// let index = torrents.findIndex(({ cached }) => cached.length > 0)
 	// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
 	// else console.log(`download best cached ->`, torrents[index].short)
 
-	torrents = torrents.filter(v => {
-		if (v.cached.length > 0) return true
-		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
-		if (v.boosts(item.S.e).bytes < utils.toBytes(`${gigs} GB`)) return false
-		return v.seeders * v.providers.length >= 5
-	})
-	console.log(`download torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
-
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
-
-	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
-	await debrids.download(torrents)
-	console.info(`download '${strm}' ->`, 'DONE')
+	await debrids.download(torrents, item)
+	console.info(`download '${item.strm}' ->`, 'DONE')
 }

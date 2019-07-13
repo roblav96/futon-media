@@ -31,7 +31,7 @@
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
 		"emby:restart": "echo 'killall EmbyServer; sleep 0.3; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | bat -l ruby'",
 		"emby:del": "echo 'data/library.db* data/collections/* data/playlists/* metadata/library/* root/default/*/poster.png'",
-		"scripts:users-sync": "run-s stop assert:build; node dist/index.js --script users-sync"
+		"scripts:users-sync": "run-s build stop; node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {
 		"all-keys": "^3.1.0",
@@ -68,6 +68,7 @@
 		"matcher": "^2.0.0",
 		"mem": "^5.1.0",
 		"module-alias": "^2.2.0",
+		"mri": "^1.1.4",
 		"multimatch": "^4.0.0",
 		"node-env-dev": "^1.6.0",
 		"node-schedule": "^1.3.2",
@@ -107,6 +108,7 @@
 		"@types/levelup": "^3.1.0",
 		"@types/lodash": "^4.14.134",
 		"@types/magnet-uri": "^5.1.2",
+		"@types/mri": "^1.1.0",
 		"@types/node": "^11.13.14",
 		"@types/node-schedule": "^1.2.3",
 		"@types/pretty-bytes": "^5.1.0",
