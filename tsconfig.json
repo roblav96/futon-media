@@ -7,7 +7,6 @@
 		"lib": ["esnext"],
 		"module": "commonjs",
 		"noEmitHelpers": true,
-		"noErrorTruncation": false,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,

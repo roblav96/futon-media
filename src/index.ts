@@ -1,4 +1,4 @@
-setInterval(Function, 1 << 30) // prevent process from exiting
+setInterval(Function, 1 << 30)
 
 import 'module-alias/register'
 import 'dotenv/config'

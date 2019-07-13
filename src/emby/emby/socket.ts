@@ -20,16 +20,16 @@ process.nextTick(async () => {
 		timeout: utils.duration(4, 'second'),
 		maxAttempts: Infinity,
 		onerror({ error }) {
-			console.error(`socket onerror -> %O`, error)
+			console.error(`emby socket onerror -> %O`, error)
 			emby.Tail.destroy()
 		},
 		onclose({ code, reason }) {
-			console.warn(`socket onclose ->`, code, reason)
+			console.warn(`emby socket onclose ->`, code, reason)
 			emby.Tail.destroy()
 		},
 		onopen({ target }) {
 			let url = target.url as string
-			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
+			console.info(`emby socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
@@ -37,7 +37,7 @@ process.nextTick(async () => {
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
-			if (err) return console.error(`socket onmessage -> %O`, err)
+			if (err) return console.error(`emby socket onmessage -> %O`, err)
 			rxSocket.next(value)
 		},
 	})
@@ -46,8 +46,8 @@ process.nextTick(async () => {
 
 export const socket = {
 	send(EmbyEvent: Partial<EmbyEvent>) {
-		console.log(`socket send ->`, JSON.stringify(EmbyEvent))
-		console.log(`ws ->`, ws)
+		console.log(`emby socket send ->`, JSON.stringify(EmbyEvent))
+		console.log(`emby ws ->`, ws)
 		ws.json(EmbyEvent)
 	},
 	filter<Data>(MessageType: string) {

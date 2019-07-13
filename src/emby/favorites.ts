@@ -3,13 +3,13 @@ import * as debrids from '@/debrids/debrids'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
-import * as pQueue from 'p-queue'
+import * as realdebrid from '@/debrids/realdebrid'
 import * as Rx from '@/shims/rxjs'
 import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
-import * as realdebrid from '@/debrids/realdebrid'
+import pQueue from 'p-queue'
 
 process.nextTick(() => {
 	let rxFavorite = emby.rxHttp.pipe(

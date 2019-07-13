@@ -75,12 +75,11 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	if (votes.length > 0) {
 		means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
 	}
-	console.log(`means ->`, means)
 
 	let index = _.clamp(query.split(' ').length - 1, 0, means.length - 1)
 	let mean = means[index]
 	if (index == 0) mean *= 0.5
-	console.log(`mean ->`, mean)
+	console.log(`mean ->`, mean, `\n`, means)
 
 	items = items.filter(item => {
 		if (utils.equals(item.title, query)) {

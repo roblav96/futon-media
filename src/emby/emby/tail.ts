@@ -35,24 +35,25 @@ export class Tail {
 		Tail.reconnect()
 	}
 
-	child: execa.ExecaChildProcess
+	child: execa.ExecaChildProcess<string>
 	constructor(logfile: string) {
 		console.info(`new Tail ->`, path.basename(logfile))
-		this.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGKILL' })
+		this.child = execa.command(`tail -fn0 ${logfile}`, { killSignal: 'SIGKILL' })
 		this.child.catch(error => this.destroy())
 		this.child.stdout.on('data', (chunk: string) => {
-			chunk = `\n${_.trim((chunk || '').toString())}`
+			chunk = `\n${(chunk || '').toString().trim()}`
 			let lines = chunk.split(/\n\d{4}-\d{2}-\d{2}\s/g)
 			for (let line of lines) {
-				line = _.trim(line || '')
+				line = (line || '').trim()
 				line && rxTail.next(line)
 			}
 		})
+		Tail.reconnect.cancel()
 	}
 
 	destroy = _.once(() => {
 		console.warn(`tail destroy ->`, 'SIGKILL')
-		this.child.kill('SIGKILL')
+		this.child.cancel()
 		Tail.reconnect()
 	})
 }

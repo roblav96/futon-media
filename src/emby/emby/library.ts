@@ -5,13 +5,13 @@ import * as isIp from 'is-ip'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
-import * as pQueue from 'p-queue'
 import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import db from '@/adapters/db'
+import pQueue from 'p-queue'
 
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
