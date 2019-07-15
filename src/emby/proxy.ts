@@ -11,12 +11,17 @@ const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 
 fastify.all('/emby/*', async (request, reply) => {
 	console.warn(`/emby ->`, request.raw.url)
-	let url = request.raw.url.slice('/emby'.length)
+	console.log(`request ->`, request)
+	let url = request.raw.url.slice('/emby/'.length - 1)
 	console.log(`url ->`, url)
-	let response = await emby.client.request({
-		url,
-		method: request.raw.method.toUpperCase() as any,
-	})
-	console.log(`response ->`, response.data)
+	try {
+		let response = await emby.client.request({
+			url,
+			method: request.raw.method.toUpperCase() as any,
+		})
+		console.log(`response ->`, response.data)
+	} catch (error) {
+		console.error(`proxy -> %O`, error)
+	}
 	reply.redirect(301, `${process.env.EMBY_LAN_ADDRESS}${request.raw.url}`)
 })

@@ -63,7 +63,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+		// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
 		(await import('@/scrapers/providers/zooqle')).Zooqle,
 	] as typeof Scraper[]

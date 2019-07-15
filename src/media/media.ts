@@ -368,7 +368,7 @@ export class Item {
 			})
 		)
 		if (this.isDaily) {
-			return [utils.byLength(_.uniq([...slugs, ...this.aliases]))[0]]
+			return [utils.byLength(_.uniq(slugs))[0]]
 		}
 		if (this.movie) {
 			slugs = slugs.map(v => [v, _.last(utils.colons(v))]).flat()
