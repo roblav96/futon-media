@@ -63,15 +63,15 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	results.push(...(await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })))
 
 	results = trakt.uniqWith(results.filter(Boolean))
-	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(1))
+	let items = results.map(v => new media.Item(v)).filter(v => !v.isJunk(0))
 	items.sort((a, b) => b.main.votes - a.main.votes)
 	console.log(`results ->`, items.map(v => v.short))
 
 	items = items.filter(v => utils.contains(utils.squash(v.title), squash))
 	console.log(`matches ->`, items.map(v => v.short))
 
+	let means = [0]
 	let votes = items.map(v => v.main.votes).filter(Boolean)
-	let means = [] as number[]
 	if (votes.length > 0) {
 		means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
 	}
@@ -83,7 +83,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	items = items.filter(item => {
 		if (utils.equals(item.title, query)) {
-			return !utils.commons(query) ? !item.isJunk(_.last(means)) : true
+			return !utils.commons(query) || item.movie ? !item.isJunk(_.last(means)) : true
 		}
 		if (!query.includes(' ') && !utils.commons(query)) return false
 		// if (spaces >= 2 && utils.startsWith(item.title, query)) return true

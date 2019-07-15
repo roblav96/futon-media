@@ -53,7 +53,7 @@ export class Item {
 		let episodes = this.show ? ` [${this.show.aired_episodes.toLocaleString()} eps] ` : ' '
 		let short = `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
 		if (this.invalid) short += ' [INVALID]'
-		else if (this.isJunk(1)) short += ' [JUNK]'
+		else if (this.isJunk(0)) short += ' [JUNK]'
 		return short
 	}
 	get strm() {
@@ -88,12 +88,16 @@ export class Item {
 	isJunk(votes = 1000) {
 		if (this.invalid) return true
 		if (_.isEmpty(this.main.genres)) return true
-		if (!this.main.country) return true
 		if (!this.main.overview) return true
+		if (!this.main.country && !this.main.language) return true
+		if (this.main.country && this.main.language) {
+			if (this.main.country != 'us' && this.main.language != 'en') return true
+		}
 		if (!(this.runtime >= 10)) return true
 		if (!(this.released.valueOf() < Date.now())) return true
 		if (this.movie && (!this.ids.imdb || !this.ids.tmdb)) return true
 		if (this.show && !this.ids.tvdb) return true
+		if (this.show && !this.show.network) return true
 		if (this.show && !this.show.first_aired) return true
 		if (this.show && !(this.show.aired_episodes > 0)) return true
 		return !this.isPopular(votes)
@@ -368,7 +372,7 @@ export class Item {
 		}
 		if (this.movie) {
 			slugs = slugs.map(v => [v, _.last(utils.colons(v))]).flat()
-			slugs = slugs.map(v => Item.years(v, this.years)).flat()
+			slugs = slugs.map(v => [v, ...Item.years(v, this.years)]).flat()
 			this.collection.name && slugs.push(utils.toSlug(this.collection.name))
 			slugs = slugs.filter(v => utils.commons(v))
 		}

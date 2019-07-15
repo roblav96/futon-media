@@ -22,8 +22,8 @@ process.nextTick(async () => {
 		transfers[i] = (await client.get(`/torrents/info/${transfers[i].id}`)) as Transfer
 	}
 	console.log(`RealDebrid transfers ->`, transfers)
-	// let tkeys = ['original_filename', 'progress', 'seeders']
-	// console.log(`RealDebrid transfers ->`, transfers.map(v => _.pick(v, tkeys)))
+	let tkeys = ['original_filename', 'progress', 'seeders']
+	console.log(`RealDebrid transfers ->`, transfers.map(v => _.pick(v, tkeys)))
 })
 
 export class RealDebrid extends debrid.Debrid<Transfer> {

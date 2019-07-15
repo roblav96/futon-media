@@ -5,6 +5,7 @@ import * as ffprobe from '@/adapters/ffprobe'
 import * as filters from '@/scrapers/filters'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
+import * as path from 'path'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
@@ -79,6 +80,7 @@ export async function getStreamUrl(
 				continue
 			}
 			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
+			files = files.filter(v => !path.dirname(v.path.toLowerCase()).includes('extras'))
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, torrent.short)
 				next = true

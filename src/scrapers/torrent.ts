@@ -63,7 +63,7 @@ export class Torrent {
 	constructor(result: scraper.Result) {
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 		magnet.xt = magnet.xt.toLowerCase()
-		magnet.dn = result.name
+		magnet.dn = result.name//.replace(/\s/g, '+')
 		magnet.tr = trackers.GOOD
 		result.magnet = `magnet:?${qs.stringify(
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
