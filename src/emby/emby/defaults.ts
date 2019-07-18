@@ -56,7 +56,7 @@ export const defaults = {
 		EnableAudioPlaybackTranscoding: false,
 		EnableContentDeletion: false,
 		EnableContentDeletionFromFolders: [],
-		EnableContentDownloading: false,
+		EnableContentDownloading: true,
 		EnableLiveTvAccess: false,
 		EnableLiveTvManagement: false,
 		EnableMediaConversion: false,

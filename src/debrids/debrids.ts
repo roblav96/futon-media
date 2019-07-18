@@ -81,6 +81,7 @@ export async function getStreamUrl(
 			}
 			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
 			files = files.filter(v => !path.dirname(v.path.toLowerCase()).includes('extras'))
+			files = files.filter(v => !path.dirname(v.path.toLowerCase()).includes('sample'))
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, torrent.short)
 				next = true
