@@ -47,7 +47,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		(await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		(await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
+		// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		// (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
 		(await import('@/scrapers/providers/glotorrents')).GloTorrents,
