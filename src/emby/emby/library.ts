@@ -168,8 +168,8 @@ export const library = {
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			silent: true,
 		})) as emby.SystemConfiguration
-		if (Configuration.LibraryMonitorDelay != 3600) {
-			Configuration.LibraryMonitorDelay = 3600
+		if (Configuration.LibraryMonitorDelay != 1) {
+			Configuration.LibraryMonitorDelay = 1
 			console.info(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
 			await emby.client.post('/System/Configuration', {
 				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
@@ -324,21 +324,21 @@ export const library = {
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
 			console.log(`addAll Creations ->`, Creations.length)
-			let Tasks = (await emby.client.get('/ScheduledTasks', {
-				silent: true,
-			})) as ScheduledTasksInfo[]
-			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
-			if (State != 'Idle') {
-				await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
-				await utils.pTimeout(1000)
-			}
+			// let Tasks = (await emby.client.get('/ScheduledTasks', {
+			// 	silent: true,
+			// })) as ScheduledTasksInfo[]
+			// let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
+			// if (State != 'Idle') {
+			// 	await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
+			// 	await utils.pTimeout(1000)
+			// }
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
 				silent: true,
 				timeout: utils.duration(1, 'minute'),
 			})
-			await library.refresh()
+			// await library.refresh()
 		}
 
 		let t = Date.now()
@@ -350,6 +350,7 @@ export const library = {
 			}
 			// console.log(`addAll while pItems ->`, pItems.length)
 			for (let i = pItems.length; i--; ) {
+				if (i < pItems.length - 1) await utils.pRandom(100)
 				let pItem = pItems[i]
 				let Item = await pItem()
 				if (!Item) continue
@@ -358,7 +359,7 @@ export const library = {
 			}
 			if (pItems.length > 0) await utils.pRandom(3000)
 		}
-		console.log(Date.now() - t, `addAll ${Items.length} Items`)
+		console.log(Date.now() - t, `addAll ${Items.length} Items ->`, 'DONE')
 
 		// let Sessions = await emby.sessions.get()
 		// for (let Session of Sessions) {
