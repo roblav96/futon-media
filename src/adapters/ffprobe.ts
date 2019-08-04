@@ -4,13 +4,8 @@ import * as execa from 'execa'
 import * as fastParse from 'fast-json-parse'
 import * as ms from 'pretty-ms'
 import * as utils from '@/utils/utils'
-import { path as ffpath } from 'ffprobe-static-next'
+import * as ffpath from 'ffprobe-binaries'
 
-const defaults = {
-	chapters: false,
-	format: false,
-	streams: true,
-}
 export async function probe(
 	streamUrl: string,
 	options: { chapters?: boolean; format?: boolean; streams?: boolean }

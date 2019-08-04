@@ -70,7 +70,7 @@ export const defaults = {
 		EnableSubtitleManagement: false,
 		EnableSyncTranscoding: false,
 		EnableUserPreferenceAccess: false,
-		EnableVideoPlaybackTranscoding: false,
+		EnableVideoPlaybackTranscoding: true,
 		EnabledChannels: [],
 		EnabledDevices: [],
 		EnabledFolders: [],

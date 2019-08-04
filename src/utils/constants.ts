@@ -28,6 +28,7 @@ export const UPLOADERS = [
 	'esir',
 	'etrg',
 	'exkinoray',
+	'geckos',
 	'grym',
 	'kralimarko',
 	'memento',
@@ -36,7 +37,9 @@ export const UPLOADERS = [
 	'rovers',
 	'sigma',
 	'sparks',
+	'swtyblz',
 	'tasted',
+	'terminal',
 	'trollhd',
 ]
 
