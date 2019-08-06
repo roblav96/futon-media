@@ -42,6 +42,7 @@ export class Eztv extends scraper.Scraper {
 				}
 			})
 			results.push(...torrents)
+			if (page >= 3) break
 			if (results.length > 0 && torrents.length == 0) break
 			if (response.torrents_count > page * 100) page++
 			else break

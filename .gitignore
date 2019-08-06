@@ -1,8 +1,9 @@
 dist
-node_modules
 logs
+node_modules
 
 *.log*
+.*cache*
 .*env*
 .*local*
 .DS_Store

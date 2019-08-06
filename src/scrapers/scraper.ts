@@ -33,6 +33,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 
 	/**
 		TODO:
+		- Torrent Search Web | https://bittorrentsearchweb.com
 		- PopcornTime | tv-v2.api-fetch.website | plugin.video.gaia
 		- PopcornTime | api.apidomain.info | tv-futon-media.paw
 		- Btsow | btsow.pw

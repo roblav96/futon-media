@@ -30,6 +30,7 @@ export const UPLOADERS = [
 	'exkinoray',
 	'geckos',
 	'grym',
+	'inspirit',
 	'kralimarko',
 	'memento',
 	'publichd',
