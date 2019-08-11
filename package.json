@@ -1,7 +1,7 @@
 {
 	"name": "futon-media",
 	"version": "1.0.0",
-	"description": "Instantly stream movies and TV shows for Emby Media",
+	"description": "Instantly stream movies and TV shows on Emby Media",
 	"main": "dist/index.js",
 	"files": [
 		"dist"
@@ -21,8 +21,8 @@
 		"repo": "git pull; echo; git reset --hard",
 		"build": "tsc || true",
 		"assert:build": "test ! -d dist; run-s build",
-		"restart": "run-s stop; forever start forever.json; tail -fn0 ~/.forever/futon-media.log",
-		"logs": "tail -fn1000 ~/.forever/futon-media.log",
+		"restart": "run-s stop; forever start forever.json; tail -f -n 0 ~/.forever/futon-media.log",
+		"logs": "tail -f -n 1000 ~/.forever/futon-media.log",
 		"del": "del dist node_modules",
 		"stop": "forever stop futon-media || true",
 		"start": "del dist; run-p --silent watch:*",
@@ -30,7 +30,7 @@
 		"watch:node": "just-wait --silent --pattern dist; sleep 1; nodemon --quiet",
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
 		"emby:restart": "echo 'killall EmbyServer; sleep 0.3; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | bat -l ruby'",
-		"emby:del": "echo 'data/library.db* data/collections/* data/playlists/* metadata/library/* root/default/*/poster.png'",
+		"emby:del": "echo 'rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/root/default/*/poster.png; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*'",
 		"scripts:users-sync": "run-s build stop; node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {

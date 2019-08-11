@@ -36,12 +36,15 @@ export const UPLOADERS = [
 	'publichd',
 	'rartv',
 	'rovers',
+	'shitbox',
 	'sigma',
+	'sinners',
 	'sparks',
 	'swtyblz',
 	'tasted',
 	'terminal',
 	'trollhd',
+	'trolluhd',
 ]
 
 export const VIDEOS = ['avi', 'm4a', 'mkv', 'mov', 'mp4', 'mpeg', 'webm', 'wmv']

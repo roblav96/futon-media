@@ -168,8 +168,8 @@ export const library = {
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			silent: true,
 		})) as emby.SystemConfiguration
-		if (Configuration.LibraryMonitorDelay != 1) {
-			Configuration.LibraryMonitorDelay = 1
+		if (Configuration.LibraryMonitorDelay != 3600) {
+			Configuration.LibraryMonitorDelay = 3600
 			console.info(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
 			await emby.client.post('/System/Configuration', {
 				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
@@ -225,6 +225,11 @@ export const library = {
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
 			if (result) return new media.Item(result)
 		}
+	},
+
+	async refreshItem(ItemId: string) {
+		let Item = await library.byItemId(ItemId)
+		
 	},
 
 	pathIds(Path: string) {
@@ -319,26 +324,26 @@ export const library = {
 
 		let Updates = (await pAll(items.map(v => () => library.add(v)), { concurrency: 1 })).flat()
 		Updates.sort((a, b) => utils.alphabetically(a.UpdateType, b.UpdateType))
-		// console.log(`addAll Updates ->`, Updates.length, Updates)
+		console.log(`addAll Updates ->`, Updates.length)
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
-			console.log(`addAll Creations ->`, Creations.length)
-			// let Tasks = (await emby.client.get('/ScheduledTasks', {
-			// 	silent: true,
-			// })) as ScheduledTasksInfo[]
-			// let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
-			// if (State != 'Idle') {
-			// 	await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
-			// 	await utils.pTimeout(1000)
-			// }
+			console.info(`addAll Creations ->`, Creations.length)
+			let Tasks = (await emby.client.get('/ScheduledTasks', {
+				silent: true,
+			})) as ScheduledTasksInfo[]
+			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
+			if (State != 'Idle') {
+				await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
+				await utils.pTimeout(1000)
+			}
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
 				silent: true,
 				timeout: utils.duration(1, 'minute'),
 			})
-			// await library.refresh()
+			await library.refresh()
 		}
 
 		let t = Date.now()
