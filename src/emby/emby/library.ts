@@ -146,7 +146,7 @@ export const library = {
 		})) as ScheduledTasksInfo[]
 		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 		if (State != 'Idle') {
-			await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
+			await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
 			await utils.pTimeout(1000)
 		}
 	},
@@ -379,7 +379,6 @@ export const library = {
 					ReplaceAllImages: 'false',
 					ReplaceAllMetadata: 'false',
 				},
-				silent: true,
 			})
 			// await utils.pRandom(1000)
 			while (true) {
