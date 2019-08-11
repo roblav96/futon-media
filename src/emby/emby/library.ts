@@ -367,7 +367,7 @@ export const library = {
 			if (pItems.length > 0) await utils.pRandom(1000)
 		}
 
-		if (Creations.length > 0) await library.unrefresh()
+		// if (Creations.length > 0) await library.unrefresh()
 		for (let Item of Items) {
 			let Creation = Creations.find(v => v.Path.startsWith(Item.Path))
 			if (!Creation) continue
