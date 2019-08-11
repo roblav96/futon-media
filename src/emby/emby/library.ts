@@ -386,7 +386,7 @@ export const library = {
 				await utils.pRandom(100)
 				let Created = await library.byItemId(Item.Id)
 				if (Created.Name != Item.Name) {
-					console.log(`Creation Item ->`, Created.Name)
+					console.log(`Creation Item ->`, Item.Name)
 					break
 				}
 			}
