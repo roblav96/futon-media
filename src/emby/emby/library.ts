@@ -140,6 +140,16 @@ export const library = {
 			timeout: utils.duration(1, 'minute'),
 		})
 	},
+	async unrefresh() {
+		let Tasks = (await emby.client.get('/ScheduledTasks', {
+			silent: true,
+		})) as ScheduledTasksInfo[]
+		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
+		if (State != 'Idle') {
+			await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
+			await utils.pTimeout(1000)
+		}
+	},
 
 	folders: { movies: '', shows: '' },
 	async setFolders() {
@@ -229,7 +239,6 @@ export const library = {
 
 	async refreshItem(ItemId: string) {
 		let Item = await library.byItemId(ItemId)
-		
 	},
 
 	pathIds(Path: string) {
@@ -329,14 +338,7 @@ export const library = {
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
 			console.info(`addAll Creations ->`, Creations.length)
-			let Tasks = (await emby.client.get('/ScheduledTasks', {
-				silent: true,
-			})) as ScheduledTasksInfo[]
-			let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
-			if (State != 'Idle') {
-				await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
-				await utils.pTimeout(1000)
-			}
+			await library.unrefresh()
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
@@ -362,9 +364,33 @@ export const library = {
 				Items.push(Item)
 				pItems.splice(i, 1)
 			}
-			if (pItems.length > 0) await utils.pRandom(3000)
+			if (pItems.length > 0) await utils.pRandom(1000)
 		}
-		console.log(Date.now() - t, `addAll ${Items.length} Items ->`, 'DONE')
+
+		if (Creations.length > 0) await library.unrefresh()
+		for (let Item of Items) {
+			let Creation = Creations.find(v => v.Path.startsWith(Item.Path))
+			if (!Creation) continue
+			await emby.client.post(`/Items/${Item.Id}/Refresh`, {
+				query: {
+					ImageRefreshMode: 'Default',
+					MetadataRefreshMode: 'Default',
+					Recursive: 'true',
+					ReplaceAllImages: 'false',
+					ReplaceAllMetadata: 'false',
+				},
+				silent: true,
+			})
+			// await utils.pRandom(1000)
+			while (true) {
+				await utils.pRandom(100)
+				let Created = await library.byItemId(Item.Id)
+				if (Created.Name != Item.Name) {
+					console.log(`Creation Item ->`, Created.Name)
+					break
+				}
+			}
+		}
 
 		// let Sessions = await emby.sessions.get()
 		// for (let Session of Sessions) {
@@ -379,6 +405,7 @@ export const library = {
 		// 	})
 		// }
 
+		console.info(Date.now() - t, `addAll ${Items.length} Items ->`, 'DONE')
 		return Items
 	},
 }

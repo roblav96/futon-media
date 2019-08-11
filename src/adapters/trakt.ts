@@ -11,7 +11,7 @@ export const client = new Http({
 		'trakt-api-version': '2',
 	},
 	query: { extended: 'full' },
-	retries: [408, 502],
+	retries: [408, 502, 504],
 	afterResponse: {
 		append: [
 			async (options, response) => {
