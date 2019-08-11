@@ -95,13 +95,17 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
 		let name = ` ${v.name} `
-		let defs = ['720p', '480p', '360p', '720', '480', '360', 'avi']
-		if (defs.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		let sds = ['720p', '480p', '360p', '720', '480', '360', 'avi']
+		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (name.includes(' proper ')) v.boost *= 1.25
 		if (sd) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
-			if (v.providers.includes('Yts')) v.boost *= 2
+			if (v.providers.includes('Yts')) {
+				v.boost *= 2
+				let hds = ['1080p', '1080']
+				if (hds.find(vv => name.includes(` ${vv} `))) v.boost *= 2
+			}
 			continue
 		}
 		let bits = ['8bit', '8 bit', '10bit', '10 bit']
