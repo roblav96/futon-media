@@ -380,6 +380,7 @@ export const library = {
 					ReplaceAllImages: 'false',
 					ReplaceAllMetadata: 'false',
 				},
+				silent: true,
 			})
 			// await utils.pRandom(1000)
 			while (true) {
