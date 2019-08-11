@@ -357,7 +357,7 @@ export const library = {
 			}
 			// console.log(`addAll while pItems ->`, pItems.length)
 			for (let i = pItems.length; i--; ) {
-				if (i < pItems.length - 1) await utils.pRandom(100)
+				if (i < pItems.length - 1) await utils.pRandom(300)
 				let pItem = pItems[i]
 				let Item = await pItem()
 				if (!Item) continue
@@ -371,6 +371,7 @@ export const library = {
 		for (let Item of Items) {
 			let Creation = Creations.find(v => v.Path.startsWith(Item.Path))
 			if (!Creation) continue
+			console.log(`Creation Item ->`, Item.Name)
 			await emby.client.post(`/Items/${Item.Id}/Refresh`, {
 				query: {
 					ImageRefreshMode: 'Default',
@@ -382,10 +383,10 @@ export const library = {
 			})
 			// await utils.pRandom(1000)
 			while (true) {
-				await utils.pRandom(100)
+				await utils.pRandom(300)
 				let Created = await library.byItemId(Item.Id)
 				if (Created.Name != Item.Name) {
-					console.log(`Creation Item ->`, Item.Name)
+					console.log(`Creation Created ->`, Created.Name)
 					break
 				}
 			}
