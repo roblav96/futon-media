@@ -33,7 +33,7 @@ for (let [method, color] of Object.entries({
 
 			let indicator = '◼︎'
 			if (process.DEVELOPMENT) {
-				indicator += '▶'
+				indicator += '►'
 				let site = new StackTracey()[1]
 				let stack = site.beforeParse.replace(site.file, site.fileShort)
 				ending += ` ${stack}`
