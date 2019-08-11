@@ -33,6 +33,7 @@ export const UPLOADERS = [
 	'inspirit',
 	'kralimarko',
 	'memento',
+	'mvgroup',
 	'publichd',
 	'rartv',
 	'rovers',
