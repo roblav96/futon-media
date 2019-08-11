@@ -5,7 +5,7 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'http://en.btbit.org',
+	baseUrl: 'https://en.btbit.org',
 	headers: { 'cookie': process.env.CF_BTBIT, 'user-agent': process.env.CF_UA },
 	beforeRequest: {
 		append: [

@@ -1,4 +1,5 @@
 interface Env {
+	CF_BITTORRENTSEARCHWEB: string
 	CF_BTBIT: string
 	CF_DIGBIT: string
 	CF_KATCR: string

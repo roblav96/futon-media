@@ -44,7 +44,8 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
 		(await import('@/scrapers/providers/bitlord')).Bitlord,
-		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		(await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
 		(await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
@@ -60,7 +61,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
