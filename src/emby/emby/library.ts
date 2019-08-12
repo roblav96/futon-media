@@ -367,31 +367,31 @@ export const library = {
 			if (pItems.length > 0) await utils.pRandom(1000)
 		}
 
-		if (Creations.length > 0) await library.unrefresh()
-		for (let Item of Items) {
-			let Creation = Creations.find(v => v.Path.startsWith(Item.Path))
-			if (!Creation) continue
-			console.log(`Creation Item ->`, `[${Item.Type}]`, Item.Name)
-			await emby.client.post(`/Items/${Item.Id}/Refresh`, {
-				query: {
-					ImageRefreshMode: 'Default',
-					MetadataRefreshMode: 'Default',
-					Recursive: 'true',
-					ReplaceAllImages: 'false',
-					ReplaceAllMetadata: 'false',
-				},
-				silent: true,
-			})
-			// await utils.pRandom(1000)
-			while (true) {
-				await utils.pRandom(300)
-				let Created = await library.byItemId(Item.Id)
-				if (Created.Name != Item.Name) {
-					console.log(`Creation Created ->`, `[${Item.Type}]`, Created.Name)
-					break
-				}
-			}
-		}
+		// if (Creations.length > 0) await library.unrefresh()
+		// for (let Item of Items) {
+		// 	let Creation = Creations.find(v => v.Path.startsWith(Item.Path))
+		// 	if (!Creation) continue
+		// 	console.log(`Creation Item ->`, `[${Item.Type}]`, Item.Name)
+		// 	await emby.client.post(`/Items/${Item.Id}/Refresh`, {
+		// 		query: {
+		// 			ImageRefreshMode: 'Default',
+		// 			MetadataRefreshMode: 'Default',
+		// 			Recursive: 'true',
+		// 			ReplaceAllImages: 'false',
+		// 			ReplaceAllMetadata: 'false',
+		// 		},
+		// 		silent: true,
+		// 	})
+		// 	// await utils.pRandom(1000)
+		// 	while (true) {
+		// 		await utils.pRandom(300)
+		// 		let Created = await library.byItemId(Item.Id)
+		// 		if (Created.Name != Item.Name) {
+		// 			console.log(`Creation Created ->`, `[${Item.Type}]`, Created.Name)
+		// 			break
+		// 		}
+		// 	}
+		// }
 
 		// let Sessions = await emby.sessions.get()
 		// for (let Session of Sessions) {
