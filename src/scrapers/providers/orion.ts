@@ -40,17 +40,18 @@ export class Orion extends scraper.Scraper {
 		let response = (await client.get(`/`, {
 			query: Object.assign(query, JSON.parse(slug)),
 		})) as Response
-		let streams = _.get(response, 'data.streams', [])
+		let streams = _.get(response, 'data.streams', []) as Stream[]
 		streams = streams.filter(stream => {
-			stream.magnet = (qs.parseUrl(stream.stream.link).query as any) as scraper.MagnetQuery
+			stream.link = stream.links.find(v => v.startsWith('magnet:?'))
+			stream.magnet = (qs.parseUrl(stream.link).query as any) as scraper.MagnetQuery
 			if (!stream.magnet.xt) return false
 			return stream.magnet.xt.startsWith('urn:btih:') && stream.magnet.xt.length > 10
 		})
 		return streams.map(stream => {
 			return {
 				bytes: stream.file.size,
-				magnet: stream.stream.link,
-				name: stream.magnet.dn || stream.file.name,
+				magnet: stream.link,
+				name: stream.file.name || stream.magnet.dn,
 				seeders: stream.stream.seeds,
 				stamp: new Date((stream.time.added || stream.time.updated) * 1000).valueOf(),
 			} as scraper.Result
@@ -76,7 +77,6 @@ interface Query {
 }
 
 interface Stream {
-	magnet: scraper.MagnetQuery
 	access: {
 		direct: boolean
 		offcloud: boolean
@@ -85,8 +85,9 @@ interface Stream {
 	}
 	audio: {
 		channels: number
-		codec: string
+		codec: any
 		languages: string[]
+		system: any
 		type: string
 	}
 	file: {
@@ -96,69 +97,55 @@ interface Stream {
 		size: number
 	}
 	id: string
+	link: string
+	links: string[]
+	magnet: scraper.MagnetQuery
 	meta: {
-		edition: string
+		edition: any
 		release: string
-		uploader: string
+		uploader: any
 	}
 	popularity: {
 		count: number
 		percent: number
 	}
 	stream: {
-		hoster: string
-		link: string
+		hoster: any
+		origin: string
 		seeds: number
 		source: string
 		time: number
 		type: string
 	}
 	subtitle: {
-		languages: string[]
-		type: string
+		languages: any[]
+		type: any
 	}
 	time: {
 		added: number
 		updated: number
 	}
 	video: {
-		codec: string
-		quality: string
+		'3d': boolean
+		'codec': string
+		'quality': string
 	}
 }
 
 interface Response {
 	data: {
 		count: {
-			filtered: number
+			requested: number
+			retrieved: number
 			total: number
-		}
-		episode: {
-			id: {
-				orion: string
-			}
-			meta: {
-				title: string
-				year: number
-			}
-			number: {
-				episode: number
-				season: number
-			}
-			popularity: {
-				count: number
-				percent: number
-			}
-			time: {
-				added: number
-				updated: number
-			}
 		}
 		movie: {
 			id: {
 				imdb: string
 				orion: string
+				slug: string
 				tmdb: string
+				trakt: string
 			}
 			meta: {
 				title: string
@@ -179,29 +166,7 @@ interface Response {
 				remaining: number
 				used: number
 			}
-			total: {
-				count: number
-				links: number
-			}
-		}
-		show: {
-			id: {
-				imdb: string
-				orion: string
-				tvdb: string
-			}
-			meta: {
-				title: string
-				year: number
-			}
-			popularity: {
-				count: number
-				percent: number
-			}
-			time: {
-				added: number
-				updated: number
-			}
+			total: number
 		}
 		streams: Stream[]
 		type: string

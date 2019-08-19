@@ -245,7 +245,9 @@ export class Item {
 		if (this.show) {
 			if (this.S.t) aliases.push(this.S.t)
 			if (this.E.t) aliases.push(this.E.t)
-			aliases = aliases.map(v => [v, `${this.main.network.split(' ')[0]} ${v}`]).flat()
+			if (this.main.network) {
+				aliases = aliases.map(v => [v, `${this.main.network.split(' ')[0]} ${v}`]).flat()
+			}
 		}
 
 		aliases = aliases.map(v => [v, _.last(utils.colons(v))]).flat()
