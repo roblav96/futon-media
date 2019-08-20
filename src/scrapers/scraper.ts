@@ -133,10 +133,11 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
+			cookies: true,
+			debug: true,
 			headers: { 'content-type': 'text/html' },
 			memoize: true,
 			retries: [],
-			silent: true,
 			timeout: 10000,
 		} as http.Config)
 		return new http.Http(config)

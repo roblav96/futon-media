@@ -11,13 +11,14 @@ import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
+process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
 
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
 	body?: any
+	cookies?: boolean
 	debug?: boolean
 	form?: any
 	memoize?: boolean
@@ -56,6 +57,8 @@ export class Http {
 		retries: [408],
 		timeout: Http.timeouts[0],
 	} as Config
+
+	private cookies = {} as Record<string, string>
 
 	constructor(public config = {} as Config) {
 		_.defaults(this.config, Http.defaults)
@@ -119,6 +122,22 @@ export class Http {
 			options.body = qs.stringify(options.form)
 		}
 
+		if (options.cookies && _.size(this.cookies)) {
+			let cookied = options.headers['cookie'] || ''
+			
+			options.headers['cookie'] = options.headers['cookie'] || ''
+			options.headers['cookie'] = Object.entries(this.cookies)
+				.map(([k, v]) => {
+					return `${k}=${v}`
+				})
+				.join('; ')
+			options.headers['cookie'] = this.cookies
+			console.warn(
+				`options.headers['cookie'] ->`,
+				JSON.stringify(options.headers['cookie'], null, 4)
+			)
+		}
+
 		if (!options.silent) {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
@@ -172,6 +191,12 @@ export class Http {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
 		}
 
+		if (options.cookies && _.isArray(response.headers['set-cookie'])) {
+			response.headers['set-cookie'].forEach(v => {
+				_.merge(this.cookies, _.omit(cookie.parse(v), COOKIE_KEYS))
+			})
+		}
+
 		if (options.afterResponse) {
 			let { prepend = [], append = [] } = options.afterResponse
 			for (let hook of _.concat(prepend, append)) {
@@ -203,3 +228,17 @@ export class Http {
 }
 
 export const client = new Http()
+
+const COOKIE_KEYS = [
+	'creation',
+	'creationIndex',
+	'domain',
+	'expires',
+	'extensions',
+	'httpOnly',
+	'key',
+	'maxAge',
+	'path',
+	'secure',
+	'value',
+]
