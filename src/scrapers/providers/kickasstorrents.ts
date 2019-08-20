@@ -9,10 +9,12 @@ import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://kat.li',
+	headers: { cookie: 'self=true' },
 })
 
-export class Katli extends scraper.Scraper {
-	sorts = ['size', 'time_add']
+export class KickassTorrents extends scraper.Scraper {
+	sorts = ['size', 'time_add', 'seeders']
+	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
 		let type = this.item.show ? 'tv' : `${this.item.type}s`

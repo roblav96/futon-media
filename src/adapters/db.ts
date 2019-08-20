@@ -15,7 +15,7 @@ import fastStringify from 'fast-safe-stringify'
 export class Db {
 	level: levelup.LevelUp<leveldown.LevelDown>
 
-	constructor(name: string) {
+	constructor(public name: string) {
 		name = path.basename(name)
 		let pkg = pkgup.sync({ cwd: __dirname })
 		let location = path.join(xdgBasedir.cache, pkg.package.name, name)
@@ -70,7 +70,7 @@ export class Db {
 	async flush(pattern: string) {
 		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
 		if (keys.length == 0) return
-		console.warn(`[DB] flush '${pattern}' ->`, keys.sort())
+		console.warn(`[DB] ${this.name} flush '${pattern}' ->`, keys.sort())
 		await Promise.all(keys.map(key => this.del(key)))
 	}
 }

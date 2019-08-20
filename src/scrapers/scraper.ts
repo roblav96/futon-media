@@ -43,31 +43,32 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
-		(await import('@/scrapers/providers/bitlord')).Bitlord,
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		(await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
+		// (await import('@/scrapers/providers/bitlord')).Bitlord,
+		// // (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
 		// (await import('@/scrapers/providers/btbit')).BtBit,
-		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
-		(await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
-		(await import('@/scrapers/providers/glotorrents')).GloTorrents,
-		(await import('@/scrapers/providers/idope')).iDope,
-		(await import('@/scrapers/providers/katli')).Katli,
-		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
-		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
-		(await import('@/scrapers/providers/yts')).Yts,
-		(await import('@/scrapers/providers/zooqle')).Zooqle,
+		// (await import('@/scrapers/providers/btdb')).Btdb,
+		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+		// // (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
+		// // (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
+		// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
+		// (await import('@/scrapers/providers/idope')).iDope,
+		(await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
+		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/rarbg')).Rarbg,
+		// // (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		// // (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		// (await import('@/scrapers/providers/yts')).Yts,
+		// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	] as typeof Scraper[]
 
 	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()
@@ -83,7 +84,9 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		return true
 	})
 	torrents = torrents.filter(v => v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
-	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+
+	console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => filters.torrents(v, item))
