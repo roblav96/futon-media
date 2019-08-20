@@ -18,7 +18,7 @@
 	},
 	"scripts": {
 		"deploy": "run-s repo build restart",
-		"repo": "git pull; echo; git reset --hard",
+		"repo": "git pull; echo; git reset --hard origin/master",
 		"build": "tsc || true",
 		"assert:build": "test ! -d dist; run-s build",
 		"restart": "run-s stop; forever start forever.json; tail -f -n 0 ~/.forever/futon-media.log",
