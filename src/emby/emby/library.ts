@@ -158,6 +158,7 @@ export const library = {
 		})) as VirtualFolder[]
 		library.folders.movies = Folders.find(v => v.CollectionType == 'movies').Locations[0]
 		library.folders.shows = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
+		console.log(`library.folders ->`, library.folders)
 	},
 
 	// async setCollections() {
@@ -338,14 +339,37 @@ export const library = {
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
 			console.log(`addAll Creations ->`, Creations.length)
-			await library.unrefresh()
+			// await library.unrefresh()
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
 				silent: true,
 				timeout: utils.duration(1, 'minute'),
 			})
-			await library.refresh()
+			// await library.refresh()
+
+			await emby.client.post('/Items/f137a2dd21bbc1b99aa5c0f6bf02a805/Refresh', {
+				query: {
+					Recursive: 'true',
+					ImageRefreshMode: 'Default',
+					MetadataRefreshMode: 'Default',
+					ReplaceAllImages: 'false',
+					ReplaceAllMetadata: 'false',
+				},
+				retries: [],
+				timeout: utils.duration(1, 'minute'),
+			})
+			await emby.client.post('/Items/6c2a057148b4d7c20a207c789aba6d07/Refresh', {
+				query: {
+					Recursive: 'true',
+					ImageRefreshMode: 'Default',
+					MetadataRefreshMode: 'Default',
+					ReplaceAllImages: 'false',
+					ReplaceAllMetadata: 'false',
+				},
+				retries: [],
+				timeout: utils.duration(1, 'minute'),
+			})
 		}
 
 		let t = Date.now()

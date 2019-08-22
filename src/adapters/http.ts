@@ -1,7 +1,6 @@
-export { HttpieOptions, HttpieResponse } from '@/shims/httpie'
 import * as _ from 'lodash'
 import * as http from 'http'
-import * as httperrors from 'http-errors'
+import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
 import * as pDelay from 'delay'
 import * as qs from '@/shims/query-string'
@@ -18,7 +17,6 @@ export interface Config extends http.RequestOptions {
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
 	body?: any
-	cookies?: boolean
 	debug?: boolean
 	form?: any
 	memoize?: boolean
@@ -57,8 +55,6 @@ export class Http {
 		retries: [408],
 		timeout: Http.timeouts[0],
 	} as Config
-
-	private cookies = {} as Record<string, string>
 
 	constructor(public config = {} as Config) {
 		_.defaults(this.config, Http.defaults)
@@ -122,22 +118,6 @@ export class Http {
 			options.body = qs.stringify(options.form)
 		}
 
-		if (options.cookies && _.size(this.cookies)) {
-			let cookied = options.headers['cookie'] || ''
-			
-			options.headers['cookie'] = options.headers['cookie'] || ''
-			options.headers['cookie'] = Object.entries(this.cookies)
-				.map(([k, v]) => {
-					return `${k}=${v}`
-				})
-				.join('; ')
-			options.headers['cookie'] = this.cookies
-			console.warn(
-				`options.headers['cookie'] ->`,
-				JSON.stringify(options.headers['cookie'], null, 4)
-			)
-		}
-
 		if (!options.silent) {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
@@ -158,7 +138,7 @@ export class Http {
 				(error: HTTPError) => {
 					if (_.isFinite(error.statusCode)) {
 						if (!_.isString(error.statusMessage)) {
-							let message = httperrors[error.statusCode]
+							let message = HttpErrors[error.statusCode]
 							error.statusMessage = message ? message.name : 'ok'
 						}
 						if (options.retries.includes(error.statusCode)) {
@@ -189,12 +169,6 @@ export class Http {
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
-		}
-
-		if (options.cookies && _.isArray(response.headers['set-cookie'])) {
-			response.headers['set-cookie'].forEach(v => {
-				_.merge(this.cookies, _.omit(cookie.parse(v), COOKIE_KEYS))
-			})
 		}
 
 		if (options.afterResponse) {
@@ -228,17 +202,3 @@ export class Http {
 }
 
 export const client = new Http()
-
-const COOKIE_KEYS = [
-	'creation',
-	'creationIndex',
-	'domain',
-	'expires',
-	'extensions',
-	'httpOnly',
-	'key',
-	'maxAge',
-	'path',
-	'secure',
-	'value',
-]
