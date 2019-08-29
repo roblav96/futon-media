@@ -14,8 +14,8 @@ import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
 
 export const debrids = {
-	realdebrid: RealDebrid,
 	premiumize: Premiumize,
+	// realdebrid: RealDebrid,
 	// offcloud: Offcloud,
 }
 
@@ -29,6 +29,8 @@ export async function cached(hashes: string[]) {
 
 let queue = new pQueue({ concurrency: 1 })
 export function download(torrents: torrent.Torrent[], item: media.Item) {
+	if (process.DEVELOPMENT) throw new Error(`RealDebrid disabled`)
+
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)

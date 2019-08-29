@@ -10,7 +10,7 @@ import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
+// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
 
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>

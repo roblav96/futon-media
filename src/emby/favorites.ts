@@ -18,17 +18,17 @@ process.nextTick(() => {
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId }) => {
 		let Session = await emby.sessions.byUserId(UserId)
-		// if (!Session.isHD) return
+		if (!Session.isHD) return
 
 		let Item = await emby.library.byItemId(ItemId)
 		if (!Item || !['Movie', /** 'Series', */ 'Episode'].includes(Item.Type)) return
 
-		let actives = (await realdebrid.client.get('/torrents/activeCount', {
-			silent: true,
-		})) as realdebrid.ActiveCount
-		if (actives.nb >= _.ceil(actives.limit * 0.8)) {
-			throw new Error(`RealDebrid actives ${actives.nb} >= ${actives.limit}`)
-		}
+		// let actives = (await realdebrid.client.get('/torrents/activeCount', {
+		// 	silent: true,
+		// })) as realdebrid.ActiveCount
+		// if (actives.nb >= _.ceil(actives.limit * 0.8)) {
+		// 	throw new Error(`RealDebrid actives ${actives.nb} >= ${actives.limit}`)
+		// }
 
 		let item = await emby.library.item(Item.Path, Item.Type)
 

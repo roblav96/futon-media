@@ -2,10 +2,13 @@ import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
-import lang from '@/lang/en-US'
 
 export async function setup() {
-	if (!process.env.EMBY_API_KEY) throw new Error(lang['!process.env.EMBY_API_KEY'])
+	if (!process.env.EMBY_API_KEY) {
+		throw new Error(
+			`Undefined EMBY_API_KEY -> Creating an API Key -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`
+		)
+	}
 
 	let Info: SystemInfo
 	let ports = _.uniq([process.env.EMBY_HTTP_PORT, '18096', '8096']).filter(Boolean)
@@ -37,7 +40,7 @@ export async function setup() {
 			([k, v]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
 		)
 	)
-	console.info(`emby config ->`, config)
+	// console.info(`emby config ->`, config)
 }
 
 export interface SystemInfo {

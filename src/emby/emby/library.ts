@@ -158,7 +158,6 @@ export const library = {
 		})) as VirtualFolder[]
 		library.folders.movies = Folders.find(v => v.CollectionType == 'movies').Locations[0]
 		library.folders.shows = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
-		console.log(`library.folders ->`, library.folders)
 	},
 
 	// async setCollections() {

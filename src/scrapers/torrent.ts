@@ -45,12 +45,14 @@ export class Torrent {
 	}
 	get json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
-		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
+		let minify = qs.stringify(
+			{ xt: magnet.xt, dn: magnet.dn.replace(/\s/g, '+') },
+			{ encode: false, sort: false }
+		)
 		return utils.compact({
 			age: this.age,
 			boost: this.boost,
 			cached: this.cached.join(', '),
-			// magnet: this.magnet,
 			magnet: `magnet:?${minify}`,
 			name: this.name,
 			packs: this.packs,
@@ -63,8 +65,8 @@ export class Torrent {
 	constructor(result: scraper.Result) {
 		let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
 		magnet.xt = magnet.xt.toLowerCase()
-		magnet.dn = result.name//.replace(/\s/g, '+')
-		magnet.tr = trackers.GOOD
+		magnet.dn = result.name
+		magnet.tr = trackers.TRACKERS
 		result.magnet = `magnet:?${qs.stringify(
 			{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
 			{ encode: false, sort: false }
