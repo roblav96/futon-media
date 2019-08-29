@@ -1,7 +1,6 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrids from '@/debrids/debrids'
-import * as magneturi from 'magnet-uri'
 import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
 import * as trackers from '@/scrapers/trackers'

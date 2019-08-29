@@ -15,6 +15,5 @@ async function start() {
 	await import('@/emby/proxy')
 	await import('@/emby/search')
 	await import('@/emby/strm')
-	await import('@/scrapers/discovery')
 }
 process.nextTick(() => start().catch(error => console.error(`start -> %O`, error)))

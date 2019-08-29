@@ -1,9 +1,6 @@
-import * as _ from 'lodash'
 import * as debrid from '@/debrids/debrid'
 import * as http from '@/adapters/http'
-import * as magneturi from 'magnet-uri'
 import * as pAll from 'p-all'
-import * as path from 'path'
 import * as utils from '@/utils/utils'
 
 export const client = new http.Http({

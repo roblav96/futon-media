@@ -1,6 +1,4 @@
-import * as magneturi from 'magnet-uri'
-import * as path from 'path'
-import * as utils from '@/utils/utils'
+import * as magnetlink from '@ctrl/magnet-link'
 
 export abstract class Debrid<Transfer = any> {
 	abstract getFiles(): Promise<File[]>
@@ -13,7 +11,7 @@ export abstract class Debrid<Transfer = any> {
 
 	use(magnet: string) {
 		this.magnet = magnet
-		let { dn, infoHash } = magneturi.decode(this.magnet)
+		let { dn, infoHash } = magnetlink.magnetDecode(this.magnet)
 		Object.assign(this, { dn, infoHash: infoHash.toLowerCase() })
 		return this
 	}

@@ -1,11 +1,9 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrids from '@/debrids/debrids'
-import * as discovery from '@/scrapers/discovery'
 import * as fastParse from 'fast-json-parse'
 import * as filters from '@/scrapers/filters'
 import * as http from '@/adapters/http'
-import * as magneturi from 'magnet-uri'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
@@ -87,9 +85,6 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	torrents = torrents.filter(v => v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
 
 	console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
-	for (let torrent of torrents) {
-		discovery.discover(torrent.json.magnet)
-	}
 	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	console.time(`torrents.filter`)
