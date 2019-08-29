@@ -18,21 +18,20 @@ export class Torrentz2 extends scraper.Scraper {
 			})
 		)
 		let results = [] as scraper.Result[]
-		$('.list p:has(a[href$="magnetlink"])').each((i, el) => {
+		$('.results dl:has(a)').each((i, el) => {
 			try {
 				let $el = $(el)
-				let $head = $el.prev()
-				let title = _.trim($head.find('a').text())
-				let href = $el.find('a[href$="magnetlink"]').attr('href')
-				let date = new Date($el.find('span:nth-of-type(4) b').text())
-				let years = new Date().getFullYear() - date.getFullYear()
-				let popularity = utils.parseInt($el.find('span:nth-of-type(5) b').text())
+				let dt = $el.find('dt').text()
+				let dta = $el.find('dt a')
+				let title = dta.text()
+				dt = dt.slice(title.length)
+				if (!dt.split(' ').includes('video')) return
 				results.push({
-					bytes: utils.toBytes($el.find('span:nth-of-type(3) b').text()),
+					bytes: utils.toBytes($el.find('dd span:nth-child(3)').text()),
 					name: title,
-					magnet: `magnet:?xt=urn:btih:${href.split('/')[1]}&dn=${title}`,
-					seeders: _.ceil(popularity / 100 / Math.max(1, years)),
-					stamp: date.valueOf(),
+					magnet: `magnet:?xt=urn:btih:${dta.attr('href').split('/')[1]}&dn=${title}`,
+					seeders: _.parseInt($el.find('dd span:nth-child(4)').text()),
+					stamp: _.parseInt($el.find('dd span:nth-child(2)').attr('title')) * 1000,
 				} as scraper.Result)
 			} catch (error) {
 				console.error(`${this.constructor.name} -> %O`, error)
