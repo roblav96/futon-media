@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as debrid from '@/debrids/debrid'
 import * as http from '@/adapters/http'
-import * as magnetlink from '@ctrl/magnet-link'
+import * as magnetlink from '@/shims/magnet-link'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as trackers from '@/scrapers/trackers'
@@ -53,7 +53,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 	}
 
 	static async download(magnet: string) {
-		let { dn, infoHash } = magnetlink.magnetDecode(magnet)
+		let { dn, infoHash } = magnetlink.decode(magnet)
 
 		let transfers = (await client.get('/torrents')) as Transfer[]
 		let transfer = transfers.find(v => v.hash.toLowerCase() == infoHash)

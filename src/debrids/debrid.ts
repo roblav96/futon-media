@@ -1,4 +1,4 @@
-import * as magnetlink from '@ctrl/magnet-link'
+import * as magnetlink from '@/shims/magnet-link'
 
 export abstract class Debrid<Transfer = any> {
 	abstract getFiles(): Promise<File[]>
@@ -11,7 +11,7 @@ export abstract class Debrid<Transfer = any> {
 
 	use(magnet: string) {
 		this.magnet = magnet
-		let { dn, infoHash } = magnetlink.magnetDecode(this.magnet)
+		let { dn, infoHash } = magnetlink.decode(this.magnet)
 		Object.assign(this, { dn, infoHash: infoHash.toLowerCase() })
 		return this
 	}

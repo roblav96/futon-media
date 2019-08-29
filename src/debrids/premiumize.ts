@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as debrid from '@/debrids/debrid'
 import * as http from '@/adapters/http'
-import * as magnetlink from '@ctrl/magnet-link'
+import * as magnetlink from '@/shims/magnet-link'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as utils from '@/utils/utils'
@@ -61,10 +61,10 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 	}
 
 	static async download(magnet: string) {
-		let { dn } = magnetlink.magnetDecode(magnet)
+		let { dn } = magnetlink.decode(magnet)
 
 		let { transfers } = (await client.post('/transfer/list')) as { transfers: Transfer[] }
-		if (transfers.find(v => utils.equals(v.name, dn as any))) {
+		if (transfers.find(v => utils.equals(v.name, dn))) {
 			console.warn(`Premiumize download transfer exists ->`, dn)
 			return true
 		}
