@@ -6,17 +6,12 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://en.btbit.org',
-	// headers: { 'cookie': process.env.CF_BTBIT, 'user-agent': process.env.CF_UA },
 })
 
 export class BtBit extends scraper.Scraper {
 	sorts = ['2', '1']
 
 	async getResults(slug: string, sort: string) {
-		// if (!process.env.CF_BTBIT) {
-		// 	console.warn(`${this.constructor.name} ->`, '!process.env.CF_BTBIT')
-		// 	return []
-		// }
 		let $ = cheerio.load(await client.get(`/list/${slug}/1-${sort}-2.html`))
 		let results = [] as scraper.Result[]
 		$('.rs:has(a[href^="magnet:?"])').each((i, el) => {

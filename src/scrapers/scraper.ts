@@ -45,8 +45,8 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		(await import('@/scrapers/providers/btbit')).BtBit,
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// (await import('@/scrapers/providers/btbit')).BtBit,
 		// (await import('@/scrapers/providers/btdb')).Btdb,
 		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
 		// // (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
@@ -143,12 +143,11 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
-			debug: true,
+			cfduid: true,
 			headers: { 'content-type': 'text/html' },
 			memoize: !process.DEVELOPMENT,
 			profile: process.DEVELOPMENT,
 			retries: [],
-			setCookie: true,
 			silent: true,
 			timeout: 10000,
 		} as http.Config)

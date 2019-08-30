@@ -11,13 +11,14 @@ import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
+// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
 
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
 	body?: any
+	cfduid?: boolean
 	debug?: boolean
 	form?: any
 	memoize?: boolean
@@ -27,7 +28,6 @@ export interface Config extends http.RequestOptions {
 	query?: Record<string, string | number | string[] | number[]>
 	redirect?: boolean
 	retries?: number[]
-	setCookie?: boolean
 	silent?: boolean
 	url?: string
 }
@@ -58,7 +58,7 @@ export class Http {
 		timeout: Http.timeouts[0],
 	} as Config
 
-	private cookies = {}
+	private cfduid = ''
 
 	constructor(public config = {} as Config) {
 		_.defaults(this.config, Http.defaults)
@@ -122,6 +122,12 @@ export class Http {
 			options.body = qs.stringify(options.form)
 		}
 
+		if (this.cfduid) {
+			let __cfduid = `__cfduid=${this.cfduid}`
+			if (options.headers['cookie']) options.headers['cookie'] += `; ${__cfduid}`
+			else options.headers['cookie'] = __cfduid
+		}
+
 		if (!options.silent) {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
@@ -175,13 +181,12 @@ export class Http {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
 		}
 
-		if (options.setCookie) {
-			// console.log(`response.headers ->`, response.headers)
-			// console.log(`response.rawHeaders ->`, response.rawHeaders)
-			// if (options.setCookie && response.headers['set-cookie']) {
-			// console.log(`response.headers['set-cookie'] ->`, response.headers['set-cookie'])
-			// let cookies = cookie.parse(response.headers['set-cookie'])
-			// console.log(`cookies ->`, cookies)
+		if (options.cfduid && _.isArray(response.headers['set-cookie'])) {
+			for (let v of response.headers['set-cookie']) {
+				let cfduid = cookie.parse(v)['__cfduid']
+				if (!cfduid) continue
+				this.cfduid = cfduid
+			}
 		}
 
 		if (options.afterResponse) {
