@@ -13,22 +13,24 @@ import fastStringify from 'fast-safe-stringify'
 import { UPLOADERS } from '@/utils/constants'
 
 export async function scrapeAll(item: media.Item, sd: boolean) {
+	if (process.DEVELOPMENT) sd = false
+
 	let t = Date.now()
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
-	// console.log(`item ->`, ((global as any).item = item))
-	console.log(`item.titles ->`, item.titles)
-	console.log(`item.years ->`, item.years)
-	console.log(`item.slugs ->`, item.slugs)
-	console.log(`item.queries ->`, item.queries)
-	console.log(`item.aliases ->`, item.aliases)
-	console.log(`item.filters ->`, item.filters)
-	console.log(`item.collisions ->`, item.collisions)
-	// console.log(`item.s00e00 ->`, item.s00e00)
-	// console.log(`item.e00 ->`, item.e00)
-	// console.log(`item.matches ->`, item.matches)
-	// if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// // console.log(`item ->`, ((global as any).item = item))
+	// console.log(`item.titles ->`, item.titles)
+	// console.log(`item.years ->`, item.years)
+	// console.log(`item.slugs ->`, item.slugs)
+	// console.log(`item.queries ->`, item.queries)
+	// console.log(`item.aliases ->`, item.aliases)
+	// console.log(`item.filters ->`, item.filters)
+	// console.log(`item.collisions ->`, item.collisions)
+	// // console.log(`item.s00e00 ->`, item.s00e00)
+	// // console.log(`item.e00 ->`, item.e00)
+	// // console.log(`item.matches ->`, item.matches)
+	// // if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	/**
 		TODO:
@@ -37,14 +39,14 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		- Btsow | btsow.pw
 		- ____ | ____
 	*/
+	// (await import('@/scrapers/providers/bitlord')).Bitlord,
+	// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
-		// (await import('@/scrapers/providers/bitlord')).Bitlord,
-		// // (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
-		// // (await import('@/scrapers/providers/btbit')).BtBit,
+		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		(await import('@/scrapers/providers/btbit')).BtBit,
 		// (await import('@/scrapers/providers/btdb')).Btdb,
 		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
 		// // (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
@@ -64,12 +66,12 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		// // (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
-		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		// (await import('@/scrapers/providers/yts')).Yts,
 		// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	] as typeof Scraper[]
 
-	let torrents = (await pAll(providers.map(scraper => () => new scraper(item).scrape()))).flat()
+	let torrents = (await pAll(providers.map(Scraper => () => new Scraper(item).scrape()))).flat()
 
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
@@ -81,14 +83,20 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
-	torrents = torrents.filter(v => v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
 
-	console.log(`scrapeAll torrents ->`, torrents.map(v => v.json))
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	torrents = torrents.filter(v => {
+		if (!(v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)) return
+		if (utils.toBytes(`${item.runtime} MB`) > v.bytes) return
+		if (item.released.valueOf() - utils.duration(1, 'day') > v.stamp) return
+		return true
+	})
 
-	console.time(`torrents.filter`)
-	torrents = torrents.filter(v => filters.torrents(v, item))
-	console.timeEnd(`torrents.filter`)
+	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+	// if (process.DEVELOPMENT) throw new Error(`DEV`)
+
+	// console.time(`torrents.filter`)
+	// torrents = torrents.filter(v => filters.torrents(v, item))
+	// console.timeEnd(`torrents.filter`)
 
 	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
@@ -122,6 +130,10 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	if (sd) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 	else torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 
+	console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+	console.info(Date.now() - t, `scrapeAll ${torrents.length} torrents ->`, 'DONE')
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
+
 	return torrents
 }
 
@@ -131,10 +143,13 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
+			debug: true,
 			headers: { 'content-type': 'text/html' },
-			memoize: true,
+			memoize: !process.DEVELOPMENT,
+			profile: process.DEVELOPMENT,
 			retries: [],
-			silent: false,
+			setCookie: true,
+			silent: true,
 			timeout: 10000,
 		} as http.Config)
 		return new http.Http(config)
@@ -168,7 +183,7 @@ export class Scraper {
 
 		let results = (await pAll(
 			combos.map(([slug, sort], index) => async () => {
-				if (index > 0) await utils.pRandom(1000)
+				if (index > 0) await utils.pRandom(300)
 				return (await this.getResults(slug, sort).catch(error => {
 					console.error(`${ctor} getResults -> %O`, error)
 					return [] as Result[]

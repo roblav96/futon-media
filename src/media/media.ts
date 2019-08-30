@@ -161,6 +161,7 @@ export class Item {
 	async setOmdb() {
 		this.omdb = (await omdb.client.get('/', {
 			query: { i: this.ids.imdb },
+			memoize: process.DEVELOPMENT,
 			silent: true,
 		})) as omdb.Full
 	}
@@ -170,12 +171,13 @@ export class Item {
 		if (!this.ids.tmdb) return
 		let type = this.show ? 'tv' : 'movie'
 		this.tmdb = (await tmdb.client.get(`/${type}/${this.ids.tmdb}`, {
+			memoize: process.DEVELOPMENT,
 			silent: true,
 		})) as tmdb.Full
 		if (this.tmdb.belongs_to_collection) {
 			this.tmdb.belongs_to_collection = (await tmdb.client.get(
 				`/collection/${this.tmdb.belongs_to_collection.id}`,
-				{ silent: true }
+				{ memoize: process.DEVELOPMENT, silent: true }
 			)) as tmdb.Collection
 		}
 	}
@@ -184,6 +186,7 @@ export class Item {
 	async setSeasons() {
 		if (!this.show) return
 		this.seasons = ((await trakt.client.get(`/shows/${this.slug}/seasons`, {
+			memoize: process.DEVELOPMENT,
 			silent: true,
 		})) as trakt.Season[]).filter(v => v.number > 0)
 	}
@@ -194,6 +197,7 @@ export class Item {
 	// 	this.episodes = (await Promise.all(
 	// 		['last_episode', 'next_episode'].map(url =>
 	// 			trakt.client.get(`/shows/${this.slug}/${url}`, {
+	// 				memoize: process.DEVELOPMENT,
 	// 				silent: true,
 	// 			})
 	// 		)
@@ -216,6 +220,7 @@ export class Item {
 		let aliases = [] as string[]
 
 		let response = (await trakt.client.get(`/${this.type}s/${this.slug}/aliases`, {
+			memoize: process.DEVELOPMENT,
 			// silent: true,
 		})) as trakt.Alias[]
 		let trakts = (response || []).filter(v => ['gb', 'nl', 'us'].includes(v.country))
@@ -224,6 +229,7 @@ export class Item {
 		if (this.ids.tmdb) {
 			let { titles } = (await tmdb.client
 				.get(`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`, {
+					memoize: process.DEVELOPMENT,
 					// silent: true,
 				})
 				.catch(() => ({ titles: [] }))) as tmdb.AlternativeTitles
@@ -288,6 +294,7 @@ export class Item {
 			queries.map(query => async () =>
 				(await trakt.client.get(`/search/movie,show`, {
 					query: { query, fields: 'title,translations,aliases', limit: 100 },
+					memoize: process.DEVELOPMENT,
 					silent: true,
 				})) as trakt.Result[]
 			)

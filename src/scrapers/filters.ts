@@ -49,14 +49,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		return // console.log(`❌ nsfw '${_.difference(nsfws, nsfwed)}' ->`, torrent.name)
 	}
 
-	if (utils.toBytes(`${item.runtime} MB`) > torrent.bytes) {
-		return // console.log(`⛔ bytes '${torrent.size}' ->`, torrent.name)
-	}
-
-	if (item.released.valueOf() - utils.duration(1, 'day') > torrent.stamp) {
-		return // console.log(`⛔ released '${torrent.age}' ->`, torrent.name)
-	}
-
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
 	if (collision) return // console.log(`❌ collisions '${collision}' ->`, torrent.name)
 

@@ -78,12 +78,15 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 
 	let index = _.clamp(query.split(' ').length - 1, 0, means.length - 1)
 	let mean = means[index]
-	if (index == 0) mean *= 0.9
+	if (index == 0) mean *= 0.75
 	console.log(`mean ->`, mean, `\n`, means)
 
 	items = items.filter(item => {
-		if (utils.equals(item.title, query)) {
-			return !utils.commons(query) || item.movie ? !item.isJunk(_.last(means)) : true
+		if (utils.startsWith(item.title, query)) {
+			if (!utils.commons(query) || (item.movie && !query.includes(' '))) {
+				return !item.isJunk(_.last(means))
+			}
+			return true
 		}
 		if (!query.includes(' ') && !utils.commons(query)) return false
 		// if (spaces >= 2 && utils.startsWith(item.title, query)) return true

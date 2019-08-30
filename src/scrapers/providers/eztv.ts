@@ -19,7 +19,7 @@ export class Eztv extends scraper.Scraper {
 		let results = [] as Result[]
 		let page = 1
 		while (true) {
-			if (page > 1) await utils.pRandom(1000)
+			if (page > 1) await utils.pRandom(300)
 			let response = (await client.get('/get-torrents', {
 				query: { imdb_id, page } as Partial<Query>,
 			})) as Response

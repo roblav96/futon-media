@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as cookie from 'cookie'
 import * as http from 'http'
 import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
@@ -10,7 +11,7 @@ import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
+process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
 
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
@@ -26,6 +27,7 @@ export interface Config extends http.RequestOptions {
 	query?: Record<string, string | number | string[] | number[]>
 	redirect?: boolean
 	retries?: number[]
+	setCookie?: boolean
 	silent?: boolean
 	url?: string
 }
@@ -55,6 +57,8 @@ export class Http {
 		retries: [408],
 		timeout: Http.timeouts[0],
 	} as Config
+
+	private cookies = {}
 
 	constructor(public config = {} as Config) {
 		_.defaults(this.config, Http.defaults)
@@ -160,7 +164,7 @@ export class Http {
 			)
 			if (options.memoize) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
-				await db.put(mkey, _.omit(response, omits), utils.duration(1, 'hour'))
+				await db.put(mkey, _.omit(response, omits), utils.duration(3, 'hour'))
 			}
 		}
 
@@ -169,6 +173,15 @@ export class Http {
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
+		}
+
+		if (options.setCookie) {
+			// console.log(`response.headers ->`, response.headers)
+			// console.log(`response.rawHeaders ->`, response.rawHeaders)
+			// if (options.setCookie && response.headers['set-cookie']) {
+			// console.log(`response.headers['set-cookie'] ->`, response.headers['set-cookie'])
+			// let cookies = cookie.parse(response.headers['set-cookie'])
+			// console.log(`cookies ->`, cookies)
 		}
 
 		if (options.afterResponse) {

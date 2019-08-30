@@ -35,12 +35,15 @@ export async function setup() {
 	process.env.EMBY_LAN_ADDRESS = normalize(process.env.EMBY_LAN_ADDRESS)
 	process.env.EMBY_WAN_ADDRESS = normalize(process.env.EMBY_WAN_ADDRESS)
 
-	let config = Object.fromEntries(
-		Object.entries(process.env).filter(
-			([k, v]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
+	if (process.DEVELOPMENT) return
+	console.info(
+		`emby config ->`,
+		Object.fromEntries(
+			Object.entries(process.env).filter(
+				([k, v]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
+			)
 		)
 	)
-	// console.info(`emby config ->`, config)
 }
 
 export interface SystemInfo {
