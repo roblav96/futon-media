@@ -8,12 +8,13 @@ import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as torrent from '@/scrapers/torrent'
+import * as UserAgents from 'user-agents'
 import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 import { UPLOADERS } from '@/utils/constants'
 
 export async function scrapeAll(item: media.Item, sd: boolean) {
-	if (process.DEVELOPMENT) sd = false
+	// if (process.DEVELOPMENT) sd = false
 
 	let t = Date.now()
 	await item.setAll()
@@ -42,18 +43,18 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// (await import('@/scrapers/providers/bitlord')).Bitlord,
 	// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
 	// (await import('@/scrapers/providers/digbt')).Digbt,
+	// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
+	// (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
+	// (await import('@/scrapers/providers/idope')).iDope,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	let providers = [
 		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btbit')).BtBit,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		// // (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
-		// // (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
+		(await import('@/scrapers/providers/btbit')).BtBit,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+		(await import('@/scrapers/providers/eztv')).Eztv,
 		// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
-		// (await import('@/scrapers/providers/idope')).iDope,
 		// // (await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
 		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
@@ -94,11 +95,11 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
 	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
-	// console.time(`torrents.filter`)
-	// torrents = torrents.filter(v => filters.torrents(v, item))
-	// console.timeEnd(`torrents.filter`)
+	console.time(`torrents.filter`)
+	torrents = torrents.filter(v => filters.torrents(v, item))
+	console.timeEnd(`torrents.filter`)
 
-	console.time(`torrents.cached`)
+	console.time(`torrents.cached -> ${torrents.length}`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
@@ -125,14 +126,14 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (name.includes(' fgt ')) v.boost *= 1.5
 	}
-	console.timeEnd(`torrents.cached`)
+	console.timeEnd(`torrents.cached -> ${torrents.length}`)
 
 	if (sd) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 	else torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 
-	console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
-	console.info(Date.now() - t, `scrapeAll ${torrents.length} torrents ->`, 'DONE')
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+	// console.info(Date.now() - t, `scrapeAll ${torrents.length} torrents ->`, 'DONE')
+	// if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	return torrents
 }
@@ -144,11 +145,14 @@ export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
 			cfduid: true,
-			headers: { 'content-type': 'text/html' },
+			headers: {
+				'content-type': 'text/html',
+				'user-agent': new UserAgents({ deviceCategory: 'desktop' }).toString(),
+			},
 			memoize: !process.DEVELOPMENT,
 			profile: process.DEVELOPMENT,
 			retries: [],
-			silent: true,
+			// silent: !process.DEVELOPMENT,
 			timeout: 10000,
 		} as http.Config)
 		return new http.Http(config)
@@ -198,7 +202,8 @@ export class Scraper {
 		let jsons = combos.map(v =>
 			v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv))
 		)
-		console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
+		// console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
+		console.log(Date.now() - t, ctor, `x${combos.length}`, results.length)
 
 		return results.map(v => new torrent.Torrent(v))
 	}

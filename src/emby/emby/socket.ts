@@ -12,51 +12,50 @@ import Sockette, { ISockette } from '@/shims/sockette'
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 let ws: ISockette
-process.nextTick(async () => {
+process.nextTick(() => {
 	let url = `${process.env.EMBY_LAN_ADDRESS}/embywebsocket?${qs.stringify({
 		api_key: process.env.EMBY_API_KEY,
 	})}`
 	ws = new Sockette(url, {
-		timeout: utils.duration(4, 'second'),
-		maxAttempts: Infinity,
+		timeout: utils.duration(3, 'second'),
 		onerror({ error }) {
-			console.error(`emby socket onerror -> %O`, error)
-			emby.Tail.destroy()
+			console.error(`socket onerror -> %O`, error)
+			emby.tail.disconnect()
 		},
 		onclose({ code, reason }) {
-			console.warn(`emby socket onclose ->`, code, reason)
-			emby.Tail.destroy()
+			console.warn(`socket onclose ->`, code, reason)
+			emby.tail.disconnect()
 		},
 		onopen({ target }) {
 			let url = target.url as string
-			console.info(`emby socket onopen ->`, url.slice(0, url.indexOf('?')))
+			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1000' })
-			emby.Tail.connect()
+			emby.tail.connect()
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
-			if (err) return console.error(`emby socket onmessage -> %O`, err)
+			if (err) return console.error(`socket onmessage -> %O`, err)
 			rxSocket.next(value)
 		},
 	})
 	exithook(() => ws.close())
 })
 
-export const socket = {
-	send(EmbyEvent: Partial<EmbyEvent>) {
-		console.log(`emby socket send ->`, JSON.stringify(EmbyEvent))
-		console.log(`emby ws ->`, ws)
-		ws.json(EmbyEvent)
-	},
-	filter<Data>(MessageType: string) {
-		return rxSocket.pipe(
-			Rx.op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
-			Rx.op.map(({ Data }) => Data as Data)
-		)
-	},
-}
+// export const socket = {
+// 	send(EmbyEvent: Partial<EmbyEvent>) {
+// 		console.log(`socket send ->`, JSON.stringify(EmbyEvent))
+// 		console.log(`emby ws ->`, ws)
+// 		ws.json(EmbyEvent)
+// 	},
+// 	filter<Data>(MessageType: string) {
+// 		return rxSocket.pipe(
+// 			Rx.op.filter(EmbyEvent => EmbyEvent.MessageType == MessageType),
+// 			Rx.op.map(({ Data }) => Data as Data)
+// 		)
+// 	},
+// }
 
 // rxSocket.subscribe(({ MessageType, Data }) => {
 // 	if (MessageType == 'LibraryChanged') {

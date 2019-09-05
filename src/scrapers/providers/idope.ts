@@ -6,7 +6,7 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://idope.se',
+	baseUrl: 'https://idope.xyz',
 })
 
 export class iDope extends scraper.Scraper {
@@ -14,13 +14,16 @@ export class iDope extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get(`/torrent-list/${slug}/`, {
-				query: {
-					c: this.item.movie ? '1,2' : '3',
-					o: `-${sort}`,
+			await client.post(`/search-site/`, {
+				form: {
+					page: 1,
+					q: slug.replace(/\s+/g, '+'),
+					x: 0,
+					y: 0,
 				} as Partial<Query>,
 			})
 		)
+		console.log(`'${slug}' $.html() ->`, $.html())
 		let results = [] as scraper.Result[]
 		$('.resultdiv').each((i, el) => {
 			try {
@@ -43,6 +46,8 @@ export class iDope extends scraper.Scraper {
 }
 
 interface Query {
-	c: string
-	o: string
+	page: number
+	q: string
+	x: number
+	y: number
 }

@@ -10,6 +10,9 @@ export const client = scraper.Scraper.http({
 })
 
 export class Eztv extends scraper.Scraper {
+	concurrency = 1
+	max = 1
+
 	slugs() {
 		return this.item.ids.imdb ? [this.item.ids.imdb.replace(/\D/g, '')] : []
 	}
@@ -42,7 +45,7 @@ export class Eztv extends scraper.Scraper {
 				}
 			})
 			results.push(...torrents)
-			if (page >= 3) break
+			if (page >= 1) break
 			if (results.length > 0 && torrents.length == 0) break
 			if (response.torrents_count > page * 100) page++
 			else break

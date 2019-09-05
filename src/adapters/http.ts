@@ -122,7 +122,7 @@ export class Http {
 			options.body = qs.stringify(options.form)
 		}
 
-		if (this.cfduid) {
+		if (options.cfduid && this.cfduid) {
 			let __cfduid = `__cfduid=${this.cfduid}`
 			if (options.headers['cookie']) options.headers['cookie'] += `; ${__cfduid}`
 			else options.headers['cookie'] = __cfduid

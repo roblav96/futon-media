@@ -11,8 +11,6 @@ export const client = scraper.Scraper.http({
 })
 
 export class BitSnoop extends scraper.Scraper {
-	concurrency = 1
-
 	async getResults(slug: string) {
 		let $ = cheerio.load(await client.get('/search', { query: { q: slug } as Partial<Query> }))
 		let results = [] as scraper.Result[]

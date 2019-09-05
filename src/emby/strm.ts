@@ -89,13 +89,15 @@ fastify.get('/strm', async (request, reply) => {
 	) as emby.StrmQuery
 	let { e, s, slug, type } = query
 
+	console.warn(`request.headers ->`, request.headers)
+
 	let strm = slug
 	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 	console.log(`/strm ->`, strm)
 
 	let rkey = `stream:${query.trakt}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	let stream = await db.get(rkey)
+	let stream = await db.get(rkey) as string
 	if (!stream) {
 		if (!emitter.eventNames().includes(`${query.trakt}`)) {
 			getDebridStreamUrl(query, rkey, strm).then(

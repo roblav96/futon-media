@@ -24,9 +24,9 @@ async function sync(init = false) {
 	let resolved = (await Promise.all([
 		http.client.get(
 			'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt',
-			{ silent: false }
+			{ silent: true }
 		),
-		http.client.get('https://newtrackon.com/api/stable', { silent: false }),
+		http.client.get('https://newtrackon.com/api/stable', { silent: true }),
 	])) as string[]
 	let all = resolved.map(v => v.split('\n').filter(Boolean)).flat()
 	all = all.map(v => v.trim().replace('/announce', ''))

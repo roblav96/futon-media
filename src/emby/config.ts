@@ -6,7 +6,7 @@ import * as path from 'path'
 export async function setup() {
 	if (!process.env.EMBY_API_KEY) {
 		throw new Error(
-			`Undefined EMBY_API_KEY -> Creating an API Key -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`
+			`Undefined EMBY_API_KEY -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`
 		)
 	}
 

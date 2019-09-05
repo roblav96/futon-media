@@ -44,6 +44,7 @@ export const UPLOADERS = [
 	'swtyblz',
 	'tasted',
 	'terminal',
+	'tgx',
 	'trollhd',
 	'trolluhd',
 ]
