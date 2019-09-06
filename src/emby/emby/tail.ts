@@ -10,8 +10,6 @@ import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 
-export const rxTail = new Rx.Subject<string>()
-
 process.nextTick(() => {
 	exithook(() => tail.disconnect())
 })
@@ -28,14 +26,27 @@ export const tail = {
 		let logfile = path.join(LogPath, Name)
 		if (!fs.pathExistsSync(logfile)) throw new Error('!fs.pathExistsSync')
 		console.info(`tail connect ->`, path.basename(logfile))
-		tail.child = execa('tail', ['-fn0', logfile], { killSignal: 'SIGKILL' })
+		tail.child = execa('tail', ['-f', '-n', '0', '-s', '0.3', path.basename(logfile)], {
+			cwd: path.dirname(logfile),
+			killSignal: 'SIGKILL',
+			stripFinalNewline: false,
+		})
+		let remainder = ''
 		tail.child.stdout.on('data', (chunk: string) => {
-			chunk = `\n${(chunk || '').toString().trim()}`
-			let lines = chunk.split(/\n\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}\s/g)
-			for (let line of lines) {
-				line = (line || '').trim()
-				line && rxTail.next(line)
+			chunk = (chunk || '').toString()
+			if (remainder) {
+				chunk = `${remainder}${chunk}`
+				remainder = ''
 			}
+			// console.warn(`chunk ->`, chunk)
+			let chunks = `\n${chunk}`.split(/\n\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s\b/)
+			let last = _.last(chunks)
+			if (!last.endsWith(`\n`)) {
+				remainder = chunks.pop()
+			}
+			chunks = chunks.map(v => v && v.trim()).filter(Boolean)
+			// console.log(`chunks ->`, chunks)
+			chunks.forEach(v => rxChunk.next(v))
 		})
 	},
 
@@ -43,16 +54,31 @@ export const tail = {
 		if (!tail.child) return
 		console.warn(`tail disconnect ->`)
 		tail.child.cancel()
-		tail.child.removeAllListeners()
+		tail.child.all.destroy()
 		tail.child = null
 	},
 }
 
-// rxTail.subscribe(line => {
-// 	console.log(`rxTail ->`, line)
-// })
+export const rxChunk = new Rx.Subject<string>()
+rxChunk.subscribe(chunk => {
+	// console.warn(`rxChunk ->`, chunk)
+})
 
-export const rxHttp = rxTail.pipe(
+export const rxLine = rxChunk.pipe(
+	Rx.op.map(chunk => {
+		console.warn(`chunk ->`, chunk)
+		let level = chunk.slice(0, chunk.indexOf(' '))
+		chunk = chunk.replace(`${level} `, '')
+		let category = chunk.slice(0, chunk.indexOf(':'))
+		chunk = chunk.replace(`${category}: `, '')
+		return { level, category, chunk }
+	})
+)
+rxLine.subscribe(line => {
+	console.log(`rxLine ->`, line)
+})
+
+export const rxHttp = rxChunk.pipe(
 	Rx.op.filter(line => !!line.match(/^Info HttpServer: HTTP [DGP]/)),
 	Rx.op.filter(line => !line.includes(emby.client.config.headers['user-agent'].toString())),
 	Rx.op.map(line => {
@@ -85,7 +111,6 @@ export const rxHttp = rxTail.pipe(
 		return { method, url, parts, query, level }
 	})
 )
-
-// rxHttp.subscribe(({ level, method, url, query }) => {
-// 	console.log(`rxHttp ->`, level, method, url, query)
-// })
+rxHttp.subscribe(({ level, method, url, query }) => {
+	// console.log(`rxHttp ->`, level, method, url, query)
+})
