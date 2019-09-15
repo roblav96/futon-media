@@ -31,18 +31,18 @@ export const tail = {
 			killSignal: 'SIGKILL',
 			stripFinalNewline: false,
 		})
-		let remainder = ''
+		let remains = ''
 		tail.child.stdout.on('data', (chunk: string) => {
 			chunk = (chunk || '').toString()
-			if (remainder) {
-				chunk = `${remainder}${chunk}`
-				remainder = ''
+			if (remains) {
+				chunk = `${remains}${chunk}`
+				remains = ''
 			}
 			// console.warn(`chunk ->`, chunk)
 			let chunks = `\n${chunk}`.split(/\n\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s\b/)
 			let last = _.last(chunks)
 			if (!last.endsWith(`\n`)) {
-				remainder = chunks.pop()
+				remains = chunks.pop()
 			}
 			chunks = chunks.map(v => v && v.trim()).filter(Boolean)
 			// console.log(`chunks ->`, chunks)
@@ -59,31 +59,38 @@ export const tail = {
 	},
 }
 
-export const rxChunk = new Rx.Subject<string>()
-rxChunk.subscribe(chunk => {
-	// console.warn(`rxChunk ->`, chunk)
-})
+const rxChunk = new Rx.Subject<string>()
+// rxChunk.subscribe(chunk => {
+// 	// console.warn(`rxChunk ->`, chunk)
+// })
 
-export const rxLine = rxChunk.pipe(
+const Levels = { DEBUG: 'DEBUG', ERROR: 'ERROR', INFO: 'INFO' }
+const rxLine = rxChunk.pipe(
 	Rx.op.map(chunk => {
-		console.warn(`chunk ->`, chunk)
-		let level = chunk.slice(0, chunk.indexOf(' '))
-		chunk = chunk.replace(`${level} `, '')
-		let category = chunk.slice(0, chunk.indexOf(':'))
-		chunk = chunk.replace(`${category}: `, '')
+		// console.warn(`chunk ->`, chunk)
+		let split = chunk.split(' ')
+		let level = split.shift().toUpperCase()
+		let category = split.shift().slice(0, -1)
+		chunk = split.join(' ')
 		return { level, category, chunk }
-	})
+	}),
+	Rx.op.filter(({ level, category, chunk }) => !!Levels[level])
 )
 rxLine.subscribe(line => {
 	console.log(`rxLine ->`, line)
 })
 
-export const rxHttp = rxChunk.pipe(
-	Rx.op.filter(line => !!line.match(/^Info HttpServer: HTTP [DGP]/)),
-	Rx.op.filter(line => !line.includes(emby.client.config.headers['user-agent'].toString())),
-	Rx.op.map(line => {
-		let matches = line.match(/\b([DGP].*)\s(http.*)\.\s\b/) || []
-		return [matches[1], matches[2], line.slice(0, line.indexOf(' '))]
+export const rxHttp = rxLine.pipe(
+	Rx.op.filter(({ level, category, chunk }) => {
+		return level == 'INFO' && category == 'HttpServer' && /^HTTP [DGP]/.test(chunk)
+	}),
+	Rx.op.filter(
+		({ chunk }) => !chunk.includes(emby.client.config.headers['user-agent'].toString())
+	),
+	Rx.op.map(({ chunk }) => {
+		let matches = chunk.match(/\b([DGP].*)\s(http.*)\.\s\b/) || []
+		console.log(`matches ->`, matches)
+		return [matches[1], matches[2], chunk.slice(0, chunk.indexOf(' '))]
 	}),
 	Rx.op.filter(matches => matches.filter(Boolean).length == 3),
 	Rx.op.map(matches => ({
