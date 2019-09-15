@@ -26,27 +26,70 @@ export const tail = {
 		let logfile = path.join(LogPath, Name)
 		if (!fs.pathExistsSync(logfile)) throw new Error('!fs.pathExistsSync')
 		console.info(`tail connect ->`, path.basename(logfile))
-		tail.child = execa('tail', ['-f', '-n', '0', '-s', '0.3', path.basename(logfile)], {
+		tail.child = execa('tail', ['-f', '-n', '0', '-s', '0.5', path.basename(logfile)], {
+			buffer: false,
 			cwd: path.dirname(logfile),
-			killSignal: 'SIGKILL',
+			// killSignal: 'SIGKILL',
 			stripFinalNewline: false,
 		})
-		let remains = ''
+		let limbo = ''
 		tail.child.stdout.on('data', (chunk: string) => {
-			chunk = (chunk || '').toString()
-			if (remains) {
-				chunk = `${remains}${chunk}`
-				remains = ''
+			chunk = limbo + (chunk || '').toString()
+			console.warn(`████  chunk  ████ ->`, JSON.stringify(chunk))
+			// let result = /\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s/.exec(chunk)
+			// console.log(`result ->`, result)
+			// // let result: RegExpExecArray
+			// // while (result = /\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s/.exec(chunk)) {
+			// // 	console.log(`result ->`, result)
+			// // 	console.log(`result ->`, result)
+			// // }
+			// chunk = ''
+
+			let regex = /(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (\w+) (\w+)\: /g
+			let matches = (Array.from((chunk as any).matchAll(regex)) as RegExpMatchArray[]).map(
+				v => {
+					delete v.input
+					return v
+				}
+			)
+			console.log(`matches ->`, matches)
+			for (let i = 0; i < matches.length; i++) {
+				let match = matches[i]
+				console.log(`match ->`, match)
+				let next = matches[i + 1]
+				let line = chunk.slice(match.index, next ? next.index : Infinity)
+				if (next || line.endsWith('\n')) {
+					rxMatch.next({ line, match })
+					console.log(`{ line, match } ->`, { line, match })
+					limbo = ''
+					continue
+				}
+				limbo = line
+				console.warn(`limbo ->`, limbo)
 			}
-			// console.warn(`chunk ->`, chunk)
-			let chunks = `\n${chunk}`.split(/\n\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s\b/)
-			let last = _.last(chunks)
-			if (!last.endsWith(`\n`)) {
-				remains = chunks.pop()
-			}
-			chunks = chunks.map(v => v && v.trim()).filter(Boolean)
+
+			// let regex = /(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (Debug|Error|Info) /
+			// let chunks = chunk.split(regex).filter(Boolean)
 			// console.log(`chunks ->`, chunks)
-			chunks.forEach(v => rxChunk.next(v))
+			// while (Levels[chunks[1]] && /\S\n$/.test(chunks[2])) {
+			// 	let stamp = chunks.shift()
+			// 	let type = chunks.shift()
+			// 	let text = chunks.shift()
+			// 	console.log(`line ->`, { stamp, type, text })
+			// }
+			// console.warn(`limbo chunks ->`, chunks)
+			// let limbo = chunks.join(' ')
+			// console.warn(`limbo ->`, limbo)
+			// data = limbo
+
+			// console.log(`chunks ->`, JSON.stringify(chunks))
+			// let last = _.last(chunks)
+			// if (!last.endsWith(`\n`)) {
+			// 	limbo = chunks.pop()
+			// }
+			// chunks = chunks.map(v => v && v.trim()).filter(Boolean)
+			// // console.log(`chunks ->`, chunks)
+			// chunks.forEach(v => rxChunk.next(v))
 		})
 	},
 
@@ -59,26 +102,23 @@ export const tail = {
 	},
 }
 
-const rxChunk = new Rx.Subject<string>()
-// rxChunk.subscribe(chunk => {
-// 	// console.warn(`rxChunk ->`, chunk)
-// })
-
-const Levels = { DEBUG: 'DEBUG', ERROR: 'ERROR', INFO: 'INFO' }
-const rxLine = rxChunk.pipe(
-	Rx.op.map(chunk => {
-		// console.warn(`chunk ->`, chunk)
-		let split = chunk.split(' ')
-		let level = split.shift().toUpperCase()
-		let category = split.shift().slice(0, -1)
-		chunk = split.join(' ')
-		return { level, category, chunk }
-	}),
-	Rx.op.filter(({ level, category, chunk }) => !!Levels[level])
-)
-rxLine.subscribe(line => {
-	console.log(`rxLine ->`, line)
+const Levels = { Debug: 'Debug', Error: 'Error', Fatal: 'Fatal', Info: 'Info', Warn: 'Warn' }
+const rxMatch = new Rx.Subject<{ line: string; match: RegExpMatchArray }>()
+rxMatch.subscribe(match => {
+	console.log(`rxMatch ->`, match)
 })
+const rxLine = rxMatch.pipe(
+	Rx.op.map(({ line, match }) => ({
+		category: match[3] as string,
+		stamp: new Date(match[1]).valueOf(),
+		level: match[2] as keyof typeof Levels,
+		text: line.slice(match[0].length).trim(),
+	})),
+	Rx.op.tap(line => console.log(`rxLine ->`, line))
+)
+// rxLine.subscribe(line => {
+// 	console.log(`rxLine ->`, line)
+// })
 
 export const rxHttp = rxLine.pipe(
 	Rx.op.filter(({ level, category, chunk }) => {
