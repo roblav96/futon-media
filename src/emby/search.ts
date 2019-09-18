@@ -9,7 +9,7 @@ import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
-export const rxSearch = emby.rxHttp.pipe(
+const rxSearch = emby.rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
 	Rx.op.map(({ query }) => {
 		let slug = utils.trim(query.SearchTerm)

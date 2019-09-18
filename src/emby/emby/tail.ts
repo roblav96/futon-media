@@ -29,67 +29,30 @@ export const tail = {
 		tail.child = execa('tail', ['-f', '-n', '0', '-s', '0.5', path.basename(logfile)], {
 			buffer: false,
 			cwd: path.dirname(logfile),
-			// killSignal: 'SIGKILL',
+			killSignal: 'SIGKILL',
 			stripFinalNewline: false,
 		})
 		let limbo = ''
 		tail.child.stdout.on('data', (chunk: string) => {
 			chunk = limbo + (chunk || '').toString()
-			console.warn(`████  chunk  ████ ->`, JSON.stringify(chunk))
-			// let result = /\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s/.exec(chunk)
-			// console.log(`result ->`, result)
-			// // let result: RegExpExecArray
-			// // while (result = /\d{4}\-\d{2}\-\d{2}\s\d{2}\:\d{2}\:\d{2}\.\d{3}\s/.exec(chunk)) {
-			// // 	console.log(`result ->`, result)
-			// // 	console.log(`result ->`, result)
-			// // }
-			// chunk = ''
-
-			let regex = /(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (\w+) (\w+)\: /g
-			let matches = (Array.from((chunk as any).matchAll(regex)) as RegExpMatchArray[]).map(
-				v => {
-					delete v.input
-					return v
-				}
-			)
-			console.log(`matches ->`, matches)
+			// console.warn(`████  chunk  ████ ->`, JSON.stringify(chunk))
+			let regex = /(?<stamp>\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (?<level>\w+) (?<category>[^\:]+)\: /g
+			let matches = Array.from(chunk.matchAll(regex))
+			// console.log(`matches ->`, matches)
 			for (let i = 0; i < matches.length; i++) {
-				let match = matches[i]
-				console.log(`match ->`, match)
-				let next = matches[i + 1]
-				let line = chunk.slice(match.index, next ? next.index : Infinity)
-				if (next || line.endsWith('\n')) {
-					rxMatch.next({ line, match })
-					console.log(`{ line, match } ->`, { line, match })
+				let [match, next] = [matches[i], matches[i + 1]]
+				// console.log(`match ->`, match)
+				let message = chunk.slice(match.index, next ? next.index : Infinity)
+				if (next || message.endsWith('\n')) {
+					delete match.input
+					// console.warn(`tail ->`, message, match)
+					rxTail.next({ message, match })
 					limbo = ''
 					continue
 				}
-				limbo = line
-				console.warn(`limbo ->`, limbo)
+				limbo = message
+				// console.warn(`limbo ->`, limbo)
 			}
-
-			// let regex = /(\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (Debug|Error|Info) /
-			// let chunks = chunk.split(regex).filter(Boolean)
-			// console.log(`chunks ->`, chunks)
-			// while (Levels[chunks[1]] && /\S\n$/.test(chunks[2])) {
-			// 	let stamp = chunks.shift()
-			// 	let type = chunks.shift()
-			// 	let text = chunks.shift()
-			// 	console.log(`line ->`, { stamp, type, text })
-			// }
-			// console.warn(`limbo chunks ->`, chunks)
-			// let limbo = chunks.join(' ')
-			// console.warn(`limbo ->`, limbo)
-			// data = limbo
-
-			// console.log(`chunks ->`, JSON.stringify(chunks))
-			// let last = _.last(chunks)
-			// if (!last.endsWith(`\n`)) {
-			// 	limbo = chunks.pop()
-			// }
-			// chunks = chunks.map(v => v && v.trim()).filter(Boolean)
-			// // console.log(`chunks ->`, chunks)
-			// chunks.forEach(v => rxChunk.next(v))
 		})
 	},
 
@@ -102,48 +65,36 @@ export const tail = {
 	},
 }
 
-const Levels = { Debug: 'Debug', Error: 'Error', Fatal: 'Fatal', Info: 'Info', Warn: 'Warn' }
-const rxMatch = new Rx.Subject<{ line: string; match: RegExpMatchArray }>()
-rxMatch.subscribe(match => {
-	console.log(`rxMatch ->`, match)
-})
-const rxLine = rxMatch.pipe(
-	Rx.op.map(({ line, match }) => ({
-		category: match[3] as string,
-		stamp: new Date(match[1]).valueOf(),
-		level: match[2] as keyof typeof Levels,
-		text: line.slice(match[0].length).trim(),
+const rxTail = new Rx.Subject<{ message: string; match: RegExpMatchArray }>()
+export const rxLine = rxTail.pipe(
+	// Rx.op.tap(({ message, match }) => console.log(`rxTail message match ->`, message, match)),
+	Rx.op.map(({ message, match }) => ({
+		category: match.groups.category,
+		stamp: new Date(match.groups.stamp).valueOf(),
+		level: match.groups.level as 'Debug' | 'Error' | 'Fatal' | 'Info' | 'Warn',
+		message: message.slice(match[0].length).trim(),
 	})),
-	Rx.op.tap(line => console.log(`rxLine ->`, line))
+	Rx.op.share()
+	// Rx.op.tap(line => console.log(`rxTail line ->`, line))
 )
-// rxLine.subscribe(line => {
-// 	console.log(`rxLine ->`, line)
-// })
 
 export const rxHttp = rxLine.pipe(
-	Rx.op.filter(({ level, category, chunk }) => {
-		return level == 'INFO' && category == 'HttpServer' && /^HTTP [DGP]/.test(chunk)
-	}),
-	Rx.op.filter(
-		({ chunk }) => !chunk.includes(emby.client.config.headers['user-agent'].toString())
-	),
-	Rx.op.map(({ chunk }) => {
-		let matches = chunk.match(/\b([DGP].*)\s(http.*)\.\s\b/) || []
-		console.log(`matches ->`, matches)
-		return [matches[1], matches[2], chunk.slice(0, chunk.indexOf(' '))]
-	}),
-	Rx.op.filter(matches => matches.filter(Boolean).length == 3),
-	Rx.op.map(matches => ({
-		...qs.parseUrl(matches[1]),
-		method: matches[0] as 'GET' | 'POST' | 'DELETE',
-		level: matches[2].toUpperCase() as 'INFO' | 'DEBUG',
+	// Rx.op.tap(line => console.log(`rxHttp line ->`, line)),
+	Rx.op.filter(({ level, category }) => level == 'Info' && category == 'HttpServer'),
+	Rx.op.map(({ message, stamp }) => ({
+		stamp,
+		match: message.match(/^HTTP (?<method>[DGP]\w+) (?<url>.+)\. UserAgent\: (?<ua>.+)/),
 	})),
-	Rx.op.filter(({ url }) => {
-		let lower = url.toLowerCase()
-		if (lower.includes('/images/') || lower.includes('/web/')) return
-		return lower.includes('/emby/')
-	}),
-	Rx.op.map(({ method, url, query, level }) => {
+	Rx.op.filter(({ match }) => _.isArray(match)),
+	Rx.op.map(({ match, stamp }) => ({
+		...qs.parseUrl(match.groups.url),
+		method: match.groups.method as 'GET' | 'POST' | 'DELETE',
+		stamp,
+		ua: match.groups.ua,
+	})),
+	Rx.op.filter(({ ua }) => ua != emby.client.config.headers['user-agent'].toString()),
+	// Rx.op.filter(({ url }) => /\/emby\//i.test(url) && /\/(images|web)\//i.test(url) == false),
+	Rx.op.map(({ method, url, query, stamp, ua }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
 		let pathname = new Url(url).pathname.toLowerCase()
 		let parts = pathname.split('/').filter(Boolean)
@@ -155,9 +106,8 @@ export const rxHttp = rxLine.pipe(
 				if (utils.isNumeric(next) || next.length == 32) query.ItemId = next
 			}
 		}
-		return { method, url, parts, query, level }
-	})
+		return { method, url, parts, query, stamp, ua }
+	}),
+	Rx.op.share()
 )
-rxHttp.subscribe(({ level, method, url, query }) => {
-	// console.log(`rxHttp ->`, level, method, url, query)
-})
+rxHttp.subscribe(line => console.log(`rxHttp ->`, line))

@@ -98,7 +98,7 @@
 		"strip-bom": "^4.0.0",
 		"tslib": "^1.10.0",
 		"url-parse": "^1.4.7",
-		"user-agents": "^1.0.380",
+		"user-agents": "^1.0.382",
 		"ws": "^7.1.2",
 		"xdg-basedir": "^4.0.0"
 	},

@@ -42,10 +42,11 @@ for (let [method, color] of Object.entries({
 			}
 
 			let heading = `\n${ansi[color](indicator)} ${ansi.dim(`${ending}`)}\n`
-			if (!process.DEVELOPMENT) args[0] = `${heading}${args[0]}`
-			else {
+			if (process.DEVELOPMENT) {
 				let stdout = (console as any)._stdout as NodeJS.WriteStream
 				stdout.write(heading)
+			} else {
+				args[0] = `${heading}${args[0]}`
 			}
 		}
 

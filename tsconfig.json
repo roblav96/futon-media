@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"experimentalDecorators": true,
-		"lib": ["esnext"],
+		"lib": ["es2020"],
 		"module": "commonjs",
 		"outDir": "dist",
 		"preserveWatchOutput": true,
