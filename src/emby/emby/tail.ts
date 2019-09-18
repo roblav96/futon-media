@@ -14,9 +14,8 @@ process.nextTick(() => {
 	exithook(() => tail.disconnect())
 })
 
+let child: execa.ExecaChildProcess<string>
 export const tail = {
-	child: null as execa.ExecaChildProcess<string>,
-
 	async connect() {
 		tail.disconnect()
 		let [{ LogPath }, [{ Name }]] = (await Promise.all([
@@ -26,14 +25,14 @@ export const tail = {
 		let logfile = path.join(LogPath, Name)
 		if (!fs.pathExistsSync(logfile)) throw new Error('!fs.pathExistsSync')
 		console.info(`tail connect ->`, path.basename(logfile))
-		tail.child = execa('tail', ['-f', '-n', '0', '-s', '0.5', path.basename(logfile)], {
+		child = execa('tail', ['-f', '-n', '0', '-s', '0.5', path.basename(logfile)], {
 			buffer: false,
 			cwd: path.dirname(logfile),
 			killSignal: 'SIGKILL',
 			stripFinalNewline: false,
 		})
 		let limbo = ''
-		tail.child.stdout.on('data', (chunk: string) => {
+		child.stdout.on('data', (chunk: string) => {
 			chunk = limbo + (chunk || '').toString()
 			// console.warn(`████  chunk  ████ ->`, JSON.stringify(chunk))
 			let regex = /(?<stamp>\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (?<level>\w+) (?<category>[^\:]+)\: /g
@@ -57,11 +56,11 @@ export const tail = {
 	},
 
 	disconnect() {
-		if (!tail.child) return
+		if (!child) return
 		console.warn(`tail disconnect ->`)
-		tail.child.cancel()
-		tail.child.all.destroy()
-		tail.child = null
+		child.cancel()
+		child.all.destroy()
+		child = null
 	},
 }
 
@@ -88,12 +87,13 @@ export const rxHttp = rxLine.pipe(
 	Rx.op.filter(({ match }) => _.isArray(match)),
 	Rx.op.map(({ match, stamp }) => ({
 		...qs.parseUrl(match.groups.url),
-		method: match.groups.method as 'GET' | 'POST' | 'DELETE',
+		method: match.groups.method as 'GET' | 'POST' | 'PUT' | 'DELETE',
 		stamp,
 		ua: match.groups.ua,
 	})),
 	Rx.op.filter(({ ua }) => ua != emby.client.config.headers['user-agent'].toString()),
-	// Rx.op.filter(({ url }) => /\/emby\//i.test(url) && /\/(images|web)\//i.test(url) == false),
+	Rx.op.filter(({ method }) => ['GET', 'POST', 'PUT', 'DELETE'].includes(method)),
+	Rx.op.filter(({ url }) => /\/emby\//i.test(url) && /\/(images|web)\//i.test(url) == false),
 	Rx.op.map(({ method, url, query, stamp, ua }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
 		let pathname = new Url(url).pathname.toLowerCase()
@@ -110,4 +110,4 @@ export const rxHttp = rxLine.pipe(
 	}),
 	Rx.op.share()
 )
-rxHttp.subscribe(line => console.log(`rxHttp ->`, line))
+rxHttp.subscribe(({ method, url }) => console.log(`rxHttp ->`, method, url))
