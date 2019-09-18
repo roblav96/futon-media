@@ -110,4 +110,6 @@ export const rxHttp = rxLine.pipe(
 	}),
 	Rx.op.share()
 )
-rxHttp.subscribe(({ method, url }) => console.log(`rxHttp ->`, method, url))
+// rxHttp.subscribe(({ method, url, query, ua }) => {
+// 	console.log(`rxHttp ->`, method, url, query, `\n${ua}`)
+// })

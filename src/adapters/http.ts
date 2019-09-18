@@ -1,5 +1,5 @@
 import * as _ from 'lodash'
-import * as cookie from 'cookie'
+import * as got from 'got'
 import * as http from 'http'
 import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
@@ -7,6 +7,8 @@ import * as pDelay from 'delay'
 import * as qs from '@/shims/query-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+import { catchCloudflare } from '@ctrl/cloudflare'
+import { CookieJar } from 'tough-cookie'
 import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
@@ -18,7 +20,7 @@ export interface Config extends http.RequestOptions {
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
 	body?: any
-	cfduid?: boolean
+	cloudflare?: string
 	debug?: boolean
 	form?: any
 	memoize?: boolean
@@ -58,13 +60,42 @@ export class Http {
 		timeout: Http.timeouts[0],
 	} as Config
 
-	private cfduid = ''
+	private cookieJar: CookieJar
+	private async refreshCloudflare() {
+		if (!this.cookieJar) {
+			let jar = await db.get(`cookieJar:${this.config.baseUrl}`)
+			if (jar) this.cookieJar = CookieJar.fromJSON(jar)
+			else this.cookieJar = new CookieJar()
+			// if (process.DEVELOPMENT) return
+		}
+		// console.log(`this.cookieJar ->`, this.cookieJar)
+		let gotopts = {
+			cookieJar: this.cookieJar,
+			headers: this.config.headers,
+			retry: 0,
+		} as got.GotOptions<any>
+		let url = this.config.baseUrl + this.config.cloudflare
+		// console.warn(`refreshCloudflare ->`, url)
+		try {
+			await got(url, gotopts)
+		} catch (error) {
+			// console.error(`refreshCloudflare -> %O`, error)
+			console.warn(`catchCloudflare ->`)
+			await catchCloudflare(error, gotopts)
+		}
+		await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
+		// console.info(`refreshCloudflare ->`, 'good')
+	}
 
 	constructor(public config = {} as Config) {
 		_.defaults(this.config, Http.defaults)
 		_.mapValues(this.config, (v, k) =>
 			_.isPlainObject(v) ? _.defaults(v, Http.defaults[k] || {}) : v
 		)
+		if (this.config.cloudflare) {
+			this.config.retries.push(503)
+			this.refreshCloudflare()
+		}
 	}
 
 	extend(config: Config) {
@@ -122,10 +153,10 @@ export class Http {
 			options.body = qs.stringify(options.form)
 		}
 
-		if (options.cfduid && this.cfduid) {
-			let __cfduid = `__cfduid=${this.cfduid}`
-			if (options.headers['cookie']) options.headers['cookie'] += `; ${__cfduid}`
-			else options.headers['cookie'] = __cfduid
+		if (options.cloudflare) {
+			let cookie = this.cookieJar.getCookieStringSync(url)
+			if (options.headers['cookie']) options.headers['cookie'] += `; ${cookie}`
+			else options.headers['cookie'] = cookie
 		}
 
 		if (!options.silent) {
@@ -144,30 +175,34 @@ export class Http {
 			response = await db.get(mkey)
 		}
 		if (!response) {
-			response = await send(options.method, options.url, options).catch(
-				(error: HTTPError) => {
-					if (_.isFinite(error.statusCode)) {
-						if (!_.isString(error.statusMessage)) {
-							let message = HttpErrors[error.statusCode]
-							error.statusMessage = message ? message.name : 'ok'
-						}
-						if (options.retries.includes(error.statusCode)) {
-							let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
-							if (Http.timeouts.includes(timeout)) {
-								Object.assign(config, { timeout })
-								console.warn(`[RETRY]`, error.statusCode, min.url, config.timeout)
-								return this.request(config)
-							}
-						}
-						error = new HTTPError(options, error as any)
-						if (!options.debug) {
-							_.unset(error, 'data')
-							_.unset(error, 'headers')
+			try {
+				response = await send(options.method, options.url, options)
+			} catch (err) {
+				let error = err as HTTPError
+				if (_.isFinite(error.statusCode)) {
+					if (!_.isString(error.statusMessage)) {
+						let message = HttpErrors[error.statusCode]
+						error.statusMessage = message ? message.name : 'ok'
+					}
+					error = new HTTPError(options, error as any)
+					if (this.config.cloudflare && error.headers['server'] == 'cloudflare') {
+						await this.refreshCloudflare()
+					}
+					if (options.retries.includes(error.statusCode)) {
+						let timeout = Http.timeouts[Http.timeouts.indexOf(options.timeout) + 1]
+						if (Http.timeouts.includes(timeout)) {
+							Object.assign(config, { timeout })
+							console.warn(`[RETRY]`, error.statusCode, min.url, config.timeout)
+							return this.request(config)
 						}
 					}
-					return Promise.reject(error)
+					if (!options.debug) {
+						_.unset(error, 'data')
+						_.unset(error, 'headers')
+					}
 				}
-			)
+				return Promise.reject(error)
+			}
 			if (options.memoize) {
 				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
 				await db.put(mkey, _.omit(response, omits), utils.duration(3, 'hour'))
@@ -179,14 +214,6 @@ export class Http {
 		}
 		if (options.debug) {
 			console.log(`[DEBUG] <-`, options.method, options.url, response)
-		}
-
-		if (options.cfduid && _.isArray(response.headers['set-cookie'])) {
-			for (let v of response.headers['set-cookie']) {
-				let cfduid = cookie.parse(v)['__cfduid']
-				if (!cfduid) continue
-				this.cfduid = cfduid
-			}
 		}
 
 		if (options.afterResponse) {

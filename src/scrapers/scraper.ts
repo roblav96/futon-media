@@ -8,10 +8,21 @@ import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as torrent from '@/scrapers/torrent'
-import * as UserAgents from 'user-agents'
 import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 import { UPLOADERS } from '@/utils/constants'
+
+const providers = [] as typeof Scraper[]
+process.nextTick(async () => {
+	providers.push(
+		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// (await import('@/scrapers/providers/btbit')).BtBit,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
+	)
+	console.log(`providers ->`, providers)
+})
 
 export async function scrapeAll(item: media.Item, sd: boolean) {
 	// if (process.DEVELOPMENT) sd = false
@@ -48,29 +59,30 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// (await import('@/scrapers/providers/idope')).iDope,
 	// (await import('@/scrapers/providers/katcr')).Katcr,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
-	let providers = [
-		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		(await import('@/scrapers/providers/btbit')).BtBit,
-		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		(await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
-		// // (await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// // (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// // (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yts')).Yts,
-		// (await import('@/scrapers/providers/zooqle')).Zooqle,
-	] as typeof Scraper[]
+	// let providers = [
+	// 	(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+	// 	(await import('@/scrapers/providers/btbit')).BtBit,
+	// 	(await import('@/scrapers/providers/btdb')).Btdb,
+	// 	(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+	// 	(await import('@/scrapers/providers/eztv')).Eztv,
+	// 	//
+	// 	// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
+	// 	// // (await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
+	// 	// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+	// 	// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+	// 	// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+	// 	// (await import('@/scrapers/providers/orion')).Orion,
+	// 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+	// 	// (await import('@/scrapers/providers/rarbg')).Rarbg,
+	// 	// // (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+	// 	// (await import('@/scrapers/providers/snowfl')).Snowfl,
+	// 	// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+	// 	// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+	// 	// // (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+	// 	// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
+	// 	// (await import('@/scrapers/providers/yts')).Yts,
+	// 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
+	// ] as typeof Scraper[]
 
 	let torrents = (await pAll(providers.map(Scraper => () => new Scraper(item).scrape()))).flat()
 
@@ -144,11 +156,7 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
-			cfduid: true,
-			headers: {
-				'content-type': 'text/html',
-				'user-agent': new UserAgents({ deviceCategory: 'desktop' }).toString(),
-			},
+			headers: { 'content-type': 'text/html' },
 			memoize: !process.DEVELOPMENT,
 			profile: process.DEVELOPMENT,
 			retries: [],
