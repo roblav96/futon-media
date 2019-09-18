@@ -87,9 +87,19 @@ fastify.get('/strm', async (request, reply) => {
 	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
 		utils.isNumeric(v) ? _.parseInt(v) : v
 	) as emby.StrmQuery
-	let { e, s, slug, type } = query
+	let { e, s, slug, type, imdb, tmdb, tvdb } = query
 
 	console.warn(`request.headers ->`, request.headers)
+	let ua = request.headers['user-agent'] as string
+	if (ua && !ua.startsWith('Lavf/')) {
+		let Item = await emby.library.byProviderIds(
+			{ imdb, tmdb, tvdb },
+			{ Fields: ['MediaSources'] }
+		)
+		return reply.redirect(
+			`${process.env.EMBY_WAN_ADDRESS}/emby/Videos/${Item.Id}/stream.strm?Static=true&mediaSourceId=${Item.MediaSources[0].Id}`
+		)
+	}
 
 	let strm = slug
 	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
@@ -97,7 +107,7 @@ fastify.get('/strm', async (request, reply) => {
 
 	let rkey = `stream:${query.trakt}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	let stream = await db.get(rkey) as string
+	let stream = (await db.get(rkey)) as string
 	if (!stream) {
 		if (!emitter.eventNames().includes(`${query.trakt}`)) {
 			getDebridStreamUrl(query, rkey, strm).then(

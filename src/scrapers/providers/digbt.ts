@@ -9,16 +9,16 @@ import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.digbt.org',
-	headers: { 'cookie': process.env.CF_DIGBIT, 'user-agent': process.env.CF_UA },
-	query: { c: 'video', u: 'None' },
+	// query: { c: 'video', u: 'None' },
+	cloudflare: '/search/ubuntu/?u=y',
 	beforeRequest: {
 		append: [
 			async options => {
+				console.log(`options ->`, options)
 				options.headers.referer = options.url
 			},
 		],
 	},
-	debug: true,
 })
 
 export class Digbt extends scraper.Scraper {
@@ -26,14 +26,8 @@ export class Digbt extends scraper.Scraper {
 	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
-		if (!process.env.CF_DIGBIT) {
-			console.warn(`${this.constructor.name} ->`, '!process.env.CF_DIGBIT')
-			return []
-		}
 		let $ = cheerio.load(
-			await client.get(`/search/${slug}-${sort}-1/`, {
-				query: { s: sort } as Partial<Query>,
-			})
+			await client.get(`/search/${slug}-${sort}-1/`, { query: { s: sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$('tr td.x-item').each((i, el) => {

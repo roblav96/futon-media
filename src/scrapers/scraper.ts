@@ -14,14 +14,15 @@ import { UPLOADERS } from '@/utils/constants'
 
 const providers = [] as typeof Scraper[]
 process.nextTick(async () => {
+	// (await import('@/scrapers/providers/eztv')).Eztv,
 	providers.push(
 		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
 		// (await import('@/scrapers/providers/btbit')).BtBit,
-		(await import('@/scrapers/providers/btdb')).Btdb,
+		// (await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/digbt')).Digbt,
 		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
+		// (await import('@/scrapers/providers/torrentz2')).Torrentz2
 	)
-	console.log(`providers ->`, providers)
 })
 
 export async function scrapeAll(item: media.Item, sd: boolean) {
@@ -158,10 +159,9 @@ export class Scraper {
 		_.defaults(config, {
 			headers: { 'content-type': 'text/html' },
 			memoize: !process.DEVELOPMENT,
-			profile: process.DEVELOPMENT,
+			// profile: process.DEVELOPMENT,
 			retries: [],
-			// silent: !process.DEVELOPMENT,
-			timeout: 10000,
+			// silent: true,
 		} as http.Config)
 		return new http.Http(config)
 	}

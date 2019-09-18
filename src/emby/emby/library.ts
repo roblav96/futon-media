@@ -213,15 +213,16 @@ export const library = {
 			silent: true,
 		})).Items || []) as emby.Item[]
 	},
-	async byItemId(ItemId: string) {
-		return (await library.Items({ Ids: [ItemId] }))[0]
+	async byItemId(ItemId: string, query = {} as any) {
+		return (await library.Items(_.merge({ Ids: [ItemId] }, query)))[0]
 	},
-	async byPath(Path: string) {
-		return (await library.Items({ Path }))[0]
+	async byPath(Path: string, query = {} as any) {
+		return (await library.Items(_.merge({ Path }, query)))[0]
 	},
-	async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>) {
+	async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>, query = {} as any) {
+		ids = utils.compact(ids)
 		let AnyProviderIdEquals = Object.entries(ids).map(([k, v]) => `${k.toLowerCase()}.${v}`)
-		return (await library.Items({ AnyProviderIdEquals }))[0]
+		return (await library.Items(_.merge({ AnyProviderIdEquals }, query)))[0]
 	},
 
 	async item(Path: string, Type: string) {

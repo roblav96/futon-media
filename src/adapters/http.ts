@@ -66,25 +66,21 @@ export class Http {
 			let jar = await db.get(`cookieJar:${this.config.baseUrl}`)
 			if (jar) this.cookieJar = CookieJar.fromJSON(jar)
 			else this.cookieJar = new CookieJar()
-			// if (process.DEVELOPMENT) return
 		}
-		// console.log(`this.cookieJar ->`, this.cookieJar)
 		let gotopts = {
 			cookieJar: this.cookieJar,
 			headers: this.config.headers,
 			retry: 0,
 		} as got.GotOptions<any>
-		let url = this.config.baseUrl + this.config.cloudflare
-		// console.warn(`refreshCloudflare ->`, url)
 		try {
-			await got(url, gotopts)
+			console.log(`refreshCloudflare ->`, this.config.baseUrl + this.config.cloudflare)
+			await got(this.config.baseUrl + this.config.cloudflare, gotopts)
 		} catch (error) {
-			// console.error(`refreshCloudflare -> %O`, error)
-			console.warn(`catchCloudflare ->`)
+			console.warn(`catchCloudflare ->`, this.config.baseUrl)
 			await catchCloudflare(error, gotopts)
 		}
 		await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
-		// console.info(`refreshCloudflare ->`, 'good')
+		// console.info(`refreshCloudflare ->`, this.config.baseUrl + this.config.cloudflare)
 	}
 
 	constructor(public config = {} as Config) {

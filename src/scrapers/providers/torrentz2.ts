@@ -6,6 +6,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://torrentz2.eu',
+	cloudflare: '/search?f= ',
 })
 
 export class Torrentz2 extends scraper.Scraper {
