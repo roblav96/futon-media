@@ -6,17 +6,14 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://torrentz2.eu',
-	cloudflare: '/search?f= ',
+	cloudflare: '/search?f=ubuntu',
+	query: { safe: '1' },
 })
 
 export class Torrentz2 extends scraper.Scraper {
-	sorts = ['searchS', 'searchA', 'search']
-
-	async getResults(slug: string, sort: string) {
+	async getResults(slug: string) {
 		let $ = cheerio.load(
-			await client.get(`/${sort}`, {
-				query: { f: `title: ${slug}`, safe: '1' },
-			})
+			await client.get(`/search`, { query: { f: `title: ${slug}` } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$('.results dl:has(a)').each((i, el) => {
@@ -40,4 +37,8 @@ export class Torrentz2 extends scraper.Scraper {
 		})
 		return results
 	}
+}
+
+interface Query {
+	f: string
 }

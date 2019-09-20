@@ -1,13 +1,12 @@
 import * as _ from 'lodash'
-import * as got from 'got'
+import * as cloudscraper from 'cloudscraper'
 import * as http from 'http'
 import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
-import * as pDelay from 'delay'
 import * as qs from '@/shims/query-string'
+import * as uastring from 'ua-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import { catchCloudflare } from '@ctrl/cloudflare'
 import { CookieJar } from 'tough-cookie'
 import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
@@ -51,36 +50,36 @@ export class HTTPError extends Error {
 export class Http {
 	static timeouts = [10000, 10001]
 	static defaults = {
-		method: 'GET',
 		headers: {
-			'content-type': 'application/json',
+			// 'content-type': 'application/json',
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
+			// 'user-agent': uastring,
 		},
+		method: 'GET',
 		retries: [408],
 		timeout: Http.timeouts[0],
 	} as Config
 
 	private cookieJar: CookieJar
 	private async refreshCloudflare() {
+		let url = this.config.baseUrl + this.config.cloudflare
+		// console.log(`refreshCloudflare ->`, url)
 		if (!this.cookieJar) {
 			let jar = await db.get(`cookieJar:${this.config.baseUrl}`)
 			if (jar) this.cookieJar = CookieJar.fromJSON(jar)
 			else this.cookieJar = new CookieJar()
 		}
-		let gotopts = {
-			cookieJar: this.cookieJar,
-			headers: this.config.headers,
-			retry: 0,
-		} as got.GotOptions<any>
+		let scraper = cloudscraper.defaults()
+		scraper.defaultParams.headers['User-Agent'] = this.config.headers['user-agent']
+		scraper.defaultParams.jar._jar = this.cookieJar
+		// console.log(`scraper.defaultParams ->`, scraper.defaultParams)
 		try {
-			console.log(`refreshCloudflare ->`, this.config.baseUrl + this.config.cloudflare)
-			await got(this.config.baseUrl + this.config.cloudflare, gotopts)
+			await scraper.get(url)
+			await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
+			// console.info(`refreshCloudflare ->`, url, this.cookieJar.toJSON().cookies)
 		} catch (error) {
-			console.warn(`catchCloudflare ->`, this.config.baseUrl)
-			await catchCloudflare(error, gotopts)
+			console.error(`refreshCloudflare -> ${url} %O`, error)
 		}
-		await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
-		// console.info(`refreshCloudflare ->`, this.config.baseUrl + this.config.cloudflare)
 	}
 
 	constructor(public config = {} as Config) {
@@ -89,7 +88,7 @@ export class Http {
 			_.isPlainObject(v) ? _.defaults(v, Http.defaults[k] || {}) : v
 		)
 		if (this.config.cloudflare) {
-			this.config.retries.push(503)
+			this.config.retries.push(403, 503)
 			this.refreshCloudflare()
 		}
 	}

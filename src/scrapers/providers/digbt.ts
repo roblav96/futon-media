@@ -9,21 +9,12 @@ import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.digbt.org',
-	// query: { c: 'video', u: 'None' },
-	cloudflare: '/search/ubuntu/?u=y',
-	beforeRequest: {
-		append: [
-			async options => {
-				console.log(`options ->`, options)
-				options.headers.referer = options.url
-			},
-		],
-	},
+	cloudflare: '/search/ubuntu/',
+	query: { c: 'video', u: 'None' },
 })
 
 export class Digbt extends scraper.Scraper {
 	sorts = ['length', 'time']
-	concurrency = 1
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(

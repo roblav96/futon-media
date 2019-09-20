@@ -34,7 +34,6 @@
 		"scripts:users-sync": "run-s build stop; node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {
-		"@ctrl/cloudflare": "^1.5.0",
 		"@ctrl/magnet-link": "^1.1.4",
 		"all-keys": "^3.1.0",
 		"ansi-colors": "^4.1.1",
@@ -42,6 +41,7 @@
 		"badwords": "^1.0.0",
 		"cheerio": "0.22.0",
 		"cli-table3": "^0.5.1",
+		"cloudscraper": "^4.1.4",
 		"dayjs": "^1.8.16",
 		"deep-diff": "^1.0.2",
 		"deepmerge": "^4.0.0",
@@ -85,6 +85,7 @@
 		"prompts": "^2.2.1",
 		"query-string": "^6.8.3",
 		"read-pkg-up": "^6.0.0",
+		"request": "^2.88.0",
 		"rxjs": "^6.5.3",
 		"shimmer": "^1.2.1",
 		"signal-exit": "^3.0.2",
@@ -96,6 +97,7 @@
 		"strip-bom": "^4.0.0",
 		"tough-cookie": "^3.0.1",
 		"tslib": "^1.10.0",
+		"ua-string": "^3.0.0",
 		"url-parse": "^1.4.7",
 		"ws": "^7.1.2",
 		"xdg-basedir": "^4.0.0"

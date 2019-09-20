@@ -25,7 +25,7 @@ export const tail = {
 		let logfile = path.join(LogPath, Name)
 		if (!fs.pathExistsSync(logfile)) throw new Error('!fs.pathExistsSync')
 		console.info(`tail connect ->`, path.basename(logfile))
-		child = execa('tail', ['-f', '-n', '0', '-s', '0.5', path.basename(logfile)], {
+		child = execa('tail', ['-f', '-n', '0', path.basename(logfile)], {
 			buffer: false,
 			cwd: path.dirname(logfile),
 			killSignal: 'SIGKILL',

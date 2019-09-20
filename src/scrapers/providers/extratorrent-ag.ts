@@ -8,12 +8,11 @@ import * as scraper from '@/scrapers/scraper'
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://extratorrent.ag',
 	query: { order: 'desc' } as Partial<Query>,
-	cloudflare: '/search/?search=',
+	cloudflare: '/search/?search=ubuntu',
 })
 
 export class ExtraTorrentAg extends scraper.Scraper {
 	sorts = ['size', 'added']
-	max = 3
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
@@ -25,7 +24,7 @@ export class ExtraTorrentAg extends scraper.Scraper {
 				let $el = $(el)
 				let result = {
 					bytes: utils.toBytes($el.find('td:nth-last-of-type(4)').text()),
-					name: $el.find('td.tli a').text(),
+					name: $el.find('td.tli > a').text(),
 					magnet: _.trim($el.find('td a[href^="magnet:?"]').attr('href')),
 					seeders: utils.parseInt($el.find('td.sy').text()),
 					stamp: NaN,

@@ -19,9 +19,9 @@ process.nextTick(async () => {
 		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
 		// (await import('@/scrapers/providers/btbit')).BtBit,
 		// (await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/digbt')).Digbt,
+		// (await import('@/scrapers/providers/digbt')).Digbt,
 		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2
+		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
 	)
 })
 
@@ -105,15 +105,17 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		return true
 	})
 
-	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
-	// if (process.DEVELOPMENT) throw new Error(`DEV`)
+	console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => filters.torrents(v, item))
 	console.timeEnd(`torrents.filter`)
 
-	console.time(`torrents.cached -> ${torrents.length}`)
+	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	console.timeEnd(`torrents.cached`)
+
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
@@ -139,7 +141,6 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (name.includes(' fgt ')) v.boost *= 1.5
 	}
-	console.timeEnd(`torrents.cached -> ${torrents.length}`)
 
 	if (sd) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 	else torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
@@ -157,9 +158,9 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
-			headers: { 'content-type': 'text/html' },
+			// headers: { 'content-type': 'text/html' },
 			memoize: !process.DEVELOPMENT,
-			// profile: process.DEVELOPMENT,
+			profile: process.DEVELOPMENT,
 			retries: [],
 			// silent: true,
 		} as http.Config)

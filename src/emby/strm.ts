@@ -89,7 +89,7 @@ fastify.get('/strm', async (request, reply) => {
 	) as emby.StrmQuery
 	let { e, s, slug, type, imdb, tmdb, tvdb } = query
 
-	console.warn(`request.headers ->`, request.headers)
+	// console.warn(`request.headers ->`, request.headers)
 	let ua = request.headers['user-agent'] as string
 	if (ua && !ua.startsWith('Lavf/')) {
 		let Item = await emby.library.byProviderIds(

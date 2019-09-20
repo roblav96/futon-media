@@ -6,7 +6,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://btdb.eu',
-	cloudflare: '/?search= ',
+	cloudflare: '/?search=ubuntu',
 })
 
 export class Btdb extends scraper.Scraper {
