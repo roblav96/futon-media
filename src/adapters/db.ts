@@ -16,9 +16,9 @@ export class Db {
 	level: levelup.LevelUp<leveldown.LevelDown>
 
 	constructor(public name: string) {
-		name = path.basename(name)
+		Object.assign(this, { name: path.basename(name) })
 		let pkg = pkgup.sync({ cwd: __dirname })
-		let location = path.join(xdgBasedir.cache, pkg.package.name, name)
+		let location = path.join(xdgBasedir.cache, pkg.package.name, this.name)
 		fs.ensureDirSync(path.dirname(location))
 		let db = level(`${location}.db`, {
 			valueEncoding: 'json',

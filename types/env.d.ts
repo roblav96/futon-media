@@ -19,11 +19,8 @@ interface Env {
 	SIMKL_ID: string
 	SIMKL_SECRET: string
 	TMDB_KEY: string
-	TRAKT_ACCESS_TOKEN: string
 	TRAKT_CLIENT_ID: string
 	TRAKT_CLIENT_SECRET: string
-	TRAKT_OAUTH_CODE: string
-	TRAKT_REFRESH_TOKEN: string
 }
 
 declare namespace NodeJS {
