@@ -1,7 +1,4 @@
 interface Env {
-	CF_KATCR: string
-	CF_SNOWFL: string
-	CF_UA: string
 	EMBY_ADMIN_ID: string
 	EMBY_ADMIN_TOKEN: string
 	EMBY_API_KEY: string
@@ -22,8 +19,11 @@ interface Env {
 	SIMKL_ID: string
 	SIMKL_SECRET: string
 	TMDB_KEY: string
-	TRAKT_KEY: string
-	TRAKT_SECRET: string
+	TRAKT_ACCESS_TOKEN: string
+	TRAKT_CLIENT_ID: string
+	TRAKT_CLIENT_SECRET: string
+	TRAKT_OAUTH_CODE: string
+	TRAKT_REFRESH_TOKEN: string
 }
 
 declare namespace NodeJS {

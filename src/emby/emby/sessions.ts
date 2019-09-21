@@ -27,7 +27,7 @@ export const sessions = {
 }
 
 export class Session {
-	static UHDUsers = ['admin', 'dev', 'developer', 'robert']
+	static UHDUsers = ['developer', 'robert']
 	get isUHD() {
 		return Session.UHDUsers.includes(this.UserName.toLowerCase())
 	}

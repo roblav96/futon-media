@@ -3,7 +3,7 @@ import * as http from '@/adapters/http'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
 
-export async function setup() {
+export async function config() {
 	if (!process.env.EMBY_API_KEY) {
 		throw new Error(
 			`Undefined EMBY_API_KEY -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`

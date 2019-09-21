@@ -50,9 +50,9 @@ process.nextTick(async () => {
 	)
 
 	let rxLibrary = rxItem.pipe(
-		Rx.op.filter(({ Item }) => {
-			return ['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
-		}),
+		Rx.op.filter(({ Item }) =>
+			['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
+		),
 		Rx.op.distinctUntilChanged((a, b) => {
 			let keys = ['ItemId', 'UserId']
 			return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))

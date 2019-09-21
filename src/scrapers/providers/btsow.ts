@@ -5,12 +5,10 @@ import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
-import * as uastring from 'ua-string'
 import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://btspread.com',
-	headers: { 'user-agent': uastring },
 })
 
 export class Btsow extends scraper.Scraper {

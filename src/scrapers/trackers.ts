@@ -8,8 +8,9 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
+// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
+
 process.nextTick(async () => {
-	// process.DEVELOPMENT && (await db.flush('*'))
 	schedule.scheduleJob('0 * * * *', () =>
 		sync().catch(error => console.error(`trackers sync -> %O`, error))
 	)

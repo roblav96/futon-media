@@ -6,7 +6,7 @@ import 'node-env-dev'
 import '@/devops/devops'
 
 async function start() {
-	await (await import('@/emby/config')).setup()
+	await (await import('@/emby/config')).config()
 	if (process.args.scripts) {
 		return await import(`@/scripts/${process.args.scripts}`)
 	}

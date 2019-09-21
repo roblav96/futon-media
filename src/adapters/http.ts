@@ -52,8 +52,8 @@ export class Http {
 	static defaults = {
 		headers: {
 			// 'content-type': 'application/json',
-			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
-			// 'user-agent': uastring,
+			// 'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
+			'user-agent': uastring,
 		},
 		method: 'GET',
 		retries: [408],
@@ -96,7 +96,7 @@ export class Http {
 		return new Http(Http.merge(this.config, config))
 	}
 
-	async request(config: Config) {
+	async request(config: Config): Promise<HttpieResponse> {
 		let options = Http.merge(this.config, config)
 
 		if (options.url.startsWith('http')) options.baseUrl = ''

@@ -1,17 +1,64 @@
 import * as _ from 'lodash'
+import * as http from '@/adapters/http'
 import * as media from '@/media/media'
 import * as utils from '@/utils/utils'
-import { Http } from '@/adapters/http'
+import { Db } from '@/adapters/db'
 
-export const client = new Http({
+const db = new Db(__filename)
+process.nextTick(async () => {
+	// process.DEVELOPMENT && (await db.flush('*'))
+	let oauth: OauthResponse
+	try {
+		oauth = await http.client.post('https://api.trakt.tv/oauth/token', {
+			query: {
+				client_id: process.env.TRAKT_CLIENT_ID,
+				client_secret: process.env.TRAKT_CLIENT_SECRET,
+				grant_type: 'refresh_token',
+				redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
+				refresh_token: (await db.get('refresh_token')) || process.env.TRAKT_REFRESH_TOKEN,
+			} as Partial<OauthRequest>,
+			silent: true,
+		})
+	} catch (error) {
+		console.warn(`trakt refresh oauth token ->`, error.message)
+		try {
+			oauth = await http.client.post('https://api.trakt.tv/oauth/token', {
+				query: {
+					client_id: process.env.TRAKT_CLIENT_ID,
+					client_secret: process.env.TRAKT_CLIENT_SECRET,
+					grant_type: 'authorization_code',
+					redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
+					code: process.env.TRAKT_OAUTH_CODE,
+				} as Partial<OauthRequest>,
+				silent: true,
+			})
+		} catch (error) {
+			console.error(`trakt pin oauth token ->`, error.message)
+			console.info(`get pin code ->`, 'https://trakt.tv/pin/999')
+		}
+	} finally {
+		// console.log(`finally oauth ->`, oauth)
+		process.env.TRAKT_ACCESS_TOKEN = oauth.access_token
+		process.env.TRAKT_REFRESH_TOKEN = oauth.refresh_token
+		await db.put('refresh_token', oauth.refresh_token)
+	}
+})
+
+export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',
 	headers: {
-		'authorization': `Bearer ${process.env.TRAKT_SECRET}`,
-		'trakt-api-key': process.env.TRAKT_KEY,
+		'trakt-api-key': process.env.TRAKT_CLIENT_ID,
 		'trakt-api-version': '2',
 	},
 	query: { extended: 'full' },
 	retries: [408, 502, 504],
+	beforeRequest: {
+		prepend: [
+			async options => {
+				options.headers['authorization'] = `Bearer ${process.env.TRAKT_ACCESS_TOKEN}`
+			},
+		],
+	},
 	afterResponse: {
 		append: [
 			async (options, response) => {
@@ -288,4 +335,22 @@ export interface User {
 export interface Alias {
 	country: string
 	title: string
+}
+
+export interface OauthRequest {
+	client_id: string
+	client_secret: string
+	code: string
+	grant_type: string
+	redirect_uri: string
+	refresh_token: string
+}
+
+export interface OauthResponse {
+	access_token: string
+	created_at: number
+	expires_in: number
+	refresh_token: string
+	scope: string
+	token_type: string
 }
