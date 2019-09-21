@@ -7,6 +7,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://glodls.to',
+	cloudflare: '/search_results.php?search=ubuntu',
 	query: { order: 'desc', incldead: '0', inclexternal: '0', lang: '0' } as Partial<Query>,
 })
 
@@ -35,6 +36,7 @@ export class GloTorrents extends scraper.Scraper {
 				console.error(`${this.constructor.name} -> %O`, error)
 			}
 		})
+		console.log(`results ->`, results)
 		return results
 	}
 }

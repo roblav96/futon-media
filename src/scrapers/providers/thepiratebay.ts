@@ -7,10 +7,10 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://thepiratebay.org',
+	cloudflare: '/search/ubuntu/0/99/0',
 })
 
 export class ThePirateBay extends scraper.Scraper {
-	// size, date
 	sorts = ['5', '3']
 
 	async getResults(slug: string, sort: string) {

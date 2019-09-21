@@ -63,7 +63,7 @@ export class Http {
 	private cookieJar: CookieJar
 	private async refreshCloudflare() {
 		let url = this.config.baseUrl + this.config.cloudflare
-		// console.log(`refreshCloudflare ->`, url)
+		console.log(`refreshCloudflare ->`, url)
 		if (!this.cookieJar) {
 			let jar = await db.get(`cookieJar:${this.config.baseUrl}`)
 			if (jar) this.cookieJar = CookieJar.fromJSON(jar)
@@ -72,11 +72,10 @@ export class Http {
 		let scraper = cloudscraper.defaults()
 		scraper.defaultParams.headers['User-Agent'] = this.config.headers['user-agent']
 		scraper.defaultParams.jar._jar = this.cookieJar
-		// console.log(`scraper.defaultParams ->`, scraper.defaultParams)
 		try {
 			await scraper.get(url)
 			await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
-			// console.info(`refreshCloudflare ->`, url, this.cookieJar.toJSON().cookies)
+			console.info(`refreshCloudflare ->`, url, this.cookieJar.toJSON().cookies)
 		} catch (error) {
 			console.error(`refreshCloudflare -> ${url} %O`, error)
 		}

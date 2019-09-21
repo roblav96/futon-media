@@ -7,6 +7,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://zooqle.com',
+	cloudflare: '/search?q=ubuntu',
 	query: { sd: 'd', v: 't' } as Partial<Query>,
 })
 

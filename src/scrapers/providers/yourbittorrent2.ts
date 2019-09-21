@@ -9,16 +9,13 @@ import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://yourbittorrent2.com',
+	cloudflare: '/?q=ubuntu',
 })
 
 export class YourBittorrent2 extends scraper.Scraper {
-	concurrency = 1
-
 	async getResults(slug: string) {
 		let c = this.item.show ? 'television' : this.item.type
-		let $ = cheerio.load(
-			await client.get('/', { query: { c, q: slug } as Partial<Query> })
-		)
+		let $ = cheerio.load(await client.get('/', { query: { c, q: slug } as Partial<Query> }))
 		let results = [] as scraper.Result[]
 		$('table tr:has(a[href^="magnet:?"])').each((i, el) => {
 			try {
@@ -29,7 +26,6 @@ export class YourBittorrent2 extends scraper.Scraper {
 					name: $el.find('td[colspan="2"] a').text(),
 					seeders: utils.parseInt($el.find('td:nth-child(6)').text()),
 				} as scraper.Result
-
 				let date = $el.find('td:nth-child(5)').text()
 				let day = dayjs(date)
 				if (date.includes('today')) {
@@ -38,7 +34,6 @@ export class YourBittorrent2 extends scraper.Scraper {
 					day = dayjs().subtract(1, 'day')
 				}
 				result.stamp = day.valueOf()
-
 				results.push(result)
 			} catch (error) {
 				console.error(`${this.constructor.name} -> %O`, error)

@@ -6,7 +6,6 @@ import * as scraper from '@/scrapers/scraper'
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://yts.lt/api/v2',
 	headers: { 'content-type': 'application/json' },
-	query: { limit: 50 } as Partial<Query>,
 })
 
 export class Yts extends scraper.Scraper {
@@ -17,24 +16,27 @@ export class Yts extends scraper.Scraper {
 	async getResults(slug: string) {
 		if (!this.item.movie) return []
 		let response = (await client.get('/list_movies.json', {
-			query: { sort_by: 'date_added', query_term: slug } as Partial<Query>,
+			query: { query_term: slug } as Partial<Query>,
 		})) as Response
-		let results = ((response.data && response.data.movies) || []).map(result =>
-			result.torrents.map((v, i) => {
-				let rip = result.torrents.length >= 2 && i >= 2 ? 'WEB' : 'BluRay'
-				let name = _.startCase(
-					result.title_long || result.title_english || result.title || slug
-				)
-				let title = `${name} ${v.quality} ${rip}`
+		let movies = (response.data && response.data.movies) || []
+		let results = ((response.data && response.data.movies) || []).map(result => {
+			result.torrents = result.torrents.filter(v => v.quality != '3D')
+			// result.torrents = _.uniqWith(result.torrents, (from, to) => {
+			// 	if (to.quality != from.quality) return false
+			// 	return to.type == 'bluray'
+			// })
+			return result.torrents.map(v => {
+				let title = `${result.title_english || result.title} ${result.year}`
+				let name = `${title} ${v.quality} ${_.startCase(v.type)}`
 				return {
 					bytes: v.size_bytes,
-					magnet: `magnet:?xt=urn:btih:${v.hash}&dn=${title}`,
-					name: title,
-					seeders: v.quality == '1080p' ? v.seeds * 10 : v.seeds,
+					magnet: `magnet:?xt=urn:btih:${v.hash}&dn=${name}`,
+					name,
+					seeders: v.seeds,
 					stamp: v.date_uploaded_unix * 1000,
 				} as scraper.Result
 			})
-		)
+		})
 		return results.flat()
 	}
 }

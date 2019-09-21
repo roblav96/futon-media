@@ -7,6 +7,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.magnetdl.com',
+	cloudflare: '/u/ubuntu/',
 })
 
 export class MagnetDl extends scraper.Scraper {

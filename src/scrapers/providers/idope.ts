@@ -6,24 +6,20 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://idope.xyz',
+	baseUrl: 'https://idope.se',
+	cloudflare: '/torrent-list/ubuntu/',
 })
 
 export class iDope extends scraper.Scraper {
-	sorts = ['2', '3']
+	sorts = ['-2', '-1']
 
 	async getResults(slug: string, sort: string) {
+		let c = this.item.movie ? '1' : '3'
 		let $ = cheerio.load(
-			await client.post(`/search-site/`, {
-				form: {
-					page: 1,
-					q: slug.replace(/\s+/g, '+'),
-					x: 0,
-					y: 0,
-				} as Partial<Query>,
+			await client.get(`/torrent-list/${slug}/`, {
+				query: { c, o: sort } as Partial<Query>,
 			})
 		)
-		console.log(`'${slug}' $.html() ->`, $.html())
 		let results = [] as scraper.Result[]
 		$('.resultdiv').each((i, el) => {
 			try {

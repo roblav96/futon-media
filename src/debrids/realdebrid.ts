@@ -9,7 +9,8 @@ import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
-	query: { auth_token: process.env.REALDEBRID_SECRET },
+	headers: { authorization: `Bearer ${process.env.REALDEBRID_SECRET}` },
+	// query: { auth_token: process.env.REALDEBRID_SECRET },
 })
 
 process.nextTick(async () => {
@@ -53,6 +54,8 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 	}
 
 	static async download(magnet: string) {
+		throw new Error(`RealDebrid download -> disabled`)
+
 		let { dn, infoHash } = magnetlink.decode(magnet)
 
 		let transfers = (await client.get('/torrents')) as Transfer[]
@@ -125,6 +128,8 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 	}
 
 	async streamUrl(file: debrid.File) {
+		throw new Error(`RealDebrid streamUrl -> disabled`)
+
 		let transfers = (await client.get('/torrents')) as Transfer[]
 		let transfer = transfers.find(v => v.hash.toLowerCase() == this.infoHash)
 

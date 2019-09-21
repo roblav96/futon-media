@@ -11,14 +11,8 @@ const db = new Db(__filename)
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
-	headers: { 'cookie': process.env.CF_SNOWFL, 'user-agent': process.env.CF_UA },
-	beforeRequest: {
-		append: [
-			async options => {
-				options.headers.referer = options.url
-			},
-		],
-	},
+	cloudflare: '/',
+	// headers: { referer: 'https://snowfl.com/' },
 })
 
 async function getToken() {
@@ -33,21 +27,13 @@ async function getToken() {
 	await db.put('snowfl:token', token, utils.duration(1, 'day'))
 	return token
 }
+process.nextTick(() => getToken().catch(error => console.error(`getToken -> %O`, error)))
 
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'DATE']
 	max = 2
-	concurrency = 1
-
-	// slugs() {
-	// 	return super.slugs().slice(0, 1)
-	// }
 
 	async getResults(slug: string, sort: string) {
-		if (!process.env.CF_SNOWFL) {
-			console.warn(`${this.constructor.name} ->`, '!process.env.CF_SNOWFL')
-			return []
-		}
 		let token = await getToken()
 		let url = `/${token}/${slug}/${utils.nonce()}/0/${sort}/NONE/0`
 		let response = (await client.get(url, {

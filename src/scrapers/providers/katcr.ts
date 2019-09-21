@@ -8,22 +8,15 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://katcr.co',
-	headers: { 'cookie': process.env.CF_KATCR, 'user-agent': process.env.CF_UA },
-	memoize: false,
+	cloudflare: '/katsearch/page/1/ubuntu',
 })
 
 export class Katcr extends scraper.Scraper {
-	concurrency = 1
-
 	async getResults(slug: string) {
-		if (!process.env.CF_KATCR) {
-			console.warn(`${this.constructor.name} ->`, '!process.env.CF_KATCR')
-			return []
-		}
-		let type = this.item.show ? 'tv' : `${this.item.type}s`
+		let type = this.item.show ? `tv/subcat/41` : `${this.item.type}s/subcat/71`
 		let $ = cheerio.load(await client.get(`/katsearch/category/${type}/page/1/${slug}`))
 		let results = [] as scraper.Result[]
-		$('table.torrents_table tr:has(a[href^="magnet:?"])').each((i, el) => {
+		$('table.torrents_table > tbody > tr:has(a[href^="magnet:?"])').each((i, el) => {
 			try {
 				let $el = $(el)
 				let result = {
@@ -32,7 +25,6 @@ export class Katcr extends scraper.Scraper {
 					name: $el.find('a.torrents_table__torrent_title b').text(),
 					seeders: utils.parseInt($el.find('td[data-title="Seed"]').text()),
 				} as scraper.Result
-
 				let date = $el.find('td[data-title="Age"]').text()
 				let day = dayjs(date)
 				if (date.includes('today')) {
@@ -41,7 +33,6 @@ export class Katcr extends scraper.Scraper {
 					day = dayjs(date.replace('yesterday', '').trim(), 'HH:mm').subtract(1, 'day')
 				}
 				result.stamp = day.valueOf()
-
 				results.push(result)
 			} catch (error) {
 				console.error(`${this.constructor.name} -> %O`, error)

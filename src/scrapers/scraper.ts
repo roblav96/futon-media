@@ -15,13 +15,34 @@ import { UPLOADERS } from '@/utils/constants'
 const providers = [] as typeof Scraper[]
 process.nextTick(async () => {
 	// (await import('@/scrapers/providers/eztv')).Eztv,
+	// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
+	// (await import('@/scrapers/providers/katcr')).Katcr,
+	// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
+	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+	// (await import('@/scrapers/providers/zooqle')).Zooqle,
+	// (await import('@/scrapers/providers/idope')).iDope,
+	// (await import('@/scrapers/providers/demonoid')).Demonoid,
 	providers.push(
 		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
 		// (await import('@/scrapers/providers/btbit')).BtBit,
 		// (await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/btsow')).Btsow,
 		// (await import('@/scrapers/providers/digbt')).Digbt,
 		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/rarbg')).Rarbg,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
+		// (await import('@/scrapers/providers/yts')).Yts,
 	)
 })
 
@@ -77,7 +98,6 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// 	// (await import('@/scrapers/providers/rarbg')).Rarbg,
 	// 	// // (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 	// 	// (await import('@/scrapers/providers/snowfl')).Snowfl,
-	// 	// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 	// 	// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 	// 	// // (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	// 	// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
@@ -94,7 +114,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
-		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
+		to.stamp = _.min([to.stamp, from.stamp].filter(_.isFinite))
 		return true
 	})
 
@@ -105,16 +125,19 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		return true
 	})
 
-	console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
+	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	// let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	// torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
+	console.log(`torrents ->`, torrents.map(v => v.short))
 	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => filters.torrents(v, item))
 	console.timeEnd(`torrents.filter`)
 
-	console.time(`torrents.cached`)
-	let cacheds = await debrids.cached(torrents.map(v => v.hash))
-	console.timeEnd(`torrents.cached`)
+	// console.time(`torrents.cached`)
+	// let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	// console.timeEnd(`torrents.cached`)
 
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
@@ -158,7 +181,7 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
-			// headers: { 'content-type': 'text/html' },
+			// debug: process.DEVELOPMENT,
 			memoize: !process.DEVELOPMENT,
 			profile: process.DEVELOPMENT,
 			retries: [],

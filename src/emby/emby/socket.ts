@@ -57,19 +57,19 @@ process.nextTick(() => {
 // 	},
 // }
 
-// rxSocket.subscribe(({ MessageType, Data }) => {
-// 	if (MessageType == 'LibraryChanged') {
-// 		console.warn(`rxSocket ->`, MessageType, Data)
-// 	}
-// 	// if (MessageType == 'Sessions') return
-// 	// if (MessageType == 'ScheduledTasksInfo') return
-// 	// // if (MessageType == 'ScheduledTasksInfo') {
-// 	// // 	let tasks = Data as emby.ScheduledTasksInfo[]
-// 	// // 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
-// 	// // 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
-// 	// // }
-// 	// console.log(`rxSocket ->`, MessageType, Data)
-// })
+rxSocket.subscribe(({ MessageType, Data }) => {
+	// if (MessageType == 'LibraryChanged') {
+	// 	console.warn(`rxSocket ->`, MessageType, Data)
+	// }
+	// if (MessageType == 'Sessions') return
+	// if (MessageType == 'ScheduledTasksInfo') return
+	// // if (MessageType == 'ScheduledTasksInfo') {
+	// // 	let tasks = Data as emby.ScheduledTasksInfo[]
+	// // 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
+	// // 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
+	// // }
+	console.log(`rxSocket ->`, MessageType /** , Data */)
+})
 
 export interface EmbyEvent<Data = any> {
 	Data: Data

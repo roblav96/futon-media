@@ -7,6 +7,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://extratorrent.si',
+	cloudflare: '/search/?search=ubuntu',
 	query: { order: 'desc' } as Partial<Query>,
 })
 

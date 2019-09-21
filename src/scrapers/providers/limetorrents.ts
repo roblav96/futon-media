@@ -8,11 +8,12 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.limetorrents.info',
+	cloudflare: '/search/all/ubuntu/',
 })
 
 export class LimeTorrents extends scraper.Scraper {
 	sorts = ['size', 'date']
-	concurrency = 1
+	max = 3
 
 	async getResults(slug: string, sort: string) {
 		let type = this.item.show ? 'tv' : `${this.item.type}s`
