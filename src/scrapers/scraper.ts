@@ -39,7 +39,7 @@ process.nextTick(async () => {
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
 		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 		// (await import('@/scrapers/providers/yts')).Yts,
@@ -125,9 +125,9 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		return true
 	})
 
-	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	// let cacheds = await debrids.cached(torrents.map(v => v.hash))
-	// torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
+	torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
 	console.log(`torrents ->`, torrents.map(v => v.short))
 	if (process.DEVELOPMENT) throw new Error(`DEV`)
 

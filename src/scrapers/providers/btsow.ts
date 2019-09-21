@@ -5,31 +5,30 @@ import * as http from '@/adapters/http'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
+import * as uastring from 'ua-string'
 import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://btspread.com',
+	headers: { 'user-agent': uastring },
 })
 
 export class Btsow extends scraper.Scraper {
 	async getResults(slug: string) {
 		let $ = cheerio.load(await client.get(`/search/${slug}`))
 		let results = [] as scraper.Result[]
-		$('.data-list > .row').each((i, el) => {
+		$('.data-list > .row:has(a)').each((i, el) => {
 			try {
 				let $el = $(el)
-				let link = $el.find('.tt-name > a')
-				let hash = link.attr('href').split('/')[1]
-				let title = link.text()
-				let age = $el.find('td.tdnormal:nth-of-type(2)').text()
-				age = age.replace('ago', '').trim()
-				age = age.replace(/^last/i, '1')
+				let link = $el.find('a')
+				let href = link.attr('href')
+				let title = link.attr('title')
 				results.push({
-					bytes: utils.toBytes($el.find('td.tdnormal:nth-of-type(3)').text()),
+					bytes: utils.toBytes($el.find('.size').text()),
 					name: title,
-					magnet: `magnet:?xt=urn:btih:${hash}&dn=${title}`,
-					seeders: utils.parseInt($el.find('td.tdseed').text()),
-					stamp: utils.toStamp(age),
+					magnet: `magnet:?xt=urn:btih:${href.split('/').pop()}&dn=${title}`,
+					seeders: 1,
+					stamp: utils.toStamp($el.find('.date').text()),
 				} as scraper.Result)
 			} catch (error) {
 				console.error(`${this.constructor.name} -> %O`, error)
