@@ -3,6 +3,7 @@ import * as cloudscraper from 'cloudscraper'
 import * as http from 'http'
 import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
+import * as path from 'path'
 import * as qs from '@/shims/query-string'
 import * as uastring from 'ua-string'
 import * as Url from 'url-parse'
@@ -61,23 +62,24 @@ export class Http {
 	} as Config
 
 	private cookieJar: CookieJar
+	private cloudscraper = cloudscraper.defaults()
 	private async refreshCloudflare() {
-		let url = this.config.baseUrl + this.config.cloudflare
-		console.log(`refreshCloudflare ->`, url)
+		let host = this.config.baseUrl // new Url(this.config.baseUrl).host
+		console.log(`${host} -> refreshCloudflare ->`)
 		if (!this.cookieJar) {
 			let jar = await db.get(`cookieJar:${this.config.baseUrl}`)
+			console.log(`${host} -> jar ->`, jar && jar.cookies)
 			if (jar) this.cookieJar = CookieJar.fromJSON(jar)
 			else this.cookieJar = new CookieJar()
 		}
-		let scraper = cloudscraper.defaults()
-		scraper.defaultParams.headers['User-Agent'] = this.config.headers['user-agent']
-		scraper.defaultParams.jar._jar = this.cookieJar
+		this.cloudscraper.defaultParams.headers['User-Agent'] = this.config.headers['user-agent']
+		this.cloudscraper.defaultParams.jar._jar = this.cookieJar
 		try {
-			await scraper.get(url)
+			await this.cloudscraper.get(this.config.baseUrl + this.config.cloudflare)
 			await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
-			console.info(`refreshCloudflare ->`, url, this.cookieJar.toJSON().cookies)
+			console.info(`${host} -> ->`, this.cookieJar.toJSON().cookies)
 		} catch (error) {
-			console.error(`refreshCloudflare -> ${url} %O`, error)
+			console.error(`${host} -> refreshCloudflare -> %O`, error)
 		}
 	}
 

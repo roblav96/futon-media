@@ -14,35 +14,39 @@ import { UPLOADERS } from '@/utils/constants'
 
 const providers = [] as typeof Scraper[]
 process.nextTick(async () => {
-	// (await import('@/scrapers/providers/eztv')).Eztv,
+	// (await import('@/scrapers/providers/bitlord')).Bitlord,
+	// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
+	// (await import('@/scrapers/providers/demonoid')).Demonoid,
 	// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
-	// (await import('@/scrapers/providers/katcr')).Katcr,
+	// (await import('@/scrapers/providers/eztv')).Eztv,
+	// (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
 	// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
+	// (await import('@/scrapers/providers/idope')).iDope,
+	// (await import('@/scrapers/providers/katcr')).Katcr,
+	// (await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
 	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
-	// (await import('@/scrapers/providers/idope')).iDope,
-	// (await import('@/scrapers/providers/demonoid')).Demonoid,
 	providers.push(
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btbit')).BtBit,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		(await import('@/scrapers/providers/btbit')).BtBit,
+		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/btsow')).Btsow,
-		// (await import('@/scrapers/providers/digbt')).Digbt,
-		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/digbt')).Digbt,
+		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		(await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
+		(await import('@/scrapers/providers/yts')).Yts
 	)
 })
 
@@ -66,45 +70,6 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	// // console.log(`item.matches ->`, item.matches)
 	// // if (process.DEVELOPMENT) throw new Error(`DEV`)
 
-	/**
-		TODO:
-		- PopcornTime | tv-v2.api-fetch.website | plugin.video.gaia
-		- PopcornTime | api.apidomain.info | tv-futon-media.paw
-		- Btsow | btsow.pw
-		- ____ | ____
-	*/
-	// (await import('@/scrapers/providers/bitlord')).Bitlord,
-	// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
-	// (await import('@/scrapers/providers/digbt')).Digbt,
-	// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
-	// (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
-	// (await import('@/scrapers/providers/idope')).iDope,
-	// (await import('@/scrapers/providers/katcr')).Katcr,
-	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
-	// let providers = [
-	// 	(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-	// 	(await import('@/scrapers/providers/btbit')).BtBit,
-	// 	(await import('@/scrapers/providers/btdb')).Btdb,
-	// 	(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-	// 	(await import('@/scrapers/providers/eztv')).Eztv,
-	// 	//
-	// 	// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
-	// 	// // (await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
-	// 	// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-	// 	// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-	// 	// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-	// 	// (await import('@/scrapers/providers/orion')).Orion,
-	// 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-	// 	// (await import('@/scrapers/providers/rarbg')).Rarbg,
-	// 	// // (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
-	// 	// (await import('@/scrapers/providers/snowfl')).Snowfl,
-	// 	// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-	// 	// // (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
-	// 	// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-	// 	// (await import('@/scrapers/providers/yts')).Yts,
-	// 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
-	// ] as typeof Scraper[]
-
 	let torrents = (await pAll(providers.map(Scraper => () => new Scraper(item).scrape()))).flat()
 
 	torrents = _.uniqWith(torrents, (from, to) => {
@@ -126,9 +91,9 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 	})
 
 	torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	let cacheds = await debrids.cached(torrents.map(v => v.hash))
-	torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
-	console.log(`torrents ->`, torrents.map(v => v.short))
+	// let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	// torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
+	console.info(Date.now() - t, `scrapeAll ->`, torrents.map(v => v.short))
 	if (process.DEVELOPMENT) throw new Error(`DEV`)
 
 	console.time(`torrents.filter`)
@@ -185,7 +150,7 @@ export class Scraper {
 			memoize: !process.DEVELOPMENT,
 			profile: process.DEVELOPMENT,
 			retries: [],
-			// silent: true,
+			silent: true,
 		} as http.Config)
 		return new http.Http(config)
 	}
@@ -234,8 +199,8 @@ export class Scraper {
 		let jsons = combos.map(v =>
 			v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv))
 		)
-		// console.log(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
-		console.log(Date.now() - t, ctor, `x${combos.length}`, results.length)
+		// console.info(Date.now() - t, ctor, results.length, combos.length, fastStringify(jsons))
+		console.info(Date.now() - t, ctor, `x${combos.length}`, results.length)
 
 		return results.map(v => new torrent.Torrent(v))
 	}
