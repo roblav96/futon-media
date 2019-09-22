@@ -10,7 +10,7 @@ import * as path from 'path'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
-import { UPLOADERS } from '@/utils/constants'
+import DICTS from '@/utils/dicts'
 
 const providers = [] as typeof Scraper[]
 process.nextTick(async () => {
@@ -41,7 +41,7 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
@@ -111,7 +111,7 @@ export async function scrapeAll(item: media.Item, sd: boolean) {
 		let sds = ['720p', '480p', '360p', '720', '480', '360', 'avi']
 		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (name.includes(' proper ')) v.boost *= 1.25
-		if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (DICTS.UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (sd) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5

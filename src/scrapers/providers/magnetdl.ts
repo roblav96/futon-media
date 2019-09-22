@@ -14,16 +14,14 @@ export class MagnetDl extends scraper.Scraper {
 	sorts = ['size', 'age']
 
 	async getResults(slug: string, sort: string) {
-		let category = this.item.movie ? 'Movie' : 'TV'
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`
 		let $ = cheerio.load(await client.get(url.toLowerCase()))
 		let results = [] as scraper.Result[]
 		$(`tr:has(td[class="m"])`).each((i, el) => {
 			try {
 				let $el = $(el)
-				if ($el.find(`td[class^="t"]`).text() != category) {
-					return
-				}
+				let category = this.item.movie ? 'Movie' : 'TV'
+				if ($el.find(`td[class^="t"]`).text() != category) return
 				results.push({
 					bytes: utils.toBytes($el.find(`td:nth-child(6)`).text()),
 					name: $el.find(`td[class="n"] a`).attr('title'),

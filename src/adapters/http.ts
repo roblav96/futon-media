@@ -5,10 +5,11 @@ import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
+import * as request from 'request'
 import * as uastring from 'ua-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import { CookieJar } from 'tough-cookie'
+import { CookieJar, Store } from 'tough-cookie'
 import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
@@ -53,33 +54,47 @@ export class Http {
 	static defaults = {
 		headers: {
 			// 'content-type': 'application/json',
-			// 'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
-			'user-agent': uastring,
+			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
+			// 'user-agent': uastring,
 		},
 		method: 'GET',
 		retries: [408],
 		timeout: Http.timeouts[0],
 	} as Config
 
-	private cookieJar: CookieJar
-	private cloudscraper = cloudscraper.defaults()
+	private jar: CookieJar & { store?: Store }
 	private async refreshCloudflare() {
-		let host = this.config.baseUrl // new Url(this.config.baseUrl).host
-		console.log(`${host} -> refreshCloudflare ->`)
-		if (!this.cookieJar) {
-			let jar = await db.get(`cookieJar:${this.config.baseUrl}`)
-			console.log(`${host} -> jar ->`, jar && jar.cookies)
-			if (jar) this.cookieJar = CookieJar.fromJSON(jar)
-			else this.cookieJar = new CookieJar()
+		let url = new Url(this.config.baseUrl)
+		let host = _.join(url.host.split('.').slice(-2), '.')
+		// console.log(`${host} refreshCloudflare ->`)
+
+		if (!this.jar) {
+			let jar = await db.get(`jar:${host}`)
+			if (jar) this.jar = CookieJar.fromJSON(jar)
+			else this.jar = new CookieJar()
+			// console.log(`${host} jar ->`, this.jar.toJSON().cookies)
 		}
-		this.cloudscraper.defaultParams.headers['User-Agent'] = this.config.headers['user-agent']
-		this.cloudscraper.defaultParams.jar._jar = this.cookieJar
+
+		let scraper = cloudscraper.defaults(
+			_.defaultsDeep(
+				{
+					agentOptions: { ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256' },
+					cloudflareMaxTimeout: 10000,
+					headers: { 'User-Agent': this.config.headers['user-agent'] },
+					jar: request.jar(this.jar.store),
+				},
+				cloudscraper.defaultParams
+			)
+		)
+		scraper.defaultParams.jar._jar = this.jar
+		// console.log(`${host} defaultParams ->`, scraper.defaultParams)
+
 		try {
-			await this.cloudscraper.get(this.config.baseUrl + this.config.cloudflare)
-			await db.put(`cookieJar:${this.config.baseUrl}`, this.cookieJar.toJSON())
-			console.info(`${host} -> ->`, this.cookieJar.toJSON().cookies)
+			await scraper(this.config.baseUrl + this.config.cloudflare)
+			await db.put(`jar:${host}`, this.jar.toJSON())
+			// console.info(`${host} jar ->`, this.jar.toJSON().cookies)
 		} catch (error) {
-			console.error(`${host} -> refreshCloudflare -> %O`, error)
+			console.error(`${host} catch -> %O`, error)
 		}
 	}
 
@@ -150,7 +165,7 @@ export class Http {
 		}
 
 		if (options.cloudflare) {
-			let cookie = this.cookieJar.getCookieStringSync(url)
+			let cookie = this.jar.getCookieStringSync(url)
 			if (options.headers['cookie']) options.headers['cookie'] += `; ${cookie}`
 			else options.headers['cookie'] = cookie
 		}

@@ -1,4 +1,3 @@
-export * from '@/utils/constants'
 import * as _ from 'lodash'
 import * as advancedFormat from 'dayjs/plugin/advancedFormat'
 import * as badwords from 'badwords/array'
@@ -13,7 +12,7 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import stripBom = require('strip-bom')
-import { BYTE_UNITS, COMMONS, STOPS, VIDEOS } from '@/utils/constants'
+import { dicts } from '@/utils/dicts'
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
@@ -192,14 +191,14 @@ export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
 }
 
 export function stops(value: string) {
-	return excludes(value, STOPS)
+	return excludes(value, dicts.STOPS)
 }
 export function commons(value: string) {
-	return excludes(value, COMMONS)
+	return excludes(value, dicts.COMMONS)
 }
 
 export function isVideo(file: string) {
-	return VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
+	return dicts.VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
 }
 
 export function sortKeys<T>(value: T) {
@@ -293,6 +292,25 @@ export function toStamp(value: string) {
 	return day.add(1, 'minute').valueOf()
 }
 
+const BYTE_UNITS = {
+	b: { num: 1, str: 'B' },
+	kb: { num: Math.pow(1000, 1), str: 'KB' },
+	mb: { num: Math.pow(1000, 2), str: 'MB' },
+	gb: { num: Math.pow(1000, 3), str: 'GB' },
+	tb: { num: Math.pow(1000, 4), str: 'TB' },
+	pb: { num: Math.pow(1000, 5), str: 'PB' },
+	eb: { num: Math.pow(1000, 6), str: 'EB' },
+	zb: { num: Math.pow(1000, 7), str: 'ZB' },
+	yb: { num: Math.pow(1000, 8), str: 'YB' },
+	kib: { num: Math.pow(1024, 1), str: 'KiB' },
+	mib: { num: Math.pow(1024, 2), str: 'MiB' },
+	gib: { num: Math.pow(1024, 3), str: 'GiB' },
+	tib: { num: Math.pow(1024, 4), str: 'TiB' },
+	pib: { num: Math.pow(1024, 5), str: 'PiB' },
+	eib: { num: Math.pow(1024, 6), str: 'EiB' },
+	zib: { num: Math.pow(1024, 7), str: 'ZiB' },
+	yib: { num: Math.pow(1024, 8), str: 'YiB' },
+}
 export function toBytes(value: string) {
 	let amount = parseFloat(value)
 	let unit = value.replace(/[^a-z]/gi, '').toLowerCase()
