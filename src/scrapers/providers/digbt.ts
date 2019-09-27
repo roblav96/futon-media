@@ -10,7 +10,7 @@ import * as utils from '@/utils/utils'
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.digbt.org',
 	cloudflare: '/search/ubuntu/',
-	query: { c: 'video', u: 'None' },
+	query: { c: 'video' },
 })
 
 export class Digbt extends scraper.Scraper {
@@ -32,7 +32,7 @@ export class Digbt extends scraper.Scraper {
 					bytes: utils.toBytes(size.slice(-2).join(' ')),
 					name: $el.find('div a').attr('title'),
 					magnet: $el.find('div.tail a[href^="magnet:?"]').attr('href'),
-					seeders: _.max([utils.parseInt(downloads), 3]),
+					seeders: utils.parseInt(downloads) || NaN,
 					stamp: utils.toStamp(ctime.replace('ago', '').trim()),
 				} as scraper.Result)
 			} catch (error) {

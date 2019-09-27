@@ -34,9 +34,9 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	let squash = utils.squash(query)
 	let squashes = utils.byLength(_.uniq([query, squash]))
 	let results = (await pAll(
-		squashes.map(squash => async () =>
+		squashes.map(squashed => async () =>
 			(await trakt.client.get('/search/movie,show', {
-				query: { query: squash, fields: 'title,translations,aliases', limit: 100 },
+				query: { query: squashed, fields: 'title,translations,aliases', limit: 100 },
 			})) as trakt.Result[]
 		),
 		{ concurrency: 1 }

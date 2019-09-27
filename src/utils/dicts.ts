@@ -4,16 +4,20 @@ const __dicts__ = {
 	'COLLECTOR': (`["collector", "collectoredition", "collectorversion", "collectorcut", "collectors", "collectorsedition", "collectorsversion", "collectorscut"]` as any) as string[],
 	'COMMENTARY': (`["commentary", "commentaryedition", "commentaryversion", "commentarycut"]` as any) as string[],
 	'DIRECTOR': (`["directors", "directorsedition", "directorsversion", "directorscut"]` as any) as string[],
-	'EXTENDED': (`["ee", "see", "ece", "ext", "exted", "extended", "extendededition", "extendedversion", "extendedcut"]` as any) as string[],
+	'EXTENDED': (`["ece", "ee", "ext", "exted", "extended", "extended cut", "extended edition", "extended version", "extendedcut", "extendededition", "extendedversion", "see"]` as any) as string[],
 	'MAKING': (`["making", "makingedition", "makingversion", "makingcut", "makingof", "makingofedition", "makingofversion", "makingofcut", "making of"]` as any) as string[],
 	'SPECIAL': (`["special", "specialedition", "specialversion", "specialcut"]` as any) as string[],
 
 	'3D': (`["3d", "hsbs", "htab", "sbs", "side by side", "sidebyside", "stereoscopic", "tab", "top and bottom", "topandbottom"]` as any) as string[],
-	'CAM': (`["cam", "cam rip", "camhd", "camrip", "dvd cam", "dvdcam", "hd cam", "hdcam"]` as any) as string[],
+	'CAM': (`["cam", "cam hd", "cam rip", "camhd", "camrip", "dvd cam", "dvdcam", "hd cam", "hdcam"]` as any) as string[],
+	'TELESYNC': (`["ts", "telesync", "tsync", "tsrip", "dvdts", "dvd ts", "hdts", "hdtelesync", "hdtsync"]` as any) as string[],
+	'TELECINE': (`["tc", "tk", "telecine", "tcine", "tcrip", "dvdtc", "dvd tc"]` as any) as string[],
 	'EXTRAS': (`["extra", "extras"]` as any) as string[],
 	'SAMPLE': (`["preview", "previews", "sample", "samples"]` as any) as string[],
 	'SOUNDTRACK': (`["album", "albums", "flac", "music", "ost", "soundtrack", "soundtracks", "theme music", "theme song", "theme songs", "thememusic", "themesong", "themesongs"]` as any) as string[],
 	'TRAILER': (`["trailer", "trailers"]` as any) as string[],
+
+	'JUNK': (`["rarbg com mp4"]` as any) as string[],
 
 	'UPLOADERS': (`["amiable", "ctrlhd", "dimension", "epsilon", "esir", "etrg", "exkinoray", "geckos", "grym", "inspirit", "kralimarko", "memento", "mvgroup", "publichd", "rartv", "rovers", "shitbox", "sigma", "sinners", "sparks", "swtyblz", "tasted", "terminal", "tgx", "trollhd", "trolluhd"]` as any) as string[],
 
@@ -33,11 +37,15 @@ export const EXCLUDES = _.uniq(
 	Array.of(
 		dicts['3D'],
 		dicts['CAM'],
+		dicts['COMMENTARY'],
 		dicts['EXTRAS'],
+		dicts['JUNK'],
+		dicts['MAKING'],
 		dicts['SAMPLE'],
 		dicts['SOUNDTRACK'],
-		dicts['TRAILER'],
-		dicts['SPECIAL']
-	)
-)
-console.log(`EXCLUDES ->`, EXCLUDES)
+		dicts['SPECIAL'],
+		dicts['TELECINE'],
+		dicts['TELESYNC'],
+		dicts['TRAILER']
+	).flat()
+).sort()

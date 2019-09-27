@@ -22,12 +22,12 @@ export class Btsow extends scraper.Scraper {
 				let $el = $(el)
 				let link = $el.find('a')
 				let href = link.attr('href')
-				let title = link.attr('title')
+				let title = link.attr('title') || link.text()
 				results.push({
 					bytes: utils.toBytes($el.find('.size').text()),
 					name: title,
 					magnet: `magnet:?xt=urn:btih:${href.split('/').pop()}&dn=${title}`,
-					seeders: 1,
+					seeders: NaN,
 					stamp: utils.toStamp($el.find('.date').text()),
 				} as scraper.Result)
 			} catch (error) {

@@ -12,7 +12,6 @@ const db = new Db(__filename)
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
 	cloudflare: '/',
-	// headers: { referer: 'https://snowfl.com/' },
 })
 
 async function getToken() {

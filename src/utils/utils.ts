@@ -283,6 +283,10 @@ export function defineValue<T, K extends keyof T>(target: T, key: K, value: T[K]
 }
 
 export function toStamp(value: string) {
+	value = value.trim()
+	if (/^\d{4}\-\d{2}\-\d{2}$/.test(value)) {
+		return dayjs(value).valueOf()
+	}
 	let amount = parseInt(value)
 	let unit = value.replace(/[^a-z\s]/gi, '')
 	unit = unit.toLowerCase().trim()

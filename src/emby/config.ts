@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
+import * as internalIp from 'internal-ip'
 
 export async function config() {
 	if (!process.env.EMBY_API_KEY) {
@@ -22,6 +23,13 @@ export async function config() {
 		} catch {}
 	}
 	if (!Info) throw new Error(`!SystemInfo -> Could not find emby server on any ports '${ports}'`)
+
+	if (process.DEVELOPMENT) {
+		let ip = await internalIp.v4()
+		if (!Info.WanAddress.includes(ip)) {
+			throw new Error(`config Info.WanAddress -> ${Info.WanAddress} != ${ip}`)
+		}
+	}
 
 	_.defaults(process.env, {
 		EMBY_DATA_PATH: Info.ProgramDataPath,

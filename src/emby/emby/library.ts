@@ -7,6 +7,7 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
+import * as scraper from '@/scrapers/scraper'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
@@ -94,6 +95,9 @@ process.nextTick(async () => {
 				if (_.isArray(entry)) await db.del(entry[0])
 				await db.put(`UserId:${item.ids.trakt}`, UserId, utils.duration(1, 'day'))
 			}
+			// if (process.DEVELOPMENT && ['Movie', 'Episode'].includes(Item.Type)) {
+			// 	await scraper.scrapeAll(item)
+			// }
 		}
 	})
 
@@ -308,7 +312,7 @@ export const library = {
 		if (item.show) {
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
-				.get(`/shows/${item.ids.trakt}/seasons`, { silent: true })
+				.get(`/shows/${item.ids.slug}/seasons`, { silent: true })
 				.catch(error => {
 					console.error(`library add '${item.short}' -> %O`, error)
 					return []

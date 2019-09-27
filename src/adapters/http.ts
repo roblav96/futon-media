@@ -70,15 +70,16 @@ export class Http {
 
 		if (!this.jar) {
 			let jar = await db.get(`jar:${host}`)
+			// console.log(`${host} jar:${host} ->`, jar)
 			if (jar) this.jar = CookieJar.fromJSON(jar)
 			else this.jar = new CookieJar()
-			// console.log(`${host} jar ->`, this.jar.toJSON().cookies)
+			// console.log(`${host} CookieJar ->`, this.jar.toJSON().cookies)
 		}
 
 		let scraper = cloudscraper.defaults(
 			_.defaultsDeep(
 				{
-					agentOptions: { ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256' },
+					// agentOptions: { ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256' },
 					cloudflareMaxTimeout: 10000,
 					headers: { 'User-Agent': this.config.headers['user-agent'] },
 					jar: request.jar(this.jar.store),
