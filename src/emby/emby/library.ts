@@ -95,9 +95,9 @@ process.nextTick(async () => {
 				if (_.isArray(entry)) await db.del(entry[0])
 				await db.put(`UserId:${item.ids.trakt}`, UserId, utils.duration(1, 'day'))
 			}
-			// if (process.DEVELOPMENT && ['Movie', 'Episode'].includes(Item.Type)) {
-			// 	await scraper.scrapeAll(item)
-			// }
+			if (process.DEVELOPMENT && ['Movie', 'Episode'].includes(Item.Type)) {
+				await scraper.scrapeAll(item)
+			}
 		}
 	})
 
@@ -317,7 +317,7 @@ export const library = {
 					console.error(`library add '${item.short}' -> %O`, error)
 					return []
 				})) as trakt.Season[]
-			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
+			seasons = seasons.filter(v => v.number > 0 && v.episode_count > 0)
 			for (let season of seasons) {
 				item.use({ season })
 				for (let i = 1; i <= item.S.e; i++) {

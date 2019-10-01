@@ -151,7 +151,7 @@ export class Scraper {
 			memoize: !process.DEVELOPMENT,
 			profile: process.DEVELOPMENT,
 			retries: [],
-			// silent: true,
+			silent: true,
 		} as http.Config)
 		return new http.Http(config)
 	}
