@@ -83,11 +83,11 @@ export class Http {
 					cloudflareMaxTimeout: 10000,
 					headers: { 'User-Agent': this.config.headers['user-agent'] },
 					jar: request.jar(this.jar.store),
-				},
+				} as cloudscraper.CoreOptions,
 				cloudscraper.defaultParams
 			)
-		)
-		scraper.defaultParams.jar._jar = this.jar
+		) as typeof cloudscraper
+		;(scraper.defaultParams as any).jar._jar = this.jar
 		// console.log(`${host} defaultParams ->`, scraper.defaultParams)
 
 		try {

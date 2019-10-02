@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
 import * as media from '@/media/media'
 import * as utils from '@/utils/utils'
@@ -41,7 +42,8 @@ process.nextTick(async () => {
 					} as OauthRequest,
 					silent: true,
 				})
-				console.info(`OAUTH_TOKEN ->`, OAUTH_TOKEN)
+				let expires = dayjs(OAUTH_TOKEN.created_at * 1000 + OAUTH_TOKEN.expires_in * 1000)
+				console.info(`OAUTH_TOKEN expires ->`, expires.toNow())
 			} catch {}
 		}
 	}
