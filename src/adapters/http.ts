@@ -191,6 +191,9 @@ export class Http {
 				response = await send(options.method, options.url, options)
 			} catch (err) {
 				let error = err as HTTPError
+				if (options.debug) {
+					console.error(`[DEBUG] <- ${options.method} ${options.url} %O`, error)
+				}
 				if (_.isFinite(error.statusCode)) {
 					if (!_.isString(error.statusMessage)) {
 						let message = HttpErrors[error.statusCode]

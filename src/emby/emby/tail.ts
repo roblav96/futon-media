@@ -64,7 +64,7 @@ export const tail = {
 	},
 }
 
-const rxTail = new Rx.Subject<{ message: string; match: RegExpMatchArray }>()
+export const rxTail = new Rx.Subject<{ message: string; match: RegExpMatchArray }>()
 export const rxLine = rxTail.pipe(
 	// Rx.op.tap(({ message, match }) => console.log(`rxTail message match ->`, message, match)),
 	Rx.op.map(({ message, match }) => ({
