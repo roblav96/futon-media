@@ -19,37 +19,25 @@ export class Eztv extends scraper.Scraper {
 
 	async getResults(imdb_id: string) {
 		if (!this.item.show) return []
-		let results = [] as Result[]
-		let page = 1
-		while (true) {
-			if (page > 1) await utils.pRandom(300)
-			let response = (await client.get('/get-torrents', {
-				query: { imdb_id, page } as Partial<Query>,
-			})) as Response
-			let torrents = (response.torrents || []).filter(v => {
-				let season = _.parseInt(v.season)
-				let episode = _.parseInt(v.episode)
-				if (this.item.E.a && utils.includes(v.title, this.item.E.a)) {
-					return true
-				}
-				if (this.item.E.t && utils.accuracy(v.title, this.item.E.t)) {
-					return true
-				}
-				if (this.item.S.n && season && this.item.E.n && episode) {
-					if (this.item.S.n == season && this.item.E.n == episode) {
-						return true
-					}
-				}
-				if (this.item.S.n && season && this.item.S.n == season) {
-					return true
-				}
-			})
-			results.push(...torrents)
-			if (page >= 1) break
-			if (results.length > 0 && torrents.length == 0) break
-			if (response.torrents_count > page * 100) page++
-			else break
-		}
+		let response = (await client.get('/get-torrents', {
+			query: { imdb_id } as Partial<Query>,
+		})) as Response
+		let results = (response.torrents || []).filter(v => {
+			let season = _.parseInt(v.season)
+			let episode = _.parseInt(v.episode)
+			if (this.item.E.a && utils.includes(v.title, this.item.E.a)) {
+				return true
+			}
+			if (this.item.E.t && utils.accuracy(v.title, this.item.E.t)) {
+				return true
+			}
+			if (this.item.S.n && season && this.item.E.n && episode) {
+				return this.item.S.n == season && this.item.E.n == episode
+			}
+			if (this.item.S.n && season && this.item.S.n == season) {
+				return true
+			}
+		})
 		return results.map(v => {
 			return {
 				bytes: _.parseInt(v.size_bytes),
