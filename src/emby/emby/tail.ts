@@ -76,6 +76,9 @@ export const rxLine = rxTail.pipe(
 	Rx.op.share()
 	// Rx.op.tap(line => console.log(`rxTail line ->`, line))
 )
+// rxLine.subscribe(({ stamp, level, category, message }) => {
+// 	console.log(`rxLine ->`, stamp, level, category, message)
+// })
 
 export const rxHttp = rxLine.pipe(
 	// Rx.op.tap(line => console.log(`rxHttp line ->`, line)),

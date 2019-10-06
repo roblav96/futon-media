@@ -17,22 +17,6 @@ import pQueue from 'p-queue'
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush('UserId:*'))
 
-	// let ansi = await import('ansi-colors')
-	// let names = (await library.Items({ IncludeItemTypes: ['Movie', 'Series'] })).map(v => v.Name)
-	// names = _.uniq(names).sort(utils.alphabetically)
-	// names = names.filter(v => v.split(' ').length == 1)
-	// // names = names.filter(v => !utils.isAscii(v))
-	// names.forEach(v =>
-	// 	console.log(
-	// 		ansi.bold(v),
-	// 		// `\n${v.replace(/[^a-z0-9\s]{2,}/gi,'')}`,
-	// 		`\n${utils.toSlug(v)}`,
-	// 		`\n${utils.toSlug(v, { squash: true })}`,
-	// 		`\n${utils.simplify(v)}`,
-	// 		`\n${utils.stops(v)}`
-	// 	)
-	// )
-
 	await library.setFolders()
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
@@ -95,9 +79,9 @@ process.nextTick(async () => {
 				if (_.isArray(entry)) await db.del(entry[0])
 				await db.put(`UserId:${item.ids.trakt}`, UserId, utils.duration(1, 'day'))
 			}
-			if (process.DEVELOPMENT && ['Movie', 'Episode'].includes(Item.Type)) {
-				await scraper.scrapeAll(item)
-			}
+			// if (process.DEVELOPMENT && ['Movie', 'Episode'].includes(Item.Type)) {
+			// 	await scraper.scrapeAll(item)
+			// }
 		}
 	})
 
@@ -155,13 +139,15 @@ export const library = {
 		}
 	},
 
-	folders: { movies: '', shows: '' },
+	folders: { movies: { Location: '', ItemId: '' }, shows: { Location: '', ItemId: '' } },
 	async setFolders() {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
-		library.folders.movies = Folders.find(v => v.CollectionType == 'movies').Locations[0]
-		library.folders.shows = Folders.find(v => v.CollectionType == 'tvshows').Locations[0]
+		let movies = Folders.find(v => v.CollectionType == 'movies')
+		library.folders.movies = { Location: movies.Locations[0], ItemId: movies.ItemId }
+		let tvshows = Folders.find(v => v.CollectionType == 'tvshows')
+		library.folders.shows = { Location: tvshows.Locations[0], ItemId: tvshows.ItemId }
 	},
 
 	// async setCollections() {
@@ -242,9 +228,9 @@ export const library = {
 		}
 	},
 
-	async refreshItem(ItemId: string) {
-		let Item = await library.byItemId(ItemId)
-	},
+	// async refreshItem(ItemId: string) {
+	// 	let Item = await library.byItemId(ItemId)
+	// },
 
 	pathIds(Path: string) {
 		let matches = Path.match(/\[\w{4}id=(tt)?\d*\]/g)
@@ -258,7 +244,7 @@ export const library = {
 
 	toStrmPath(item: media.Item, full = false) {
 		let title = utils.toSlug(item.title, { title: true })
-		let dir = library.folders[`${item.type}s`]
+		let dir = library.folders[`${item.type}s` as media.MainContentTypes].Location
 		let file = `/${title} (${item.year})`
 
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
@@ -691,8 +677,64 @@ export interface ItemsQuery {
 
 export interface VirtualFolder {
 	CollectionType: string
+	ItemId: string
+	LibraryOptions: LibraryOptions
 	Locations: string[]
 	Name: string
+	PrimaryImageItemId: string
+	RefreshStatus: string
+}
+
+export interface LibraryOptions {
+	AutomaticRefreshIntervalDays: number
+	CollapseSingleItemFolders: boolean
+	ContentType: string
+	DisabledLocalMetadataReaders: any[]
+	DisabledSubtitleFetchers: string[]
+	DownloadImagesInAdvance: boolean
+	EnableArchiveMediaFiles: boolean
+	EnableAudioResume: boolean
+	EnableAutomaticSeriesGrouping: boolean
+	EnableChapterImageExtraction: boolean
+	EnableEmbeddedTitles: boolean
+	EnablePhotos: boolean
+	EnableRealtimeMonitor: boolean
+	ExtractChapterImagesDuringLibraryScan: boolean
+	ForcedSubtitlesOnly: boolean
+	ImportMissingEpisodes: boolean
+	LocalMetadataReaderOrder: any[]
+	MaxResumePct: number
+	MetadataCountryCode: string
+	MetadataSavers: any[]
+	MinResumeDurationSeconds: number
+	MinResumePct: number
+	PathInfos: {
+		Path: string
+	}[]
+	PreferredImageLanguage: string
+	PreferredMetadataLanguage: string
+	RequirePerfectSubtitleMatch: boolean
+	SaveLocalMetadata: boolean
+	SaveLocalThumbnailSets: boolean
+	SaveSubtitlesWithMedia: boolean
+	SeasonZeroDisplayName: string
+	SkipSubtitlesIfAudioTrackMatches: boolean
+	SkipSubtitlesIfEmbeddedSubtitlesPresent: boolean
+	SubtitleDownloadLanguages: any[]
+	SubtitleFetcherOrder: string[]
+	ThumbnailImagesIntervalSeconds: number
+	TypeOptions: {
+		ImageFetcherOrder: string[]
+		ImageFetchers: string[]
+		ImageOptions: {
+			Limit: number
+			MinWidth: number
+			Type: string
+		}[]
+		MetadataFetcherOrder: string[]
+		MetadataFetchers: string[]
+		Type: string
+	}[]
 }
 
 export interface View {
