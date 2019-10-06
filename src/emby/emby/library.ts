@@ -38,10 +38,11 @@ process.nextTick(async () => {
 		Rx.op.filter(({ Item }) =>
 			['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
 		),
-		Rx.op.distinctUntilChanged((a, b) => {
-			let keys = ['ItemId', 'UserId']
-			return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
-		})
+		Rx.op.distinct(({ ItemId, UserId }) => utils.hash(ItemId + UserId))
+		// Rx.op.distinctUntilChanged((a, b) => {
+		// 	let keys = ['ItemId', 'UserId']
+		// 	return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
+		// })
 	)
 	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
 		let who = await emby.sessions.byWho(UserId)
@@ -71,19 +72,23 @@ process.nextTick(async () => {
 			library.addQueue(items)
 		}
 		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
-			let item = await library.item(Item.Path, Item.Type)
+			let item = await library.item(Item)
 			console.info(`${who}rxItem ${Item.Type} ->`, item.short)
 			library.addQueue([item])
 			if (UserId) {
 				let entry = (await db.entries()).find(([k, v]) => v == UserId)
 				if (_.isArray(entry)) await db.del(entry[0])
-				await db.put(`UserId:${item.ids.trakt}`, UserId, utils.duration(1, 'day'))
+				await db.put(`UserId:${item.trakt}`, UserId, utils.duration(1, 'day'))
 			}
-			// if (process.DEVELOPMENT && ['Movie', 'Episode'].includes(Item.Type)) {
-			// 	await scraper.scrapeAll(item)
-			// }
 		}
 	})
+
+	if (process.DEVELOPMENT) {
+		rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
+			if (!['Movie', 'Episode'].includes(Item.Type)) return
+			await scraper.scrapeAll(await library.item(Item))
+		})
+	}
 
 	let rxSubtitles = rxItem.pipe(
 		Rx.op.filter(({ Item }) => {
@@ -215,16 +220,34 @@ export const library = {
 		return (await library.Items(_.merge({ AnyProviderIdEquals }, query)))[0]
 	},
 
-	async item(Path: string, Type: string) {
-		let type = ['Series', 'Season', 'Episode'].includes(Type) ? 'show' : Type.toLowerCase()
-		let ids = utils.sortKeys(library.pathIds(Path))
+	async item(Item: emby.Item) {
+		let type = Item.Type.toLowerCase() as media.ContentType
+		if (['Series', 'Season', 'Episode'].includes(Item.Type)) type = 'show'
+		let ids = utils.sortKeys(library.pathIds(Item.Path))
 		for (let key in ids) {
 			let results = (await trakt.client.get(`/search/${key}/${ids[key]}`, {
 				query: { type },
 				silent: true,
 			})) as trakt.Result[]
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
-			if (result) return new media.Item(result)
+			if (!result) continue
+			let item = new media.Item(result)
+			if (Item.Type == 'Season' && _.isFinite(Item.IndexNumber)) {
+				let seasons = (await trakt.client.get(
+					`/shows/${item.slug}/seasons`
+				)) as trakt.Season[]
+				item.use({
+					type: 'season',
+					season: seasons.find(v => v.number == Item.IndexNumber),
+				})
+			}
+			if (Item.Type == 'Episode' && _.isFinite(Item.IndexNumber)) {
+				let episode = (await trakt.client.get(
+					`/shows/${item.slug}/seasons/${Item.ParentIndexNumber}/episodes/${Item.IndexNumber}`
+				)) as trakt.Episode
+				item.use({ type: 'episode', episode })
+			}
+			return item
 		}
 	},
 
@@ -291,6 +314,10 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
+		/*
+			TODO:
+			- clone item so season and episodes item.use don't mutate original item
+		*/
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
 			Updates.push(await library.toStrmFile(item))
@@ -298,7 +325,7 @@ export const library = {
 		if (item.show) {
 			await utils.pRandom(100)
 			let seasons = (await trakt.client
-				.get(`/shows/${item.ids.slug}/seasons`, { silent: true })
+				.get(`/shows/${item.slug}/seasons`, { silent: true })
 				.catch(error => {
 					console.error(`library add '${item.short}' -> %O`, error)
 					return []

@@ -30,7 +30,7 @@ process.nextTick(() => {
 		// 	throw new Error(`RealDebrid actives ${actives.nb} >= ${actives.limit}`)
 		// }
 
-		let item = await emby.library.item(Item.Path, Item.Type)
+		let item = await emby.library.item(Item)
 
 		if (Item.Type == 'Movie') {
 			queue.add(() => download(item, Session.isSD))
@@ -41,19 +41,19 @@ process.nextTick(() => {
 				silent: true,
 			})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
-			if (Item.Type == 'Series') {
-				if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
-					return console.warn(`favorites item.isDaily || item.episodes >= 500`)
-				}
-				if (process.DEVELOPMENT) {
-					return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
-				}
-				queue.addAll(
-					seasons.map(season => () =>
-						download(item.use({ type: 'season', season }), Session.isSD)
-					)
-				)
-			}
+			// if (Item.Type == 'Series') {
+			// 	if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
+			// 		return console.warn(`favorites item.isDaily || item.episodes >= 500`)
+			// 	}
+			// 	if (process.DEVELOPMENT) {
+			// 		return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
+			// 	}
+			// 	queue.addAll(
+			// 		seasons.map(season => () =>
+			// 			download(item.use({ type: 'season', season }), Session.isSD)
+			// 		)
+			// 	)
+			// }
 			if (Item.Type == 'Episode') {
 				let { ParentIndexNumber: s, IndexNumber: e } = Item
 				item.use({ type: 'season', season: seasons.find(v => v.number == s) })

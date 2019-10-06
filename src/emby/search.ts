@@ -10,6 +10,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 const rxSearch = emby.rxHttp.pipe(
+	// Rx.op.tap(({ url, query }) => console.log(`rxHttp ->`, url, query)),
 	Rx.op.filter(({ query }) => !!query.SearchTerm),
 	Rx.op.map(({ query }) => {
 		let slug = utils.trim(query.SearchTerm)
