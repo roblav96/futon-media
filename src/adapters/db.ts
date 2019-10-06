@@ -56,7 +56,7 @@ export class Db {
 			let entries = [] as [string, T][]
 			let stream = this.level.createReadStream() as NodeJS.ReadStream
 			stream.once('error', error => reject(error))
-			stream.on('data', ({ key, value }) => entries.push([key, value]))
+			stream.on('data', ({ key, value }: any) => entries.push([key, value]))
 			stream.on('end', () => resolve(entries))
 		})
 	}
