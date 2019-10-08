@@ -11,7 +11,7 @@ import * as utils from '@/utils/utils'
 
 const rxSearch = emby.rxHttp.pipe(
 	// Rx.op.tap(({ url, query }) => console.log(`rxHttp ->`, url, query)),
-	Rx.op.filter(({ query }) => !!query.SearchTerm),
+	Rx.op.filter(({ query }) => !!(query.SearchTerm && query.UserId)),
 	Rx.op.map(({ query }) => {
 		let slug = utils.trim(query.SearchTerm)
 		if (!slug.includes(' ')) slug = utils.stops(slug)
@@ -19,12 +19,12 @@ const rxSearch = emby.rxHttp.pipe(
 	}),
 	Rx.op.filter(({ query }) => utils.squash(query).length > 1),
 	Rx.op.debounceTime(1000),
-	Rx.op.distinctUntilChanged((a, b) => a.query == b.query)
+	Rx.op.distinctUntilKeyChanged('query')
 )
 
 rxSearch.subscribe(async ({ query, UserId }) => {
-	let who = await emby.sessions.byWho(UserId)
-	console.warn(`${who}rxSearch '${query}' ->`)
+	let Session = await emby.sessions.byUserId(UserId)
+	console.warn(`[${Session.short}] rxSearch '${query}' ->`)
 
 	if (!query.includes(' ') && /^tt\d+$/.test(query)) {
 		let results = (await trakt.client.get(`/search/imdb/${query}`)) as trakt.Result[]

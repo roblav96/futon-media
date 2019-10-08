@@ -12,7 +12,7 @@ import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
 import { dicts } from '@/utils/dicts'
 
-const providers = [] as typeof Scraper[]
+let providers = [] as typeof Scraper[]
 process.nextTick(async () => {
 	// https://ibit.to/
 	// (await import('@/scrapers/providers/bitlord')).Bitlord,
@@ -28,28 +28,28 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
-	providers.push(
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+	providers = [
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
 		// (await import('@/scrapers/providers/btbit')).BtBit,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/btsow')).Btsow,
-		// (await import('@/scrapers/providers/digbt')).Digbt,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/btsow')).Btsow,
+		(await import('@/scrapers/providers/digbt')).Digbt,
 		// (await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
 		(await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
-		// (await import('@/scrapers/providers/yts')).Yts
-	)
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		(await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
+		(await import('@/scrapers/providers/yts')).Yts,
+	]
 })
 
 export async function scrapeAll(item: media.Item, sd = true) {

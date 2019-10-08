@@ -16,30 +16,25 @@ export const sessions = {
 	async byUserId(UserId: string) {
 		return (await sessions.get()).find(v => v.UserId == UserId)
 	},
-	async byWho(UserId: string) {
-		if (!UserId || process.DEVELOPMENT) return ''
-		let Session = await sessions.byUserId(UserId)
-		return Session ? `[${Session.short}]\n` : ''
-	},
 	broadcast(message: string) {
 		sessions.get().then(sessions => sessions.forEach(v => v.message(message)))
 	},
 }
 
 export class Session {
-	static UHDUsers = ['developer', 'robert']
 	get isUHD() {
-		return Session.UHDUsers.includes(this.UserName.toLowerCase())
+		let UHDUsers = ['developer', 'robert']
+		return UHDUsers.includes(this.UserName.toLowerCase())
 	}
-	static HDUsers = Session.UHDUsers.concat(['mom'])
 	get isHD() {
-		return Session.HDUsers.includes(this.UserName.toLowerCase())
+		let HDUsers = ['mom']
+		return this.isUHD || HDUsers.includes(this.UserName.toLowerCase())
 	}
 	get isSD() {
 		return this.Quality == 'SD'
 	}
 	isDevice(device: string) {
-		return utils.includes(`${this.Client} ${this.DeviceName}`, device)
+		return utils.includes(this.Client + this.DeviceName, device)
 	}
 
 	get Codecs() {
@@ -65,12 +60,9 @@ export class Session {
 				v.startsWith('-') ? utils.minify(v) : v
 			),
 		}
-		if (Codecs.audio.includes('ac3')) {
-			Codecs.audio.push('eac3') && Codecs.audio.sort()
-		}
-		if (Codecs.audio.includes('dts') && this.isHD) {
-			Codecs.audio.push('truehd') && Codecs.audio.sort()
-		}
+		if (Codecs.audio.includes('ac3')) Codecs.audio.push('eac3')
+		if (Codecs.audio.includes('dts') && this.isHD) Codecs.audio.push('truehd')
+		Codecs.audio.sort()
 		return Codecs
 	}
 	get Channels() {
@@ -187,7 +179,7 @@ export class Session {
 	}
 
 	async command(Name: string, body: any) {
-		console.log(`command '${Name}' ->`, body)
+		// console.log(`command '${Name}' ->`, body)
 		let response = await emby.client.post(`/Sessions/${this.Id}/Command/LibraryChanged`, {
 			query: {
 				// messageId: utils.hash(utils.nonce(), 'md5'),
@@ -195,7 +187,7 @@ export class Session {
 			},
 			body,
 		})
-		console.log(`response ->`, response)
+		// console.log(`response ->`, response)
 	}
 
 	message(data: string | Error) {
@@ -204,9 +196,11 @@ export class Session {
 			body.Text = `❌ Error: ${data.message}`
 			body.TimeoutMs *= 2
 		}
-		emby.client.post(`/Sessions/${this.Id}/Message`, { body }).catch(_.noop)
+		return emby.client.post(`/Sessions/${this.Id}/Message`, { body }).catch(_.noop)
 	}
 }
+
+export type Quality = 'SD' | 'HD' | 'UHD'
 
 export interface Session {
 	AdditionalUsers: any[]

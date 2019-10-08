@@ -12,15 +12,14 @@ import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 
 process.nextTick(() => {
-	let rxFavorite = emby.rxHttp.pipe(
-		Rx.op.filter(({ method, parts, query }) => {
-			if (!query.ItemId || !query.UserId) return
+	let rxFavorite = emby.rxItemId.pipe(
+		Rx.op.filter(({ method, parts }) => {
 			return method == 'POST' && parts.includes('favoriteitems')
 		}),
-		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId }))
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId }) => {
 		let Session = await emby.sessions.byUserId(UserId)
+		console.log(`Session ->`, Session)
 		if (!Session.isHD) return
 
 		let Item = await emby.library.byItemId(ItemId)

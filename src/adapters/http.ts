@@ -200,7 +200,7 @@ export class Http {
 						error.statusMessage = message ? message.name : 'ok'
 					}
 					error = new HTTPError(options, error as any)
-					if (this.config.cloudflare && error.headers['server'] == 'cloudflare') {
+					if (this.config.cloudflare && _.get(error, 'headers.server') == 'cloudflare') {
 						await this.refreshCloudflare()
 					}
 					if (options.retries.includes(error.statusCode)) {

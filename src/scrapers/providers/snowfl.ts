@@ -30,6 +30,7 @@ process.nextTick(() => getToken().catch(error => console.error(`getToken -> %O`,
 
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'DATE']
+	concurrency = 1
 	max = 2
 
 	async getResults(slug: string, sort: string) {

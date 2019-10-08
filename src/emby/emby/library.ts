@@ -21,109 +21,95 @@ process.nextTick(async () => {
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
 
-	let rxItem = emby.rxHttp.pipe(
-		Rx.op.filter(({ parts }) => !parts.includes('favoriteitems')),
-		Rx.op.filter(({ query }) => [query.ItemId, query.UserId].filter(Boolean).length == 2),
-		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId })),
-		Rx.op.debounceTime(100),
-		Rx.op.switchMap(async ({ ItemId, UserId }) => {
-			let Item = await library.byItemId(ItemId)
-			if (Item && Item.SeriesId) ItemId = Item.SeriesId
-			return { ItemId, UserId, Item }
-		}),
-		Rx.op.filter(({ Item }) => !!Item)
-	)
-
-	let rxLibrary = rxItem.pipe(
-		Rx.op.filter(({ Item }) =>
-			['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
-		),
-		Rx.op.distinct(({ ItemId, UserId }) => utils.hash(ItemId + UserId))
-		// Rx.op.distinctUntilChanged((a, b) => {
-		// 	let keys = ['ItemId', 'UserId']
-		// 	return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
-		// })
-	)
-	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
-		let who = await emby.sessions.byWho(UserId)
-		if (Item.Type == 'Person') {
-			if (!Item.ProviderIds.Imdb) {
-				if (!Item.ProviderIds.Tmdb) {
-					if (!Item.Name) return console.warn(`${who}rxItem !Item.Name ->`, Item)
-					let results = ((await tmdb.client.get('/search/person', {
-						query: { query: Item.Name },
-					})) as tmdb.Paginated<tmdb.Person>).results
-					results.sort((a, b) => b.popularity - a.popularity)
-					if (!results[0]) return console.warn(`${who}rxItem !Item.Tmdb ->`, Item)
-					Item.ProviderIds.Tmdb = results[0].id.toString()
-				}
-				let externals = (await tmdb.client.get(
-					`/person/${Item.ProviderIds.Tmdb}/external_ids`
-				)) as tmdb.ExternalIds
-				Item.ProviderIds.Imdb = externals.imdb_id
-			}
-			let person = (await trakt.client.get(
-				`/people/${Item.ProviderIds.Imdb}`
-			)) as trakt.Person
-			let items = (await trakt.resultsFor(person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk())
-			items.sort((a, b) => b.main.votes - a.main.votes)
-			console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.short))
-			library.addQueue(items)
-		}
-		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
-			let item = await library.item(Item)
-			console.info(`${who}rxItem ${Item.Type} ->`, item.short)
-			library.addQueue([item])
-			if (UserId) {
-				let entry = (await db.entries()).find(([k, v]) => v == UserId)
-				if (_.isArray(entry)) await db.del(entry[0])
-				await db.put(`UserId:${item.trakt}`, UserId, utils.duration(1, 'day'))
-			}
-		}
-	})
-
-	if (process.DEVELOPMENT) {
-		rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
-			if (!['Movie', 'Episode'].includes(Item.Type)) return
-			await scraper.scrapeAll(await library.item(Item))
-		})
-	}
-
-	let rxSubtitles = rxItem.pipe(
-		Rx.op.filter(({ Item }) => {
-			return ['Movie', 'Episode'].includes(Item.Type)
-		}),
-		Rx.op.distinctUntilChanged((a, b) => a.Item.Id == b.Item.Id)
-	)
-	rxSubtitles.subscribe(async ({ Item }) => {
-		let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
-			query: { IsPerfectMatch: 'false', IsForced: 'true' },
-			silent: true,
-		})) as RemoteSubtitle[]
-		if (subs && subs[0]) {
-			await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`)
-		}
-	})
-
-	// let rxRefresh = rxItem.pipe(
-	// 	Rx.op.filter(({ Item }) => {
-	// 		return ['Series', 'Season', 'Episode'].includes(Item.Type)
-	// 	}),
-	// 	Rx.op.distinctUntilChanged((a, b) => a.ItemId == b.ItemId)
-	// )
-	// rxRefresh.subscribe(async ({ Item, ItemId, UserId }) => {
-	// 	await emby.client.post(`/Items/${ItemId}/Refresh`, {
-	// 		query: {
-	// 			ImageRefreshMode: 'FullRefresh',
-	// 			MetadataRefreshMode: 'FullRefresh',
-	// 			Recursive: 'true',
-	// 			ReplaceAllImages: 'false',
-	// 			ReplaceAllMetadata: 'false',
-	// 		},
-	// 		silent: true,
+	// let rxLibrary = rxItem.pipe(
+	// 	Rx.op.filter(({ Item }) =>
+	// 		['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
+	// 	),
+	// 	Rx.op.distinctUntilChanged((a, b) => {
+	// 		let keys = ['ItemId', 'UserId']
+	// 		return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
 	// 	})
+	// )
+	// rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
+	// 	let who = await emby.sessions.byWho(UserId)
+	// 	if (Item.Type == 'Person') {
+	// 		if (!Item.ProviderIds.Imdb) {
+	// 			if (!Item.ProviderIds.Tmdb) {
+	// 				if (!Item.Name) return console.warn(`${who}rxItem !Item.Name ->`, Item)
+	// 				let results = ((await tmdb.client.get('/search/person', {
+	// 					query: { query: Item.Name },
+	// 				})) as tmdb.Paginated<tmdb.Person>).results
+	// 				results.sort((a, b) => b.popularity - a.popularity)
+	// 				if (!results[0]) return console.warn(`${who}rxItem !Item.Tmdb ->`, Item)
+	// 				Item.ProviderIds.Tmdb = results[0].id.toString()
+	// 			}
+	// 			let externals = (await tmdb.client.get(
+	// 				`/person/${Item.ProviderIds.Tmdb}/external_ids`
+	// 			)) as tmdb.ExternalIds
+	// 			Item.ProviderIds.Imdb = externals.imdb_id
+	// 		}
+	// 		let person = (await trakt.client.get(
+	// 			`/people/${Item.ProviderIds.Imdb}`
+	// 		)) as trakt.Person
+	// 		let items = (await trakt.resultsFor(person)).map(v => new media.Item(v))
+	// 		items = items.filter(v => !v.isJunk())
+	// 		items.sort((a, b) => b.main.votes - a.main.votes)
+	// 		console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.short))
+	// 		library.addQueue(items)
+	// 	}
+	// 	if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
+	// 		let item = await library.item(Item)
+	// 		console.info(`${who}rxItem ${Item.Type} ->`, item.short)
+	// 		library.addQueue([item])
+	// 		if (UserId) {
+	// 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
+	// 			if (_.isArray(entry)) await db.del(entry[0])
+	// 			await db.put(`UserId:${item.trakt}`, UserId, utils.duration(1, 'day'))
+	// 		}
+	// 	}
 	// })
+
+	// // if (process.DEVELOPMENT) {
+	// // 	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
+	// // 		if (!['Movie', 'Episode'].includes(Item.Type)) return
+	// // 		await scraper.scrapeAll(await library.item(Item))
+	// // 	})
+	// // }
+
+	// let rxSubtitles = rxItem.pipe(
+	// 	Rx.op.filter(({ Item }) => {
+	// 		return ['Movie', 'Episode'].includes(Item.Type)
+	// 	}),
+	// 	Rx.op.distinctUntilChanged((a, b) => a.Item.Id == b.Item.Id)
+	// )
+	// rxSubtitles.subscribe(async ({ Item }) => {
+	// 	let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
+	// 		query: { IsPerfectMatch: 'false', IsForced: 'true' },
+	// 		silent: true,
+	// 	})) as RemoteSubtitle[]
+	// 	if (subs && subs[0]) {
+	// 		await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`)
+	// 	}
+	// })
+
+	// // let rxRefresh = rxItem.pipe(
+	// // 	Rx.op.filter(({ Item }) => {
+	// // 		return ['Series', 'Season', 'Episode'].includes(Item.Type)
+	// // 	}),
+	// // 	Rx.op.distinctUntilChanged((a, b) => a.ItemId == b.ItemId)
+	// // )
+	// // rxRefresh.subscribe(async ({ Item, ItemId, UserId }) => {
+	// // 	await emby.client.post(`/Items/${ItemId}/Refresh`, {
+	// // 		query: {
+	// // 			ImageRefreshMode: 'FullRefresh',
+	// // 			MetadataRefreshMode: 'FullRefresh',
+	// // 			Recursive: 'true',
+	// // 			ReplaceAllImages: 'false',
+	// // 			ReplaceAllMetadata: 'false',
+	// // 		},
+	// // 		silent: true,
+	// // 	})
+	// // })
 })
 
 export const library = {
@@ -445,8 +431,6 @@ export const library = {
 		return Items
 	},
 }
-
-export type Quality = 'SD' | 'HD' | 'UHD'
 
 export interface StrmQuery extends trakt.IDs {
 	e: number
