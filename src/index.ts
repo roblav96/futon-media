@@ -1,5 +1,3 @@
-setInterval(Function, 1 << 30)
-
 import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
@@ -17,3 +15,5 @@ async function start() {
 	await import('@/emby/strm')
 }
 process.nextTick(() => start().catch(error => console.error(`start -> %O`, error)))
+
+setInterval(Function, 1 << 30)

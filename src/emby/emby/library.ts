@@ -267,8 +267,8 @@ export const library = {
 
 	toStrmPath(item: media.Item, full = false) {
 		let title = utils.toSlug(item.title, { title: true })
-		let dir = library.folders[`${item.type}s` as media.MainContentTypes].Location
 		let file = `/${title} (${item.year})`
+		let dir = library.folders[`${item.type}s` as media.MainContentTypes].Location
 
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
@@ -314,22 +314,16 @@ export const library = {
 	},
 
 	async add(item: media.Item) {
-		/*
-			TODO:
-			- clone item so season and episodes item.use don't mutate original item
-		*/
+		item = new media.Item(JSON.parse(JSON.stringify(item)))
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
 			Updates.push(await library.toStrmFile(item))
 		}
 		if (item.show) {
 			await utils.pRandom(100)
-			let seasons = (await trakt.client
-				.get(`/shows/${item.slug}/seasons`, { silent: true })
-				.catch(error => {
-					console.error(`library add '${item.short}' -> %O`, error)
-					return []
-				})) as trakt.Season[]
+			let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+				silent: true,
+			})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.episode_count > 0)
 			for (let season of seasons) {
 				item.use({ season })

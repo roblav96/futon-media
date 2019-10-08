@@ -1,4 +1,3 @@
-import '@/mocks/mocks'
 import * as http from '@/adapters/http'
 
 export const client = new http.Http({

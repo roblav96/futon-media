@@ -13,7 +13,10 @@ import pQueue from 'p-queue'
 
 process.nextTick(() => {
 	let rxFavorite = emby.rxHttp.pipe(
-		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
+		Rx.op.filter(({ method, parts, query }) => {
+			if (!query.ItemId || !query.UserId) return
+			return method == 'POST' && parts.includes('favoriteitems')
+		}),
 		Rx.op.map(({ query }) => ({ ItemId: query.ItemId, UserId: query.UserId }))
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId }) => {
@@ -21,7 +24,7 @@ process.nextTick(() => {
 		if (!Session.isHD) return
 
 		let Item = await emby.library.byItemId(ItemId)
-		if (!Item || !['Movie', /** 'Series', */ 'Episode'].includes(Item.Type)) return
+		if (!Item || !['Movie', 'Series', 'Episode'].includes(Item.Type)) return
 
 		// let actives = (await realdebrid.client.get('/torrents/activeCount', {
 		// 	silent: true,
@@ -33,38 +36,38 @@ process.nextTick(() => {
 		let item = await emby.library.item(Item)
 
 		if (Item.Type == 'Movie') {
-			queue.add(() => download(item, Session.isSD))
+			return queue.add(() => download(item, Session.isSD))
 		}
 
-		if ([/** 'Series', */ 'Episode'].includes(Item.Type)) {
-			let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
-				silent: true,
-			})) as trakt.Season[]
-			seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
-			// if (Item.Type == 'Series') {
-			// 	if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
-			// 		return console.warn(`favorites item.isDaily || item.episodes >= 500`)
-			// 	}
-			// 	if (process.DEVELOPMENT) {
-			// 		return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
-			// 	}
-			// 	queue.addAll(
-			// 		seasons.map(season => () =>
-			// 			download(item.use({ type: 'season', season }), Session.isSD)
-			// 		)
-			// 	)
-			// }
-			if (Item.Type == 'Episode') {
-				let { ParentIndexNumber: s, IndexNumber: e } = Item
-				item.use({ type: 'season', season: seasons.find(v => v.number == s) })
-				let episode = (await trakt.client.get(
-					`/shows/${item.slug}/seasons/${s}/episodes/${e}`,
-					{ silent: true }
-				)) as trakt.Episode
-				item.use({ type: 'episode', episode })
-				queue.add(() => download(item, Session.isSD))
-			}
+		let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+			silent: true,
+		})) as trakt.Season[]
+		seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
+
+		if (Item.Type == 'Episode') {
+			let { ParentIndexNumber: s, IndexNumber: e } = Item
+			item.use({ type: 'season', season: seasons.find(v => v.number == s) })
+			let episode = (await trakt.client.get(
+				`/shows/${item.slug}/seasons/${s}/episodes/${e}`,
+				{ silent: true }
+			)) as trakt.Episode
+			item.use({ type: 'episode', episode })
+			return queue.add(() => download(item, Session.isSD))
 		}
+
+		// if (Item.Type == 'Series') {
+		// 	if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
+		// 		return console.warn(`favorites item.isDaily || item.episodes >= 500`)
+		// 	}
+		// 	if (process.DEVELOPMENT) {
+		// 		return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
+		// 	}
+		// 	queue.addAll(
+		// 		seasons.map(season => () =>
+		// 			download(item.use({ type: 'season', season }), Session.isSD)
+		// 		)
+		// 	)
+		// }
 	})
 })
 
