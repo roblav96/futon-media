@@ -58,6 +58,7 @@ export const tail = {
 		console.warn(`tail disconnect ->`)
 		child.cancel()
 		child.all.destroy()
+		child.stdout.removeAllListeners()
 		child = null
 	},
 }
@@ -71,7 +72,7 @@ export const rxLine = rxTail.pipe(
 		level: match.groups.level as 'Debug' | 'Error' | 'Fatal' | 'Info' | 'Warn',
 		message: message.slice(match[0].length).trim(),
 	})),
-	Rx.op.share()
+	Rx.op.share(),
 	// Rx.op.tap(line => console.log(`rxTail line ->`, line))
 )
 // rxLine.subscribe(({ stamp, level, category, message }) => {
@@ -99,51 +100,58 @@ export const rxHttp = rxLine.pipe(
 	}),
 	Rx.op.map(({ method, url, query, ua }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
-		let pathname = new Url(url).pathname.toLowerCase()
-		let parts = pathname.split('/').filter(Boolean)
+		let pathname = new Url(url).pathname
+		let parts = _.compact(pathname.toLowerCase().split('/'))
 		for (let i = 0; i < parts.length; i++) {
 			let [part, next] = [parts[i], parts[i + 1]]
 			if (!next) continue
-			if (part == 'users' && next.length == 32) query.UserId = query.UserId || next
-			let types = [
-				'items',
-				'movies',
-				'shows',
-				'episodes',
-				'videos',
-				'favoriteitems',
-				'playingitems',
-				'subtitles',
-				'trailers',
-			]
-			if (types.includes(part)) {
-				if (utils.isNumeric(next) || next.length == 32) query.ItemId = query.ItemId || next
+			if (['users'].includes(part) && next.length == 32) {
+				query.UserId = query.UserId || next
+			}
+			if (ITEM_ID_PARTS.includes(part) && (utils.isNumeric(next) || next.length == 32)) {
+				query.ItemId = query.ItemId || next
 			}
 		}
+		// if (query.ListItemIds) query.ItemId = query.ItemId || query.ListItemIds
+		// if (query.SeriesId) query.ItemId = query.ItemId || query.SeriesId
 		return { method, url, pathname, parts, query, ua }
 	}),
-	Rx.op.share()
+	Rx.op.share(),
 )
-rxHttp.subscribe(({ method, pathname, query }) => console.log(`rxHttp ->`, method, pathname, query))
+rxHttp.subscribe(({ method, pathname, query, ua }) => {
+	// console.log(`rxHttp ->`, method, `${pathname}\n`, query, `\n${ua}`)
+})
 
 export const rxItemId = rxHttp.pipe(
+	// Rx.op.filter(({ query }) => !!query.ItemId),
 	Rx.op.filter(({ query }) => !!(query.ItemId && query.UserId)),
 	Rx.op.map(v => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
+	Rx.op.debounceTime(10),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
-	// Rx.op.tap(({ ItemId }) => console.log(`rxItemId tap ->`, ItemId)),
-	Rx.op.share()
+	// Rx.op.tap(({ ItemId }) => console.log(`rxItemId.tap ->`, ItemId)),
+	Rx.op.share(),
 )
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
 export const rxItem = rxItemId.pipe(
-	Rx.op.debounceTime(100),
-	// Rx.op.tap(({ ItemId }) => console.log(`rxItem tap ->`, ItemId)),
-	Rx.op.mergeMap(async v => {
+	// Rx.op.tap(({ ItemId }) => console.log(`rxItem.tap ->`, ItemId)),
+	Rx.op.concatMap(async v => {
 		return { ...v, Item: await emby.library.byItemId(v.ItemId) }
 	}),
-	Rx.op.filter(
-		({ Item }) => !!Item && ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)
-	),
-	Rx.op.share()
+	Rx.op.filter(({ Item }) => !!Item && ITEM_TYPES.includes(Item.Type)),
+	Rx.op.share(),
 )
 // rxItem.subscribe(({ ItemId }) => console.log(`rxItem ->`, ItemId))
+
+export const ITEM_TYPES = ['Movie', 'Series', /** 'Season', */ 'Episode', 'Person']
+export const ITEM_ID_PARTS = [
+	'items',
+	'movies',
+	'shows',
+	'episodes',
+	'videos',
+	'favoriteitems',
+	'playingitems',
+	'subtitles',
+	'trailers',
+]

@@ -32,7 +32,7 @@ export class Torrentz2 extends scraper.Scraper {
 					stamp: _.parseInt($el.find('dd span:nth-child(2)').attr('title')) * 1000,
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

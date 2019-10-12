@@ -43,7 +43,7 @@ export class ExtraTorrentSi extends scraper.Scraper {
 				result.stamp = day.valueOf()
 				results.push(result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

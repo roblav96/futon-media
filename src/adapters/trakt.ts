@@ -5,12 +5,12 @@ import * as media from '@/media/media'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
-let OAUTH_TOKEN: OauthToken
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// process.DEVELOPMENT && (await db.flush('*'))
+	// process.DEVELOPMENT && (await db.flush())
+	let token: OauthToken
 	try {
-		OAUTH_TOKEN = await http.client.post('https://api.trakt.tv/oauth/token', {
+		token = await http.client.post('https://api.trakt.tv/oauth/token', {
 			body: {
 				client_id: process.env.TRAKT_CLIENT_ID,
 				client_secret: process.env.TRAKT_CLIENT_SECRET,
@@ -30,11 +30,11 @@ process.nextTick(async () => {
 			silent: true,
 		})) as OauthCode
 		let expired = Date.now() + utils.duration(code.expires_in, 'second')
-		while (!OAUTH_TOKEN && Date.now() < expired) {
+		while (!token && Date.now() < expired) {
 			console.warn(`trakt oauth verify -> ${code.verification_url} -> ${code.user_code}`)
 			await utils.pTimeout(utils.duration(code.interval, 'second'))
 			try {
-				OAUTH_TOKEN = await http.client.post('https://api.trakt.tv/oauth/device/token', {
+				token = await http.client.post('https://api.trakt.tv/oauth/device/token', {
 					body: {
 						client_id: process.env.TRAKT_CLIENT_ID,
 						client_secret: process.env.TRAKT_CLIENT_SECRET,
@@ -42,14 +42,14 @@ process.nextTick(async () => {
 					} as OauthRequest,
 					silent: true,
 				})
-				let expires = dayjs(OAUTH_TOKEN.created_at * 1000 + OAUTH_TOKEN.expires_in * 1000)
-				console.info(`OAUTH_TOKEN expires ->`, expires.toNow())
+				let expires = dayjs(token.created_at * 1000 + token.expires_in * 1000)
+				console.info(`token expires ->`, expires.fromNow())
 			} catch {}
 		}
 	}
-	if (!OAUTH_TOKEN) throw new Error(`trakt oauth !OAUTH_TOKEN`)
-	await db.put('refresh_token', OAUTH_TOKEN.refresh_token)
-	client.config.headers['authorization'] = `Bearer ${OAUTH_TOKEN.access_token}`
+	if (!token) throw new Error(`trakt oauth !token`)
+	await db.put('refresh_token', token.refresh_token)
+	client.config.headers['authorization'] = `Bearer ${token.access_token}`
 })
 
 export const client = new http.Http({

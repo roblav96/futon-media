@@ -6,8 +6,29 @@ import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
+import { Db } from '@/adapters/db'
+
+const db = new Db(__filename)
+process.nextTick(async () => {
+	process.DEVELOPMENT && (await db.flush())
+
+	// let Sessions = await emby.sessions.get()
+	// console.log(`Sessions ->`, Sessions)
+
+	let rxBrowsing = emby.rxItem.pipe(
+		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
+	)
+	rxBrowsing.subscribe(async ({ Item, ItemId, UserId }) => {
+		// console.warn(`rxBrowsing ${ItemId} ->`, Item)
+		// let entry = (await db.entries()).find(([k, v]) => v == UserId)
+		// console.log(`entry ->`, entry)
+		// // if (_.isArray(entry)) await db.del(entry[0])
+		// await db.put(`UserId:${ItemId}`, UserId, utils.duration(1, 'day'))
+	})
+})
 
 export const sessions = {
+	db,
 	async get() {
 		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
 		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new Session(v))
@@ -54,10 +75,10 @@ export class Session {
 		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
 		let Codecs = {
 			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)).map(v =>
-				v.startsWith('-') ? utils.minify(v) : v
+				v.startsWith('-') ? utils.minify(v) : v,
 			),
 			video: _.sortBy(_.uniq(video.toLowerCase().split(',')).filter(Boolean)).map(v =>
-				v.startsWith('-') ? utils.minify(v) : v
+				v.startsWith('-') ? utils.minify(v) : v,
 			),
 		}
 		if (Codecs.audio.includes('ac3')) Codecs.audio.push('eac3')
@@ -67,7 +88,6 @@ export class Session {
 	}
 	get Channels() {
 		// if (process.DEVELOPMENT) return 8
-		if (this.DeviceName == 'Roku Device' && this.Client == 'Roku SG') return 2
 		let Channels = [2]
 		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
 		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
@@ -86,13 +106,8 @@ export class Session {
 	}
 	get Quality(): emby.Quality {
 		// if (process.DEVELOPMENT) return 'UHD'
-		if (this.isDevice('mobile')) return 'SD'
-		if (this.DeviceName == 'Roku Device') return 'SD'
 		if (this.Channels > 2) {
-			if (this.isUHD) {
-				if (this.DeviceName == 'Roku Ultra') return 'HD'
-				return 'UHD'
-			}
+			if (this.isUHD) return 'UHD'
 			if (this.isHD) return 'HD'
 		}
 		return 'SD'

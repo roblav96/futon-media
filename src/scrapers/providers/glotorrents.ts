@@ -33,7 +33,7 @@ export class GloTorrents extends scraper.Scraper {
 					stamp: NaN,
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		console.log(`results ->`, results)

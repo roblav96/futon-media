@@ -10,13 +10,15 @@ import * as torrent from '@/scrapers/torrent'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
 import Emitter from '@/utils/emitter'
 import Fastify from '@/adapters/fastify'
+import { Db } from '@/adapters/db'
+
+const db = new Db(__filename)
+process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
-process.nextTick(() => process.DEVELOPMENT && db.flush('stream:*'))
 
 async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: string) {
 	let t = Date.now()
@@ -52,7 +54,7 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 		let seasons = (await trakt.client.get(`/shows/${query.slug}/seasons`)) as trakt.Season[]
 		item.use({ type: 'season', season: seasons.find(v => v.number == s) })
 		let episode = (await trakt.client.get(
-			`/shows/${query.slug}/seasons/${s}/episodes/${e}`
+			`/shows/${query.slug}/seasons/${s}/episodes/${e}`,
 		)) as trakt.Episode
 		item.use({ type: 'episode', episode })
 	}
@@ -83,27 +85,37 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 }
 
 fastify.get('/strm', async (request, reply) => {
-	if (_.isEmpty(request.query)) return reply.redirect('/dev/null')
+	// if (_.isEmpty(request.query)) return reply.redirect('/dev/null')
 	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
-		utils.isNumeric(v) ? _.parseInt(v) : v
+		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
 	let { e, s, slug, type, imdb, tmdb, tvdb } = query
 
-	// console.warn(`request.headers ->`, request.headers)
-	let ua = request.headers['user-agent'] as string
-	if (ua && !ua.startsWith('Lavf/')) {
-		let Item = await emby.library.byProviderIds(
-			{ imdb, tmdb, tvdb },
-			{ Fields: ['MediaSources'] }
-		)
-		return reply.redirect(
-			`${process.env.EMBY_WAN_ADDRESS}/emby/Videos/${Item.Id}/stream.strm?Static=true&mediaSourceId=${Item.MediaSources[0].Id}`
-		)
-	}
+	// let ua = request.headers['user-agent'] as string
+	// if (ua && !ua.startsWith('Lavf/')) {
+	// 	let Item = await emby.library.byProviderIds(
+	// 		{ imdb, tmdb, tvdb },
+	// 		{ Fields: ['MediaSources'] },
+	// 	)
+	// 	return reply.redirect(
+	// 		`${process.env.EMBY_WAN_ADDRESS}/emby/Videos/${Item.Id}/stream.strm?Static=true&mediaSourceId=${Item.MediaSources[0].Id}`,
+	// 	)
+	// }
 
 	let strm = slug
 	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	console.log(`/strm ->`, strm)
+	console.warn(`/strm ->`, strm)
+
+	// console.log(`request ->`, request)
+	console.log(`request.headers ->`, request.headers)
+	let { remoteFamily, remoteAddress, remotePort } = request.raw.socket
+	console.log(`request.socket ->`, remoteFamily, remoteAddress, remotePort)
+	let Sessions = await emby.sessions.get()
+	console.log(`Sessions ->`, Sessions.map(v => v.RemoteEndPoint))
+
+	return reply.redirect(`https://imaginaryblueogre-sto.energycdn.com/dl/Gdm-ilKcZXgx9E6GDHOSVQ/1571390619/675000842/5d987596c2fd63.92750983/01%20-%20What%20Is%20Neuroscience.m4v`)
+
+	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	let rkey = `stream:${query.trakt}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
@@ -119,7 +131,7 @@ fastify.get('/strm', async (request, reply) => {
 					console.error(`getDebridStreamUrl '${slug}' -> %O`, error)
 					await db.put(rkey, '/dev/null', utils.duration(1, 'minute'))
 					emitter.emit(`${query.trakt}`, '/dev/null')
-				}
+				},
 			)
 		}
 		stream = await emitter.toPromise(`${query.trakt}`)

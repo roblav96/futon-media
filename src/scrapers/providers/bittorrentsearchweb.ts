@@ -43,7 +43,7 @@ export class BitTorrentSearchWeb extends scraper.Scraper {
 					stamp: date.valueOf(),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

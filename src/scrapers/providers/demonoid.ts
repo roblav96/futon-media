@@ -30,7 +30,7 @@ export class Demonoid extends scraper.Scraper {
 				} as scraper.Result
 				results.push(result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

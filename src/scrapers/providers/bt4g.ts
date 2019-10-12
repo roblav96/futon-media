@@ -31,7 +31,7 @@ export class Bt4g extends scraper.Scraper {
 					stamp: utils.toStamp($el.find('span:nth-last-of-type(5) b').text()),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

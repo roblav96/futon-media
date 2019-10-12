@@ -10,7 +10,6 @@ async function start() {
 	}
 	await import('@/emby/collections')
 	await import('@/emby/favorites')
-	await import('@/emby/proxy')
 	await import('@/emby/search')
 	await import('@/emby/strm')
 }

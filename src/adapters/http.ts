@@ -14,7 +14,7 @@ import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
+// process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 export interface Config extends http.RequestOptions {
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
@@ -95,7 +95,7 @@ export class Http {
 			await db.put(`jar:${host}`, this.jar.toJSON())
 			// console.info(`${host} jar ->`, this.jar.toJSON().cookies)
 		} catch (error) {
-			console.error(`${host} catch -> %O`, error)
+			console.error(`${host} catch -> %O`, error.message)
 		}
 	}
 

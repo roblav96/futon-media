@@ -34,7 +34,7 @@ export class Zooqle extends scraper.Scraper {
 					stamp: !stamp || stamp.includes('long') ? NaN : utils.toStamp(stamp),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

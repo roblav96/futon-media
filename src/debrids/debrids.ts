@@ -37,7 +37,7 @@ export function download(torrents: torrent.Torrent[], item: media.Item) {
 	})
 	console.log(`download torrents '${item.strm}' ->`, torrents.length, torrents.map(v => v.short))
 
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
 

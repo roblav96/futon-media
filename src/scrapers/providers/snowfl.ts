@@ -8,6 +8,7 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
+// process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',

@@ -11,12 +11,9 @@ import * as scraper from '@/scrapers/scraper'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
-import db from '@/adapters/db'
 import pQueue from 'p-queue'
 
 process.nextTick(async () => {
-	// process.DEVELOPMENT && (await db.flush('UserId:*'))
-
 	await library.setFolders()
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
@@ -61,11 +58,6 @@ process.nextTick(async () => {
 	// 		let item = await library.item(Item)
 	// 		console.info(`${who}rxItem ${Item.Type} ->`, item.short)
 	// 		library.addQueue([item])
-	// 		if (UserId) {
-	// 			let entry = (await db.entries()).find(([k, v]) => v == UserId)
-	// 			if (_.isArray(entry)) await db.del(entry[0])
-	// 			await db.put(`UserId:${item.trakt}`, UserId, utils.duration(1, 'day'))
-	// 		}
 	// 	}
 	// })
 
@@ -191,6 +183,7 @@ export const library = {
 		query.Fields = (query.Fields || []).concat(['ParentId', 'Path', 'ProviderIds'])
 		return ((await emby.client.get('/Items', {
 			query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
+			profile: process.DEVELOPMENT,
 			silent: true,
 		})).Items || []) as emby.Item[]
 	},

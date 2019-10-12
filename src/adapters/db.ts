@@ -9,16 +9,18 @@ import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
 import * as ttl from 'level-ttl'
+import * as utils from '@/utils/utils'
 import * as xdgBasedir from 'xdg-basedir'
-import fastStringify from 'fast-safe-stringify'
 
 export class Db {
 	level: levelup.LevelUp<leveldown.LevelDown>
 
 	constructor(public name: string) {
-		Object.assign(this, { name: path.basename(name) })
-		let pkg = pkgup.sync({ cwd: __dirname })
-		let location = path.join(xdgBasedir.cache, pkg.packageJson._id, this.name)
+		if (fs.pathExistsSync(name)) {
+			this.name = path.relative(process.mainModule.path, name).replace(/\//g, '-')
+		}
+		let pkg = pkgup.sync({ cwd: __dirname }).packageJson
+		let location = path.join(xdgBasedir.cache, `${pkg.name}@${pkg.version}`, this.name)
 		fs.ensureDirSync(path.dirname(location))
 		let db = level(`${location}.db`, {
 			valueEncoding: 'json',
@@ -36,7 +38,7 @@ export class Db {
 		let options = _.isFinite(ttl) ? { ttl } : {}
 		return new Promise(resolve => {
 			this.level.put(key, value, options, error => {
-				if (error) console.error(`[DB] put '${key}'  -> %O`, error)
+				if (error) console.error(`[DB] ${this.name} put '${key}'  -> %O`, error.message)
 				resolve()
 			})
 		})
@@ -45,7 +47,7 @@ export class Db {
 	del(key: string) {
 		return new Promise(resolve => {
 			this.level.del(key, error => {
-				if (error) console.error(`[DB] del '${key}'  -> %O`, error)
+				if (error) console.error(`[DB] ${this.name} del '${key}'  -> %O`, error.message)
 				resolve()
 			})
 		})
@@ -67,7 +69,7 @@ export class Db {
 		return (await this.entries()).map(([key, value]) => value)
 	}
 
-	async flush(pattern: string) {
+	async flush(pattern = '*') {
 		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
 		if (keys.length == 0) return
 		console.warn(`[DB] ${this.name} flush '${pattern}' ->`, keys.sort())
@@ -80,13 +82,24 @@ export default db
 
 process.nextTick(async () => {
 	process.DEVELOPMENT && _.defaults(global, await import('@/adapters/db'))
-	// process.DEVELOPMENT && devops().catch(error => console.error(`db devops -> %O`, error))
+	// if (process.DEVELOPMENT) {
+	// 	let mocks = await import('@/mocks/mocks')
+	// 	await db.put(`UserId:${Math.random().toString()}`, Math.random().toString())
+	// 	await db.put('mocks:ant-man-and-the-wasp-2018', mocks.MOVIES['ant-man-and-the-wasp-2018'])
+	// 	let entries = await db.entries()
+	// 	console.log(`db entriess ->`, entries)
+	// }
+	// if (process.DEVELOPMENT) {
+	// 	let mocks = await import('@/mocks/mocks')
+	// 	let all = [mocks.MOVIES, mocks.SHOWS, mocks.EPISODES, mocks.PEOPLE].map(_.values).flat()
+	// 	let suite = new (await import('benchmarkify'))().createSuite('db.js', { time: 3000 })
+	// 	let db = new Db('benchmarkify')
+	// 	await db.flush()
+	// 	suite.add('db.put', async done => {
+	// 		await db.put(`${Math.random().toString()}`, _.sample(all))
+	// 		return done()
+	// 	})
+	// 	let results = await suite.run()
+	// 	console.log(`results ->`, results)
+	// }
 })
-
-// async function devops() {
-// 	let mocks = await import('@/mocks/mocks')
-// 	await db.put(`UserId:${Math.random().toString()}`, Math.random().toString())
-// 	await db.put('mocks:ant-man-and-the-wasp-2018', mocks.MOVIES['ant-man-and-the-wasp-2018'])
-// 	let entries = await db.entries()
-// 	console.log(`db entriess ->`, entries)
-// }

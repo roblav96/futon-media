@@ -9,6 +9,11 @@ import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 import Sockette, { ISockette } from '@/shims/sockette'
 
+export interface EmbyEvent<Data = any> {
+	Data: Data
+	MessageId: string
+	MessageType: string
+}
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 let ws: ISockette
@@ -43,6 +48,27 @@ process.nextTick(() => {
 	exithook(() => ws.close())
 })
 
+rxSocket.subscribe(({ MessageType, Data }) => {
+	// if (['Sessions', 'ScheduledTasksInfo'].includes(MessageType)) {
+	// 	return console.info(`rxSocket ->`, MessageType, '...')
+	// }
+	if (MessageType == 'Sessions') {
+		let Sessions = Data as emby.Session[]
+		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new emby.Session(v))
+		Sessions.sort((a, b) => b.Stamp - a.Stamp)
+		return console.log(`rxSocket Sessions ->`, Sessions.map(v => v.RemoteEndPoint))
+	}
+	console.log(`rxSocket ->`, MessageType, Data)
+	// if (MessageType == 'LibraryChanged') {
+	// 	console.warn(`rxSocket ->`, MessageType, Data)
+	// }
+	// // if (MessageType == 'ScheduledTasksInfo') {
+	// // 	let tasks = Data as emby.ScheduledTasksInfo[]
+	// // 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
+	// // 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
+	// // }
+})
+
 // export const socket = {
 // 	send(EmbyEvent: Partial<EmbyEvent>) {
 // 		console.log(`socket send ->`, JSON.stringify(EmbyEvent))
@@ -56,26 +82,6 @@ process.nextTick(() => {
 // 		)
 // 	},
 // }
-
-// rxSocket.subscribe(({ MessageType, Data }) => {
-// 	console.log(`rxSocket ->`, MessageType /** , Data */)
-// 	// if (MessageType == 'LibraryChanged') {
-// 	// 	console.warn(`rxSocket ->`, MessageType, Data)
-// 	// }
-// 	// if (MessageType == 'Sessions') return
-// 	// if (MessageType == 'ScheduledTasksInfo') return
-// 	// // if (MessageType == 'ScheduledTasksInfo') {
-// 	// // 	let tasks = Data as emby.ScheduledTasksInfo[]
-// 	// // 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
-// 	// // 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
-// 	// // }
-// })
-
-export interface EmbyEvent<Data = any> {
-	Data: Data
-	MessageId: string
-	MessageType: string
-}
 
 // socket.filter<emby.Session[]>('Sessions').subscribe(async () => {})
 

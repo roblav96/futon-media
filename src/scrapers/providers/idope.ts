@@ -34,7 +34,7 @@ export class iDope extends scraper.Scraper {
 				result.magnet = `magnet:?xt=urn:btih:${infos.first().text()}&dn=${result.name}`
 				results.push(result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

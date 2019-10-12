@@ -8,11 +8,10 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush('*'))
-
 process.nextTick(async () => {
+	// process.DEVELOPMENT && (await db.flush())
 	schedule.scheduleJob('0 * * * *', () =>
-		sync().catch(error => console.error(`trackers sync -> %O`, error))
+		sync().catch(error => console.error(`trackers sync -> %O`, error)),
 	)
 	sync(true)
 })
@@ -25,7 +24,7 @@ async function sync(init = false) {
 	let resolved = (await Promise.all([
 		http.client.get(
 			'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt',
-			{ silent: true }
+			{ silent: true },
 		),
 		http.client.get('https://newtrackon.com/api/stable', { silent: true }),
 	])) as string[]

@@ -28,7 +28,7 @@ export class BtBit extends scraper.Scraper {
 					stamp: new Date($el.find('.sbar span:nth-of-type(3) b').text()).valueOf(),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

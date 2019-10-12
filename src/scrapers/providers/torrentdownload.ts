@@ -35,7 +35,7 @@ export class TorrentDownload extends scraper.Scraper {
 					stamp: utils.toStamp(age),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

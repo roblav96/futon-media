@@ -46,7 +46,7 @@ export class LimeTorrents extends scraper.Scraper {
 
 				results.push(result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

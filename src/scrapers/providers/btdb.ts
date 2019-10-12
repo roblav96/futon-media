@@ -30,7 +30,7 @@ export class Btdb extends scraper.Scraper {
 					stamp: utils.toStamp($el.find('div[class$="info"] span:nth-of-type(3)').text()),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

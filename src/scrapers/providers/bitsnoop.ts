@@ -25,7 +25,7 @@ export class BitSnoop extends Scraper {
 					stamp: utils.toStamp($el.find('td:nth-child(3)').text()),
 				} as Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

@@ -36,7 +36,7 @@ export class Digbt extends scraper.Scraper {
 					stamp: utils.toStamp(ctime.replace('ago', '').trim()),
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

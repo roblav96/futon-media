@@ -34,7 +34,7 @@ export class TorrentGalaxy extends scraper.Scraper {
 					stamp,
 				} as scraper.Result)
 			} catch (error) {
-				console.error(`${this.constructor.name} -> %O`, error)
+				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
 		return results

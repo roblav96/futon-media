@@ -44,9 +44,9 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		(await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 		(await import('@/scrapers/providers/yts')).Yts,
 	]
@@ -70,7 +70,7 @@ export async function scrapeAll(item: media.Item, sd = true) {
 	// // console.log(`item.s00e00 ->`, item.s00e00)
 	// // console.log(`item.e00 ->`, item.e00)
 	// // console.log(`item.matches ->`, item.matches)
-	// // if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// // if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	let torrents = (await pAll(providers.map(Scraper => () => new Scraper(item).scrape()))).flat()
 
@@ -96,10 +96,14 @@ export async function scrapeAll(item: media.Item, sd = true) {
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
 	console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short))
-	if (process.DEVELOPMENT) throw new Error(`DEV`)
+	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	console.time(`torrents.filter`)
-	torrents = torrents.filter(v => filters.torrents(v, item))
+	torrents = torrents.filter(v => {
+		try {
+			return filters.torrents(v, item)
+		} catch {}
+	})
 	console.timeEnd(`torrents.filter`)
 
 	// console.time(`torrents.cached`)
@@ -137,7 +141,7 @@ export async function scrapeAll(item: media.Item, sd = true) {
 
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
 	// console.info(Date.now() - t, `scrapeAll ${torrents.length} torrents ->`, 'DONE')
-	// if (process.DEVELOPMENT) throw new Error(`DEV`)
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	return torrents
 }
@@ -194,9 +198,11 @@ export class Scraper {
 			{ concurrency: this.concurrency }
 		)).flat()
 
-		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(
-			v => v && filters.results(v, this.item)
-		)
+		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(v => {
+			try {
+				v && filters.results(v, this.item)
+			} catch {}
+		})
 
 		let jsons = combos.map(v =>
 			v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv))

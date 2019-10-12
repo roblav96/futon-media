@@ -39,6 +39,7 @@
 		"ansi-colors": "^4.1.1",
 		"ansi-escapes": "^4.2.1",
 		"badwords": "^1.0.0",
+		"benchmarkify": "^2.1.2",
 		"cheerio": "0.22.0",
 		"cli-table3": "^0.5.1",
 		"cloudscraper": "^4.3.0",
