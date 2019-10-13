@@ -19,17 +19,17 @@ export const rxSocket = new Rx.Subject<EmbyEvent>()
 let ws: ISockette
 process.nextTick(() => {
 	let url = `${process.env.EMBY_LAN_ADDRESS}/embywebsocket?${qs.stringify({
-		api_key: process.env.EMBY_API_KEY,
+		api_key: process.env.EMBY_ADMIN_TOKEN || process.env.EMBY_API_KEY,
 	})}`
 	ws = new Sockette(url, {
 		timeout: utils.duration(3, 'second'),
 		onerror({ error }) {
 			console.error(`socket onerror -> %O`, error)
-			emby.tail.disconnect()
+			emby.Tail.disconnect()
 		},
 		onclose({ code, reason }) {
 			console.warn(`socket onclose ->`, code, reason)
-			emby.tail.disconnect()
+			emby.Tail.disconnect()
 		},
 		onopen({ target }) {
 			let url = target.url as string
@@ -37,7 +37,7 @@ process.nextTick(() => {
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1500,900' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1500' })
-			emby.tail.connect()
+			emby.Tail.connect()
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
@@ -49,25 +49,31 @@ process.nextTick(() => {
 })
 
 rxSocket.subscribe(({ MessageType, Data }) => {
-	// if (['Sessions', 'ScheduledTasksInfo'].includes(MessageType)) {
-	// 	return console.info(`rxSocket ->`, MessageType, '...')
-	// }
-	if (MessageType == 'Sessions') {
-		let Sessions = Data as emby.Session[]
-		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new emby.Session(v))
-		Sessions.sort((a, b) => b.Stamp - a.Stamp)
-		return console.log(`rxSocket Sessions ->`, Sessions.map(v => v.RemoteEndPoint))
+	if (['ScheduledTasksInfo'].includes(MessageType)) {
+		// console.info(`rxSocket ->`, MessageType, '...')
+		return
 	}
-	console.log(`rxSocket ->`, MessageType, Data)
-	// if (MessageType == 'LibraryChanged') {
-	// 	console.warn(`rxSocket ->`, MessageType, Data)
+	// if (MessageType == 'Sessions') {
+	// 	let Sessions = Data as emby.Session[]
+	// 	Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new emby.Session(v))
+	// 	Sessions.sort((a, b) => b.Stamp - a.Stamp)
+	// 	console.info(`rxSocket Sessions ->`, Sessions /** .map(v => v.RemoteEndPoint) */)
+	// 	return
 	// }
-	// // if (MessageType == 'ScheduledTasksInfo') {
-	// // 	let tasks = Data as emby.ScheduledTasksInfo[]
-	// // 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
-	// // 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
-	// // }
+	// console.info(`rxSocket ->`, MessageType, Data)
 })
+
+//
+
+// 	if (MessageType == 'LibraryChanged') {
+// 		console.warn(`rxSocket ->`, MessageType, Data)
+// 	}
+// 	// if (MessageType == 'ScheduledTasksInfo') {
+// 	// 	let tasks = Data as emby.ScheduledTasksInfo[]
+// 	// 	let task = tasks.find(v => v.Key == 'RefreshLibrary')
+// 	// 	return console.log(`rxSocket ->`, 'ScheduledTasksInfo', task)
+// 	// }
+// })
 
 // export const socket = {
 // 	send(EmbyEvent: Partial<EmbyEvent>) {

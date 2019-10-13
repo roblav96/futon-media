@@ -85,7 +85,13 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 }
 
 fastify.get('/strm', async (request, reply) => {
-	// if (_.isEmpty(request.query)) return reply.redirect('/dev/null')
+	if (_.isEmpty(request.query)) {
+		console.error(`/strm isEmpty request.query ->`, request)
+		return reply.redirect('/dev/null')
+	}
+	// return reply.redirect(
+	// 	'https://tinyworldeater-sto.energycdn.com/dl/bVS0z8nQAKjbRTVcdsMdug/1571487288/675000842/5d9d54453b43d2.58722995/the.daily.show.2019.10.08.susan.rice.extended.1080p.web.x264-tbs.mkv',
+	// )
 	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
@@ -112,8 +118,6 @@ fastify.get('/strm', async (request, reply) => {
 	console.log(`request.socket ->`, remoteFamily, remoteAddress, remotePort)
 	let Sessions = await emby.sessions.get()
 	console.log(`Sessions ->`, Sessions.map(v => v.RemoteEndPoint))
-
-	return reply.redirect(`https://imaginaryblueogre-sto.energycdn.com/dl/Gdm-ilKcZXgx9E6GDHOSVQ/1571390619/675000842/5d987596c2fd63.92750983/01%20-%20What%20Is%20Neuroscience.m4v`)
 
 	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 

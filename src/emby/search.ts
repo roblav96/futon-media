@@ -60,7 +60,7 @@ rxSearch.subscribe(async ({ query, UserId }) => {
 	fulls = utils.uniqBy(fulls, 'id').filter(v => {
 		return utils.contains(utils.squash(v.title || v.name), squash)
 	})
-	console.log(`tmdb fulls ->`, fulls.map(v => v.title || v.name))
+	// console.log(`tmdb fulls ->`, fulls.map(v => v.title || v.name))
 	results.push(...(await pAll(fulls.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })))
 
 	results = trakt.uniqWith(results.filter(Boolean))

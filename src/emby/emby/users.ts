@@ -20,14 +20,14 @@ export class User {
 	}
 
 	async setConfiguration(Configuration: UserConfiguration) {
-		if (!process.env.EMBY_ADMIN_TOKEN) return
+		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
 		await emby.client.post(`/Users/${this.Id}/Configuration`, {
 			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: Configuration,
 		})
 	}
 	async setPolicy(Policy: Policy) {
-		if (!process.env.EMBY_ADMIN_TOKEN) return
+		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
 		await emby.client.post(`/Users/${this.Id}/Policy`, {
 			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: Policy,
@@ -40,7 +40,7 @@ export class User {
 		})) as DisplayPreferences
 	}
 	async setDisplayPreferences(DisplayPreferences: DisplayPreferences) {
-		if (!process.env.EMBY_ADMIN_TOKEN) return
+		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
 		await emby.client.post(`/DisplayPreferences/usersettings`, {
 			query: { client: 'emby', userId: this.Id, api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: DisplayPreferences,
@@ -135,18 +135,20 @@ export interface DisplayPreferences {
 	Client: string
 	CustomPrefs: Partial<{
 		[key: string]: string
-		dashboardTheme: string
-		enableNextVideoInfoOverlay: string
-		homesection0: string
-		homesection1: string
-		homesection2: string
-		homesection3: string
-		homesection4: string
-		homesection5: string
-		homesection6: string
-		skipBackLength: string
-		skipForwardLength: string
-		tvhome: string
+		'dashboardTheme': string
+		'enableNextVideoInfoOverlay': string
+		'homesection0': string
+		'homesection1': string
+		'homesection2': string
+		'homesection3': string
+		'homesection4': string
+		'homesection5': string
+		'homesection6': string
+		'skipBackLength': string
+		'skipForwardLength': string
+		'stillwatchingms': string
+		'subtitleeditor-language': string
+		'tvhome': string
 	}>
 	Id: string
 	PrimaryImageHeight: number

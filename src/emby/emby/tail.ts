@@ -10,27 +10,63 @@ import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 
-process.nextTick(() => exithook(() => tail.disconnect()))
+process.nextTick(() => exithook(() => Tail.disconnect()))
 
-let child: execa.ExecaChildProcess<string>
-export const tail = {
-	async connect() {
-		tail.disconnect()
-		let [{ LogPath }, [{ Name }]] = (await Promise.all([
-			emby.client.get('/System/Info', { silent: true }),
-			emby.client.get('/System/Logs', { silent: true }),
-		])) as [emby.SystemInfo, emby.SystemLog[]]
-		let logfile = path.join(LogPath, Name)
-		if (!fs.pathExistsSync(logfile)) throw new Error('!fs.pathExistsSync')
-		console.info(`tail connect ->`, path.basename(logfile))
-		child = execa('tail', ['-f', '-n', '0', '-s', '0.1', path.basename(logfile)], {
-			buffer: false,
+export class Tail {
+	private static tail: Tail
+	private static busy = false
+
+	static async connect() {
+		if (Tail.busy || Tail.tail) return
+		Tail.busy = true
+		try {
+			let [{ LogPath }, [{ Name }]] = (await Promise.all([
+				emby.client.get('/System/Info', { silent: true }),
+				emby.client.get('/System/Logs', { silent: true }),
+			])) as [emby.SystemInfo, emby.SystemLog[]]
+			let logfile = path.join(LogPath, Name)
+			if (!(await fs.pathExists(logfile))) throw new Error('!fs.pathExists')
+			Tail.tail = new Tail(logfile)
+		} catch (error) {
+			console.error(`Tail connect -> %O`, error)
+			Tail.reconnect()
+		}
+		Tail.busy = false
+	}
+	static reconnect = _.debounce(Tail.connect, 3000)
+	static disconnect() {
+		if (Tail.tail) {
+			console.warn(`Tail disconnect ->`)
+			Tail.tail.child.cancel()
+			Tail.tail.child.all.removeAllListeners()
+			Tail.tail = null
+		}
+		Tail.reconnect()
+	}
+
+	child: execa.ExecaChildProcess<string>
+	constructor(logfile: string) {
+		Tail.disconnect()
+		let args = '--follow=name --lines=0 --sleep-interval=0.1'.split(' ')
+		args.push(path.basename(logfile))
+		this.child = execa('tail', args, {
 			cwd: path.dirname(logfile),
-			killSignal: 'SIGKILL',
 			stripFinalNewline: false,
 		})
+		this.child.then(resolved => Tail.disconnect())
+		this.child.catch(error => Tail.disconnect())
+		this.child.finally(() => Tail.disconnect())
+		this.child.on('close', (code, signal) => Tail.disconnect())
+		this.child.on('exit', (code, signal) => Tail.disconnect())
+		this.child.on('disconnect', () => Tail.disconnect())
+		this.child.on('error', error => Tail.disconnect())
+		this.child.all.on('close', () => Tail.disconnect())
+		this.child.all.on('end', () => Tail.disconnect())
+		this.child.all.on('error', () => Tail.disconnect())
+		console.info(`tail connected ->`, path.basename(logfile))
+
 		let limbo = ''
-		child.stdout.on('data', (chunk: string) => {
+		this.child.all.on('data', (chunk: string) => {
 			chunk = limbo + (chunk || '').toString()
 			// console.warn(`████  chunk  ████ ->`, JSON.stringify(chunk))
 			let regex = /(?<stamp>\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (?<level>\w+) (?<category>[^\:]+)\: /g
@@ -51,16 +87,7 @@ export const tail = {
 				// console.warn(`limbo ->`, limbo)
 			}
 		})
-	},
-
-	disconnect() {
-		if (!child) return
-		console.warn(`tail disconnect ->`)
-		child.cancel()
-		child.all.destroy()
-		child.stdout.removeAllListeners()
-		child = null
-	},
+	}
 }
 
 export const rxTail = new Rx.Subject<{ message: string; match: RegExpMatchArray }>()
@@ -75,9 +102,11 @@ export const rxLine = rxTail.pipe(
 	Rx.op.share(),
 	// Rx.op.tap(line => console.log(`rxTail line ->`, line))
 )
-// rxLine.subscribe(({ stamp, level, category, message }) => {
-// 	console.log(`rxLine ->`, stamp, level, category, message)
-// })
+rxLine
+	.pipe(Rx.op.filter(({ level, category }) => !(level == 'Info' && category == 'HttpServer')))
+	.subscribe(({ level, category, message }) => {
+		console.info(`rxLine ->`, `[${level} ${category}]`, message)
+	})
 
 export const rxHttp = rxLine.pipe(
 	// Rx.op.tap(line => console.log(`rxHttp line ->`, line)),
@@ -119,14 +148,13 @@ export const rxHttp = rxLine.pipe(
 	Rx.op.share(),
 )
 rxHttp.subscribe(({ method, pathname, query, ua }) => {
-	// console.log(`rxHttp ->`, method, `${pathname}\n`, query, `\n${ua}`)
+	console.log(`rxHttp ->`, method, pathname, query /** , `\n${ua}` */)
 })
 
 export const rxItemId = rxHttp.pipe(
-	// Rx.op.filter(({ query }) => !!query.ItemId),
 	Rx.op.filter(({ query }) => !!(query.ItemId && query.UserId)),
 	Rx.op.map(v => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
-	Rx.op.debounceTime(10),
+	// Rx.op.debounceTime(10),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.tap(({ ItemId }) => console.log(`rxItemId.tap ->`, ItemId)),
 	Rx.op.share(),
@@ -134,6 +162,7 @@ export const rxItemId = rxHttp.pipe(
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
 export const rxItem = rxItemId.pipe(
+	Rx.op.filter(({ ItemId }) => ItemId.length != 32),
 	// Rx.op.tap(({ ItemId }) => console.log(`rxItem.tap ->`, ItemId)),
 	Rx.op.concatMap(async v => {
 		return { ...v, Item: await emby.library.byItemId(v.ItemId) }
