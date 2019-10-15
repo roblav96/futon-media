@@ -17,14 +17,15 @@ export interface EmbyEvent<Data = any> {
 export const rxSocket = new Rx.Subject<EmbyEvent>()
 
 let ws: ISockette
-process.nextTick(() => {
+process.nextTick(async () => {
 	let url = `${process.env.EMBY_LAN_ADDRESS}/embywebsocket?${qs.stringify({
 		api_key: process.env.EMBY_ADMIN_TOKEN || process.env.EMBY_API_KEY,
+		deviceId: process.env.EMBY_SERVER_ID,
 	})}`
 	ws = new Sockette(url, {
-		timeout: utils.duration(3, 'second'),
+		timeout: 3000,
 		onerror({ error }) {
-			console.error(`socket onerror -> %O`, error)
+			console.error(`socket onerror ->`, error.message)
 			emby.Tail.disconnect()
 		},
 		onclose({ code, reason }) {
@@ -35,33 +36,31 @@ process.nextTick(() => {
 			let url = target.url as string
 			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1500,900' })
-			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
-			ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1500' })
+			emby.sessions.sync()
 			emby.Tail.connect()
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
-			if (err) return console.error(`socket onmessage -> %O`, err)
+			if (err) return console.error(`socket onmessage ->`, err.message)
 			rxSocket.next(value)
 		},
 	})
 	exithook(() => ws.close())
 })
 
-rxSocket.subscribe(({ MessageType, Data }) => {
-	if (['ScheduledTasksInfo'].includes(MessageType)) {
-		// console.info(`rxSocket ->`, MessageType, '...')
-		return
-	}
-	// if (MessageType == 'Sessions') {
-	// 	let Sessions = Data as emby.Session[]
-	// 	Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new emby.Session(v))
-	// 	Sessions.sort((a, b) => b.Stamp - a.Stamp)
-	// 	console.info(`rxSocket Sessions ->`, Sessions /** .map(v => v.RemoteEndPoint) */)
-	// 	return
-	// }
-	// console.info(`rxSocket ->`, MessageType, Data)
-})
+// rxSocket.subscribe(({ MessageType, Data }) => {
+// 	if (['ScheduledTasksInfo'].includes(MessageType)) {
+// 		// console.info(`rxSocket ->`, MessageType, '...')
+// 		return
+// 	}
+// 	if (MessageType == 'Sessions') {
+// 		// console.info(`rxSocket Sessions ->`, Data)
+// 		// let Sessions = emby.sessions.use(Data as emby.Session[])
+// 		// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
+// 		return
+// 	}
+// 	console.info(`rxSocket ->`, MessageType, Data)
+// })
 
 //
 

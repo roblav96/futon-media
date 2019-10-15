@@ -5,9 +5,7 @@ import * as utils from '@/utils/utils'
 
 export const users = {
 	async get() {
-		let Users = (await emby.client.get('/Users')) as User[]
-		Users = Users.map(v => new User(v))
-		return Users.sort((a, b) => utils.alphabetically(a.Name, b.Name))
+		return ((await emby.client.get('/Users')) as User[]).map(v => new User(v))
 	},
 	async byUserId(UserId: string) {
 		return new User(await emby.client.get(`/Users/${UserId}`))
@@ -15,6 +13,10 @@ export const users = {
 }
 
 export class User {
+	get Stamp() {
+		return new Date(this.LastActivityDate).valueOf()
+	}
+
 	constructor(User: User) {
 		_.merge(this, User)
 	}

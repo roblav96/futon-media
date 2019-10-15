@@ -6,6 +6,7 @@ interface Env {
 	EMBY_HTTP_PORT: string
 	EMBY_LAN_ADDRESS: string
 	EMBY_PROXY_PORT: string
+	EMBY_SERVER_ID: string
 	EMBY_WAN_ADDRESS: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string

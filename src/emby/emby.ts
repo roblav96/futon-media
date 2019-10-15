@@ -1,3 +1,4 @@
+import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 
 export const client = new http.Http({
@@ -12,3 +13,7 @@ export * from '@/emby/emby/sessions'
 export * from '@/emby/emby/socket'
 export * from '@/emby/emby/tail'
 export * from '@/emby/emby/users'
+
+if (process.DEVELOPMENT) {
+	process.nextTick(async () => ((global as any).emby = await import('@/emby/emby')))
+}

@@ -19,7 +19,7 @@ const __dicts__ = {
 
 	'JUNK': (`["rarbg com mp4"]` as any) as string[],
 
-	'UPLOADERS': (`["amiable", "ctrlhd", "dimension", "epsilon", "esir", "etrg", "exkinoray", "geckos", "grym", "inspirit", "kralimarko", "memento", "monkee", "mvgroup", "ntb", "publichd", "rartv", "rovers", "shitbox", "shortbrehd", "sigma", "sinners", "sparks", "swtyblz", "tasted", "terminal", "tgx", "trollhd", "trolluhd"]` as any) as string[],
+	'UPLOADERS': (`["amiable", "caffeine", "ctrlhd", "dimension", "epsilon", "esir", "etrg", "exkinoray", "geckos", "grym", "inspirit", "kralimarko", "memento", "monkee", "mvgroup", "ntb", "publichd", "rartv", "rovers", "shitbox", "shortbrehd", "sigma", "sinners", "sparks", "swtyblz", "tasted", "terminal", "tgx", "trollhd", "trolluhd"]` as any) as string[],
 
 	'STOPS': (`["&", "a", "an", "and", "in", "of", "the", "to"]` as any) as string[],
 	// 'STOPS': `["a", "an", "and", "as", "but", "for", "if", "in", "nor", "of", "on", "or", "so", "the", "to"]`,

@@ -18,15 +18,16 @@ process.nextTick(async () => {
 				redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
 				refresh_token: await db.get('refresh_token'),
 			} as OauthRequest,
+			retries: [500, 503],
 			silent: true,
 		})
 	} catch (error) {
-		console.warn(`trakt oauth refresh token ->`, error.message)
+		console.error(`trakt oauth refresh token ->`, error.message)
 		let code = (await http.client.post('https://api.trakt.tv/oauth/device/code', {
 			body: {
 				client_id: process.env.TRAKT_CLIENT_ID,
 			} as OauthRequest,
-			retries: [500],
+			retries: [500, 503],
 			silent: true,
 		})) as OauthCode
 		let expired = Date.now() + utils.duration(code.expires_in, 'second')

@@ -38,6 +38,7 @@ export class Tail {
 		if (Tail.tail) {
 			console.warn(`Tail disconnect ->`)
 			Tail.tail.child.cancel()
+			Tail.tail.child.all.destroy()
 			Tail.tail.child.all.removeAllListeners()
 			Tail.tail = null
 		}
@@ -47,13 +48,13 @@ export class Tail {
 	child: execa.ExecaChildProcess<string>
 	constructor(logfile: string) {
 		Tail.disconnect()
-		let args = '--follow=name --lines=0 --sleep-interval=0.1'.split(' ')
-		args.push(path.basename(logfile))
+		let args = ['--follow=name', '--lines=0', '--sleep-interval=0.1', path.basename(logfile)]
 		this.child = execa('tail', args, {
+			all: true,
 			cwd: path.dirname(logfile),
 			stripFinalNewline: false,
 		})
-		this.child.then(resolved => Tail.disconnect())
+		this.child.then(() => Tail.disconnect())
 		this.child.catch(error => Tail.disconnect())
 		this.child.finally(() => Tail.disconnect())
 		this.child.on('close', (code, signal) => Tail.disconnect())
@@ -102,11 +103,10 @@ export const rxLine = rxTail.pipe(
 	Rx.op.share(),
 	// Rx.op.tap(line => console.log(`rxTail line ->`, line))
 )
-rxLine
-	.pipe(Rx.op.filter(({ level, category }) => !(level == 'Info' && category == 'HttpServer')))
-	.subscribe(({ level, category, message }) => {
-		console.info(`rxLine ->`, `[${level} ${category}]`, message)
-	})
+// rxLine.subscribe(({ level, category, message }) => {
+// 	if (level == 'Info' && category == 'HttpServer') return
+// 	console.log(`rxLine ->`, `[${level} ${category}]`, message)
+// })
 
 export const rxHttp = rxLine.pipe(
 	// Rx.op.tap(line => console.log(`rxHttp line ->`, line)),
@@ -137,7 +137,8 @@ export const rxHttp = rxLine.pipe(
 			if (['users'].includes(part) && next.length == 32) {
 				query.UserId = query.UserId || next
 			}
-			if (ITEM_ID_PARTS.includes(part) && (utils.isNumeric(next) || next.length == 32)) {
+			let types = ['items', 'movies', 'shows', 'episodes', 'videos', 'favoriteitems']
+			if (types.includes(part) && (utils.isNumeric(next) || next.length == 32)) {
 				query.ItemId = query.ItemId || next
 			}
 		}
@@ -147,40 +148,40 @@ export const rxHttp = rxLine.pipe(
 	}),
 	Rx.op.share(),
 )
-rxHttp.subscribe(({ method, pathname, query, ua }) => {
-	console.log(`rxHttp ->`, method, pathname, query /** , `\n${ua}` */)
-})
+// rxHttp.subscribe(({ method, pathname, query, ua }) => {
+// 	console.log(`rxHttp ->`, method, pathname, query /** , `\n${ua}` */)
+// })
 
 export const rxItemId = rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!(query.ItemId && query.UserId)),
 	Rx.op.map(v => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
 	// Rx.op.debounceTime(10),
-	Rx.op.distinctUntilKeyChanged('ItemId'),
+	// Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
 	// Rx.op.tap(({ ItemId }) => console.log(`rxItemId.tap ->`, ItemId)),
 	Rx.op.share(),
 )
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
-export const rxItem = rxItemId.pipe(
-	Rx.op.filter(({ ItemId }) => ItemId.length != 32),
-	// Rx.op.tap(({ ItemId }) => console.log(`rxItem.tap ->`, ItemId)),
-	Rx.op.concatMap(async v => {
-		return { ...v, Item: await emby.library.byItemId(v.ItemId) }
-	}),
-	Rx.op.filter(({ Item }) => !!Item && ITEM_TYPES.includes(Item.Type)),
-	Rx.op.share(),
-)
+// export const rxItem = rxItemId.pipe(
+// 	Rx.op.filter(({ ItemId }) => ItemId.length != 32),
+// 	// Rx.op.tap(({ ItemId }) => console.log(`rxItem.tap ->`, ItemId)),
+// 	Rx.op.concatMap(async v => {
+// 		return { ...v, Item: await emby.library.byItemId(v.ItemId) }
+// 	}),
+// 	Rx.op.filter(({ Item }) => !!Item && ITEM_TYPES.includes(Item.Type)),
+// 	Rx.op.share(),
+// )
 // rxItem.subscribe(({ ItemId }) => console.log(`rxItem ->`, ItemId))
 
-export const ITEM_TYPES = ['Movie', 'Series', /** 'Season', */ 'Episode', 'Person']
-export const ITEM_ID_PARTS = [
-	'items',
-	'movies',
-	'shows',
-	'episodes',
-	'videos',
-	'favoriteitems',
-	'playingitems',
-	'subtitles',
-	'trailers',
-]
+// export const ITEM_TYPES = ['Movie', 'Series', 'Season', 'Episode', 'Person']
+// export const ITEM_ID_PARTS = [
+// 	'items',
+// 	'movies',
+// 	'shows',
+// 	'episodes',
+// 	'videos',
+// 	'favoriteitems',
+// 	'playingitems',
+// 	'subtitles',
+// 	'trailers',
+// ]

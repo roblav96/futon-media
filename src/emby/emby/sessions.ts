@@ -8,34 +8,44 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
+export const Sessions = [] as Session[]
+
 const db = new Db(__filename)
 process.nextTick(async () => {
 	process.DEVELOPMENT && (await db.flush())
 
-	// let Sessions = await emby.sessions.get()
-	// console.log(`Sessions ->`, Sessions)
-
-	let rxBrowsing = emby.rxItem.pipe(
-		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
-	)
-	rxBrowsing.subscribe(async ({ Item, ItemId, UserId }) => {
-		// console.warn(`rxBrowsing ${ItemId} ->`, Item)
-		// let entry = (await db.entries()).find(([k, v]) => v == UserId)
-		// console.log(`entry ->`, entry)
-		// // if (_.isArray(entry)) await db.del(entry[0])
-		// await db.put(`UserId:${ItemId}`, UserId, utils.duration(1, 'day'))
+	await sessions.sync()
+	emby.rxSocket.subscribe(({ MessageType, Data }) => {
+		if (MessageType != 'Sessions') return
+		emby.Sessions.splice(0, Infinity, ...sessions.use(Data))
+		console.info(`rxSocket Session ->`, emby.Sessions[0] && emby.Sessions[0].json)
 	})
 })
 
 export const sessions = {
 	db,
+	parse(Sessions: Session[]) {
+		_.remove(Sessions, ({ Capabilities, DeviceId, Id, RemoteEndPoint, UserName }) => {
+			if (!UserName) return true
+			if (DeviceId == process.env.EMBY_SERVER_ID) return true
+			// if (RemoteEndPoint && (urlParseLax(RemoteEndPoint) as Url).port) return true
+			// if (Capabilities.Id != Id) return true
+		})
+		return Sessions.sort((a, b) => {
+			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
+		})
+	},
+	use(Sessions: Session[]) {
+		return sessions.parse(Sessions).map(v => new Session(v))
+	},
 	async get() {
-		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
-		Sessions = Sessions.filter(({ UserName }) => !!UserName).map(v => new Session(v))
-		return Sessions.sort((a, b) => b.Stamp - a.Stamp)
+		return sessions.use(await emby.client.get('/Sessions', { silent: true }))
 	},
 	async byUserId(UserId: string) {
 		return (await sessions.get()).find(v => v.UserId == UserId)
+	},
+	async sync() {
+		emby.Sessions.splice(0, Infinity, ...(await sessions.get()))
 	},
 	broadcast(message: string) {
 		sessions.get().then(sessions => sessions.forEach(v => v.message(message)))
@@ -168,14 +178,21 @@ export class Session {
 	get json() {
 		return utils.compact({
 			Age: this.Age,
-			Audio: JSON.stringify(this.Codecs.audio),
-			Bitrate: this.Bitrate && `${utils.fromBytes(this.Bitrate)}/s`,
-			Channels: this.Channels,
+			// Audio: JSON.stringify(this.Codecs.audio),
+			// Bitrate: this.Bitrate && `${utils.fromBytes(this.Bitrate)}/s`,
+			// Channels: this.Channels,
 			Client: this.Client,
+			// DeviceId: this.DeviceId,
 			DeviceName: this.DeviceName,
-			IsStreaming: this.IsStreaming,
+			Id: this.Id,
+			IsPlayState: this.IsPlayState || null,
+			IsStreaming: this.IsStreaming || null,
+			ItemId: this.ItemId,
 			Quality: this.Quality,
-			StrmPath: this.StrmPath,
+			// RemoteEndPoint: this.RemoteEndPoint,
+			// StrmPath: this.StrmPath,
+			// SupportsRemoteControl: this.SupportsRemoteControl,
+			UserId: this.UserId,
 			UserName: this.UserName,
 			Video: JSON.stringify(this.Codecs.video),
 		})

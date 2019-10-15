@@ -14,19 +14,31 @@ import Emitter from '@/utils/emitter'
 import Fastify from '@/adapters/fastify'
 import { Db } from '@/adapters/db'
 
-const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush())
-
 const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
+
+const db = new Db(__filename)
+process.nextTick(async () => {
+	process.DEVELOPMENT && (await db.flush())
+
+	let rxIntros = emby.rxItemId.pipe(Rx.op.filter(({ parts }) => parts.includes('intros')))
+	rxIntros.subscribe(async ({ ItemId, UserId }) => {
+		/*
+			TODO:
+			- this ItemId is an episode ItemId
+		*/
+		await db.put(`rxIntros:${UserId}`, ItemId, utils.duration(1, 'day'))
+		console.warn(`rxIntros ${UserId} ->`, ItemId)
+	})
+})
 
 async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: string) {
 	let t = Date.now()
 	let { e, s, imdb, tmdb, tvdb, type } = query
-	let Sessions = (await emby.sessions.get()).sort((a, b) => a.Age - b.Age)
+	let Sessions = await emby.sessions.get()
 	let Session = Sessions[0]
 
-	let UserId = await db.get(`UserId:${query.trakt}`)
+	let UserId = await db.get(`UserId:${query.slug}`)
 	if (UserId) Session = Sessions.find(v => v.UserId == UserId) || Session
 
 	Session = (Sessions.find(v => {
@@ -85,17 +97,35 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 }
 
 fastify.get('/strm', async (request, reply) => {
-	if (_.isEmpty(request.query)) {
-		console.error(`/strm isEmpty request.query ->`, request)
-		return reply.redirect('/dev/null')
-	}
-	// return reply.redirect(
-	// 	'https://tinyworldeater-sto.energycdn.com/dl/bVS0z8nQAKjbRTVcdsMdug/1571487288/675000842/5d9d54453b43d2.58722995/the.daily.show.2019.10.08.susan.rice.extended.1080p.web.x264-tbs.mkv',
-	// )
+	if (_.isEmpty(request.query)) return reply.status(404).send()
+
 	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
 	let { e, s, slug, type, imdb, tmdb, tvdb } = query
+
+	let strm = slug
+	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
+	console.warn(`/strm ->`, strm)
+
+	/*
+		TODO:
+		- this Item is the series ItemId
+	*/
+	let Item = await emby.library.byProviderIds({ imdb, tmdb, tvdb })
+	console.log(`/strm Item ->`, Item)
+	console.log(`/strm Item.Id ->`, Item.Id)
+
+	console.log(`/strm Sessions ->`, emby.Sessions.map(v => v.json))
+	let Session = emby.Sessions[0]
+	for (let v of emby.Sessions) {
+		let ItemId = await db.get(`rxIntros:${v.UserId}`)
+		if (ItemId == Item.Id) {
+			Session = v
+			break
+		}
+	}
+	console.log(`/strm Session ->`, Session)
 
 	// let ua = request.headers['user-agent'] as string
 	// if (ua && !ua.startsWith('Lavf/')) {
@@ -108,37 +138,36 @@ fastify.get('/strm', async (request, reply) => {
 	// 	)
 	// }
 
-	let strm = slug
-	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	console.warn(`/strm ->`, strm)
-
 	// console.log(`request ->`, request)
-	console.log(`request.headers ->`, request.headers)
-	let { remoteFamily, remoteAddress, remotePort } = request.raw.socket
-	console.log(`request.socket ->`, remoteFamily, remoteAddress, remotePort)
-	let Sessions = await emby.sessions.get()
-	console.log(`Sessions ->`, Sessions.map(v => v.RemoteEndPoint))
+	// console.log(`/strm request.headers ->`, request.headers)
+	// let { remoteFamily, remoteAddress, remotePort } = request.raw.socket
+	// console.log(`/strm request.socket ->`, remoteFamily, remoteAddress, remotePort)
 
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	if (process.DEVELOPMENT) {
+		return reply.status(404).send()
+		return reply.redirect(
+			'https://tinyworldeater-sto.energycdn.com/dl/bVS0z8nQAKjbRTVcdsMdug/1571487288/675000842/5d9d54453b43d2.58722995/the.daily.show.2019.10.08.susan.rice.extended.1080p.web.x264-tbs.mkv',
+		)
+	}
 
-	let rkey = `stream:${query.trakt}`
+	let rkey = `stream:${query.slug}`
 	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
 	let stream = (await db.get(rkey)) as string
 	if (!stream) {
-		if (!emitter.eventNames().includes(`${query.trakt}`)) {
+		if (!emitter.eventNames().includes(`${query.slug}`)) {
 			getDebridStreamUrl(query, rkey, strm).then(
 				async stream => {
 					await db.put(rkey, stream, utils.duration(1, 'minute'))
-					emitter.emit(`${query.trakt}`, stream)
+					emitter.emit(`${query.slug}`, stream)
 				},
 				async error => {
-					console.error(`getDebridStreamUrl '${slug}' -> %O`, error)
+					console.error(`/strm getDebridStreamUrl '${slug}' -> %O`, error)
 					await db.put(rkey, '/dev/null', utils.duration(1, 'minute'))
-					emitter.emit(`${query.trakt}`, '/dev/null')
+					emitter.emit(`${query.slug}`, '/dev/null')
 				},
 			)
 		}
-		stream = await emitter.toPromise(`${query.trakt}`)
+		stream = await emitter.toPromise(`${query.slug}`)
 	}
 
 	reply.redirect(stream)

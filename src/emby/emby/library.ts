@@ -178,7 +178,7 @@ export const library = {
 	) {
 		if (!query.Ids && !query.Recursive) query.Recursive = true
 		if (!query.Ids && !query.Path && !query.IncludeItemTypes) {
-			query.IncludeItemTypes = ['Movie', 'Series', 'Person']
+			query.IncludeItemTypes = ['Movie', 'Series', 'Episode', 'Person']
 		}
 		query.Fields = (query.Fields || []).concat(['ParentId', 'Path', 'ProviderIds'])
 		return ((await emby.client.get('/Items', {
