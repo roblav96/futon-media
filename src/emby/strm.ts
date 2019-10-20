@@ -94,7 +94,7 @@ async function getDebridStreamUrl(Query: emby.StrmQuery, Item: emby.Item) {
 }
 
 fastify.get('/strm', async (request, reply) => {
-	if (_.isEmpty(request.query)) return reply.redirect('/dev/null')
+	if (_.isEmpty(request.query)) return reply.code(404).send(Buffer.from(''))
 
 	let Query = _.mapValues(request.query, v =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,
@@ -111,14 +111,13 @@ fastify.get('/strm', async (request, reply) => {
 				emitter.emit(Item.Id, stream)
 			} catch (error) {
 				console.error(`/strm ${emby.library.toName(Item)} -> %O`, error)
-				await db.put(Item.Id, '/dev/null', utils.duration(1, 'minute'))
-				emitter.emit(Item.Id, '/dev/null')
+				await db.put(Item.Id, '', utils.duration(1, 'minute'))
+				emitter.emit(Item.Id, '')
 			}
 		} else {
 			stream = await emitter.toPromise(Item.Id)
 		}
 	}
 
-	console.log(`reply.redirect(${stream}) ->`)
-	reply.redirect(stream)
+	stream ? reply.redirect(stream) : reply.code(404).send(Buffer.from(''))
 })
