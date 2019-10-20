@@ -3,7 +3,7 @@ import * as emby from '@/emby/emby'
 
 process.nextTick(async () => {
 	try {
-		let Users = await emby.users.get()
+		let Users = await emby.User.get()
 		for (let User of Users) {
 			let DisplayPreferences = await User.getDisplayPreferences()
 			_.merge(DisplayPreferences, emby.defaults.DisplayPreferences)

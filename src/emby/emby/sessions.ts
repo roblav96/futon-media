@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
+import * as fastParse from 'fast-json-parse'
 import * as media from '@/media/media'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
@@ -8,28 +9,25 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
-export const Sessions = [] as Session[]
-
-const db = new Db(__filename)
-process.nextTick(async () => {
-	process.DEVELOPMENT && (await db.flush())
-
-	await sessions.sync()
-	emby.rxSocket.subscribe(({ MessageType, Data }) => {
-		if (MessageType != 'Sessions') return
-		emby.Sessions.splice(0, Infinity, ...sessions.use(Data))
-		console.info(`rxSocket Session ->`, emby.Sessions[0] && emby.Sessions[0].json)
-	})
-})
+// const db = new Db(__filename)
+// process.nextTick(async () => {
+// 	process.DEVELOPMENT && (await db.flush())
+// 	// global.dts(await emby.client.get('/Sessions', { silent: true }), 'Sessions')
+// 	// await sessions.sync()
+// 	// emby.rxSocket.subscribe(({ MessageType, Data }) => {
+// 	// 	if (MessageType != 'Sessions') return
+// 	// 	emby.Sessions.splice(0, Infinity, ...sessions.use(Data))
+// 	// 	console.info(`rxSocket Session ->`, emby.Sessions[0] && emby.Sessions[0].json)
+// 	// })
+// })
 
 export const sessions = {
-	db,
+	// db,
 	parse(Sessions: Session[]) {
-		_.remove(Sessions, ({ Capabilities, DeviceId, Id, RemoteEndPoint, UserName }) => {
+		_.remove(Sessions, ({ DeviceId, RemoteEndPoint, UserName }) => {
 			if (!UserName) return true
 			if (DeviceId == process.env.EMBY_SERVER_ID) return true
 			// if (RemoteEndPoint && (urlParseLax(RemoteEndPoint) as Url).port) return true
-			// if (Capabilities.Id != Id) return true
 		})
 		return Sessions.sort((a, b) => {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
@@ -44,96 +42,18 @@ export const sessions = {
 	async byUserId(UserId: string) {
 		return (await sessions.get()).find(v => v.UserId == UserId)
 	},
-	async sync() {
-		emby.Sessions.splice(0, Infinity, ...(await sessions.get()))
-	},
 	broadcast(message: string) {
 		sessions.get().then(sessions => sessions.forEach(v => v.message(message)))
 	},
 }
 
 export class Session {
-	get isUHD() {
-		let UHDUsers = ['developer', 'robert']
-		return UHDUsers.includes(this.UserName.toLowerCase())
-	}
-	get isHD() {
-		let HDUsers = ['mom']
-		return this.isUHD || HDUsers.includes(this.UserName.toLowerCase())
-	}
-	get isSD() {
-		return this.Quality == 'SD'
-	}
-	isDevice(device: string) {
-		return utils.includes(this.Client + this.DeviceName, device)
-	}
-
-	get Codecs() {
-		let { audio, video } = { audio: '', video: '' }
-		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
-		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
-		audio += `${_.join(cprofiles.filter(v => v.Type == 'Audio').map(v => v.Codec), ',')},`
-		audio += `${_.join(cprofiles.filter(v => v.Type == 'VideoAudio').map(v => v.Codec), ',')},`
-		video += `${_.join(cprofiles.filter(v => v.Type == 'Video').map(v => v.Codec), ',')},`
-		let dpath = 'Capabilities.DeviceProfile.DirectPlayProfiles'
-		let dprofiles = _.get(this, dpath, []) as DirectPlayProfiles[]
-		audio += `${_.join(dprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
-		video += `${_.join(dprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
-		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
-		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
-		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
-		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
-		let Codecs = {
-			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)).map(v =>
-				v.startsWith('-') ? utils.minify(v) : v,
-			),
-			video: _.sortBy(_.uniq(video.toLowerCase().split(',')).filter(Boolean)).map(v =>
-				v.startsWith('-') ? utils.minify(v) : v,
-			),
-		}
-		if (Codecs.audio.includes('ac3')) Codecs.audio.push('eac3')
-		if (Codecs.audio.includes('dts') && this.isHD) Codecs.audio.push('truehd')
-		Codecs.audio.sort()
-		return Codecs
-	}
-	get Channels() {
-		// if (process.DEVELOPMENT) return 8
-		let Channels = [2]
-		let cpath = 'Capabilities.DeviceProfile.CodecProfiles'
-		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
-		cprofiles.forEach(({ Conditions, Type }) => {
-			if (Type != 'VideoAudio' || !_.isArray(Conditions)) return
-			let Condition = Conditions.find(({ Property }) => Property == 'AudioChannels')
-			Condition && Condition.Value && Channels.push(_.parseInt(Condition.Value))
-		})
-		let tpath = 'Capabilities.DeviceProfile.TranscodingProfiles'
-		let tprofiles = _.get(this, tpath, []) as TranscodingProfiles[]
-		tprofiles.forEach(({ MaxAudioChannels }) => {
-			MaxAudioChannels && Channels.push(_.parseInt(MaxAudioChannels))
-		})
-		if (Channels.length == 1) return 8
-		return _.max(Channels)
-	}
-	get Quality(): emby.Quality {
-		// if (process.DEVELOPMENT) return 'UHD'
-		if (this.Channels > 2) {
-			if (this.isUHD) return 'UHD'
-			if (this.isHD) return 'HD'
-		}
-		return 'SD'
-	}
 
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}
 	get Age() {
 		return Date.now() - this.Stamp
-	}
-	get Bitrate() {
-		let rate = NaN
-		if ((rate = _.get(this, 'Capabilities.DeviceProfile.MaxStreamingBitrate'))) return rate
-		if ((rate = _.get(this, 'Capabilities.DeviceProfile.MaxStaticBitrate'))) return rate
-		return rate
 	}
 
 	get AudioStreamIndex() {
@@ -158,14 +78,14 @@ export class Session {
 	get ItemName() {
 		return _.get(this, 'NowPlayingItem.Name') as string
 	}
-	get StrmPath() {
+	get ItemPath() {
 		return _.get(this, 'NowPlayingItem.Path') as string
 	}
 	get ItemId() {
 		return _.get(this, 'NowPlayingItem.Id') as string
 	}
 	get IsNowPlaying() {
-		return !!this.Container && !!this.ItemName && !!this.StrmPath && !!this.ItemId
+		return !!this.Container && !!this.ItemName && !!this.ItemPath && !!this.ItemId
 	}
 	get IsStreaming() {
 		return !!this.IsPlayState && !!this.IsNowPlaying
@@ -173,7 +93,7 @@ export class Session {
 
 	get short() {
 		let parts = [this.UserName, this.Client, this.DeviceName].map(v => v.replace(/\s+/g, ''))
-		return `${parts[0]}@${parts[1]}.${parts[2]}`
+		return `${this.Age}ms|${parts[0]}@${parts[1]}.${parts[2]}`
 	}
 	get json() {
 		return utils.compact({
@@ -182,19 +102,19 @@ export class Session {
 			// Bitrate: this.Bitrate && `${utils.fromBytes(this.Bitrate)}/s`,
 			// Channels: this.Channels,
 			Client: this.Client,
-			// DeviceId: this.DeviceId,
+			DeviceId: this.DeviceId,
 			DeviceName: this.DeviceName,
 			Id: this.Id,
 			IsPlayState: this.IsPlayState || null,
 			IsStreaming: this.IsStreaming || null,
 			ItemId: this.ItemId,
-			Quality: this.Quality,
+			ItemPath: this.ItemPath,
+			// Quality: this.Quality,
 			// RemoteEndPoint: this.RemoteEndPoint,
-			// StrmPath: this.StrmPath,
 			// SupportsRemoteControl: this.SupportsRemoteControl,
 			UserId: this.UserId,
 			UserName: this.UserName,
-			Video: JSON.stringify(this.Codecs.video),
+			// Video: JSON.stringify(this.Codecs.video),
 		})
 	}
 
@@ -203,7 +123,7 @@ export class Session {
 	}
 
 	async getUser() {
-		return await emby.users.byUserId(this.UserId)
+		return await emby.User.byUserId(this.UserId)
 	}
 
 	async getDevice() {
@@ -232,164 +152,159 @@ export class Session {
 	}
 }
 
-export type Quality = 'SD' | 'HD' | 'UHD'
-
 export interface Session {
 	AdditionalUsers: any[]
 	AppIconUrl: string
 	ApplicationVersion: string
-	Capabilities: {
-		DeviceProfile: {
-			CodecProfiles: CodecProfiles[]
-			ContainerProfiles: any[]
-			DirectPlayProfiles: DirectPlayProfiles[]
-			EnableAlbumArtInDidl: boolean
-			EnableMSMediaReceiverRegistrar: boolean
-			EnableSingleAlbumArtLimit: boolean
-			EnableSingleSubtitleLimit: boolean
-			IgnoreTranscodeByteRangeRequests: boolean
-			MaxAlbumArtHeight: number
-			MaxAlbumArtWidth: number
-			MaxStaticBitrate: number
-			MaxStaticMusicBitrate: number
-			MaxStreamingBitrate: number
-			MusicStreamingTranscodingBitrate: number
-			RequiresPlainFolders: boolean
-			RequiresPlainVideoItems: boolean
-			ResponseProfiles: {
-				Conditions: any[]
-				Container: string
-				MimeType: string
-				Type: string
-			}[]
-			SubtitleProfiles: {
-				Format: string
-				Method: string
-			}[]
-			SupportedMediaTypes: string
-			TimelineOffsetSeconds: number
-			TranscodingProfiles: TranscodingProfiles[]
-			XmlRootAttributes: any[]
-		}
-		IconUrl: string
-		Id: string
-		PlayableMediaTypes: string[]
-		PushToken: string
-		PushTokenType: string
-		SupportedCommands: string[]
-		SupportsMediaControl: boolean
-		SupportsPersistentIdentifier: boolean
-		SupportsSync: boolean
-	}
 	Client: string
 	DeviceId: string
 	DeviceName: string
 	Id: string
 	LastActivityDate: string
-	NowPlayingItem: {
-		BackdropImageTags: string[]
-		Chapters: Function[][]
-		CommunityRating: number
-		Container: string
-		CriticRating: number
-		DateCreated: string
-		ExternalUrls: Function[][]
-		GenreItems: Function[][]
-		Genres: string[]
-		HasSubtitles: boolean
-		Height: number
-		Id: string
-		ImageTags: {
-			Art: string
-			Banner: string
-			Disc: string
-			Logo: string
-			Primary: string
-			Thumb: string
-		}
-		IsFolder: boolean
-		LocalTrailerCount: number
-		MediaStreams: Function[][]
-		MediaType: string
-		Name: string
-		OfficialRating: string
-		OriginalTitle: string
-		Overview: string
-		ParentId: string
-		Path: string
-		PremiereDate: string
-		PrimaryImageAspectRatio: number
-		ProductionYear: number
-		ProviderIds: {
-			Imdb: string
-			Tmdb: string
-			Tvdb: string
-		}
-		RunTimeTicks: number
-		ServerId: string
-		Studios: Function[][]
-		Taglines: string[]
-		Type: string
-		Width: number
-	}
-	PlayState: {
-		AudioStreamIndex: number
-		CanSeek: boolean
-		IsMuted: boolean
-		IsPaused: boolean
-		MediaSourceId: string
-		PlayMethod: string
-		PositionTicks: number
-		RepeatMode: string
-		VolumeLevel: number
-	}
+	NowPlayingItem: NowPlayingItem
+	PlayState: PlayState
 	PlayableMediaTypes: string[]
-	PlaylistItemId: string
+	PlaylistIndex: number
+	PlaylistLength: number
 	RemoteEndPoint: string
 	ServerId: string
 	SupportedCommands: string[]
 	SupportsRemoteControl: boolean
+	TranscodingInfo: TranscodingInfo
 	UserId: string
 	UserName: string
 }
 
-interface CodecProfiles {
-	ApplyConditions: any[]
-	Codec: string
-	Conditions: {
-		Condition: any
-		IsRequired: any
-		Property: any
-		Value: any
+export interface TranscodingInfo {
+	AudioChannels: number
+	AudioCodec: string
+	Bitrate: number
+	CompletionPercentage: number
+	Container: string
+	CurrentThrottle: number
+	Framerate: number
+	Height: number
+	IsAudioDirect: boolean
+	IsVideoDirect: boolean
+	TranscodeReasons: string[]
+	TranscodingPositionTicks: number
+	TranscodingStartPositionTicks: number
+	VideoCodec: string
+	VideoDecoderIsHardware: boolean
+	VideoEncoderIsHardware: boolean
+	Width: number
+}
+
+export interface NowPlayingItem {
+	BackdropImageTags: string[]
+	Chapters: {
+		Name: string
+		StartPositionTicks: number
 	}[]
+	CommunityRating: number
+	Container: string
+	CriticRating: number
+	DateCreated: string
+	ExternalUrls: {
+		Name: string
+		Url: string
+	}[]
+	GenreItems: {
+		Id: number
+		Name: string
+	}[]
+	Genres: string[]
+	Height: number
+	Id: string
+	ImageTags: {
+		Primary: string
+	}
+	IndexNumber: number
+	IsFolder: boolean
+	LocalTrailerCount: number
+	MediaStreams: MediaStream[]
+	MediaType: string
+	Name: string
+	OfficialRating: string
+	OriginalTitle: string
+	Overview: string
+	ParentBackdropImageTags: string[]
+	ParentBackdropItemId: string
+	ParentId: string
+	ParentIndexNumber: number
+	Path: string
+	PremiereDate: string
+	PresentationUniqueKey: string
+	PrimaryImageAspectRatio: number
+	ProductionYear: number
+	ProviderIds: {
+		Imdb: string
+		Tmdb: string
+		Tvdb: string
+	}
+	RunTimeTicks: number
+	SeasonId: string
+	SeasonName: string
+	SeriesId: string
+	SeriesName: string
+	SeriesPrimaryImageTag: string
+	ServerId: string
+	Studios: any[]
+	Taglines: any[]
 	Type: string
+	Width: number
 }
 
-interface DirectPlayProfiles {
-	AudioCodec: string
-	Container: string
-	Type: string
-	VideoCodec: string
-}
-
-interface TranscodingProfiles {
-	AudioCodec: string
-	BreakOnNonKeyFrames: boolean
-	Container: string
-	Context: string
-	CopyTimestamps: boolean
-	EnableMpegtsM2TsMode: boolean
-	EstimateContentLength: boolean
-	MaxAudioChannels: string
-	MinSegments: number
+export interface MediaStream {
+	AspectRatio: string
+	AverageFrameRate: number
+	BitDepth: number
+	BitRate: number
+	ChannelLayout: string
+	Channels: number
+	Codec: string
+	CodecTimeBase: string
+	ColorPrimaries: string
+	ColorSpace: string
+	ColorTransfer: string
+	DisplayTitle: string
+	Height: number
+	Index: number
+	IsAVC: boolean
+	IsAnamorphic: boolean
+	IsDefault: boolean
+	IsExternal: boolean
+	IsForced: boolean
+	IsInterlaced: boolean
+	IsTextSubtitleStream: boolean
+	Level: number
+	NalLengthSize: string
+	PixelFormat: string
+	Profile: string
 	Protocol: string
-	SegmentLength: number
-	TranscodeSeekInfo: string
+	RealFrameRate: number
+	RefFrames: number
+	SampleRate: number
+	SupportsExternalStream: boolean
+	TimeBase: string
 	Type: string
-	VideoCodec: string
+	VideoRange: string
+	Width: number
 }
 
-interface Device {
+export interface PlayState {
+	AudioStreamIndex: number
+	CanSeek: boolean
+	IsMuted: boolean
+	IsPaused: boolean
+	MediaSourceId: string
+	PlayMethod: string
+	PositionTicks: number
+	RepeatMode: string
+	VolumeLevel: number
+}
+
+export interface Device {
 	AppName: string
 	AppVersion: string
 	DateLastActivity: string

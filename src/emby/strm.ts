@@ -20,37 +20,34 @@ const emitter = new Emitter<string, string>()
 const db = new Db(__filename)
 process.nextTick(async () => {
 	process.DEVELOPMENT && (await db.flush())
-
-	let rxIntros = emby.rxItemId.pipe(Rx.op.filter(({ parts }) => parts.includes('intros')))
-	rxIntros.subscribe(async ({ ItemId, UserId }) => {
-		/*
-			TODO:
-			- this ItemId is an episode ItemId
-		*/
-		await db.put(`rxIntros:${UserId}`, ItemId, utils.duration(1, 'day'))
-		console.warn(`rxIntros ${UserId} ->`, ItemId)
-	})
 })
 
-async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: string) {
+async function getDebridStreamUrl(Query: emby.StrmQuery, Item: emby.Item) {
 	let t = Date.now()
-	let { e, s, imdb, tmdb, tvdb, type } = query
-	let Sessions = await emby.sessions.get()
-	let Session = Sessions[0]
+
+	let Session = (await emby.sessions.get()).find(v => v.ItemPath == Item.Path)
+	let PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, Session && Session.UserId)
+	console.log(`PlaybackInfo ->`, PlaybackInfo)
+
+	if (process.DEVELOPMENT) {
+		return 'https://whitetreefairy-sto.energycdn.com/dl/2bQ74BXOQcwsenIZWFJSWg/1572156133/675000842/5d3894d4c0d876.18082955/How%20the%20Universe%20Works%20S02E04%201080p%20WEB-DL%20DD%2B%202.0%20x264-TrollHD.mkv'
+		// return 'https://lazycarefulsailor-sto.energycdn.com/dl/aiGuRJQkn0AVJ2bfVAItyQ/1572142690/675000842/5da9d83ec2a9c6.33536050/Starsky.And.Hutch.2004.1080p.BluRay.x264.DTS-FGT.mkv'
+		// return 'https://phantasmagoricfairytale-sto.energycdn.com/dl/uat0AxAx0BEAddz2zeRVyg/1572129772/675000842/5da6353eb18ad8.55901578/The.Lion.King.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1-FGT.mkv'
+	}
 
 	let UserId = await db.get(`UserId:${query.slug}`)
 	if (UserId) Session = Sessions.find(v => v.UserId == UserId) || Session
 
 	Session = (Sessions.find(v => {
 		if (!v.StrmPath) return
-		if (type == 'show') {
-			let zero = `S${utils.zeroSlug(s)}E${utils.zeroSlug(e)}`
+		if (query.type == 'show') {
+			let zero = `S${utils.zeroSlug(query.season)}E${utils.zeroSlug(query.episode)}`
 			if (!v.StrmPath.includes(zero)) return
 		}
 		let ids = emby.library.pathIds(v.StrmPath)
-		if (ids.imdb && imdb) return ids.imdb == imdb
-		if (ids.tmdb && tmdb) return ids.tmdb == tmdb
-		if (ids.tvdb && tvdb) return ids.tvdb == tvdb
+		if (ids.imdb && query.imdb) return ids.imdb == query.imdb
+		if (ids.tmdb && query.tmdb) return ids.tmdb == query.tmdb
+		if (ids.tvdb && query.tvdb) return ids.tvdb == query.tvdb
 	}) || Session) as emby.Session
 
 	let { Quality, Channels, Codecs } = Session
@@ -60,13 +57,13 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 
 	console.log(`getDebridStreamUrl '${strm}' ->`, Session.json)
 
-	let full = (await trakt.client.get(`/${type}s/${query.slug}`)) as trakt.Full
-	let item = new media.Item({ type, [type]: full })
-	if (type == 'show') {
+	let full = (await trakt.client.get(`/${query.type}s/${query.slug}`)) as trakt.Full
+	let item = new media.Item({ type: query.type, [query.type]: full })
+	if (query.type == 'show') {
 		let seasons = (await trakt.client.get(`/shows/${query.slug}/seasons`)) as trakt.Season[]
-		item.use({ type: 'season', season: seasons.find(v => v.number == s) })
+		item.use({ type: 'season', season: seasons.find(v => v.number == query.season) })
 		let episode = (await trakt.client.get(
-			`/shows/${query.slug}/seasons/${s}/episodes/${e}`,
+			`/shows/${query.slug}/seasons/${query.season}/episodes/${query.episode}`,
 		)) as trakt.Episode
 		item.use({ type: 'episode', episode })
 	}
@@ -97,78 +94,31 @@ async function getDebridStreamUrl(query: emby.StrmQuery, rkey: string, strm: str
 }
 
 fastify.get('/strm', async (request, reply) => {
-	if (_.isEmpty(request.query)) return reply.status(404).send()
+	if (_.isEmpty(request.query)) return reply.redirect('/dev/null')
 
-	let query = _.mapValues(request.query, (v, k: keyof emby.StrmQuery) =>
+	let Query = _.mapValues(request.query, v =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
-	let { e, s, slug, type, imdb, tmdb, tvdb } = query
+	let Item = await emby.library.byPath(emby.library.toStrmPath(Query, true))
+	console.warn(`/strm ->`, emby.library.toName(Item))
 
-	let strm = slug
-	if (type == 'show') strm += ` s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	console.warn(`/strm ->`, strm)
-
-	/*
-		TODO:
-		- this Item is the series ItemId
-	*/
-	let Item = await emby.library.byProviderIds({ imdb, tmdb, tvdb })
-	console.log(`/strm Item ->`, Item)
-	console.log(`/strm Item.Id ->`, Item.Id)
-
-	console.log(`/strm Sessions ->`, emby.Sessions.map(v => v.json))
-	let Session = emby.Sessions[0]
-	for (let v of emby.Sessions) {
-		let ItemId = await db.get(`rxIntros:${v.UserId}`)
-		if (ItemId == Item.Id) {
-			Session = v
-			break
-		}
-	}
-	console.log(`/strm Session ->`, Session)
-
-	// let ua = request.headers['user-agent'] as string
-	// if (ua && !ua.startsWith('Lavf/')) {
-	// 	let Item = await emby.library.byProviderIds(
-	// 		{ imdb, tmdb, tvdb },
-	// 		{ Fields: ['MediaSources'] },
-	// 	)
-	// 	return reply.redirect(
-	// 		`${process.env.EMBY_WAN_ADDRESS}/emby/Videos/${Item.Id}/stream.strm?Static=true&mediaSourceId=${Item.MediaSources[0].Id}`,
-	// 	)
-	// }
-
-	// console.log(`request ->`, request)
-	// console.log(`/strm request.headers ->`, request.headers)
-	// let { remoteFamily, remoteAddress, remotePort } = request.raw.socket
-	// console.log(`/strm request.socket ->`, remoteFamily, remoteAddress, remotePort)
-
-	if (process.DEVELOPMENT) {
-		return reply.status(404).send()
-		return reply.redirect(
-			'https://tinyworldeater-sto.energycdn.com/dl/bVS0z8nQAKjbRTVcdsMdug/1571487288/675000842/5d9d54453b43d2.58722995/the.daily.show.2019.10.08.susan.rice.extended.1080p.web.x264-tbs.mkv',
-		)
-	}
-
-	let rkey = `stream:${query.slug}`
-	if (type == 'show') rkey += `:s${utils.zeroSlug(s)}e${utils.zeroSlug(e)}`
-	let stream = (await db.get(rkey)) as string
+	let stream = (await db.get(Item.Id)) as string
 	if (!stream) {
-		if (!emitter.eventNames().includes(`${query.slug}`)) {
-			getDebridStreamUrl(query, rkey, strm).then(
-				async stream => {
-					await db.put(rkey, stream, utils.duration(1, 'minute'))
-					emitter.emit(`${query.slug}`, stream)
-				},
-				async error => {
-					console.error(`/strm getDebridStreamUrl '${slug}' -> %O`, error)
-					await db.put(rkey, '/dev/null', utils.duration(1, 'minute'))
-					emitter.emit(`${query.slug}`, '/dev/null')
-				},
-			)
+		if (!emitter.eventNames().includes(Item.Id)) {
+			try {
+				stream = await getDebridStreamUrl(Query, Item)
+				await db.put(Item.Id, stream, utils.duration(1, 'minute'))
+				emitter.emit(Item.Id, stream)
+			} catch (error) {
+				console.error(`/strm ${emby.library.toName(Item)} -> %O`, error)
+				await db.put(Item.Id, '/dev/null', utils.duration(1, 'minute'))
+				emitter.emit(Item.Id, '/dev/null')
+			}
+		} else {
+			stream = await emitter.toPromise(Item.Id)
 		}
-		stream = await emitter.toPromise(`${query.slug}`)
 	}
 
+	console.log(`reply.redirect(${stream}) ->`)
 	reply.redirect(stream)
 })

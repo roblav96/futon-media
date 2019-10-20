@@ -3,16 +3,14 @@ import * as emby from '@/emby/emby'
 import * as schedule from 'node-schedule'
 import * as utils from '@/utils/utils'
 
-export const users = {
-	async get() {
-		return ((await emby.client.get('/Users')) as User[]).map(v => new User(v))
-	},
-	async byUserId(UserId: string) {
-		return new User(await emby.client.get(`/Users/${UserId}`))
-	},
-}
-
 export class User {
+	static async get() {
+		return ((await emby.client.get('/Users')) as User[]).map(v => new User(v))
+	}
+	static async byUserId(UserId: string) {
+		return new User(await emby.client.get(`/Users/${UserId}`))
+	}
+
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}

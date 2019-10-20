@@ -76,7 +76,7 @@ export class Http {
 			// console.log(`${host} CookieJar ->`, this.jar.toJSON().cookies)
 		}
 
-		let scraper = cloudscraper.defaults(
+		let scraper = (cloudscraper as any).defaults(
 			_.defaultsDeep(
 				{
 					// agentOptions: { ciphers: 'ECDHE-ECDSA-AES128-GCM-SHA256' },
@@ -84,14 +84,14 @@ export class Http {
 					headers: { 'User-Agent': this.config.headers['user-agent'] },
 					jar: request.jar(this.jar.store),
 				} as cloudscraper.CoreOptions,
-				cloudscraper.defaultParams
-			)
-		) as typeof cloudscraper
-		;(scraper.defaultParams as any).jar._jar = this.jar
+				cloudscraper.defaultParams,
+			),
+		) as cloudscraper.CloudscraperAPI
+		_.set(scraper, 'defaultParams.jar._jar', this.jar)
 		// console.log(`${host} defaultParams ->`, scraper.defaultParams)
 
 		try {
-			await scraper(this.config.baseUrl + this.config.cloudflare)
+			await (scraper as any)(this.config.baseUrl + this.config.cloudflare)
 			await db.put(`jar:${host}`, this.jar.toJSON())
 			// console.info(`${host} jar ->`, this.jar.toJSON().cookies)
 		} catch (error) {
@@ -102,7 +102,7 @@ export class Http {
 	constructor(public config = {} as Config) {
 		_.defaults(this.config, Http.defaults)
 		_.mapValues(this.config, (v, k) =>
-			_.isPlainObject(v) ? _.defaults(v, Http.defaults[k] || {}) : v
+			_.isPlainObject(v) ? _.defaults(v, Http.defaults[k] || {}) : v,
 		)
 		if (this.config.cloudflare) {
 			this.config.retries.push(403, 503)
@@ -124,7 +124,7 @@ export class Http {
 				removeQueryParameters: null,
 				removeTrailingSlash: false, // !config.url.endsWith('/'),
 				sortQueryParameters: false,
-			})
+			}),
 		)
 		options.url = url
 		_.defaultsDeep(options.query, query)
@@ -132,7 +132,7 @@ export class Http {
 		let min = {
 			url: _.truncate(
 				normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
-				{ length: 100 }
+				{ length: 100 },
 			),
 			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
 				length: 100 - url.length,
@@ -155,7 +155,7 @@ export class Http {
 		if (_.size(options.query)) {
 			let stringify = qs.stringify(
 				options.query,
-				options.qsArrayFormat && { arrayFormat: options.qsArrayFormat }
+				options.qsArrayFormat && { arrayFormat: options.qsArrayFormat },
 			)
 			if (stringify.length > 0) options.url += `?${stringify}`
 		}

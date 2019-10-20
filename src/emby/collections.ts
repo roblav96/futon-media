@@ -52,8 +52,8 @@ async function buildSchemas() {
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
 				} as CollectionSchema
-			})
-		).flat()
+			}),
+		).flat(),
 	)
 
 	let lists = [] as trakt.List[]
@@ -85,7 +85,7 @@ async function buildSchemas() {
 				name: utils.toSlug(list.name, { title: true }),
 				url: `/users/${list.user.ids.slug}/lists/${list.ids.slug}/items`,
 			} as CollectionSchema
-		})
+		}),
 	)
 
 	schemas.forEach(schema => {
@@ -154,14 +154,20 @@ async function syncCollections() {
 		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, schema.items.length)
 
 		let Items = await emby.library
-			.addAll(schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item))))
+			.addAll(
+				schema.items.filter(
+					item => !mIds.has(emby.library.toStrmPath(emby.library.toStrmQuery(item))),
+				),
+			)
 			.catch(error => {
 				console.error(`syncCollections addAll -> %O`, error)
 				return []
 			})
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
-		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).filter(Boolean)
+		let Ids = schema.items
+			.map(item => mIds.get(emby.library.toStrmPath(emby.library.toStrmQuery(item))))
+			.filter(Boolean)
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {

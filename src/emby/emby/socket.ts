@@ -33,11 +33,23 @@ process.nextTick(async () => {
 			emby.Tail.disconnect()
 		},
 		onopen({ target }) {
+			emby.Tail.connect()
 			let url = target.url as string
 			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1500,900' })
-			emby.sessions.sync()
-			emby.Tail.connect()
+			// emby.sessions.sync()
+			// {
+			// 	;(async () => {
+			// 		let Sessions = await emby.sessions.get()
+			// 		for (let Session of Sessions) {
+			// 			console.log(`Session.Id ->`, Session.Id)
+			// 			ws.json({
+			// 				MessageType: 'SessionEventsStart',
+			// 				Data: `100,800,${Session.Id}`,
+			// 			})
+			// 		}
+			// 	})()
+			// }
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
@@ -54,7 +66,7 @@ process.nextTick(async () => {
 // 		return
 // 	}
 // 	if (MessageType == 'Sessions') {
-// 		// console.info(`rxSocket Sessions ->`, Data)
+// 		console.info(`rxSocket Sessions ->`, Data)
 // 		// let Sessions = emby.sessions.use(Data as emby.Session[])
 // 		// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
 // 		return
