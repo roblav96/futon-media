@@ -18,55 +18,55 @@ process.nextTick(() => {
 		}),
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId }) => {
-		let Session = await emby.sessions.byUserId(UserId)
-		console.log(`Session ->`, Session)
-		if (!Session.isHD) return
+		// let Session = await emby.sessions.byUserId(UserId)
+		// console.log(`Session ->`, Session)
+		// if (!Session.isHD) return
 
-		let Item = await emby.library.byItemId(ItemId)
-		if (!Item || !['Movie', 'Series', 'Episode'].includes(Item.Type)) return
+		// let Item = await emby.library.byItemId(ItemId)
+		// if (!Item || !['Movie', 'Series', 'Episode'].includes(Item.Type)) return
 
-		// let actives = (await realdebrid.client.get('/torrents/activeCount', {
+		// // let actives = (await realdebrid.client.get('/torrents/activeCount', {
+		// // 	silent: true,
+		// // })) as realdebrid.ActiveCount
+		// // if (actives.nb >= _.ceil(actives.limit * 0.8)) {
+		// // 	throw new Error(`RealDebrid actives ${actives.nb} >= ${actives.limit}`)
+		// // }
+
+		// let item = await emby.library.item(Item)
+
+		// if (Item.Type == 'Movie') {
+		// 	return queue.add(() => download(item, Session.isSD))
+		// }
+
+		// let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
 		// 	silent: true,
-		// })) as realdebrid.ActiveCount
-		// if (actives.nb >= _.ceil(actives.limit * 0.8)) {
-		// 	throw new Error(`RealDebrid actives ${actives.nb} >= ${actives.limit}`)
+		// })) as trakt.Season[]
+		// seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
+
+		// if (Item.Type == 'Episode') {
+		// 	let { ParentIndexNumber: s, IndexNumber: e } = Item
+		// 	item.use({ type: 'season', season: seasons.find(v => v.number == s) })
+		// 	let episode = (await trakt.client.get(
+		// 		`/shows/${item.slug}/seasons/${s}/episodes/${e}`,
+		// 		{ silent: true }
+		// 	)) as trakt.Episode
+		// 	item.use({ type: 'episode', episode })
+		// 	return queue.add(() => download(item, Session.isSD))
 		// }
 
-		let item = await emby.library.item(Item)
-
-		if (Item.Type == 'Movie') {
-			return queue.add(() => download(item, Session.isSD))
-		}
-
-		let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
-			silent: true,
-		})) as trakt.Season[]
-		seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
-
-		if (Item.Type == 'Episode') {
-			let { ParentIndexNumber: s, IndexNumber: e } = Item
-			item.use({ type: 'season', season: seasons.find(v => v.number == s) })
-			let episode = (await trakt.client.get(
-				`/shows/${item.slug}/seasons/${s}/episodes/${e}`,
-				{ silent: true }
-			)) as trakt.Episode
-			item.use({ type: 'episode', episode })
-			return queue.add(() => download(item, Session.isSD))
-		}
-
-		// if (Item.Type == 'Series') {
-		// 	if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
-		// 		return console.warn(`favorites item.isDaily || item.episodes >= 500`)
-		// 	}
-		// 	if (process.DEVELOPMENT) {
-		// 		return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
-		// 	}
-		// 	queue.addAll(
-		// 		seasons.map(season => () =>
-		// 			download(item.use({ type: 'season', season }), Session.isSD)
-		// 		)
-		// 	)
-		// }
+		// // if (Item.Type == 'Series') {
+		// // 	if (item.isDaily || (item.show && item.show.aired_episodes) >= 500) {
+		// // 		return console.warn(`favorites item.isDaily || item.episodes >= 500`)
+		// // 	}
+		// // 	if (process.DEVELOPMENT) {
+		// // 		return download(item.use({ type: 'season', season: seasons[0] }), Session.isSD)
+		// // 	}
+		// // 	queue.addAll(
+		// // 		seasons.map(season => () =>
+		// // 			download(item.use({ type: 'season', season }), Session.isSD)
+		// // 		)
+		// // 	)
+		// // }
 	})
 })
 

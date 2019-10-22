@@ -9,20 +9,19 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
-// const db = new Db(__filename)
-// process.nextTick(async () => {
-// 	process.DEVELOPMENT && (await db.flush())
-// 	// global.dts(await emby.client.get('/Sessions', { silent: true }), 'Sessions')
-// 	// await sessions.sync()
-// 	// emby.rxSocket.subscribe(({ MessageType, Data }) => {
-// 	// 	if (MessageType != 'Sessions') return
-// 	// 	emby.Sessions.splice(0, Infinity, ...sessions.use(Data))
-// 	// 	console.info(`rxSocket Session ->`, emby.Sessions[0] && emby.Sessions[0].json)
-// 	// })
-// })
+const db = new Db(__filename)
+process.nextTick(async () => {
+	process.DEVELOPMENT && (await db.flush())
+	// global.dts(await emby.client.get('/Sessions', { silent: true }), 'Sessions')
+	// await sessions.sync()
+	// emby.rxSocket.subscribe(({ MessageType, Data }) => {
+	// 	if (MessageType != 'Sessions') return
+	// 	emby.Sessions.splice(0, Infinity, ...sessions.use(Data))
+	// 	console.info(`rxSocket Session ->`, emby.Sessions[0] && emby.Sessions[0].json)
+	// })
+})
 
 export const sessions = {
-	// db,
 	parse(Sessions: Session[]) {
 		_.remove(Sessions, ({ DeviceId, RemoteEndPoint, UserName }) => {
 			if (!UserName) return true
@@ -48,7 +47,6 @@ export const sessions = {
 }
 
 export class Session {
-
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}

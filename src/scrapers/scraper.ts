@@ -44,7 +44,7 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		(await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
@@ -81,7 +81,7 @@ export async function scrapeAll(item: media.Item, sd = true) {
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
-		to.stamp = _.min([to.stamp, from.stamp].filter(_.isFinite))
+		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
 

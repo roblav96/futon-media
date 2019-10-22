@@ -258,25 +258,25 @@ export const library = {
 		}
 		if (query.type == 'show') {
 			file += `/Season ${query.season}`
-			file += `/${query.title} S${utils.zeroSlug(query.season)}E${utils.zeroSlug(
-				query.episode,
-			)}`
+			file += `/${query.title} `
+			file += `S${utils.zeroSlug(query.season)}`
+			file += `E${utils.zeroSlug(query.episode)}`
 		}
 		return `${dir}${file}.strm`
 	},
 	toStrmQuery(item: media.Item) {
 		let query = {
-			imdb: item.ids.imdb,
 			slug: item.ids.slug,
 			title: utils.toSlug(item.title, { title: true }),
-			tmdb: item.ids.tmdb,
-			tvdb: item.ids.tvdb,
 			type: item.type,
 			year: item.year,
 		} as StrmQuery
+		if (item.ids.imdb) query.imdb = item.ids.imdb
+		if (item.ids.tmdb) query.tmdb = item.ids.tmdb
+		if (item.ids.tvdb) query.tvdb = item.ids.tvdb
 		if (item.S.n) query.season = item.S.n
 		if (item.E.n) query.episode = item.E.n
-		return utils.compact(query)
+		return query
 	},
 	toStrmUrl(query: StrmQuery) {
 		return `${process.env.EMBY_WAN_ADDRESS}/strm?${qs.stringify(query)}`

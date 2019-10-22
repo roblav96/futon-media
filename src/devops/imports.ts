@@ -8,6 +8,7 @@ if (process.DEVELOPMENT) {
 			dayjs: await import('dayjs'),
 			deepdiff: await import('deep-diff'),
 			deepmerge: await import('deepmerge'),
+			flatten: await import('flat'),
 			httperrors: await import('http-errors'),
 			matcher: await import('matcher'),
 			ms: await import('pretty-ms'),

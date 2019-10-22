@@ -4,6 +4,7 @@ import 'node-env-dev'
 import '@/devops/devops'
 
 async function start() {
+	if (process.DEVELOPMENT) await import('@/mocks/mocks')
 	await (await import('@/emby/config')).config()
 	if (process.args.scripts) {
 		return await import(`@/scripts/${process.args.scripts}`)
@@ -12,6 +13,7 @@ async function start() {
 	await import('@/emby/favorites')
 	await import('@/emby/search')
 	await import('@/emby/strm')
+	await import('@/emby/webhooks')
 }
 process.nextTick(() => start().catch(error => console.error(`start -> %O`, error)))
 

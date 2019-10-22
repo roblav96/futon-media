@@ -33,10 +33,11 @@ process.nextTick(async () => {
 			emby.Tail.disconnect()
 		},
 		onopen({ target }) {
-			emby.Tail.connect()
 			let url = target.url as string
 			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1500,900' })
+			emby.Tail.connect()
+			emby.PlaybackInfo.setUserNames()
 			// emby.sessions.sync()
 			// {
 			// 	;(async () => {

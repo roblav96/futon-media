@@ -2,7 +2,9 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as fastParse from 'fast-json-parse'
+import * as flatten from 'flat'
 import * as media from '@/media/media'
+import * as mocks from '@/mocks/mocks'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
@@ -24,8 +26,12 @@ process.nextTick(async () => {
 		let { Id, UserId } = value as PlaybackInfo
 		console.log(`rxPostedPlaybackInfo ->`, value)
 		await db.put(Id, value, utils.duration(1, 'day'))
+		await db.put(UserId, value, utils.duration(1, 'day'))
 		await db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day'))
 	})
+
+	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
+	// console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
 
 	// let rxPlaybackInfo = emby.rxHttp.pipe(
 	// 	Rx.op.filter(({ method, parts, query }) => {
@@ -39,83 +45,88 @@ process.nextTick(async () => {
 })
 
 export class PlaybackInfo {
-	static async get(ItemId: string, UserId = '') {
+	static async setUserNames() {
 		;(await emby.User.get()).forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
-		return new PlaybackInfo(await db.get(UserId ? `${ItemId}:${UserId}` : ItemId))
+	}
+	static async get(ItemId: string, UserId = '') {
+		let value = (await db.get(UserId ? `${ItemId}:${UserId}` : ItemId)) as PlaybackInfo
+		return value ? new PlaybackInfo(value) : value
 	}
 
 	static UserNames = {} as Record<string, string>
 	get UserName() {
 		return PlaybackInfo.UserNames[this.UserId]
 	}
-
 	get UHD() {
 		let UHDs = ['developer', 'robert']
 		return UHDs.includes(this.UserName.toLowerCase())
 	}
 	get HD() {
 		let HDs = ['mom']
-		return HDs.includes(this.UserName.toLowerCase()) || this.UHD
+		return this.UHD || HDs.includes(this.UserName.toLowerCase())
+	}
+	get SD() {
+		return !this.UHD && !this.HD
+	}
+	get Quality(): emby.Quality {
+		if (this.AudioChannels > 2 && this.UHD) return 'UHD'
+		if (this.AudioChannels > 2 && this.HD) return 'HD'
+		return 'SD'
 	}
 
-	get Codecs() {
-		let { audio, video } = { audio: '', video: '' }
-		let cpath = 'DeviceProfile.CodecProfiles'
-		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
-		audio += `${_.join(cprofiles.filter(v => v.Type == 'Audio').map(v => v.Codec), ',')},`
-		audio += `${_.join(cprofiles.filter(v => v.Type == 'VideoAudio').map(v => v.Codec), ',')},`
-		video += `${_.join(cprofiles.filter(v => v.Type == 'Video').map(v => v.Codec), ',')},`
-		let dpath = 'DeviceProfile.DirectPlayProfiles'
-		let dprofiles = _.get(this, dpath, []) as DirectPlayProfile[]
-		audio += `${_.join(dprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
-		video += `${_.join(dprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
-		let tpath = 'DeviceProfile.TranscodingProfiles'
-		let tprofiles = _.get(this, tpath, []) as TranscodingProfile[]
-		audio += `${_.join(tprofiles.map(v => v.AudioCodec).filter(Boolean), ',')},`
-		video += `${_.join(tprofiles.map(v => v.VideoCodec).filter(Boolean), ',')},`
-		let Codecs = {
-			audio: _.sortBy(_.uniq(audio.toLowerCase().split(',')).filter(Boolean)).map(v =>
-				v.startsWith('-') ? utils.minify(v) : v,
-			),
-			video: _.sortBy(_.uniq(video.toLowerCase().split(',')).filter(Boolean)).map(v =>
-				v.startsWith('-') ? utils.minify(v) : v,
-			),
-		}
-		if (Codecs.audio.includes('ac3')) Codecs.audio.push('eac3')
-		if (Codecs.audio.includes('dts') && this.HD) Codecs.audio.push('truehd')
-		Codecs.audio.sort()
-		return Codecs
+	get Bitrate() {
+		return this.MaxStreamingBitrate || this.DeviceProfile.MaxStreamingBitrate
 	}
-	get Channels() {
-		// if (process.DEVELOPMENT) return 8
+
+	get AudioChannels() {
 		let Channels = [2]
-		let cpath = 'DeviceProfile.CodecProfiles'
-		let cprofiles = _.get(this, cpath, []) as CodecProfiles[]
-		cprofiles.forEach(({ Conditions, Type }) => {
-			if (Type != 'VideoAudio' || !_.isArray(Conditions)) return
-			let Condition = Conditions.find(({ Property }) => Property == 'AudioChannels')
-			Condition && Condition.Value && Channels.push(_.parseInt(Condition.Value))
-		})
-		let tpath = 'DeviceProfile.TranscodingProfiles'
-		let tprofiles = _.get(this, tpath, []) as TranscodingProfile[]
-		tprofiles.forEach(({ MaxAudioChannels }) => {
-			MaxAudioChannels && Channels.push(_.parseInt(MaxAudioChannels))
-		})
+		for (let [k, v] of Object.entries(this.flat)) {
+			if (k.endsWith('channels')) {
+				Channels.push(_.parseInt(v as string))
+			}
+			if (k.endsWith('.property') && _.isString(v) && v.toLowerCase() == 'audiochannels') {
+				Channels.push(_.parseInt(this.flat[k.replace('.property', '.value')] as string))
+			}
+		}
 		// if (Channels.length == 1) return 8
 		return _.max(Channels)
 	}
-	get Quality(): emby.Quality {
-		// if (process.DEVELOPMENT) return 'UHD'
-		if (this.Channels > 2 && this.UHD) return 'UHD'
-		if (this.Channels > 2 && this.HD) return 'HD'
-		return 'SD'
+
+	get AudioCodecs() {
+		let AudioCodecs = [] as string[]
+		for (let [k, v] of Object.entries(this.flat)) {
+			if (!_.isString(v)) continue
+			v = v.toLowerCase()
+			if (k.endsWith('.audiocodec')) {
+				AudioCodecs.push(...v.split(','))
+			}
+			if (k.endsWith('.type') && (v == 'audio' || v == 'videoaudio')) {
+				AudioCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
+			}
+		}
+		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean)))
 	}
-	get Bitrate() {
-		return this.MaxStreamingBitrate || this.DeviceProfile.MaxStreamingBitrate || NaN
+	get VideoCodecs() {
+		let VideoCodecs = [] as string[]
+		for (let [k, v] of Object.entries(this.flat)) {
+			if (!_.isString(v)) continue
+			v = v.toLowerCase()
+			if (k.endsWith('.videocodec')) {
+				VideoCodecs.push(...v.split(','))
+			}
+			if (k.endsWith('.type') && v == 'video') {
+				VideoCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
+			}
+		}
+		return _.sortBy(_.uniq(VideoCodecs.filter(Boolean)))
 	}
 
+	flat: Record<string, boolean | number | string>
 	constructor(PlaybackInfo: PlaybackInfo) {
 		_.merge(this, PlaybackInfo)
+		Object.defineProperty(this, 'flat', {
+			value: _.mapKeys(flatten(PlaybackInfo), (v, k: string) => k.toLowerCase()),
+		})
 	}
 }
 
@@ -142,8 +153,8 @@ export interface PlaybackInfo {
 }
 
 export interface DeviceProfile {
-	CodecProfiles: CodecProfiles[]
-	ContainerProfiles: any[]
+	CodecProfiles: CodecProfile[]
+	ContainerProfiles: ContainerProfile[]
 	DirectPlayProfiles: DirectPlayProfile[]
 	EnableAlbumArtInDidl: boolean
 	EnableSingleAlbumArtLimit: boolean
@@ -172,9 +183,20 @@ export interface DeviceProfile {
 	XmlRootAttributes: any[]
 }
 
-export interface CodecProfiles {
+export interface CodecProfile {
 	ApplyConditions: any[]
 	Codec: string
+	Conditions: {
+		Condition: string
+		IsRequired: boolean
+		Property: string
+		Value: string
+	}[]
+	Container: string
+	Type: string
+}
+
+export interface ContainerProfile {
 	Conditions: {
 		Condition: string
 		IsRequired: boolean
