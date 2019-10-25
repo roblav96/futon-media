@@ -23,67 +23,65 @@ process.nextTick(async () => {
 	process.DEVELOPMENT && (await db.flush())
 })
 
-async function getDebridStreamUrl(Query: emby.StrmQuery, Item: emby.Item) {
+async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	let t = Date.now()
+	let name = emby.library.toName(Item)
 
 	let Session = (await emby.sessions.get()).find(v => v.ItemPath == Item.Path)
-	let UserId = Session && Session.UserId
 	let PlaybackInfo: emby.PlaybackInfo
 	while (!PlaybackInfo) {
-		PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, UserId)
+		PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, Session && Session.UserId)
 		if (!PlaybackInfo) await utils.pTimeout(300)
 	}
-	console.log(`PlaybackInfo ->`, PlaybackInfo)
+	if (!Session) Session = (await emby.sessions.get()).find(v => v.UserId == PlaybackInfo.UserId)
+	console.info(`getDebridStream '${name}' ->\n${Session.short}`, PlaybackInfo.json)
 
-	if (process.DEVELOPMENT) {
-		throw new Error(`DEVELOPMENT`)
-		return 'https://battlefuryscepter-sto.energycdn.com/dl/Eof6rPXcoUu5vGH0vjWnUQ/1572224225/675000842/5bd4d143ada4d8.47303017/hd1080-walle.mkv'
-		// return 'https://whitetreefairy-sto.energycdn.com/dl/2bQ74BXOQcwsenIZWFJSWg/1572156133/675000842/5d3894d4c0d876.18082955/How%20the%20Universe%20Works%20S02E04%201080p%20WEB-DL%20DD%2B%202.0%20x264-TrollHD.mkv'
-		// return 'https://lazycarefulsailor-sto.energycdn.com/dl/aiGuRJQkn0AVJ2bfVAItyQ/1572142690/675000842/5da9d83ec2a9c6.33536050/Starsky.And.Hutch.2004.1080p.BluRay.x264.DTS-FGT.mkv'
-		// return 'https://phantasmagoricfairytale-sto.energycdn.com/dl/uat0AxAx0BEAddz2zeRVyg/1572129772/675000842/5da6353eb18ad8.55901578/The.Lion.King.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1-FGT.mkv'
-	}
-
-	// let { Quality, Channels, Codecs } = Session
-	// let skey = `${rkey}:${utils.hash([Quality, Channels, Codecs.audio, Codecs.video])}`
-	// let streamUrl = await db.get(skey)
-	// if (streamUrl) return streamUrl
-
-	// console.log(`getDebridStreamUrl '${strm}' ->`, Session.json)
-
-	// let full = (await trakt.client.get(`/${query.type}s/${query.slug}`)) as trakt.Full
-	// let item = new media.Item({ type: query.type, [query.type]: full })
-	// if (query.type == 'show') {
-	// 	let seasons = (await trakt.client.get(`/shows/${query.slug}/seasons`)) as trakt.Season[]
-	// 	item.use({ type: 'season', season: seasons.find(v => v.number == query.season) })
-	// 	let episode = (await trakt.client.get(
-	// 		`/shows/${query.slug}/seasons/${query.season}/episodes/${query.episode}`,
-	// 	)) as trakt.Episode
-	// 	item.use({ type: 'episode', episode })
+	// if (process.DEVELOPMENT) {
+	// 	// throw new Error(`DEVELOPMENT`)
+	// 	return '0.0.0.0'
+	// 	// return 'https://battlefuryscepter-sto.energycdn.com/dl/Eof6rPXcoUu5vGH0vjWnUQ/1572224225/675000842/5bd4d143ada4d8.47303017/hd1080-walle.mkv'
+	// 	// return 'https://whitetreefairy-sto.energycdn.com/dl/2bQ74BXOQcwsenIZWFJSWg/1572156133/675000842/5d3894d4c0d876.18082955/How%20the%20Universe%20Works%20S02E04%201080p%20WEB-DL%20DD%2B%202.0%20x264-TrollHD.mkv'
+	// 	// return 'https://lazycarefulsailor-sto.energycdn.com/dl/aiGuRJQkn0AVJ2bfVAItyQ/1572142690/675000842/5da9d83ec2a9c6.33536050/Starsky.And.Hutch.2004.1080p.BluRay.x264.DTS-FGT.mkv'
+	// 	// return 'https://phantasmagoricfairytale-sto.energycdn.com/dl/uat0AxAx0BEAddz2zeRVyg/1572129772/675000842/5da6353eb18ad8.55901578/The.Lion.King.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1-FGT.mkv'
 	// }
 
-	// let torrents = await scraper.scrapeAll(item, Session.isSD)
+	let { Quality, AudioChannels, AudioCodecs, VideoCodecs } = PlaybackInfo
+	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
+	let stream = await db.get(skey)
+	if (stream) return stream
 
-	// // if (!process.DEVELOPMENT) console.log(`all torrents '${strm}' ->`, torrents.length)
-	// console.log(`all torrents '${strm}' ->`, torrents.length, torrents.map(v => v.short))
+	let item = await emby.library.item(Item)
+	if (Query.type == 'show') {
+		let seasons = (await trakt.client.get(`/shows/${Query.slug}/seasons`)) as trakt.Season[]
+		item.use({ type: 'season', season: seasons.find(v => v.number == Query.season) })
+		let episode = (await trakt.client.get(
+			`/shows/${Query.slug}/seasons/${Query.season}/episodes/${Query.episode}`,
+		)) as trakt.Episode
+		item.use({ type: 'episode', episode })
+	}
 
-	// let cacheds = torrents.filter(v => v.cached.length > 0)
+	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality == 'SD')
+
+	// if (!process.DEVELOPMENT) console.log(`all torrents '${name}' ->`, torrents.length)
+	console.log(`all torrents '${name}' ->`, torrents.length, torrents.map(v => v.short))
+
+	let cacheds = torrents.filter(v => v.cached.length > 0)
 	// if (cacheds.length == 0) {
 	// 	debrids.download(torrents, item)
 	// 	throw new Error(`cacheds.length == 0`)
 	// }
+	// if (!process.DEVELOPMENT) console.log(`strm cacheds '${strm}' ->`, cacheds.length)
+	console.log(`strm cacheds '${name}' ->`, cacheds.length, cacheds.map(v => v.short))
 
-	// // if (!process.DEVELOPMENT) console.log(`strm cacheds '${strm}' ->`, cacheds.length)
-	// console.log(`strm cacheds '${strm}' ->`, cacheds.length, cacheds.map(v => v.short))
-
-	// streamUrl = await debrids.getStreamUrl(cacheds, item, Channels, Codecs)
-	// if (!streamUrl) {
+	// stream = await debrids.getStream(cacheds, item, Channels, Codecs)
+	// if (!stream) {
 	// 	debrids.download(torrents, item)
-	// 	throw new Error(`getDebridStreamUrl !streamUrl -> '${strm}'`)
+	// 	throw new Error(`getDebridStream !stream -> '${strm}'`)
 	// }
-	// await db.put(skey, streamUrl, utils.duration(1, 'day'))
+	// await db.put(skey, stream, utils.duration(1, 'day'))
 
-	// console.log(Date.now() - t, `👍 streamUrl '${strm}' ->`, streamUrl)
-	// return streamUrl
+	// console.log(Date.now() - t, `👍 stream '${strm}' ->`, stream)
+	// return stream
 }
 
 fastify.get('/strm', async (request, reply) => {
@@ -93,17 +91,18 @@ fastify.get('/strm', async (request, reply) => {
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
 	let Item = await emby.library.byPath(emby.library.toStrmPath(Query, true))
-	console.warn(`/strm ->`, emby.library.toName(Item))
+	let name = emby.library.toName(Item)
+	console.warn(`/strm ->`, `'${name}'`)
 
 	let stream = (await db.get(Item.Id)) as string
-	if (!stream) {
+	if (!_.isString(stream)) {
 		if (!emitter.eventNames().includes(Item.Id)) {
 			try {
-				stream = await getDebridStreamUrl(Query, Item)
+				stream = await getDebridStream(Query, Item)
 				await db.put(Item.Id, stream, utils.duration(1, 'minute'))
 				emitter.emit(Item.Id, stream)
 			} catch (error) {
-				console.error(`/strm ${emby.library.toName(Item)} -> %O`, error.message)
+				console.error(`/strm '${name}' -> %O`, error.message)
 				await db.put(Item.Id, '', utils.duration(1, 'minute'))
 				emitter.emit(Item.Id, '')
 			}
@@ -112,5 +111,6 @@ fastify.get('/strm', async (request, reply) => {
 		}
 	}
 
-	stream ? reply.redirect(stream) : reply.code(404).send(Buffer.from(''))
+	if (!stream) return reply.code(404).send(Buffer.from(''))
+	reply.redirect(stream)
 })

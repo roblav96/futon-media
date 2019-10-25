@@ -91,7 +91,7 @@ export class Session {
 
 	get short() {
 		let parts = [this.UserName, this.Client, this.DeviceName].map(v => v.replace(/\s+/g, ''))
-		return `${this.Age}ms|${parts[0]}@${parts[1]}.${parts[2]}`
+		return `${parts[0]}@${parts[1]}.${parts[2]}|${this.Age}ms`
 	}
 	get json() {
 		return utils.compact({

@@ -6,7 +6,7 @@ import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://btdb.eu',
-	cloudflare: '/?search=ubuntu',
+	cloudflare: '/?s=ubuntu',
 })
 
 export class Btdb extends scraper.Scraper {
@@ -14,7 +14,7 @@ export class Btdb extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get('/', { query: { search: slug, sort } as Partial<Query> })
+			await client.get('/', { query: { s: slug, sort } as Partial<Query> })
 		)
 		let results = [] as scraper.Result[]
 		$('li[class$="item"]').each((i, el) => {
@@ -38,6 +38,6 @@ export class Btdb extends scraper.Scraper {
 }
 
 interface Query {
-	search: string
+	s: string
 	sort: string
 }

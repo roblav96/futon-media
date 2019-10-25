@@ -9,7 +9,7 @@ import * as uastring from 'ua-string'
 import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://btspread.com',
+	baseUrl: 'https://btos.pw',
 	headers: { 'user-agent': uastring },
 })
 
@@ -27,7 +27,7 @@ export class Btsow extends scraper.Scraper {
 					bytes: utils.toBytes($el.find('.size').text()),
 					name: title,
 					magnet: `magnet:?xt=urn:btih:${href.split('/').pop()}&dn=${title}`,
-					seeders: NaN,
+					seeders: 1,
 					stamp: utils.toStamp($el.find('.date').text()),
 				} as scraper.Result)
 			} catch (error) {

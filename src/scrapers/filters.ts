@@ -36,7 +36,7 @@ export function results(result: scraper.Result, item: media.Item) {
 	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
 	if (skips.length - skipped.length >= 1) {
-		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
+		return console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
 	}
 
 	return true
@@ -84,7 +84,8 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			else if (
 				packed == true ||
 				years.length >= 2 ||
-				utils.accuracies(titles, 'collection').find(v => name.includes(` ${v} `))
+				utils.accuracies(titles, 'collection').find(v => name.includes(` ${v} `)) ||
+				utils.accuracies(titles, 'complete').find(v => name.includes(` ${v} `))
 			) {
 				torrent.packs = item.collection.name ? item.collection.fulls.length : years.length
 			}

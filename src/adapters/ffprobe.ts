@@ -7,12 +7,14 @@ import * as utils from '@/utils/utils'
 import * as ffpath from 'ffprobe-binaries'
 
 export async function probe(
-	streamUrl: string,
-	options: { chapters?: boolean; format?: boolean; streams?: boolean }
+	url: string,
+	options: { chapters?: boolean; format?: boolean; streams?: boolean },
 ) {
+	let flags = ['-print_format', 'json', '-show_error']
+	flags.push('-analyzeduration', '1000000', '-probesize', '1000000')
 	let pairs = Object.entries(options).filter(([k, v]) => v)
-	let flags = ['-print_format', 'json', '-show_error'].concat(pairs.map(([k]) => `-show_${k}`))
-	let { stdout } = await execa(ffpath, flags.concat(streamUrl))
+	flags.push(...pairs.map(([k]) => `-show_${k}`))
+	let { stdout } = await execa(ffpath, flags.concat(url))
 	let { err, value } = fastParse(stdout) as { err: Error; value: Probe }
 	if (err) throw err
 	if (value.format && value.format.tags) {
@@ -24,7 +26,7 @@ export async function probe(
 			stream = _.mapValues(stream, (v, k) => (_.isString(v) ? v.toLowerCase() : v)) as any
 			if (stream.tags) {
 				stream.tags = _.fromPairs(_.toPairs(stream.tags).map(v =>
-					v.map(vv => (_.isString(vv) ? vv.toLowerCase() : vv))
+					v.map(vv => (_.isString(vv) ? vv.toLowerCase() : vv)),
 				) as any) as any
 			}
 			return stream

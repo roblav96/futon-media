@@ -4,7 +4,7 @@ import * as badwords from 'badwords/array'
 import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
-import * as levenshtein from 'js-levenshtein'
+import * as levenshtein from 'leven'
 import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pDelay from 'delay'
@@ -12,7 +12,7 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import stripBom = require('strip-bom')
-import { dicts } from '@/utils/dicts'
+import { COMMONS, STOPS, VIDEO_EXTENSIONS } from '@/utils/dicts'
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
@@ -23,7 +23,7 @@ export function duration(amount: number, unit: dayjs.OpUnitType) {
 	return day.valueOf()
 }
 
-export function hash(value: any, algo = 'sha256') {
+export function hash(value: any) {
 	if (!_.isString(value)) value = fastStringify.stable(value)
 	let sha256 = crypto.createHash('sha256').update(value)
 	return sha256.digest('hex')
@@ -191,14 +191,14 @@ export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
 }
 
 export function stops(value: string) {
-	return excludes(value, dicts.STOPS)
+	return excludes(value, STOPS)
 }
 export function commons(value: string) {
-	return excludes(value, dicts.COMMONS)
+	return excludes(value, COMMONS)
 }
 
 export function isVideo(file: string) {
-	return dicts.VIDEOS.includes(path.extname(file.toLowerCase()).slice(1))
+	return VIDEO_EXTENSIONS.includes(path.extname(file.toLowerCase()).slice(1))
 }
 
 export function sortKeys<T>(value: T) {

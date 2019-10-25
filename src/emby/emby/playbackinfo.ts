@@ -24,14 +24,16 @@ process.nextTick(async () => {
 		let { err, value } = fastParse(message.slice(message.indexOf('{')))
 		if (err) return console.error(`rxPostedPlaybackInfo ->`, err.message)
 		let { Id, UserId } = value as PlaybackInfo
-		console.log(`rxPostedPlaybackInfo ->`, value)
+		console.log(`rxPostedPlaybackInfo ->`)
 		await db.put(Id, value, utils.duration(1, 'day'))
 		await db.put(UserId, value, utils.duration(1, 'day'))
 		await db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day'))
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
-	// console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
+	console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
+
+	// console.log(`PLAYBACK_INFO ->`, _.mapValues(mocks.PLAYBACK_INFO, v => new PlaybackInfo(v)))
 
 	// let rxPlaybackInfo = emby.rxHttp.pipe(
 	// 	Rx.op.filter(({ method, parts, query }) => {
@@ -65,9 +67,6 @@ export class PlaybackInfo {
 		let HDs = ['mom']
 		return this.UHD || HDs.includes(this.UserName.toLowerCase())
 	}
-	get SD() {
-		return !this.UHD && !this.HD
-	}
 	get Quality(): emby.Quality {
 		if (this.AudioChannels > 2 && this.UHD) return 'UHD'
 		if (this.AudioChannels > 2 && this.HD) return 'HD'
@@ -88,7 +87,12 @@ export class PlaybackInfo {
 				Channels.push(_.parseInt(this.flat[k.replace('.property', '.value')] as string))
 			}
 		}
-		// if (Channels.length == 1) return 8
+		for (let codec of ['dts', 'dca']) {
+			if (this.AudioCodecs.includes(codec)) Channels.push(6)
+		}
+		for (let codec of ['dtshd', 'truehd']) {
+			if (this.AudioCodecs.includes(codec)) Channels.push(8)
+		}
 		return _.max(Channels)
 	}
 
@@ -119,6 +123,16 @@ export class PlaybackInfo {
 			}
 		}
 		return _.sortBy(_.uniq(VideoCodecs.filter(Boolean)))
+	}
+
+	get json() {
+		return utils.compact({
+			AudioChannels: this.AudioChannels,
+			AudioCodecs: JSON.stringify(this.AudioCodecs),
+			Quality: this.Quality,
+			UserName: this.UserName,
+			VideoCodecs: JSON.stringify(this.VideoCodecs),
+		})
 	}
 
 	flat: Record<string, boolean | number | string>

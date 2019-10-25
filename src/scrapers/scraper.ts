@@ -18,7 +18,9 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/bitlord')).Bitlord,
 	// (await import('@/scrapers/providers/bittorrentsearchweb')).BitTorrentSearchWeb,
 	// (await import('@/scrapers/providers/bt4g')).Bt4g,
+	// (await import('@/scrapers/providers/btbit')).BtBit,
 	// (await import('@/scrapers/providers/demonoid')).Demonoid,
+	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/extratorrent-si')).ExtraTorrentSi,
 	// (await import('@/scrapers/providers/gaia-popcorn-time')).GaiaPopcornTime,
 	// (await import('@/scrapers/providers/glotorrents')).GloTorrents,
@@ -30,10 +32,8 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
 		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btbit')).BtBit,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/btsow')).Btsow,
-		// (await import('@/scrapers/providers/digbt')).Digbt,
 		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
@@ -43,19 +43,19 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		(await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
+		// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 		(await import('@/scrapers/providers/yts')).Yts,
 	]
 })
 
-export async function scrapeAll(item: media.Item, sd = true) {
-	// if (process.DEVELOPMENT) sd = false
-
+export async function scrapeAll(item: media.Item, SD: boolean) {
 	let t = Date.now()
+	// if (process.DEVELOPMENT) SD = false
+
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
@@ -96,7 +96,7 @@ export async function scrapeAll(item: media.Item, sd = true) {
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
 	torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
 	console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short))
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	throw new Error(`DEVELOPMENT`)
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => {
@@ -118,7 +118,7 @@ export async function scrapeAll(item: media.Item, sd = true) {
 		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (name.includes(' proper ')) v.boost *= 1.25
 		if (dicts.UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
-		if (sd) {
+		if (SD) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 			if (v.providers.includes('Yts')) {
@@ -136,7 +136,7 @@ export async function scrapeAll(item: media.Item, sd = true) {
 		if (name.includes(' fgt ')) v.boost *= 1.5
 	}
 
-	if (sd) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
+	if (SD) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 	else torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 
 	// console.log(`scrapeAll torrents ->`, torrents.map(v => v.short))
@@ -157,6 +157,7 @@ export class Scraper {
 			profile: process.DEVELOPMENT,
 			retries: [],
 			silent: true,
+			timeout: process.DEVELOPMENT ? 10000 : 5000,
 		} as http.Config)
 		return new http.Http(config)
 	}
@@ -195,18 +196,16 @@ export class Scraper {
 					return [] as Result[]
 				})).map(result => ({ providers: [ctor], ...result } as Result))
 			}),
-			{ concurrency: this.concurrency }
+			{ concurrency: this.concurrency },
 		)).flat()
 
 		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(v => {
-			try {
-				v && filters.results(v, this.item)
-			} catch {}
+			return v && filters.results(v, this.item)
 		})
 
-		let jsons = combos.map(v =>
-			v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv))
-		)
+		// let jsons = combos.map(v =>
+		// 	v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv)),
+		// )
 		// console.info(Date.now() - t, ctor, combos.length, results.length, fastStringify(jsons))
 		console.info(Date.now() - t, ctor, combos.length, results.length)
 

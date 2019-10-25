@@ -213,7 +213,7 @@ export const library = {
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
 			if (!result) continue
 			let item = new media.Item(result)
-			if (Item.Type == 'Season' && _.isFinite(Item.IndexNumber)) {
+			if (Item.Type == 'Season') {
 				let seasons = (await trakt.client.get(
 					`/shows/${item.slug}/seasons`,
 				)) as trakt.Season[]
@@ -222,7 +222,7 @@ export const library = {
 					season: seasons.find(v => v.number == Item.IndexNumber),
 				})
 			}
-			if (Item.Type == 'Episode' && _.isFinite(Item.IndexNumber)) {
+			if (Item.Type == 'Episode') {
 				let episode = (await trakt.client.get(
 					`/shows/${item.slug}/seasons/${Item.ParentIndexNumber}/episodes/${Item.IndexNumber}`,
 				)) as trakt.Episode
@@ -244,11 +244,9 @@ export const library = {
 	toStrmPath(query: StrmQuery, full = false) {
 		let file = `/${query.title} (${query.year})`
 		let dir = library.folders[`${query.type}s` as media.MainContentTypes].Location
-
 		if (query.imdb) file += ` [imdbid=${query.imdb}]`
 		if (query.tmdb) file += ` [tmdbid=${query.tmdb}]`
 		if (query.tvdb) file += ` [tvdbid=${query.tvdb}]`
-
 		if (query.type == 'movie') {
 			file += `/${query.title} (${query.year})`
 		}
@@ -307,9 +305,12 @@ export const library = {
 			})) as trakt.Season[]
 			seasons = seasons.filter(v => v.number > 0 && v.episode_count > 0)
 			for (let season of seasons) {
-				item.use({ season })
+				item.use({ type: 'season', season })
 				for (let i = 1; i <= item.S.e; i++) {
-					item.use({ episode: { number: i, season: season.number } as trakt.Episode })
+					item.use({
+						type: 'episode',
+						episode: { number: i, season: season.number } as trakt.Episode,
+					})
 					Updates.push(await library.toStrmFile(item))
 				}
 			}

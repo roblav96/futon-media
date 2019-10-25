@@ -28,7 +28,7 @@ export class Tail {
 			if (!(await fs.pathExists(logfile))) throw new Error('!fs.pathExists')
 			Tail.tail = new Tail(logfile)
 		} catch (error) {
-			console.error(`Tail connect -> %O`, error)
+			console.error(`Tail connect -> %O`, error.message)
 			Tail.reconnect()
 		}
 		Tail.busy = false
