@@ -12,7 +12,7 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import stripBom = require('strip-bom')
-import { COMMONS, STOPS, VIDEO_EXTENSIONS } from '@/utils/dicts'
+import { COMMON_WORDS, STOP_WORDS, VIDEO_EXTENSIONS } from '@/utils/dicts'
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
@@ -52,33 +52,36 @@ export function zeroSlug(value: number) {
 	return (value / 100).toFixed(2).slice(-2)
 }
 
-export function stripForeign(value: string) {
-	return trim(clean(value).replace(/[^\x01-\xFF]/gi, ' '))
+export function trim(value: string) {
+	return value.replace(/\s+/g, ' ').trim()
 }
+export function clean(value: string) {
+	return trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+}
+export function squash(value: string) {
+	return trim(clean(value).replace(/[^a-z\d\s]/gi, ''))
+}
+export function minify(value: string) {
+	value = clean(value).replace(/[^a-z\d]/gi, '')
+	return value.toLowerCase()
+}
+
+export function isAscii(value: string) {
+	return /[^a-z\d\s]/gi.test(value) == false
+}
+export function stripAnsi(value: string) {
+	return value.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, '')
+}
+
 export function isForeign(value: string) {
 	return /[^\x01-\xFF]/gi.test(value) == true
 	// return /[^\x00-\x7F]/gi.test(value) == false
 	// return /[^\x01-\xFF]/gi.test(value) == false
 }
-export function isAscii(value: string) {
-	return /[^a-z0-9\s]/gi.test(value) == false
+export function stripForeign(value: string) {
+	return trim(clean(value).replace(/[^\x01-\xFF]/gi, ' '))
 }
-export function squash(value: string) {
-	return trim(clean(value).replace(/[^a-z0-9\s]/gi, ''))
-}
-export function minify(value: string) {
-	value = clean(value).replace(/[^a-z0-9]/gi, '')
-	return value.toLowerCase().trim()
-}
-export function clean(value: string) {
-	return trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
-}
-export function stripAnsi(value: string) {
-	return value.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, '')
-}
-export function trim(value: string) {
-	return value.replace(/\s+/g, ' ').trim()
-}
+
 export function simplify(value: string) {
 	let squashes = unsquash(value)
 	if (squashes.length == 1) return value
@@ -190,11 +193,11 @@ export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
 	return slug
 }
 
-export function stops(value: string) {
-	return excludes(value, STOPS)
+export function stripStopWords(value: string) {
+	return excludes(value, STOP_WORDS)
 }
-export function commons(value: string) {
-	return excludes(value, COMMONS)
+export function stripCommonWords(value: string) {
+	return excludes(value, COMMON_WORDS)
 }
 
 export function isVideo(file: string) {

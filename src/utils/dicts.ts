@@ -216,7 +216,7 @@ export const EXCLUDES = _.uniq(
 	).flat(),
 ).sort()
 
-export const STOPS = [
+export const STOP_WORDS = [
 	'&',
 	'a',
 	'an',
@@ -244,7 +244,7 @@ export const STOPS = [
 // 	//
 // ]
 
-export const COMMONS = [
+export const COMMON_WORDS = [
 	'&',
 	'a',
 	'able',

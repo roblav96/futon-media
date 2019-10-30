@@ -9,7 +9,7 @@ export const client = new Http({
 	query: { apikey: process.env.OMDB_KEY, detail: 'full' },
 })
 
-export interface Full {
+export interface Result {
 	Actors: string
 	Awards: string
 	BoxOffice: string

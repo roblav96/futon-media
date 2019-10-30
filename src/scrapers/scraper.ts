@@ -10,7 +10,7 @@ import * as path from 'path'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import fastStringify from 'fast-safe-stringify'
-import { dicts } from '@/utils/dicts'
+import { UPLOADERS } from '@/utils/dicts'
 
 let providers = [] as typeof Scraper[]
 process.nextTick(async () => {
@@ -29,26 +29,26 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/kickasstorrents')).KickassTorrents,
 	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
 	// (await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
+	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
-		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/btsow')).Btsow,
-		(await import('@/scrapers/providers/extratorrent-ag')).ExtraTorrentAg,
-		(await import('@/scrapers/providers/eztv')).Eztv,
-		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
-		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// (await import('@/scrapers/providers/btdb')).Btdb,
+		// (await import('@/scrapers/providers/btsow')).Btsow,
+		// (await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
+		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/orion')).Orion,
+		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		// (await import('@/scrapers/providers/rarbg')).Rarbg,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
-		(await import('@/scrapers/providers/yts')).Yts,
+		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		// (await import('@/scrapers/providers/yts')).Yts,
 	]
 })
 
@@ -117,7 +117,7 @@ export async function scrapeAll(item: media.Item, SD: boolean) {
 		let sds = ['720p', '480p', '360p', '720', '480', '360', 'avi']
 		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (name.includes(' proper ')) v.boost *= 1.25
-		if (dicts.UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (SD) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5

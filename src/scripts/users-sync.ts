@@ -3,6 +3,7 @@ import * as emby from '@/emby/emby'
 
 process.nextTick(async () => {
 	try {
+		await (await import('@/emby/config')).config()
 		let Users = await emby.User.get()
 		for (let User of Users) {
 			let DisplayPreferences = await User.getDisplayPreferences()

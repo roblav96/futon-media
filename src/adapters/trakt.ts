@@ -135,7 +135,7 @@ export function toFull(result: Result) {
 }
 
 export function uniqWith(results: Result[]) {
-	return _.uniqWith(results, (a, b) => toFull(a).ids.trakt == toFull(b).ids.trakt)
+	return _.uniqWith(results, (a, b) => toFull(a).ids.slug == toFull(b).ids.slug)
 }
 
 export interface IDs {

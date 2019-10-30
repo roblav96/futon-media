@@ -37,7 +37,7 @@ export class Torrent {
 	}
 
 	get short() {
-		let flags = { R: 'R🇫🇷 ', P: 'P🇧🇪 ' }
+		let flags = { R: 'R🔵', P: 'P🔴' }
 		let boost = `[${this.boost.toFixed(2)} x${this.packs > 0 ? ` ${this.packs}` : ''}]`
 		return `${boost} [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''

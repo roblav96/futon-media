@@ -137,7 +137,20 @@ export const rxHttp = rxLine.pipe(
 			if (['users'].includes(part) && next.length == 32) {
 				query.UserId = query.UserId || next
 			}
-			let types = ['items', 'movies', 'shows', 'episodes', 'videos', 'favoriteitems']
+			let types = [
+				'items',
+				'movies',
+				'shows',
+				'episodes',
+				'videos',
+				'collections',
+				'favoriteitems',
+				'playeditems',
+				'playingitems',
+				'playlists',
+				'subtitles',
+				'trailers',
+			]
 			if (types.includes(part) && (utils.isNumeric(next) || next.length == 32)) {
 				query.ItemId = query.ItemId || next
 			}

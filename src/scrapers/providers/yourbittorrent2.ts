@@ -13,6 +13,8 @@ export const client = scraper.Scraper.http({
 })
 
 export class YourBittorrent2 extends scraper.Scraper {
+	concurrency = 1
+
 	async getResults(slug: string) {
 		let c = this.item.show ? 'television' : this.item.type
 		let $ = cheerio.load(await client.get('/', { query: { c, q: slug } as Partial<Query> }))

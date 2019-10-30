@@ -31,7 +31,7 @@ process.nextTick(async () => {
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
-	console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
+	// console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
 
 	// console.log(`PLAYBACK_INFO ->`, _.mapValues(mocks.PLAYBACK_INFO, v => new PlaybackInfo(v)))
 

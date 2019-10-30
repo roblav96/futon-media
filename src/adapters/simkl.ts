@@ -6,42 +6,55 @@ import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://api.simkl.com',
-	query: { client_id: process.env.SIMKL_ID, extended: 'full' },
+	query: {
+		client_id: process.env.SIMKL_ID,
+		client_secret: process.env.SIMKL_SECRET,
+		extended: 'full',
+	},
 })
 
-export async function results(queries: string[]) {
-	let combos = queries.map(v => ['movies', 'tv'].map(vv => [v, vv])).flat()
+export async function titles(queries: string[]) {
+	let combos = queries.map(v => ['movie', 'tv'].map(vv => [v, vv])).flat()
 	let results = (await pAll(
 		combos.map(([query, type]) => async () =>
-			_.values(JSON.parse(
-				await http.client.get('https://simkl.com/ajax/full/search.php', {
-					query: { s: query, type },
-					silent: true,
-				})
-			) as Record<string, Result>)
-		)
-		// { concurrency: 1 }
+			(await client.get(`/search/${type}`, {
+				query: { q: query, limit: 50 },
+				memoize: process.DEVELOPMENT,
+				silent: true,
+			})) as Result[],
+		),
+		// { concurrency: 1 },
 	)).flat()
-	results.sort((a, b) => utils.alphabetically(a.titles.m, b.titles.m))
-	results = utils.uniqBy(results, 'id').filter(v => v.year)
-	return results.map(v => ({
-		id: v.id,
-		slug: v.url.split('/').pop(),
-		title: v.titles.m,
-		type: { mov: 'movie', tv: 'show' }[v.show_type] as media.MainContentType,
-		year: _.parseInt(v.year),
-	}))
+	return _.uniqBy(results.filter(v => v.title && v.year), 'ids.simkl_id')
 }
 
+// if (process.DEVELOPMENT) {
+// 	process.nextTick(async () => {
+// 		let results = await client.get('/search/anime', { query: { q: 'the body', limit: 50 } })
+// 		global.dts(results, `results`)
+// 	})
+// }
+
 export interface Result {
-	eps: string
-	id: string
-	poster: string
-	rank: number
-	show_type: string
-	titles: {
-		m: string
+	all_titles: string[]
+	ep_count: number
+	ids: {
+		simkl_id: number
+		slug: string
 	}
+	poster: string
+	rank: any
+	ratings: {
+		imdb: {
+			rating: number
+			votes: number
+		}
+		simkl: {
+			rating: number
+			votes: number
+		}
+	}
+	title: string
 	url: string
-	year: string
+	year: number
 }

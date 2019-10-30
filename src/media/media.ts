@@ -46,14 +46,12 @@ export class Item {
 	get slug() {
 		return this.ids.slug
 	}
-	get trakt() {
-		return this.ids.trakt
-	}
 	get short() {
-		let episodes = this.show ? ` [${this.show.aired_episodes.toLocaleString()} eps] ` : ' '
-		let short = `${this.slug}${episodes}[${this.main.votes.toLocaleString()}]`
+		let short = `[${this.type[0].toUpperCase()}] ${this.slug}${
+			this.show ? ` [${this.show.aired_episodes} eps] ` : ' '
+		}[${this.main.votes}]`
 		if (this.invalid) short += ' [INVALID]'
-		else if (this.isJunk(0)) short += ' [JUNK]'
+		else if (this.isJunk(1)) short += ' [JUNK]'
 		return short
 	}
 	get strm() {
@@ -81,25 +79,37 @@ export class Item {
 	get invalid() {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
-		if (!this.ids.imdb && !this.ids.tmdb && !this.ids.tvdb) return true
 		if (this.ids.imdb && this.ids.imdb.startsWith('http')) return true
+		if (this.movie) {
+			if (!this.ids.imdb) return true
+			if (!this.ids.tmdb) return true
+		}
+		if (this.show) {
+			if (!this.ids.tvdb) return true
+		}
 		return false
 	}
 	isJunk(votes = 1000) {
 		if (this.invalid) return true
-		if (_.isEmpty(this.main.genres)) return true
 		if (!this.main.overview) return true
 		if (!this.main.country && !this.main.language) return true
+		if (this.main.language && this.main.language != 'en') return true
 		if (this.main.country && this.main.language) {
 			if (this.main.country != 'us' && this.main.language != 'en') return true
 		}
-		if (!(this.runtime >= 10)) return true
-		if (!(this.released.valueOf() < Date.now())) return true
-		if (this.movie && (!this.ids.imdb || !this.ids.tmdb)) return true
-		if (this.show && !this.ids.tvdb) return true
-		if (this.show && !this.show.network) return true
-		if (this.show && !this.show.first_aired) return true
-		if (this.show && !(this.show.aired_episodes > 0)) return true
+		if (this.released.valueOf() > Date.now()) return true
+		if (!this.runtime || this.runtime < 10) return true
+		if (_.isEmpty(this.main.genres)) return true
+		if (this.movie) {
+			if (!this.movie.trailer) return true
+			if (!this.movie.certification) return true
+		}
+		if (this.show) {
+			if (!this.ids.imdb) return true
+			if (!this.show.network) return true
+			if (!this.show.first_aired) return true
+			if (!this.show.aired_episodes) return true
+		}
 		return !this.isPopular(votes)
 	}
 	isPopular(votes = 500) {
@@ -112,7 +122,7 @@ export class Item {
 
 	get isDaily() {
 		if (this.movie) return false
-		let genres = [/** 'drama', */ 'news', 'game-show', 'talk-show']
+		let genres = ['game-show', 'news', 'talk-show']
 		return this.main.genres.filter(v => genres.includes(v)).length > 0
 	}
 
@@ -157,13 +167,13 @@ export class Item {
 		return E
 	}
 
-	omdb: omdb.Full
+	omdb: omdb.Result
 	async setOmdb() {
 		this.omdb = (await omdb.client.get('/', {
 			query: { i: this.ids.imdb },
 			memoize: process.DEVELOPMENT,
 			silent: true,
-		})) as omdb.Full
+		})) as omdb.Result
 	}
 
 	tmdb: tmdb.Full
@@ -177,7 +187,7 @@ export class Item {
 		if (this.tmdb.belongs_to_collection) {
 			this.tmdb.belongs_to_collection = (await tmdb.client.get(
 				`/collection/${this.tmdb.belongs_to_collection.id}`,
-				{ memoize: process.DEVELOPMENT, silent: true }
+				{ memoize: process.DEVELOPMENT, silent: true },
 			)) as tmdb.Collection
 		}
 	}
@@ -268,7 +278,8 @@ export class Item {
 		return this.aliases.filter(v => {
 			if (utils.equals(v, this.collection.name)) return false
 			if (!isNaN(v.split(' ').pop() as any)) return true
-			if (!utils.stops(v).includes(' ')) console.error(`get filters !stops includes ->`, v)
+			if (!utils.stripStopWords(v).includes(' '))
+				console.error(`get filters !stops includes ->`, v)
 			return true // utils.stops(v).includes(' ')
 		})
 	}
@@ -280,13 +291,13 @@ export class Item {
 		let title = utils.byLength(titles)[0].toLowerCase()
 		title = _.last(utils.colons(title))
 		let simple = utils.simplify(title)
-		let stops = utils.stops(simple)
+		let stops = utils.stripStopWords(simple)
 		let query = (stops.includes(' ') && stops) || (simple.includes(' ') && simple) || title
 		let squashes = utils.unsquash(query)
 		let queries = _.uniq([query, utils.clean(query), ...squashes, utils.unisolate(squashes)])
 		// console.log(`queries ->`, queries)
 
-		let simkls = await simkl.results(queries.map(v => [v, ...Item.years(v, this.years)]).flat())
+		let simkls = await simkl.titles(queries)
 		simkls.forEach(v => collisions.push(...Item.aliases(v.title, v.year)))
 		// console.log(`collisions ->`, collisions)
 
@@ -296,12 +307,12 @@ export class Item {
 					query: { query, fields: 'title,translations,aliases', limit: 100 },
 					memoize: process.DEVELOPMENT,
 					silent: true,
-				})) as trakt.Result[]
-			)
+				})) as trakt.Result[],
+			),
 			// { concurrency: 1 }
 		)).flat()
 
-		let items = results.map(v => new Item(v)).filter(v => v.trakt != this.trakt)
+		let items = results.map(v => new Item(v)).filter(v => v.slug != this.slug)
 		items = _.sortBy(_.uniqBy(items, 'slug'), ['slug'])
 		// console.log(`setCollisions '${this.slug}' items ->`, items.map(v => v.short))
 
@@ -372,9 +383,9 @@ export class Item {
 				squashes[0] = utils.unisolate(squashes)
 				let simple = utils.simplify(title)
 				if (!simple.includes(' ')) return squashes
-				if (!utils.stops(simple).includes(' ')) return squashes
+				if (!utils.stripStopWords(simple).includes(' ')) return squashes
 				return [utils.toSlug(simple)]
-			})
+			}),
 		)
 		if (this.isDaily) {
 			return [utils.byLength(_.uniq(slugs))[0]]
@@ -383,7 +394,7 @@ export class Item {
 			slugs = slugs.map(v => [v, _.last(utils.colons(v))]).flat()
 			slugs = slugs.map(v => [v, ...Item.years(v, this.years)]).flat()
 			this.collection.name && slugs.push(utils.toSlug(this.collection.name))
-			slugs = slugs.filter(v => utils.commons(v))
+			slugs = slugs.filter(v => utils.stripCommonWords(v))
 		}
 		return _.uniq(slugs.filter(Boolean))
 	}
