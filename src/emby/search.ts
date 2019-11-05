@@ -78,13 +78,14 @@ process.nextTick(() => {
 			if (!item || item.invalid) {
 				return console.error(`rxSearch invalid imdb || slug ->`, `"${imdb || slug}"`)
 			}
+			console.log(`rxSearch adding ->`, item.short)
 			return emby.library.addQueue([item])
 		}
 
-		process.DEVELOPMENT && console.log(`results ->`, items.map(v => v.short))
+		process.DEVELOPMENT && console.log(`rxSearch results ->`, items.map(v => v.short))
 		items = items.filter(v => !v.isJunk(1))
 		items = items.filter(v => utils.contains(v.title, SearchTerm))
-		process.DEVELOPMENT && console.log(`items ->`, items.map(v => v.short))
+		process.DEVELOPMENT && console.log(`rxSearch items ->`, items.map(v => v.short))
 
 		let means = [1]
 		let votes = items.map(v => v.main.votes).filter(Boolean)
@@ -95,7 +96,7 @@ process.nextTick(() => {
 		let index = _.clamp(SearchTerm.split(' ').length - 1, 0, means.length - 1)
 		let mean = means[index]
 		if (index == 0) mean *= 0.75
-		process.DEVELOPMENT && console.log(`mean ->`, mean, means)
+		process.DEVELOPMENT && console.log(`rxSearch mean ->`, mean, means)
 
 		items = items.filter(item => {
 			if (utils.startsWith(item.title, SearchTerm)) {
@@ -110,7 +111,9 @@ process.nextTick(() => {
 			if (!SearchTerm.includes(' ') && !utils.stripCommonWords(SearchTerm)) return false
 			return !item.isJunk(mean)
 		})
-		console.log(`adding ->`, items.map(v => v.short))
+		console.log(`rxSearch adding ->`, items.map(v => v.short))
+
+		return
 
 		emby.library.addQueue(items)
 	})

@@ -12,7 +12,7 @@ export const defaults = {
 		RememberSubtitleSelections: true,
 		SubtitleLanguagePreference: 'eng',
 		SubtitleMode: 'OnlyForced',
-	} as Partial<emby.UserConfiguration>,
+	} as emby.UserConfiguration,
 
 	DisplayPreferences: {
 		CustomPrefs: {
@@ -43,7 +43,7 @@ export const defaults = {
 		ShowSidebar: false,
 		SortBy: 'SortName',
 		SortOrder: 'Ascending',
-	} as Partial<emby.DisplayPreferences>,
+	} as emby.UserDisplayPreferences,
 
 	Policy: {
 		AccessSchedules: [],
@@ -82,5 +82,6 @@ export const defaults = {
 		IsHiddenRemotely: true,
 		IsTagBlockingModeInclusive: false,
 		RemoteClientBitrateLimit: 0,
-	} as Partial<emby.Policy>,
+		SimultaneousStreamLimit: 0,
+	} as emby.UserPolicy,
 }

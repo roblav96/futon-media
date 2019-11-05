@@ -19,6 +19,18 @@ export class User {
 		_.merge(this, User)
 	}
 
+	async getDisplayPreferences(client = 'emby' as 'emby' | 'ATV') {
+		return (await emby.client.get(`/DisplayPreferences/usersettings`, {
+			query: { client, userId: this.Id },
+		})) as UserDisplayPreferences
+	}
+	async setDisplayPreferences(DisplayPreferences: UserDisplayPreferences) {
+		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
+		await emby.client.post(`/DisplayPreferences/usersettings`, {
+			query: { client: 'emby', userId: this.Id, api_key: process.env.EMBY_ADMIN_TOKEN },
+			body: DisplayPreferences,
+		})
+	}
 	async setConfiguration(Configuration: UserConfiguration) {
 		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
 		await emby.client.post(`/Users/${this.Id}/Configuration`, {
@@ -26,24 +38,11 @@ export class User {
 			body: Configuration,
 		})
 	}
-	async setPolicy(Policy: Policy) {
+	async setPolicy(Policy: UserPolicy) {
 		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
 		await emby.client.post(`/Users/${this.Id}/Policy`, {
 			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			body: Policy,
-		})
-	}
-
-	async getDisplayPreferences(client = 'emby' as 'emby' | 'ATV') {
-		return (await emby.client.get(`/DisplayPreferences/usersettings`, {
-			query: { client, userId: this.Id },
-		})) as DisplayPreferences
-	}
-	async setDisplayPreferences(DisplayPreferences: DisplayPreferences) {
-		if (!process.env.EMBY_ADMIN_TOKEN) throw new Error(`Missing EMBY_ADMIN_TOKEN`)
-		await emby.client.post(`/DisplayPreferences/usersettings`, {
-			query: { client: 'emby', userId: this.Id, api_key: process.env.EMBY_ADMIN_TOKEN },
-			body: DisplayPreferences,
 		})
 	}
 
@@ -60,6 +59,8 @@ export class User {
 
 export interface User {
 	Configuration: UserConfiguration
+	ConnectLinkType: string
+	ConnectUserName: string
 	HasConfiguredEasyPassword: boolean
 	HasConfiguredPassword: boolean
 	HasPassword: boolean
@@ -67,7 +68,7 @@ export interface User {
 	LastActivityDate: string
 	LastLoginDate: string
 	Name: string
-	Policy: Policy
+	Policy: UserPolicy
 	PrimaryImageAspectRatio: number
 	PrimaryImageTag: string
 	ServerId: string
@@ -79,10 +80,10 @@ export interface UserConfiguration {
 	DisplayMissingEpisodes: boolean
 	EnableLocalPassword: boolean
 	EnableNextEpisodeAutoPlay: boolean
-	GroupedFolders: string[]
+	GroupedFolders: any[]
 	HidePlayedInLatest: boolean
-	LatestItemsExcludes: string[]
-	MyMediaExcludes: string[]
+	LatestItemsExcludes: any[]
+	MyMediaExcludes: any[]
 	OrderedViews: string[]
 	PlayDefaultAudioTrack: boolean
 	RememberAudioSelections: boolean
@@ -91,7 +92,7 @@ export interface UserConfiguration {
 	SubtitleMode: string
 }
 
-export interface Policy {
+export interface UserPolicy {
 	AccessSchedules: any[]
 	AuthenticationProviderId: string
 	BlockedTags: any[]
@@ -129,9 +130,10 @@ export interface Policy {
 	IsHiddenRemotely: boolean
 	IsTagBlockingModeInclusive: boolean
 	RemoteClientBitrateLimit: number
+	SimultaneousStreamLimit: number
 }
 
-export interface DisplayPreferences {
+export interface UserDisplayPreferences {
 	Client: string
 	CustomPrefs: Partial<{
 		[key: string]: string

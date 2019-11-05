@@ -15,6 +15,7 @@ process.nextTick(async () => {
 		await import('@/emby/favorites')
 		await import('@/emby/search')
 		await import('@/emby/strm')
+		await import('@/emby/signup')
 		await import('@/emby/webhooks')
 	} catch (error) {
 		console.error(`index -> %O`, error)

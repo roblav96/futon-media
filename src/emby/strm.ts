@@ -9,7 +9,6 @@ import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as trakt from '@/adapters/trakt'
 import * as Url from 'url-parse'
-import * as flatten from 'flat'
 import * as utils from '@/utils/utils'
 import Emitter from '@/utils/emitter'
 import Fastify from '@/adapters/fastify'
@@ -36,14 +35,15 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	if (!Session) Session = (await emby.sessions.get()).find(v => v.UserId == PlaybackInfo.UserId)
 	console.warn(`getDebridStream '${name}' ->\n${Session.short}`, PlaybackInfo.json)
 
-	// if (process.DEVELOPMENT) {
-	// 	// throw new Error(`DEVELOPMENT`)
-	// 	return '0.0.0.0'
-	// 	// return 'https://battlefuryscepter-sto.energycdn.com/dl/Eof6rPXcoUu5vGH0vjWnUQ/1572224225/675000842/5bd4d143ada4d8.47303017/hd1080-walle.mkv'
-	// 	// return 'https://whitetreefairy-sto.energycdn.com/dl/2bQ74BXOQcwsenIZWFJSWg/1572156133/675000842/5d3894d4c0d876.18082955/How%20the%20Universe%20Works%20S02E04%201080p%20WEB-DL%20DD%2B%202.0%20x264-TrollHD.mkv'
-	// 	// return 'https://lazycarefulsailor-sto.energycdn.com/dl/aiGuRJQkn0AVJ2bfVAItyQ/1572142690/675000842/5da9d83ec2a9c6.33536050/Starsky.And.Hutch.2004.1080p.BluRay.x264.DTS-FGT.mkv'
-	// 	// return 'https://phantasmagoricfairytale-sto.energycdn.com/dl/uat0AxAx0BEAddz2zeRVyg/1572129772/675000842/5da6353eb18ad8.55901578/The.Lion.King.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1-FGT.mkv'
-	// }
+	if (process.DEVELOPMENT) {
+		// throw new Error(`DEVELOPMENT`)
+		return 'https://imaginaryblueogre-sto.energycdn.com/dl/aAOuiBl5umEyeFVtvoa4kA/1573518735/675000842/5d8e693b9bfb56.35804272/Toy.Story.4.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv'
+		// return '0.0.0.0'
+		// return 'https://battlefuryscepter-sto.energycdn.com/dl/Eof6rPXcoUu5vGH0vjWnUQ/1572224225/675000842/5bd4d143ada4d8.47303017/hd1080-walle.mkv'
+		// return 'https://whitetreefairy-sto.energycdn.com/dl/2bQ74BXOQcwsenIZWFJSWg/1572156133/675000842/5d3894d4c0d876.18082955/How%20the%20Universe%20Works%20S02E04%201080p%20WEB-DL%20DD%2B%202.0%20x264-TrollHD.mkv'
+		// return 'https://lazycarefulsailor-sto.energycdn.com/dl/aiGuRJQkn0AVJ2bfVAItyQ/1572142690/675000842/5da9d83ec2a9c6.33536050/Starsky.And.Hutch.2004.1080p.BluRay.x264.DTS-FGT.mkv'
+		// return 'https://phantasmagoricfairytale-sto.energycdn.com/dl/uat0AxAx0BEAddz2zeRVyg/1572129772/675000842/5da6353eb18ad8.55901578/The.Lion.King.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1-FGT.mkv'
+	}
 
 	let { Quality, AudioChannels, AudioCodecs, VideoCodecs } = PlaybackInfo
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
