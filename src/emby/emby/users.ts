@@ -80,10 +80,10 @@ export interface UserConfiguration {
 	DisplayMissingEpisodes: boolean
 	EnableLocalPassword: boolean
 	EnableNextEpisodeAutoPlay: boolean
-	GroupedFolders: any[]
+	GroupedFolders: string[]
 	HidePlayedInLatest: boolean
-	LatestItemsExcludes: any[]
-	MyMediaExcludes: any[]
+	LatestItemsExcludes: string[]
+	MyMediaExcludes: string[]
 	OrderedViews: string[]
 	PlayDefaultAudioTrack: boolean
 	RememberAudioSelections: boolean
