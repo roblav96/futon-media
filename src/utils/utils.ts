@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
 import * as advancedFormat from 'dayjs/plugin/advancedFormat'
-import * as badwords from 'badwords/array'
+import * as badwords from 'badwords-list/lib/array'
 import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'

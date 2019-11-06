@@ -82,38 +82,50 @@ process.nextTick(() => {
 			return emby.library.addQueue([item])
 		}
 
-		process.DEVELOPMENT && console.log(`rxSearch results ->`, items.map(v => v.short))
+		// let isCommons = !utils.stripCommonWords(SearchTerm)
+
 		items = items.filter(v => !v.isJunk(1))
-		items = items.filter(v => utils.contains(v.title, SearchTerm))
-		process.DEVELOPMENT && console.log(`rxSearch items ->`, items.map(v => v.short))
+		items = items.filter(v => {
+			if (SearchTerm.split(' ').length == 1) return utils.contains(v.title, SearchTerm)
+			return utils.includes(v.title, SearchTerm)
+		})
+		console.log(`rxSearch items ->`, items.map(v => v.short), items.length, 'items')
 
 		let means = [1]
 		let votes = items.map(v => v.main.votes).filter(Boolean)
 		if (votes.length > 0) {
-			means = [ss.mean(votes), ss.geometricMean(votes), ss.harmonicMean(votes)]
+			means = [ss.rootMeanSquare(votes), ss.mean(votes), ss.harmonicMean(votes)]
 		}
+		means = means.map(v => _.floor(v))
 
-		let index = _.clamp(SearchTerm.split(' ').length - 1, 0, means.length - 1)
+		let split = utils.stripStopWords(SearchTerm).split(' ')
+		let index = _.clamp(split.length - 1, 0, means.length - 1)
 		let mean = means[index]
-		if (index == 0) mean *= 0.75
-		process.DEVELOPMENT && console.log(`rxSearch mean ->`, mean, means)
+		if (index == 0) {
+			mean -= _.last(means)
+		}
+		if (split.length >= 3) {
+			mean = 1
+			means.push(1)
+		}
+		console.log(`rxSearch mean ->`, mean, means)
 
 		items = items.filter(item => {
-			if (utils.startsWith(item.title, SearchTerm)) {
-				if (
-					!utils.stripCommonWords(SearchTerm) ||
-					(item.movie && !SearchTerm.includes(' '))
-				) {
-					return !item.isJunk(_.last(means))
-				}
-				return true
+			if (utils.equals(item.title, SearchTerm)) {
+				return !item.isJunk(_.last(means))
 			}
-			if (!SearchTerm.includes(' ') && !utils.stripCommonWords(SearchTerm)) return false
+			if (split.length == 1 && !utils.startsWith(item.title, SearchTerm)) {
+				return false
+			}
+			if (split.length == 2 && utils.startsWith(item.title, SearchTerm)) {
+				return !item.isJunk(_.last(means))
+			}
+			if (split.length == 2 && utils.contains(item.title, SearchTerm)) {
+				return !item.isJunk(_.last(means))
+			}
 			return !item.isJunk(mean)
 		})
 		console.log(`rxSearch adding ->`, items.map(v => v.short))
-
-		return
 
 		emby.library.addQueue(items)
 	})
