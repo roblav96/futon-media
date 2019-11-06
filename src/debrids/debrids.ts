@@ -35,41 +35,41 @@ export function download(torrents: torrent.Torrent[], item: media.Item) {
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${item.gigs} GB`)) return false
 		return v.seeders * v.providers.length >= 5
 	})
-	console.log(`download torrents '${item.strm}' ->`, torrents.length, torrents.map(v => v.short))
+	if (!process.DEVELOPMENT) console.log(`download torrents '${item.strm}' ->`, torrents.length)
+	console.log(`download torrents '${item.strm}' ->`, torrents.map(v => v.short), torrents.length)
 
 	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-	if (torrents.length == 0) return console.warn(`download torrents.length == 0`)
+	if (torrents.length == 0) return console.warn(`download torrents ->`, 'torrents.length == 0')
 
 	return queue.add(async () => {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, torrent.short)
-			let success = await RealDebrid.download(torrent.magnet).catch(async error => {
-				console.error(`RealDebrid download '${torrent.short}' -> %O`, error)
+			try {
+				let success = await RealDebrid.download(torrent.magnet)
+				if (success) return console.log(`👍 download torrent success ->`, torrent.short)
+			} catch (error) {
+				console.error(`RealDebrid download '${torrent.short}' -> %O`, error.message)
 				if (!torrent.cached.includes('premiumize')) {
 					// await Premiumize.download(torrent.magnet)
 				}
-				return false
-			})
-			if (success) {
-				console.log(`👍 download success ->`, torrent.short)
-				return
 			}
 		}
 	})
 }
 
-export async function getStreamUrl(
+export async function getStream(
 	torrents: torrent.Torrent[],
 	item: media.Item,
-	channels: number,
-	codecs: { audio: string[]; video: string[] }
+	AudioChannels: number,
+	AudioCodecs: string[],
+	VideoCodecs: string[],
 ) {
 	for (let torrent of torrents) {
 		let next = false
 		for (let cached of torrent.cached) {
 			if (next) continue
-			console.info(`getStreamUrl '${cached}' torrent ->`, torrent.json)
+			console.info(`getStream '${cached}' torrent ->`, torrent.json)
 			let debrid = new debrids[cached]().use(torrent.magnet)
 
 			let files = (await debrid.getFiles().catch(error => {
@@ -89,7 +89,7 @@ export async function getStreamUrl(
 			}
 
 			let file = files.find(v =>
-				filters.torrents({ name: utils.toSlug(v.name) } as any, item)
+				filters.torrents({ name: utils.toSlug(v.name) } as any, item),
 			)
 			if (!file) {
 				console.warn(`!file ->`, torrent.short, files)
@@ -121,7 +121,7 @@ export async function getStreamUrl(
 
 			console.log(`probe format ->`, ffprobe.json(probe.format))
 			probe.streams = probe.streams.filter(({ codec_type }) =>
-				['video', 'audio'].includes(codec_type)
+				['video', 'audio'].includes(codec_type),
 			)
 
 			let videos = probe.streams.filter(({ codec_name, codec_type, tags }) => {
@@ -137,8 +137,8 @@ export async function getStreamUrl(
 			}
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
 			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
-			if (_.size(codecs.video) > 0 && !codecs.video.includes(videos[0].codec_name)) {
-				console.warn(`probe !codecs.video ->`, torrent.short, videos[0].codec_name)
+			if (_.size(VideoCodecs) > 0 && !VideoCodecs.includes(videos[0].codec_name)) {
+				console.warn(`probe !VideoCodecs ->`, torrent.short, videos[0].codec_name)
 				next = true
 				continue
 			}
@@ -157,16 +157,13 @@ export async function getStreamUrl(
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
 			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
-			if (!audios.find(v => v.channels <= channels)) {
-				console.warn(`probe !channels ->`, torrent.short, audios.map(v => v.channels))
+			if (!audios.find(v => v.channels <= AudioChannels)) {
+				console.warn(`probe !AudioChannels ->`, torrent.short, audios.map(v => v.channels))
 				next = true
 				continue
 			}
-			if (
-				_.size(codecs.audio) > 0 &&
-				!audios.find(v => codecs.audio.includes(v.codec_name))
-			) {
-				console.warn(`probe !codecs.audio ->`, torrent.short, audios.map(v => v.codec_name))
+			if (_.size(AudioCodecs) > 0 && !audios.find(v => AudioCodecs.includes(v.codec_name))) {
+				console.warn(`probe !AudioCodecs ->`, torrent.short, audios.map(v => v.codec_name))
 				next = true
 				continue
 			}

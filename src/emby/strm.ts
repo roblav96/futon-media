@@ -37,7 +37,7 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
-		return 'https://imaginaryblueogre-sto.energycdn.com/dl/aAOuiBl5umEyeFVtvoa4kA/1573518735/675000842/5d8e693b9bfb56.35804272/Toy.Story.4.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv'
+		// return 'https://imaginaryblueogre-sto.energycdn.com/dl/aAOuiBl5umEyeFVtvoa4kA/1573518735/675000842/5d8e693b9bfb56.35804272/Toy.Story.4.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv'
 		// return '0.0.0.0'
 		// return 'https://battlefuryscepter-sto.energycdn.com/dl/Eof6rPXcoUu5vGH0vjWnUQ/1572224225/675000842/5bd4d143ada4d8.47303017/hd1080-walle.mkv'
 		// return 'https://whitetreefairy-sto.energycdn.com/dl/2bQ74BXOQcwsenIZWFJSWg/1572156133/675000842/5d3894d4c0d876.18082955/How%20the%20Universe%20Works%20S02E04%201080p%20WEB-DL%20DD%2B%202.0%20x264-TrollHD.mkv'
@@ -61,27 +61,24 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	}
 
 	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality == 'SD')
-
-	// if (!process.DEVELOPMENT) console.log(`all torrents '${name}' ->`, torrents.length)
-	console.log(`all torrents '${name}' ->`, torrents.length, torrents.map(v => v.short))
-
 	let cacheds = torrents.filter(v => v.cached.length > 0)
-	// if (cacheds.length == 0) {
-	// 	debrids.download(torrents, item)
-	// 	throw new Error(`cacheds.length == 0`)
-	// }
-	// if (!process.DEVELOPMENT) console.log(`strm cacheds '${strm}' ->`, cacheds.length)
-	console.log(`strm cacheds '${name}' ->`, cacheds.length, cacheds.map(v => v.short))
+	if (cacheds.length == 0) {
+		debrids.download(torrents, item)
+		await db.put(skey, stream, utils.duration(1, 'hour'))
+		throw new Error(`cacheds.length == 0`)
+	}
+	console.log(`strm cacheds '${name}' ->`, cacheds.map(v => v.short), cacheds.length)
 
-	// stream = await debrids.getStream(cacheds, item, Channels, Codecs)
-	// if (!stream) {
-	// 	debrids.download(torrents, item)
-	// 	throw new Error(`getDebridStream !stream -> '${strm}'`)
-	// }
-	// await db.put(skey, stream, utils.duration(1, 'day'))
+	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
+	if (!stream) {
+		debrids.download(torrents, item)
+		await db.put(skey, stream, utils.duration(1, 'hour'))
+		throw new Error(`debrids.getStream !stream -> '${name}'`)
+	}
 
-	// console.log(Date.now() - t, `👍 stream '${strm}' ->`, stream)
-	// return stream
+	await db.put(skey, stream, utils.duration(1, 'day'))
+	console.log(Date.now() - t, `👍 stream '${name}' ->`, stream)
+	return stream
 }
 
 fastify.get('/strm', async (request, reply) => {
@@ -99,18 +96,17 @@ fastify.get('/strm', async (request, reply) => {
 		if (!emitter.eventNames().includes(Item.Id)) {
 			try {
 				stream = await getDebridStream(Query, Item)
-				await db.put(Item.Id, stream, utils.duration(1, 'minute'))
-				emitter.emit(Item.Id, stream)
 			} catch (error) {
 				console.error(`/strm '${name}' -> %O`, error.message)
-				await db.put(Item.Id, '', utils.duration(1, 'minute'))
-				emitter.emit(Item.Id, '')
+				stream = 'null'
 			}
+			await db.put(Item.Id, stream, utils.duration(1, 'minute'))
+			emitter.emit(Item.Id, stream)
 		} else {
 			stream = await emitter.toPromise(Item.Id)
 		}
 	}
 
-	if (!stream) return reply.code(404).send(Buffer.from(''))
+	if (!stream || stream == 'null') return reply.code(404).send(Buffer.from(''))
 	reply.redirect(stream)
 })

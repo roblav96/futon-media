@@ -82,14 +82,12 @@ process.nextTick(() => {
 			return emby.library.addQueue([item])
 		}
 
-		// let isCommons = !utils.stripCommonWords(SearchTerm)
-
 		items = items.filter(v => !v.isJunk(1))
 		items = items.filter(v => {
 			if (SearchTerm.split(' ').length == 1) return utils.contains(v.title, SearchTerm)
 			return utils.includes(v.title, SearchTerm)
 		})
-		console.log(`rxSearch items ->`, items.map(v => v.short), items.length, 'items')
+		console.log(`rxSearch items ->`, items.map(v => v.short), items.length)
 
 		let means = [1]
 		let votes = items.map(v => v.main.votes).filter(Boolean)
@@ -104,6 +102,7 @@ process.nextTick(() => {
 		if (index == 0) {
 			mean -= _.last(means)
 		}
+		split = SearchTerm.split(' ')
 		if (split.length >= 3) {
 			mean = 1
 			means.push(1)

@@ -331,38 +331,29 @@ export const library = {
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
-			console.log(`addAll Creations ->`, Creations.length)
-			// await library.unrefresh()
+			console.warn(`addAll Creations ->`, Creations.length)
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
 				silent: true,
 				timeout: utils.duration(1, 'minute'),
 			})
-			// await library.refresh()
 
-			await emby.client.post('/Items/f137a2dd21bbc1b99aa5c0f6bf02a805/Refresh', {
-				query: {
-					Recursive: 'true',
-					ImageRefreshMode: 'Default',
-					MetadataRefreshMode: 'Default',
-					ReplaceAllImages: 'false',
-					ReplaceAllMetadata: 'false',
-				},
-				retries: [],
-				timeout: utils.duration(1, 'minute'),
-			})
-			await emby.client.post('/Items/6c2a057148b4d7c20a207c789aba6d07/Refresh', {
-				query: {
-					Recursive: 'true',
-					ImageRefreshMode: 'Default',
-					MetadataRefreshMode: 'Default',
-					ReplaceAllImages: 'false',
-					ReplaceAllMetadata: 'false',
-				},
-				retries: [],
-				timeout: utils.duration(1, 'minute'),
-			})
+			for (let [key, value] of Object.entries(library.folders)) {
+				if (Creations.find(v => v.Path.startsWith(value.Location))) {
+					await emby.client.post(`/Items/${value.ItemId}/Refresh`, {
+						query: {
+							Recursive: 'true',
+							ImageRefreshMode: 'Default',
+							MetadataRefreshMode: 'Default',
+							ReplaceAllImages: 'false',
+							ReplaceAllMetadata: 'false',
+						},
+						retries: [],
+						timeout: utils.duration(1, 'minute'),
+					})
+				}
+			}
 		}
 
 		let t = Date.now()

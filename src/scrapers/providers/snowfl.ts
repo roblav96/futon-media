@@ -21,8 +21,7 @@ async function getToken() {
 	let html = (await client.get('/b.min.js', {
 		query: { v: utils.nonce() } as Partial<Query>,
 	})) as string
-	let index = html.search(/\"\w{35}\"/i)
-	token = html.slice(index + 1, index + 36)
+	token = html.match(/\=\"(\w{33})\"\,/i)[1]
 	if (!token) throw new Error('snowfl token not found')
 	await db.put('snowfl:token', token, utils.duration(1, 'day'))
 	return token
@@ -31,7 +30,7 @@ process.nextTick(() => getToken().catch(error => console.error(`getToken -> %O`,
 
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'DATE']
-	concurrency = 2
+	concurrency = 1
 	max = 2
 
 	async getResults(slug: string, sort: string) {
