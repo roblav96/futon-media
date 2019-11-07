@@ -180,7 +180,18 @@ export const library = {
 		if (!query.Ids && !query.Path && !query.IncludeItemTypes) {
 			query.IncludeItemTypes = ['Movie', 'Series', 'Episode', 'Person']
 		}
-		let Fields = ['ParentId', 'Path', 'ProviderIds']
+		let Fields = [
+			'IndexNumber',
+			'ParentId',
+			'ParentIndexNumber',
+			'Path',
+			'ProductionYear',
+			'ProviderIds',
+			'SeasonId',
+			'SeasonName',
+			'SeriesId',
+			'SeriesName',
+		]
 		query.Fields = (query.Fields || []).concat(Fields)
 		return ((await emby.client.get('/Items', {
 			query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
@@ -213,19 +224,18 @@ export const library = {
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
 			if (!result) continue
 			let item = new media.Item(result)
-			if (Item.Type == 'Season') {
-				let seasons = (await trakt.client.get(
-					`/shows/${item.slug}/seasons`,
-				)) as trakt.Season[]
-				item.use({
-					type: 'season',
-					season: seasons.find(v => v.number == Item.IndexNumber),
-				})
+			let indexes = library.pathIndexes(Item.Path)
+			if (!item.season && ['Season', 'Episode'].includes(Item.Type)) {
+				let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+					silent: true,
+				})) as trakt.Season[]
+				item.use({ type: 'season', season: seasons.find(v => v.number == indexes.season) })
 			}
-			if (Item.Type == 'Episode') {
-				let episode = (await trakt.client.get(
-					`/shows/${item.slug}/seasons/${Item.ParentIndexNumber}/episodes/${Item.IndexNumber}`,
-				)) as trakt.Episode
+			if (!item.episode && Item.Type == 'Episode') {
+				let url = `/shows/${item.slug}/seasons/${indexes.season}/episodes/${indexes.episode}`
+				let episode = (await trakt.client.get(url, {
+					silent: true,
+				})) as trakt.Episode
 				item.use({ type: 'episode', episode })
 			}
 			return item
@@ -239,6 +249,16 @@ export const library = {
 			return [key, value]
 		})
 		return _.fromPairs(pairs) as trakt.IDs
+	},
+	pathIndexes(Path: string) {
+		let [season, episode] = [] as number[]
+		let match = Path.match(/\sS(?<season>\d+)E(?<episode>\d+)\.strm/)
+		if (!match) match = Path.match(/\/Season (?<season>\d+)\//)
+		if (match && match.groups) {
+			season = _.parseInt(match.groups.season)
+			episode = _.parseInt(match.groups.episode)
+		}
+		return { season, episode }
 	},
 
 	toStrmPath(query: StrmQuery, full = false) {
@@ -279,12 +299,15 @@ export const library = {
 	toStrmUrl(query: StrmQuery) {
 		return `${process.env.EMBY_WAN_ADDRESS}/strm?${qs.stringify(query)}`
 	},
+	itemStrmPath(item: media.Item, full?: boolean) {
+		return library.toStrmPath(library.toStrmQuery(item), full)
+	},
 	toName(Item: emby.Item) {
 		return path.basename(Item.Path).slice(0, -5)
 	},
 
 	async toStrmFile(item: media.Item) {
-		let Path = library.toStrmPath(library.toStrmQuery(item), true)
+		let Path = library.itemStrmPath(item, true)
 		let Updated = { Path, UpdateType: 'Modified' } as emby.MediaUpdated
 		if (await fs.pathExists(Path)) return Updated
 		Updated.UpdateType = 'Created'
@@ -331,7 +354,7 @@ export const library = {
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
-			console.warn(`addAll Creations ->`, Creations.length)
+			console.info(`addAll Creations ->`, Creations.length)
 			await emby.client.post('/Library/Media/Updated', {
 				body: { Updates: Creations },
 				retries: [],
@@ -350,6 +373,7 @@ export const library = {
 							ReplaceAllMetadata: 'false',
 						},
 						retries: [],
+						silent: true,
 						timeout: utils.duration(1, 'minute'),
 					})
 				}
@@ -357,9 +381,7 @@ export const library = {
 		}
 
 		let t = Date.now()
-		let pItems = items.map(item => () =>
-			library.byPath(library.toStrmPath(library.toStrmQuery(item))),
-		)
+		let pItems = items.map(item => () => library.byPath(library.itemStrmPath(item)))
 		let Items = [] as emby.Item[]
 		while (pItems.length > 0) {
 			if (Date.now() > t + utils.duration(1, 'minute')) {

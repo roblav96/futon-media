@@ -9,9 +9,9 @@ import * as path from 'path'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
-// import { Offcloud } from '@/debrids/offcloud'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
+// import { Offcloud } from '@/debrids/offcloud'
 
 export const debrids = {
 	premiumize: Premiumize,
@@ -28,7 +28,9 @@ export async function cached(hashes: string[]) {
 }
 
 let queue = new pQueue({ concurrency: 1 })
-export function download(torrents: torrent.Torrent[], item: media.Item) {
+export async function download(torrents: torrent.Torrent[], item: media.Item) {
+	await RealDebrid.activeCount()
+
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
@@ -45,8 +47,9 @@ export function download(torrents: torrent.Torrent[], item: media.Item) {
 	return queue.add(async () => {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, torrent.short)
+			let success = torrent.cached.length > 0
 			try {
-				let success = await RealDebrid.download(torrent.magnet)
+				if (!success) success = await RealDebrid.download(torrent.magnet)
 				if (success) return console.log(`👍 download torrent success ->`, torrent.short)
 			} catch (error) {
 				console.error(`RealDebrid download '${torrent.short}' -> %O`, error.message)

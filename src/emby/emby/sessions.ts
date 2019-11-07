@@ -123,7 +123,9 @@ export class Session {
 	async getUser() {
 		return await emby.User.byUserId(this.UserId)
 	}
-
+	async getPlaybackInfo() {
+		return await emby.PlaybackInfo.byUserId(this.UserId)
+	}
 	async getDevice() {
 		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
 	}
@@ -168,29 +170,8 @@ export interface Session {
 	ServerId: string
 	SupportedCommands: string[]
 	SupportsRemoteControl: boolean
-	TranscodingInfo: TranscodingInfo
 	UserId: string
 	UserName: string
-}
-
-export interface TranscodingInfo {
-	AudioChannels: number
-	AudioCodec: string
-	Bitrate: number
-	CompletionPercentage: number
-	Container: string
-	CurrentThrottle: number
-	Framerate: number
-	Height: number
-	IsAudioDirect: boolean
-	IsVideoDirect: boolean
-	TranscodeReasons: string[]
-	TranscodingPositionTicks: number
-	TranscodingStartPositionTicks: number
-	VideoCodec: string
-	VideoDecoderIsHardware: boolean
-	VideoEncoderIsHardware: boolean
-	Width: number
 }
 
 export interface NowPlayingItem {

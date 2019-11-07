@@ -16,19 +16,18 @@ process.nextTick(() => {
 			return ['movie', 'series'].includes(query.IncludeItemTypes.toLowerCase())
 		}),
 		Rx.op.map(({ query }) => {
-			let SearchTerm = utils.clean(query.SearchTerm).toLowerCase()
+			let SearchTerm = utils.trim(query.SearchTerm).toLowerCase()
 			let imdb = /^tt\d+$/.test(SearchTerm) && SearchTerm
 			let slug = /^(\w+\-)+\w+$/.test(SearchTerm) && SearchTerm
 			if (!SearchTerm.includes(' ')) SearchTerm = utils.stripStopWords(SearchTerm)
 			return { SearchTerm, imdb, slug, UserId: query.UserId }
 		}),
-		Rx.op.share(),
 		Rx.op.filter(({ SearchTerm }) => utils.squash(SearchTerm).length >= 2),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilKeyChanged('SearchTerm'),
 		Rx.op.concatMap(async ({ SearchTerm, imdb, slug, UserId }) => {
 			let Session = await emby.sessions.byUserId(UserId)
-			console.warn(`[${Session.short}]\nrxSearch ->`, `"${SearchTerm}"`)
+			console.warn(`[${Session.short}] rxSearch ->`, `"${SearchTerm}"`)
 
 			if (imdb) {
 				let results = (await trakt.client.get(`/search/imdb/${imdb}`, {
@@ -68,7 +67,7 @@ process.nextTick(() => {
 			return { SearchTerm, items }
 		}),
 		Rx.op.catchError((error, caught) => {
-			console.error(`rxSearch concatMap -> %O`, error.message)
+			console.error(`rxSearch concatMap -> %O`, error)
 			return caught
 		}),
 	)
@@ -102,7 +101,7 @@ process.nextTick(() => {
 		if (index == 0) {
 			mean -= _.last(means)
 		}
-		split = SearchTerm.split(' ')
+		// split = SearchTerm.split(' ')
 		if (split.length >= 3) {
 			mean = 1
 			means.push(1)
@@ -124,7 +123,7 @@ process.nextTick(() => {
 			}
 			return !item.isJunk(mean)
 		})
-		console.log(`rxSearch adding ->`, items.map(v => v.short))
+		console.info(`rxSearch adding ->`, items.map(v => v.short))
 
 		emby.library.addQueue(items)
 	})

@@ -156,7 +156,7 @@ async function syncCollections() {
 		let Items = await emby.library
 			.addAll(
 				schema.items.filter(
-					item => !mIds.has(emby.library.toStrmPath(emby.library.toStrmQuery(item))),
+					item => !mIds.has(emby.library.itemStrmPath(item)),
 				),
 			)
 			.catch(error => {
@@ -166,7 +166,7 @@ async function syncCollections() {
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
 		let Ids = schema.items
-			.map(item => mIds.get(emby.library.toStrmPath(emby.library.toStrmQuery(item))))
+			.map(item => mIds.get(emby.library.itemStrmPath(item)))
 			.filter(Boolean)
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {

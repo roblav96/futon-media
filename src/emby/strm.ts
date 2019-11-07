@@ -33,7 +33,7 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 		if (!PlaybackInfo) await utils.pTimeout(300)
 	}
 	if (!Session) Session = (await emby.sessions.get()).find(v => v.UserId == PlaybackInfo.UserId)
-	console.warn(`getDebridStream '${name}' ->\n${Session.short}`, PlaybackInfo.json)
+	console.warn(`[${Session.short}] getDebridStream '${name}' ->`, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
@@ -51,6 +51,8 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	if (stream) return stream
 
 	let item = await emby.library.item(Item)
+	console.log(`item ->`, item)
+	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 	if (Query.type == 'show') {
 		let seasons = (await trakt.client.get(`/shows/${Query.slug}/seasons`)) as trakt.Season[]
 		item.use({ type: 'season', season: seasons.find(v => v.number == Query.season) })
@@ -67,7 +69,9 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 		await db.put(skey, stream, utils.duration(1, 'hour'))
 		throw new Error(`cacheds.length == 0`)
 	}
-	console.log(`strm cacheds '${name}' ->`, cacheds.map(v => v.short), cacheds.length)
+	console.log(`strm cacheds '${name}' ->`, cacheds.map(v => v.json), cacheds.length)
+
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
 	if (!stream) {

@@ -48,9 +48,20 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 					}
 				})
 			}),
-			{ concurrency: 3 }
+			{ concurrency: 3 },
 		)
 		return cached
+	}
+
+	static async activeCount() {
+		let actives = (await client.get('/torrents/activeCount', {
+			silent: true,
+		})) as ActiveCount
+		if (actives.list.length >= _.ceil(actives.limit * 0.8)) {
+			throw new Error(
+				`${actives.list.length} RealDebrid actives greater than ${actives.limit}`,
+			)
+		}
 	}
 
 	static async download(magnet: string) {
@@ -99,7 +110,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 
 	async getFiles() {
 		let response = (await client.get(
-			`/torrents/instantAvailability/${this.infoHash}`
+			`/torrents/instantAvailability/${this.infoHash}`,
 		)) as CacheResponse
 		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFile[]
 
@@ -109,7 +120,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		})
 		rds.sort((a, b) => {
 			let [asize, bsize] = [a, b].map(v =>
-				_.sum(_.toPairs(v).map(([id, file]) => file.filesize))
+				_.sum(_.toPairs(v).map(([id, file]) => file.filesize)),
 			)
 			return bsize - asize
 		})

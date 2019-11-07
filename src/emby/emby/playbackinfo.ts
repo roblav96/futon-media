@@ -13,7 +13,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	process.DEVELOPMENT && (await db.flush())
+	// process.DEVELOPMENT && (await db.flush())
 
 	let rxPostedPlaybackInfo = emby.rxLine.pipe(
 		Rx.op.filter(({ level, message }) => {
@@ -25,8 +25,8 @@ process.nextTick(async () => {
 		if (err) return console.error(`rxPostedPlaybackInfo ->`, err.message)
 		let { Id, UserId } = value as PlaybackInfo
 		console.log(`rxPostedPlaybackInfo ->`)
+		await db.put(UserId, value)
 		await db.put(Id, value, utils.duration(1, 'day'))
-		await db.put(UserId, value, utils.duration(1, 'day'))
 		await db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day'))
 	})
 
@@ -53,6 +53,9 @@ export class PlaybackInfo {
 	static async get(ItemId: string, UserId = '') {
 		let value = (await db.get(UserId ? `${ItemId}:${UserId}` : ItemId)) as PlaybackInfo
 		return value ? new PlaybackInfo(value) : value
+	}
+	static async byUserId(UserId: string) {
+		return new PlaybackInfo(await db.get(UserId))
 	}
 
 	static UserNames = {} as Record<string, string>
