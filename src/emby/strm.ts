@@ -48,35 +48,25 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	let { Quality, AudioChannels, AudioCodecs, VideoCodecs } = PlaybackInfo
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
 	let stream = await db.get(skey)
-	if (stream) return stream
+	if (stream && stream != 'null') return stream
 
 	let item = await emby.library.item(Item)
-	console.log(`item ->`, item)
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
-	if (Query.type == 'show') {
-		let seasons = (await trakt.client.get(`/shows/${Query.slug}/seasons`)) as trakt.Season[]
-		item.use({ type: 'season', season: seasons.find(v => v.number == Query.season) })
-		let episode = (await trakt.client.get(
-			`/shows/${Query.slug}/seasons/${Query.season}/episodes/${Query.episode}`,
-		)) as trakt.Episode
-		item.use({ type: 'episode', episode })
-	}
-
 	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality == 'SD')
 	let cacheds = torrents.filter(v => v.cached.length > 0)
-	if (cacheds.length == 0) {
-		debrids.download(torrents, item)
-		await db.put(skey, stream, utils.duration(1, 'hour'))
-		throw new Error(`cacheds.length == 0`)
-	}
 	console.log(`strm cacheds '${name}' ->`, cacheds.map(v => v.json), cacheds.length)
 
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+
+	if (cacheds.length == 0) {
+		debrids.download(torrents, item)
+		await db.put(skey, 'null', utils.duration(1, 'hour'))
+		throw new Error(`cacheds.length == 0`)
+	}
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
 	if (!stream) {
 		debrids.download(torrents, item)
-		await db.put(skey, stream, utils.duration(1, 'hour'))
+		await db.put(skey, 'null', utils.duration(1, 'hour'))
 		throw new Error(`debrids.getStream !stream -> '${name}'`)
 	}
 

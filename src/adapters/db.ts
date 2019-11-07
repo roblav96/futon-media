@@ -38,7 +38,7 @@ export class Db {
 		let options = _.isFinite(ttl) ? { ttl } : {}
 		return new Promise(resolve => {
 			this.level.put(key, value, options, error => {
-				if (error) console.error(`[DB] ${this.name} put '${key}'  -> %O`, error.message)
+				if (error) console.error(`[DB] ${this.name} put '${key}' -> %O`, error.message)
 				resolve()
 			})
 		})
@@ -47,7 +47,7 @@ export class Db {
 	del(key: string) {
 		return new Promise(resolve => {
 			this.level.del(key, error => {
-				if (error) console.error(`[DB] ${this.name} del '${key}'  -> %O`, error.message)
+				if (error) console.error(`[DB] ${this.name} del '${key}' -> %O`, error.message)
 				resolve()
 			})
 		})

@@ -41,7 +41,8 @@ for (let [method, color] of Object.entries({
 				ending += ` ${dayjs().format('ddd, MMM DD YYYY hh:mm:ss A')}`
 			}
 
-			let heading = `\n${ansi[color](indicator)} ${ansi.dim(`${ending}`)}\n`
+			let highlight = ['warn', 'error'].includes(method) ? color : 'dim'
+			let heading = `\n${ansi[color](indicator)} ${ansi[highlight](`${ending}`)}\n`
 			if (process.DEVELOPMENT) {
 				let stdout = (console as any)._stdout as NodeJS.WriteStream
 				stdout.write(heading)

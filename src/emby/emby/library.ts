@@ -253,7 +253,7 @@ export const library = {
 	pathIndexes(Path: string) {
 		let [season, episode] = [] as number[]
 		let match = Path.match(/\sS(?<season>\d+)E(?<episode>\d+)\.strm/)
-		if (!match) match = Path.match(/\/Season (?<season>\d+)\//)
+		if (!match) match = Path.match(/\/Season\s(?<season>\d+)\//)
 		if (match && match.groups) {
 			season = _.parseInt(match.groups.season)
 			episode = _.parseInt(match.groups.episode)
