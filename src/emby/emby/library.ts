@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as isIp from 'is-ip'
@@ -97,17 +98,20 @@ export const library = {
 		}
 		let Fields = [
 			'IndexNumber',
+			// 'MediaSources',
 			'MediaType',
 			'ParentId',
 			'ParentIndexNumber',
 			'Path',
 			'ProductionYear',
 			'ProviderIds',
+			// 'RunTimeTicks',
 			'SeasonId',
 			'SeasonName',
 			'SeriesId',
 			'SeriesName',
 			'SortName',
+			// 'SupportsLocalMetadata',
 		]
 		query.Fields = (query.Fields || []).concat(Fields)
 		return ((await emby.client.get('/Items', {
@@ -131,6 +135,7 @@ export const library = {
 
 	async item(Item: emby.Item) {
 		let ids = Item.Path ? library.pathIds(Item.Path) : (Item.ProviderIds as never)
+		if (_.isEmpty(ids)) return
 		ids = utils.sortKeys(_.mapKeys(ids, (v, k) => k.toLowerCase())) as any
 		let type = Item.Type.toLowerCase() as media.ContentType
 		if (['Series', 'Season', 'Episode'].includes(Item.Type)) type = 'show'
@@ -267,57 +272,72 @@ export const library = {
 	},
 	async addAll(items: media.Item[]) {
 		if (items.length == 0) return []
+		let t = Date.now()
+		let start = dayjs().subtract(100, 'millisecond')
 
 		let Updates = (await pAll(items.map(v => () => library.add(v)), { concurrency: 1 })).flat()
-		Updates.sort((a, b) => utils.alphabetically(a.UpdateType, b.UpdateType))
 		console.log(`addAll Updates ->`, Updates.length)
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
 			console.info(`addAll Creations ->`, Creations.length)
-			await emby.client.post('/Library/Media/Updated', {
-				body: { Updates: Creations },
-				retries: [],
-				silent: true,
-				timeout: utils.duration(1, 'minute'),
-			})
+			// await emby.client.post('/Library/Media/Updated', {
+			// 	body: { Updates: Creations },
+			// 	retries: [],
+			// 	// silent: true,
+			// 	timeout: utils.duration(1, 'minute'),
+			// })
 
-			for (let [key, value] of Object.entries(library.folders)) {
-				if (Creations.find(v => v.Path.startsWith(value.Location))) {
-					await emby.client.post(`/Items/${value.ItemId}/Refresh`, {
-						query: {
-							Recursive: 'true',
-							ImageRefreshMode: 'Default',
-							MetadataRefreshMode: 'Default',
-							ReplaceAllImages: 'false',
-							ReplaceAllMetadata: 'false',
-						},
-						retries: [],
-						silent: true,
-						timeout: utils.duration(1, 'minute'),
-					})
+			for (let [key, folder] of Object.entries(library.folders)) {
+				if (Creations.find(v => v.Path.startsWith(folder.Location))) {
+					let rxRefreshProgress = emby.rxSocket.pipe(
+						Rx.op.filter(({ MessageType, Data }) => {
+							if (MessageType != 'RefreshProgress') return
+							return Data.ItemId == folder.ItemId && Data.Progress == '100'
+						}),
+						Rx.op.take(1),
+					)
+					await Promise.all([
+						rxRefreshProgress.toPromise(),
+						emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
+							query: {
+								Recursive: 'true',
+								ImageRefreshMode: 'Default',
+								MetadataRefreshMode: 'Default',
+								ReplaceAllImages: 'false',
+								ReplaceAllMetadata: 'false',
+							},
+							retries: [],
+							// silent: true,
+							timeout: utils.duration(1, 'minute'),
+						}),
+					])
 				}
 			}
 		}
 
-		let t = Date.now()
-		let pItems = items.map(item => () => library.byPath(library.itemStrmPath(item)))
-		let Items = [] as emby.Item[]
-		while (pItems.length > 0) {
-			if (Date.now() > t + utils.duration(1, 'minute')) {
-				throw new Error(`addAll duration > 1 minute`)
-			}
-			// console.log(`addAll while pItems ->`, pItems.length)
-			for (let i = pItems.length; i--; ) {
-				if (i < pItems.length - 1) await utils.pRandom(300)
-				let pItem = pItems[i]
-				let Item = await pItem()
-				if (!Item) continue
-				Items.push(Item)
-				pItems.splice(i, 1)
-			}
-			if (pItems.length > 0) await utils.pRandom(1000)
-		}
+		let Items = await pAll(
+			items.map(item => () => library.byPath(library.itemStrmPath(item))),
+			{ concurrency: 1 },
+		)
+
+		// let pItems = items.map(item => () => library.byPath(library.itemStrmPath(item)))
+		// let Items = [] as emby.Item[]
+		// while (pItems.length > 0) {
+		// 	if (Date.now() > t + utils.duration(1, 'minute')) {
+		// 		throw new Error(`addAll duration > 1 minute`)
+		// 	}
+		// 	// console.log(`addAll while pItems ->`, pItems.length)
+		// 	for (let i = pItems.length; i--; ) {
+		// 		if (i < pItems.length - 1) await utils.pRandom(300)
+		// 		let pItem = pItems[i]
+		// 		let Item = await pItem()
+		// 		if (!Item) continue
+		// 		Items.push(Item)
+		// 		pItems.splice(i, 1)
+		// 	}
+		// 	if (pItems.length > 0) await utils.pRandom(1000)
+		// }
 
 		// if (Creations.length > 0) await library.unrefresh()
 		// for (let Item of Items) {

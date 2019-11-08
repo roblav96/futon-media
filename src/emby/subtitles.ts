@@ -8,8 +8,10 @@ process.nextTick(() => {
 		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
 	)
 	rxSubtitles.subscribe(async ({ ItemId }) => {
-		let queries = [{ IsPerfectMatch: 'false' }, { IsPerfectMatch: 'false', IsForced: 'true' }]
-		for (let query of queries) {
+		for (let query of [
+			{ IsPerfectMatch: 'false' },
+			{ IsPerfectMatch: 'false', IsForced: 'true' },
+		]) {
 			let subs = (await emby.client.get(`/Items/${ItemId}/RemoteSearch/Subtitles/eng`, {
 				query,
 				silent: true,

@@ -176,7 +176,7 @@ export const rxItemId = rxHttp.pipe(
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
 export const rxItem = rxItemId.pipe(
-	// Rx.op.debounceTime(10),
+	Rx.op.debounceTime(100),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),
 	// Rx.op.distinctUntilKeyChanged('ItemId'),

@@ -61,7 +61,7 @@ export class Item {
 		return strm
 	}
 	get gigs() {
-		return _.round((this.runtime / (this.movie ? 30 : 40)) * (this.isPopular() ? 1 : 0.5), 2)
+		return _.round((this.runtime / (this.movie ? 30 : 40)) * (this.isPopular(100) ? 1 : 0.5), 2)
 	}
 
 	get released() {
@@ -112,7 +112,7 @@ export class Item {
 		}
 		return !this.isPopular(votes)
 	}
-	isPopular(votes = 500) {
+	isPopular(votes: number) {
 		if (!_.has(this.main, 'votes')) return false
 		let months = _.ceil((Date.now() - this.released.valueOf()) / utils.duration(1, 'month'))
 		let penalty = 1 - _.clamp(months, 1, 12) / 12

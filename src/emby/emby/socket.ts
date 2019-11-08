@@ -9,8 +9,8 @@ import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 import Sockette, { ISockette } from '@/shims/sockette'
 
-export interface EmbyEvent<Data = any> {
-	Data: Data
+export interface EmbyEvent<T = any> {
+	Data: T
 	MessageId: string
 	MessageType: string
 }
@@ -36,6 +36,8 @@ process.nextTick(async () => {
 			let url = target.url as string
 			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1500,900' })
+			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
+			// ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1500' })
 			emby.Tail.connect()
 			emby.PlaybackInfo.setUserNames()
 			// emby.sessions.sync()
@@ -62,12 +64,13 @@ process.nextTick(async () => {
 })
 
 // rxSocket.subscribe(({ MessageType, Data }) => {
-// 	if (['ScheduledTasksInfo'].includes(MessageType)) {
-// 		// console.info(`rxSocket ->`, MessageType, '...')
-// 		return
-// 	}
+// 	// if (['ScheduledTasksInfo'].includes(MessageType)) {
+// 	// 	// console.info(`rxSocket ->`, MessageType, '...')
+// 	// 	return
+// 	// }
+// 	if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
 // 	if (MessageType == 'Sessions') {
-// 		console.info(`rxSocket Sessions ->`, Data)
+// 		// console.info(`rxSocket Sessions ->`, Data)
 // 		// let Sessions = emby.sessions.use(Data as emby.Session[])
 // 		// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
 // 		return

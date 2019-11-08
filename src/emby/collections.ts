@@ -13,7 +13,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	process.DEVELOPMENT && syncCollections()
+	// process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 	}
@@ -140,7 +140,7 @@ async function syncCollections() {
 	for (let schema of schemas) {
 		await utils.pRandom(100)
 		let results = (await trakt.client
-			.get(schema.url, schema.limit ? { query: { limit: schema.limit }, silent: true } : {})
+			.get(schema.url, { query: schema.limit ? { limit: schema.limit } : {}, silent: true })
 			.catch(error => {
 				console.error(`trakt get ${schema.url} -> %O`, error)
 				return []
@@ -183,8 +183,8 @@ async function syncCollections() {
 		}
 	}
 
-	await emby.library.refresh()
-	console.log(Date.now() - t, `syncCollections ${mIds.size} Items ->`, 'DONE')
+	// await emby.library.refresh()
+	console.info(Date.now() - t, `syncCollections ${mIds.size} Items ->`, 'DONE')
 }
 
 async function toCollections(items: media.Item[], Items: emby.Item[]) {
