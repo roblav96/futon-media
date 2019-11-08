@@ -120,6 +120,7 @@ export async function resultsFor(person: Person) {
 	for (let type of media.MAIN_TYPESS) {
 		let credits = (await client.get(`/people/${person.ids.slug}/${type}`, {
 			query: { limit: 100 },
+			silent: true,
 		})) as Credits
 		let { cast, crew } = { cast: [], crew: [], ...credits }
 		results.push(...cast.filter(v => !!v.character))

@@ -24,7 +24,7 @@ process.nextTick(async () => {
 
 async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	let t = Date.now()
-	let name = emby.library.toName(Item)
+	let title = emby.library.toTitle(Item)
 
 	let Session = (await emby.sessions.get()).find(v => v.ItemPath == Item.Path)
 	let PlaybackInfo: emby.PlaybackInfo
@@ -33,7 +33,7 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 		if (!PlaybackInfo) await utils.pTimeout(300)
 	}
 	if (!Session) Session = (await emby.sessions.get()).find(v => v.UserId == PlaybackInfo.UserId)
-	console.warn(`[${Session.short}] getDebridStream '${name}' ->`, PlaybackInfo.json)
+	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
@@ -51,9 +51,9 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	if (stream && stream != 'null') return stream
 
 	let item = await emby.library.item(Item)
-	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality == 'SD')
+	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
 	let cacheds = torrents.filter(v => v.cached.length > 0)
-	console.log(`strm cacheds '${name}' ->`, cacheds.map(v => v.json), cacheds.length)
+	console.log(`strm cacheds '${title}' ->`, cacheds.map(v => v.json), cacheds.length)
 
 	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
@@ -67,11 +67,11 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	if (!stream) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'null', utils.duration(1, 'hour'))
-		throw new Error(`debrids.getStream !stream -> '${name}'`)
+		throw new Error(`debrids.getStream !stream -> '${title}'`)
 	}
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
-	console.log(Date.now() - t, `👍 stream '${name}' ->`, stream)
+	console.log(Date.now() - t, `👍 stream '${title}' ->`, stream)
 	return stream
 }
 
@@ -82,8 +82,8 @@ fastify.get('/strm', async (request, reply) => {
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
 	let Item = await emby.library.byPath(emby.library.toStrmPath(Query, true))
-	let name = emby.library.toName(Item)
-	console.log(`/strm ->`, `'${name}'`)
+	let title = emby.library.toTitle(Item)
+	console.log(`/strm ->`, `'${title}'`)
 
 	let stream = (await db.get(Item.Id)) as string
 	if (!_.isString(stream)) {
@@ -91,7 +91,7 @@ fastify.get('/strm', async (request, reply) => {
 			try {
 				stream = await getDebridStream(Query, Item)
 			} catch (error) {
-				console.error(`/strm '${name}' -> %O`, error.message)
+				console.error(`/strm '${title}' -> %O`, error.message)
 				stream = 'null'
 			}
 			await db.put(Item.Id, stream, utils.duration(1, 'minute'))

@@ -16,6 +16,8 @@ process.nextTick(async () => {
 		await import('@/emby/search')
 		await import('@/emby/strm')
 		await import('@/emby/signup')
+		await import('@/emby/refresh')
+		await import('@/emby/subtitles')
 		await import('@/emby/webhooks')
 	} catch (error) {
 		console.error(`index -> %O`, error)

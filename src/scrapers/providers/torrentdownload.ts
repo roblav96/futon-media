@@ -13,7 +13,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class TorrentDownload extends scraper.Scraper {
-	sorts = ['searchs', 'searchd']
+	sorts = ['searchs', 'search']
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(await client.get(`/${sort}`, { query: { q: slug } as Partial<Query> }))

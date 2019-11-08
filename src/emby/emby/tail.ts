@@ -175,6 +175,20 @@ export const rxItemId = rxHttp.pipe(
 )
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
+export const rxItem = rxItemId.pipe(
+	// Rx.op.debounceTime(10),
+	Rx.op.distinctUntilKeyChanged('ItemId'),
+	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),
+	// Rx.op.distinctUntilKeyChanged('ItemId'),
+	Rx.op.concatMap(async v => ({
+		...v,
+		Item: await emby.library.byItemId(v.ItemId),
+		Session: await emby.sessions.byUserId(v.UserId),
+	})),
+	Rx.op.share(),
+)
+// rxItem.subscribe(({ Item }) => console.log(`rxItem ->`, Item))
+
 // export const rxItem = rxItemId.pipe(
 // 	Rx.op.filter(({ ItemId }) => ItemId.length != 32),
 // 	// Rx.op.tap(({ ItemId }) => console.log(`rxItem.tap ->`, ItemId)),

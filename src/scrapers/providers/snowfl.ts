@@ -29,7 +29,7 @@ async function getToken() {
 process.nextTick(() => getToken().catch(error => console.error(`getToken -> %O`, error)))
 
 export class Snowfl extends scraper.Scraper {
-	sorts = ['SIZE', 'DATE']
+	sorts = ['SIZE', 'SEED']
 	concurrency = 1
 	max = 2
 

@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class Pirateiro extends scraper.Scraper {
-	sorts = ['tamanho', 'enviado']
+	sorts = ['tamanho', 'seeders']
 
 	async getResults(slug: string, sort: string) {
 		let category = this.item.movie ? 'c300' : 'c700'

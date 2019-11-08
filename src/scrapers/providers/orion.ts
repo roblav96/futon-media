@@ -20,7 +20,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class Orion extends scraper.Scraper {
-	sorts = ['filesize', 'streamage', 'streamseeds']
+	sorts = ['filesize', 'streamseeds', 'streamage']
 
 	slugs() {
 		let query = { type: this.item.type } as Query

@@ -21,7 +21,7 @@ process.nextTick(() => {
 		Rx.op.concatMap(async ({ ItemId, UserId }) => {
 			let Item = await emby.library.byItemId(ItemId)
 			let Session = await emby.sessions.byUserId(UserId)
-			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toName(Item))
+			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 			let PlaybackInfo = await Session.getPlaybackInfo()
 			return { Item, PlaybackInfo }
 		}),
@@ -57,10 +57,10 @@ process.nextTick(() => {
 				let gigs = utils.fromBytes(utils.toBytes(`${item.gigs} GB`))
 				console.warn(`rxFavorite download '${item.strm}' ->`, gigs)
 
-				let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality == 'SD')
+				let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
 				console.log(`rxFavorite torrents '${item.strm}' ->`, torrents.map(v => v.short))
 
-				if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+				// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 				// let index = torrents.findIndex(({ cached }) => cached.length > 0)
 				// if (index == -1) console.warn(`download best cached ->`, 'index == -1')

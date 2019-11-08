@@ -24,7 +24,7 @@ process.nextTick(async () => {
 		let { err, value } = fastParse(message.slice(message.indexOf('{')))
 		if (err) return console.error(`rxPostedPlaybackInfo ->`, err.message)
 		let { Id, UserId } = value as PlaybackInfo
-		console.log(`rxPostedPlaybackInfo ->`)
+		// console.log(`rxPostedPlaybackInfo ->`)
 		await db.put(UserId, value)
 		await db.put(Id, value, utils.duration(1, 'day'))
 		await db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day'))

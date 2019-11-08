@@ -13,7 +13,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// process.DEVELOPMENT && syncCollections()
+	process.DEVELOPMENT && syncCollections()
 	if (!process.DEVELOPMENT) {
 		schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 	}
@@ -48,7 +48,7 @@ async function buildSchemas() {
 				return {
 					all: schema[2],
 					limit: schema[2] ? 999 : i == 0 ? 100 : 50,
-					name: `${['M', 'T'][i]} ${schema[0]}`,
+					name: `${['Movies', 'TV Shows'][i]} ${schema[0]}`,
 					type: media.MAIN_TYPES[i],
 					url: _.template(schema[1])({ type }),
 				} as CollectionSchema
@@ -89,8 +89,9 @@ async function buildSchemas() {
 	)
 
 	schemas.forEach(schema => {
-		schema.name = _.trim(schema.name)
+		schema.name = _.capitalize(utils.trim(schema.name))
 		if (schema.name.startsWith('The ')) schema.name = schema.name.slice(4)
+		schema.name = _.capitalize(utils.trim(schema.name))
 	})
 
 	return schemas
@@ -102,32 +103,36 @@ async function syncCollections() {
 
 	if (process.DEVELOPMENT) {
 		// console.log(`schemas ->`, schemas.map(v => v.name))
-		let lists = [
-			// '007',
-			// '100 Greatest Sci Fi Movies',
-			// 'Based on a TRUE STORY',
-			// 'Best Mindfucks',
-			// 'Disney',
-			// 'James Bond',
-			// 'Latest 4K Releases',
-			// 'MARVEL Cinematic Universe',
-			// 'M Most Played Monthly',
-			// 'M Popular',
-			'M Watchlist',
-			// 'Pixar Collection',
-			// 'Star Wars Timeline',
-			// 'T Most Played Monthly',
-			// 'T Popular',
-			'T Watchlist',
-			// 'Walt Disney Animated feature films',
-			// 'Worlds of DC',
-		]
-		schemas = schemas.filter(v => lists.includes(v.name))
+		// let lists = [
+		// 	// '007',
+		// 	// '100 Greatest Sci Fi Movies',
+		// 	// 'Based on a TRUE STORY',
+		// 	// 'Best Mindfucks',
+		// 	// 'Disney',
+		// 	// 'James Bond',
+		// 	// 'Latest 4K Releases',
+		// 	// 'MARVEL Cinematic Universe',
+		// 	// 'M Most Played Monthly',
+		// 	// 'M Popular',
+		// 	'Movies watchlist',
+		// 	// 'Pixar Collection',
+		// 	// 'Star Wars Timeline',
+		// 	// 'T Most Played Monthly',
+		// 	// 'T Popular',
+		// 	'Tv shows watchlist',
+		// 	// 'Walt Disney Animated feature films',
+		// 	// 'Worlds of DC',
+		// ]
+		// schemas = schemas.filter(v => lists.includes(v.name))
+		schemas = schemas.filter(v => v.name.endsWith('watchlist'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
+
 	if (!process.DEVELOPMENT) console.log(`syncCollections schemas ->`, schemas.length)
-	else console.log(`syncCollections schemas ->`, schemas)
+	else console.log(`syncCollections schemas ->`, _.sortBy(schemas, 'name').map(v => v.name))
+
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 
@@ -146,7 +151,7 @@ async function syncCollections() {
 		})
 		results = trakt.uniqWith(results.filter(v => !v.season && !v.episode && !v.person))
 		schema.items = results.map(v => new media.Item(v))
-		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(25) : !v.isJunk()))
+		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(1) : !v.isJunk(1000)))
 		if (schema.items.length == 0) {
 			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
 			continue
@@ -154,11 +159,7 @@ async function syncCollections() {
 		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, schema.items.length)
 
 		let Items = await emby.library
-			.addAll(
-				schema.items.filter(
-					item => !mIds.has(emby.library.itemStrmPath(item)),
-				),
-			)
+			.addAll(schema.items.filter(item => !mIds.has(emby.library.itemStrmPath(item))))
 			.catch(error => {
 				console.error(`syncCollections addAll -> %O`, error)
 				return []
@@ -193,7 +194,7 @@ async function toCollections(items: media.Item[], Items: emby.Item[]) {
 		let { name, parts } = (await tmdb.client.get(`/collection/${tmcolid}`)) as tmdb.Collection
 		console.log(`Collection ->`, name)
 		let cresults = await pAll(parts.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
-		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk())
+		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk(1000))
 		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()
 		let Collection = Collections.find(v => v.Name == name)
 		if (Collection) {

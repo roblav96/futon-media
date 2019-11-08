@@ -89,7 +89,7 @@ export class Item {
 		}
 		return false
 	}
-	isJunk(votes = 1000) {
+	isJunk(votes: number) {
 		if (this.invalid) return true
 		if (!this.main.overview) return true
 		if (!this.main.country && !this.main.language) return true

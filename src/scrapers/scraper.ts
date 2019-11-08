@@ -32,29 +32,29 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/btsow')).Btsow,
-		// (await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/btsow')).Btsow,
+		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
 		(await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/pirateiro')).Pirateiro,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		(await import('@/scrapers/providers/yts')).Yts,
 	]
 })
 
-export async function scrapeAll(item: media.Item, SD: boolean) {
+export async function scrapeAll(item: media.Item, isHD: boolean) {
 	let t = Date.now()
-	// if (process.DEVELOPMENT) SD = false
+	if (process.DEVELOPMENT) isHD = true
 
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
@@ -72,7 +72,9 @@ export async function scrapeAll(item: media.Item, SD: boolean) {
 	// // console.log(`item.matches ->`, item.matches)
 	// // if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-	let torrents = (await pAll(providers.map(Scraper => () => new Scraper(item).scrape()))).flat()
+	let torrents = (await pAll(
+		providers.map(Scraper => () => new Scraper(item).scrape(isHD)),
+	)).flat()
 
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
@@ -92,11 +94,11 @@ export async function scrapeAll(item: media.Item, SD: boolean) {
 		return true
 	})
 
-	torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	let cachedz = await debrids.cached(torrents.map(v => v.hash))
-	torrents.forEach((v, i) => (v.cached = cachedz[i] || []))
-	console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short))
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
+	// // torrents.forEach((v, i) => (v.cached = cachedz[i] || []))
+	// console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short))
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => {
@@ -118,7 +120,7 @@ export async function scrapeAll(item: media.Item, SD: boolean) {
 		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (name.includes(' proper ')) v.boost *= 1.25
 		if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
-		if (SD) {
+		if (!isHD) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 			if (v.providers.includes('Yts')) {
@@ -136,8 +138,8 @@ export async function scrapeAll(item: media.Item, SD: boolean) {
 		if (name.includes(' fgt ')) v.boost *= 1.5
 	}
 
-	if (SD) torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
-	else torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	if (isHD) torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
+	else torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 
 	if (!process.DEVELOPMENT) console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
 	console.info(Date.now() - t, `scrapeAll ->`, torrents.map(v => v.short), torrents.length)
@@ -155,7 +157,7 @@ export class Scraper {
 		_.defaults(config, {
 			// debug: process.DEVELOPMENT,
 			memoize: !process.DEVELOPMENT,
-			profile: process.DEVELOPMENT,
+			// profile: process.DEVELOPMENT,
 			retries: [],
 			silent: true,
 			timeout: process.DEVELOPMENT ? 10000 : 5000,
@@ -175,14 +177,14 @@ export class Scraper {
 
 	constructor(public item: media.Item) {}
 
-	async scrape() {
+	async scrape(isHD: boolean) {
 		let t = Date.now()
 		let ctor = this.constructor.name
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
 			if (this.sorts.length == 0) return combos.push([slug] as any)
-			combos.push([slug, this.sorts[0]])
+			combos.push([slug, isHD ? _.first(this.sorts) : _.last(this.sorts)])
 		})
 		combos = combos.slice(0, this.max)
 

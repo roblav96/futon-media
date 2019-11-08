@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class SolidTorrents extends scraper.Scraper {
-	sorts = ['size', 'date']
+	sorts = ['size', 'seeders']
 	concurrency = 1
 	max = 2
 

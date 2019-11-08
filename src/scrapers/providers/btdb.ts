@@ -10,7 +10,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class Btdb extends scraper.Scraper {
-	sorts = ['length', 'time']
+	sorts = ['length', 'popular']
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(

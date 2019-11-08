@@ -54,6 +54,7 @@ export class Rarbg extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
+		await utils.pRandom(300)
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(slug)),
 		})) as Response

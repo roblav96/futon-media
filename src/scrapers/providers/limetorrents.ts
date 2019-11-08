@@ -12,7 +12,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class LimeTorrents extends scraper.Scraper {
-	sorts = ['size', 'date']
+	sorts = ['size', 'seeds']
 	max = 3
 
 	async getResults(slug: string, sort: string) {

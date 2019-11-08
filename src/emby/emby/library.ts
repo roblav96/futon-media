@@ -17,91 +17,6 @@ process.nextTick(async () => {
 	await library.setFolders()
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
-
-	// let rxLibrary = rxItem.pipe(
-	// 	Rx.op.filter(({ Item }) =>
-	// 		['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type)
-	// 	),
-	// 	Rx.op.distinctUntilChanged((a, b) => {
-	// 		let keys = ['ItemId', 'UserId']
-	// 		return utils.hash(_.pick(a, keys)) == utils.hash(_.pick(b, keys))
-	// 	})
-	// )
-	// rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
-	// 	let who = await emby.sessions.byWho(UserId)
-	// 	if (Item.Type == 'Person') {
-	// 		if (!Item.ProviderIds.Imdb) {
-	// 			if (!Item.ProviderIds.Tmdb) {
-	// 				if (!Item.Name) return console.warn(`${who}rxItem !Item.Name ->`, Item)
-	// 				let results = ((await tmdb.client.get('/search/person', {
-	// 					query: { query: Item.Name },
-	// 				})) as tmdb.Paginated<tmdb.Person>).results
-	// 				results.sort((a, b) => b.popularity - a.popularity)
-	// 				if (!results[0]) return console.warn(`${who}rxItem !Item.Tmdb ->`, Item)
-	// 				Item.ProviderIds.Tmdb = results[0].id.toString()
-	// 			}
-	// 			let externals = (await tmdb.client.get(
-	// 				`/person/${Item.ProviderIds.Tmdb}/external_ids`
-	// 			)) as tmdb.ExternalIds
-	// 			Item.ProviderIds.Imdb = externals.imdb_id
-	// 		}
-	// 		let person = (await trakt.client.get(
-	// 			`/people/${Item.ProviderIds.Imdb}`
-	// 		)) as trakt.Person
-	// 		let items = (await trakt.resultsFor(person)).map(v => new media.Item(v))
-	// 		items = items.filter(v => !v.isJunk())
-	// 		items.sort((a, b) => b.main.votes - a.main.votes)
-	// 		console.info(`${who}rxItem ${Item.Type} '${Item.Name}' ->`, items.map(v => v.short))
-	// 		library.addQueue(items)
-	// 	}
-	// 	if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
-	// 		let item = await library.item(Item)
-	// 		console.info(`${who}rxItem ${Item.Type} ->`, item.short)
-	// 		library.addQueue([item])
-	// 	}
-	// })
-
-	// // if (process.DEVELOPMENT) {
-	// // 	rxLibrary.subscribe(async ({ Item, ItemId, UserId }) => {
-	// // 		if (!['Movie', 'Episode'].includes(Item.Type)) return
-	// // 		await scraper.scrapeAll(await library.item(Item))
-	// // 	})
-	// // }
-
-	// let rxSubtitles = rxItem.pipe(
-	// 	Rx.op.filter(({ Item }) => {
-	// 		return ['Movie', 'Episode'].includes(Item.Type)
-	// 	}),
-	// 	Rx.op.distinctUntilChanged((a, b) => a.Item.Id == b.Item.Id)
-	// )
-	// rxSubtitles.subscribe(async ({ Item }) => {
-	// 	let subs = (await emby.client.get(`/Items/${Item.Id}/RemoteSearch/Subtitles/eng`, {
-	// 		query: { IsPerfectMatch: 'false', IsForced: 'true' },
-	// 		silent: true,
-	// 	})) as RemoteSubtitle[]
-	// 	if (subs && subs[0]) {
-	// 		await emby.client.post(`/Items/${Item.Id}/RemoteSearch/Subtitles/${subs[0].Id}`)
-	// 	}
-	// })
-
-	// // let rxRefresh = rxItem.pipe(
-	// // 	Rx.op.filter(({ Item }) => {
-	// // 		return ['Series', 'Season', 'Episode'].includes(Item.Type)
-	// // 	}),
-	// // 	Rx.op.distinctUntilChanged((a, b) => a.ItemId == b.ItemId)
-	// // )
-	// // rxRefresh.subscribe(async ({ Item, ItemId, UserId }) => {
-	// // 	await emby.client.post(`/Items/${ItemId}/Refresh`, {
-	// // 		query: {
-	// // 			ImageRefreshMode: 'FullRefresh',
-	// // 			MetadataRefreshMode: 'FullRefresh',
-	// // 			Recursive: 'true',
-	// // 			ReplaceAllImages: 'false',
-	// // 			ReplaceAllMetadata: 'false',
-	// // 		},
-	// // 		silent: true,
-	// // 	})
-	// // })
 })
 
 export const library = {
@@ -182,6 +97,7 @@ export const library = {
 		}
 		let Fields = [
 			'IndexNumber',
+			'MediaType',
 			'ParentId',
 			'ParentIndexNumber',
 			'Path',
@@ -191,6 +107,7 @@ export const library = {
 			'SeasonName',
 			'SeriesId',
 			'SeriesName',
+			'SortName',
 		]
 		query.Fields = (query.Fields || []).concat(Fields)
 		return ((await emby.client.get('/Items', {
@@ -213,9 +130,10 @@ export const library = {
 	},
 
 	async item(Item: emby.Item) {
+		let ids = Item.Path ? library.pathIds(Item.Path) : (Item.ProviderIds as never)
+		ids = utils.sortKeys(_.mapKeys(ids, (v, k) => k.toLowerCase())) as any
 		let type = Item.Type.toLowerCase() as media.ContentType
 		if (['Series', 'Season', 'Episode'].includes(Item.Type)) type = 'show'
-		let ids = utils.sortKeys(library.pathIds(Item.Path))
 		for (let key in ids) {
 			let results = (await trakt.client.get(`/search/${key}/${ids[key]}`, {
 				query: { type },
@@ -224,6 +142,7 @@ export const library = {
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
 			if (!result) continue
 			let item = new media.Item(result)
+			if (['Movie', 'Person'].includes(Item.Type)) return item
 			let indexes = library.pathIndexes(Item.Path)
 			if (!item.season && ['Season', 'Episode'].includes(Item.Type)) {
 				let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
@@ -242,18 +161,13 @@ export const library = {
 		}
 	},
 	pathIds(Path: string) {
-		let matches = Path.match(/\[\w{4}id=(tt)?\d*\]/g)
-		let pairs = matches.map(match => {
-			let [key, value] = match.split('=').map(utils.minify)
-			if (key.endsWith('id')) key = key.slice(0, -2)
-			return [key, value]
-		})
-		return _.fromPairs(pairs) as trakt.IDs
+		let matches = Array.from(Path.matchAll(/\[(?<key>\w{4})id=(?<value>(tt)?\d*)\]/g))
+		return _.fromPairs(matches.map(match => [match.groups.key, match.groups.value]))
 	},
 	pathIndexes(Path: string) {
 		let [season, episode] = [] as number[]
 		let match = Path.match(/\sS(?<season>\d+)E(?<episode>\d+)\.strm/)
-		if (!match) match = Path.match(/\/Season\s(?<season>\d+)\//)
+		if (!match) match = Path.match(/\/Season\s(?<season>\d+)/)
 		if (match && match.groups) {
 			season = _.parseInt(match.groups.season)
 			episode = _.parseInt(match.groups.episode)
@@ -302,8 +216,14 @@ export const library = {
 	itemStrmPath(item: media.Item, full?: boolean) {
 		return library.toStrmPath(library.toStrmQuery(item), full)
 	},
-	toName(Item: emby.Item) {
-		return path.basename(Item.Path).slice(0, -5)
+	toTitle(Item: emby.Item) {
+		let name = Item.Name
+		if (Item.Type == 'Season') name = `${Item.SeriesName} ${Item.Name}`
+		if (Item.Type == 'Episode') {
+			let base = path.basename(Item.Path).slice(0, -5)
+			name = `${Item.SeriesName} ${base.split(' ').pop()}`
+		}
+		return `[${Item.Type}] ${name}`
 	},
 
 	async toStrmFile(item: media.Item) {

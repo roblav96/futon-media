@@ -35,14 +35,14 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 		if (v.cached.length > 0) return true
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${item.gigs} GB`)) return false
-		return v.seeders * v.providers.length >= 5
+		return v.seeders * v.providers.length >= 3
 	})
 	if (!process.DEVELOPMENT) console.log(`download torrents '${item.strm}' ->`, torrents.length)
-	console.log(`download torrents '${item.strm}' ->`, torrents.map(v => v.short), torrents.length)
-
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	console.log(`download torrents '${item.strm}' ->`, torrents.map(v => v.json), torrents.length)
 
 	if (torrents.length == 0) return console.warn(`download torrents ->`, 'torrents.length == 0')
+
+	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	return queue.add(async () => {
 		for (let torrent of torrents) {

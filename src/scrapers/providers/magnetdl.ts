@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class MagnetDl extends scraper.Scraper {
-	sorts = ['size', 'age']
+	sorts = ['size', 'se']
 
 	async getResults(slug: string, sort: string) {
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`

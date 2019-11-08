@@ -49,7 +49,6 @@ export class Eztv extends scraper.Scraper {
 				console.error(`${this.constructor.name} -> %O`, error.message)
 			}
 		})
-		console.log(`results ->`, results)
 		return results
 	}
 }

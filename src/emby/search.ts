@@ -77,7 +77,7 @@ process.nextTick(() => {
 			if (!item || item.invalid) {
 				return console.error(`rxSearch invalid imdb || slug ->`, `"${imdb || slug}"`)
 			}
-			console.log(`rxSearch adding ->`, item.short)
+			console.info(`rxSearch adding ->`, [item.short])
 			return emby.library.addQueue([item])
 		}
 

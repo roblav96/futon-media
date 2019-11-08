@@ -36,7 +36,7 @@ export function results(result: scraper.Result, item: media.Item) {
 	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
 	let skipped = utils.accuracies(result.name, skips.join(' '))
 	if (skips.length - skipped.length >= 1) {
-		return console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
+		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
 	}
 
 	return true
