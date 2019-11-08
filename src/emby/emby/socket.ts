@@ -14,45 +14,30 @@ export interface EmbyEvent<T = any> {
 	MessageId: string
 	MessageType: string
 }
-export const rxSocket = new Rx.Subject<EmbyEvent>()
+export const rxSocket = new Rx.Subject<Partial<EmbyEvent>>()
 
-let ws: ISockette
 process.nextTick(async () => {
 	let url = `${process.env.EMBY_LAN_ADDRESS}/embywebsocket?${qs.stringify({
 		api_key: process.env.EMBY_ADMIN_TOKEN || process.env.EMBY_API_KEY,
 		deviceId: process.env.EMBY_SERVER_ID,
 	})}`
-	ws = new Sockette(url, {
+	const ws = new Sockette(url, {
 		timeout: 3000,
 		onerror({ error }) {
+			rxSocket.next({ MessageType: 'OnError' })
 			console.error(`socket onerror ->`, error.message)
-			emby.Tail.disconnect()
 		},
 		onclose({ code, reason }) {
+			rxSocket.next({ MessageType: 'OnClose' })
 			console.warn(`socket onclose ->`, code, reason)
-			emby.Tail.disconnect()
 		},
 		onopen({ target }) {
+			rxSocket.next({ MessageType: 'OnOpen' })
 			let url = target.url as string
 			console.info(`socket onopen ->`, url.slice(0, url.indexOf('?')))
 			ws.json({ MessageType: 'SessionsStart', Data: '0,1500,900' })
 			ws.json({ MessageType: 'ScheduledTasksInfoStart', Data: '0,1000' })
 			// ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1500' })
-			emby.Tail.connect()
-			emby.PlaybackInfo.setUserNames()
-			// emby.sessions.sync()
-			// {
-			// 	;(async () => {
-			// 		let Sessions = await emby.sessions.get()
-			// 		for (let Session of Sessions) {
-			// 			console.log(`Session.Id ->`, Session.Id)
-			// 			ws.json({
-			// 				MessageType: 'SessionEventsStart',
-			// 				Data: `100,800,${Session.Id}`,
-			// 			})
-			// 		}
-			// 	})()
-			// }
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
@@ -64,19 +49,33 @@ process.nextTick(async () => {
 })
 
 rxSocket.subscribe(({ MessageType, Data }) => {
-	// if (['ScheduledTasksInfo'].includes(MessageType)) {
-	// 	// console.info(`rxSocket ->`, MessageType, '...')
+	if (MessageType.startsWith('On')) return
+	if (MessageType == 'Sessions') return
+	if (MessageType == 'ScheduledTasksInfo') return
+	if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
+	// if (MessageType == 'Sessions') {
+	// 	// console.info(`rxSocket Sessions ->`, Data)
+	// 	// let Sessions = emby.sessions.use(Data as emby.Session[])
+	// 	// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
 	// 	return
 	// }
-	// if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
-	if (MessageType == 'Sessions') {
-		// console.info(`rxSocket Sessions ->`, Data)
-		// let Sessions = emby.sessions.use(Data as emby.Session[])
-		// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
-		return
-	}
-	console.info(`rxSocket ->`, MessageType, Data)
+	console.log(`rxSocket ->`, MessageType, Data)
 })
+
+//
+
+// {
+// 	;(async () => {
+// 		let Sessions = await emby.sessions.get()
+// 		for (let Session of Sessions) {
+// 			console.log(`Session.Id ->`, Session.Id)
+// 			ws.json({
+// 				MessageType: 'SessionEventsStart',
+// 				Data: `100,800,${Session.Id}`,
+// 			})
+// 		}
+// 	})()
+// }
 
 // 	if (MessageType == 'LibraryChanged') {
 // 		console.warn(`rxSocket ->`, MessageType, Data)

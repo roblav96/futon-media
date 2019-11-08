@@ -10,7 +10,13 @@ import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 
-process.nextTick(() => exithook(() => Tail.disconnect()))
+process.nextTick(() => {
+	exithook(() => Tail.disconnect())
+	emby.rxSocket.subscribe(({ MessageType }) => {
+		if (['OnClose', 'OnError'].includes(MessageType)) Tail.disconnect()
+		if (['OnOpen'].includes(MessageType)) Tail.connect()
+	})
+})
 
 export class Tail {
 	private static tail: Tail
@@ -185,7 +191,7 @@ export const rxItem = rxItemId.pipe(
 		Item: await emby.library.byItemId(v.ItemId),
 		Session: await emby.sessions.byUserId(v.UserId),
 	})),
-	// Rx.op.tap(({ Item }) => console.log(`tap rxItem ->`, Item.Name)),
+	// Rx.op.tap(({ Item }) => console.info(`tap rxItem ->`, Item.Name)),
 	Rx.op.share(),
 )
 // rxItem.subscribe(({ Item }) => console.log(`rxItem ->`, Item))

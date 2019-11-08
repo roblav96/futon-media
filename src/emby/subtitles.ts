@@ -9,8 +9,7 @@ process.nextTick(() => {
 	)
 	rxSubtitles.subscribe(async ({ ItemId }) => {
 		let { MediaStreams } = await emby.library.byItemId(ItemId, { Fields: ['MediaStreams'] })
-		console.log(`MediaStreams ->`, MediaStreams)
-		// if (MediaStreams.find(v => v.Type == 'Subtitle')) return
+		if (MediaStreams.find(v => v.Type == 'Subtitle')) return
 		for (let query of [
 			{ IsPerfectMatch: 'false' },
 			{ IsPerfectMatch: 'false', IsForced: 'true' },
@@ -19,7 +18,6 @@ process.nextTick(() => {
 				query,
 				silent: true,
 			})) as emby.RemoteSubtitle[]
-			console.log(`subtitles ->`, subtitles)
 			if (_.isEmpty(subtitles)) continue
 			await emby.client.post(`/Items/${ItemId}/RemoteSearch/Subtitles/${subtitles[0].Id}`, {
 				silent: true,

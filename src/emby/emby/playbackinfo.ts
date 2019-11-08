@@ -15,6 +15,12 @@ const db = new Db(__filename)
 process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush())
 
+	emby.rxSocket.subscribe(async ({ MessageType }) => {
+		if (MessageType != 'OnOpen') return
+		let Users = await emby.User.get()
+		Users.forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
+	})
+
 	let rxPostedPlaybackInfo = emby.rxLine.pipe(
 		Rx.op.filter(({ level, message }) => {
 			return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
@@ -24,7 +30,6 @@ process.nextTick(async () => {
 		let { err, value } = fastParse(message.slice(message.indexOf('{')))
 		if (err) return console.error(`rxPostedPlaybackInfo ->`, err.message)
 		let { Id, UserId } = value as PlaybackInfo
-		// console.log(`rxPostedPlaybackInfo ->`)
 		await db.put(UserId, value)
 		await db.put(Id, value, utils.duration(1, 'day'))
 		await db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day'))
@@ -32,24 +37,10 @@ process.nextTick(async () => {
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
 	// console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
-
 	// console.log(`PLAYBACK_INFO ->`, _.mapValues(mocks.PLAYBACK_INFO, v => new PlaybackInfo(v)))
-
-	// let rxPlaybackInfo = emby.rxHttp.pipe(
-	// 	Rx.op.filter(({ method, parts, query }) => {
-	// 		return method == 'POST' && parts.includes('playbackinfo') && !!query.ItemId
-	// 	}),
-	// )
-	// rxPlaybackInfo.subscribe(async ({ query, ua }) => {
-	// 	let Session = await sessions.byUserId(UserId)
-	// 	console.log(`rxPlaybackInfo Session ->`, Session.json)
-	// })
 })
 
 export class PlaybackInfo {
-	static async setUserNames() {
-		;(await emby.User.get()).forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
-	}
 	static async get(ItemId: string, UserId = '') {
 		let value = (await db.get(UserId ? `${ItemId}:${UserId}` : ItemId)) as PlaybackInfo
 		return value ? new PlaybackInfo(value) : value
