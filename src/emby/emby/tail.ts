@@ -176,7 +176,7 @@ export const rxItemId = rxHttp.pipe(
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
 export const rxItem = rxItemId.pipe(
-	Rx.op.debounceTime(100),
+	// Rx.op.debounceTime(100),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),
 	// Rx.op.distinctUntilKeyChanged('ItemId'),
@@ -185,6 +185,7 @@ export const rxItem = rxItemId.pipe(
 		Item: await emby.library.byItemId(v.ItemId),
 		Session: await emby.sessions.byUserId(v.UserId),
 	})),
+	// Rx.op.tap(({ Item }) => console.log(`tap rxItem ->`, Item.Name)),
 	Rx.op.share(),
 )
 // rxItem.subscribe(({ Item }) => console.log(`rxItem ->`, Item))

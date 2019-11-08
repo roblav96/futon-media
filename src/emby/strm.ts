@@ -53,7 +53,7 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
 	let cacheds = torrents.filter(v => v.cached.length > 0)
-	console.log(`strm cacheds '${title}' ->`, cacheds.map(v => v.json), cacheds.length)
+	console.log(`strm cacheds '${title}' ->`, cacheds.map(v => v.short), cacheds.length)
 
 	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 

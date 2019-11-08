@@ -95,30 +95,25 @@ process.nextTick(() => {
 		}
 		means = means.map(v => _.floor(v))
 
-		let split = utils.stripStopWords(SearchTerm).split(' ')
-		let index = _.clamp(split.length - 1, 0, means.length - 1)
+		let spaces = utils.stripStopWords(SearchTerm).split(' ').length - 1
+		let index = _.clamp(spaces, 0, means.length - 1)
 		let mean = means[index]
-		if (index == 0) {
-			mean -= _.last(means)
-		}
+		if (spaces == 0) mean -= _.last(means)
 		// split = SearchTerm.split(' ')
-		if (split.length >= 3) {
-			mean = 1
-			means.push(1)
-		}
+		if (spaces >= 2) mean = 1
 		console.log(`rxSearch mean ->`, mean, means)
 
 		items = items.filter(item => {
-			if (utils.equals(item.title, SearchTerm)) {
+			if (spaces <= 2  && utils.equals(item.title, SearchTerm)) {
 				return !item.isJunk(_.last(means))
 			}
-			if (split.length == 1 && !utils.startsWith(item.title, SearchTerm)) {
+			if (spaces == 0 && !utils.startsWith(item.title, SearchTerm)) {
 				return false
 			}
-			if (split.length == 2 && utils.startsWith(item.title, SearchTerm)) {
+			if (spaces == 1 && utils.startsWith(item.title, SearchTerm)) {
 				return !item.isJunk(_.last(means))
 			}
-			if (split.length == 2 && utils.contains(item.title, SearchTerm)) {
+			if (spaces == 1 && utils.contains(item.title, SearchTerm)) {
 				return !item.isJunk(_.last(means))
 			}
 			return !item.isJunk(mean)

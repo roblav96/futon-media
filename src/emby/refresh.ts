@@ -13,6 +13,7 @@ process.nextTick(() => {
 	)
 	rxRefresh.subscribe(async ({ Item, Session }) => {
 		console.log(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
+		console.log(`Item ->`, Item)
 		let item = await emby.library.item(Item)
 		if (!item) return
 		if (Item.Type == 'Person') {

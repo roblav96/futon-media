@@ -201,7 +201,7 @@ export interface NowPlayingItem {
 	IndexNumber: number
 	IsFolder: boolean
 	LocalTrailerCount: number
-	MediaStreams: MediaStream[]
+	MediaStreams: emby.MediaStream[]
 	MediaType: string
 	Name: string
 	OfficialRating: string
@@ -231,43 +231,6 @@ export interface NowPlayingItem {
 	Studios: any[]
 	Taglines: any[]
 	Type: string
-	Width: number
-}
-
-export interface MediaStream {
-	AspectRatio: string
-	AverageFrameRate: number
-	BitDepth: number
-	BitRate: number
-	ChannelLayout: string
-	Channels: number
-	Codec: string
-	CodecTimeBase: string
-	ColorPrimaries: string
-	ColorSpace: string
-	ColorTransfer: string
-	DisplayTitle: string
-	Height: number
-	Index: number
-	IsAVC: boolean
-	IsAnamorphic: boolean
-	IsDefault: boolean
-	IsExternal: boolean
-	IsForced: boolean
-	IsInterlaced: boolean
-	IsTextSubtitleStream: boolean
-	Level: number
-	NalLengthSize: string
-	PixelFormat: string
-	Profile: string
-	Protocol: string
-	RealFrameRate: number
-	RefFrames: number
-	SampleRate: number
-	SupportsExternalStream: boolean
-	TimeBase: string
-	Type: string
-	VideoRange: string
 	Width: number
 }
 

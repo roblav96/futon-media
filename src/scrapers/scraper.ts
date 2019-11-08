@@ -143,8 +143,6 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 
 	if (!process.DEVELOPMENT) console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
 	console.info(Date.now() - t, `scrapeAll ->`, torrents.map(v => v.short), torrents.length)
-	// console.info(Date.now() - t, `scrapeAll ${torrents.length} torrents ->`, 'DONE')
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	return torrents
 }

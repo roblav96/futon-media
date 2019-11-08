@@ -63,20 +63,20 @@ process.nextTick(async () => {
 	exithook(() => ws.close())
 })
 
-// rxSocket.subscribe(({ MessageType, Data }) => {
-// 	// if (['ScheduledTasksInfo'].includes(MessageType)) {
-// 	// 	// console.info(`rxSocket ->`, MessageType, '...')
-// 	// 	return
-// 	// }
-// 	if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
-// 	if (MessageType == 'Sessions') {
-// 		// console.info(`rxSocket Sessions ->`, Data)
-// 		// let Sessions = emby.sessions.use(Data as emby.Session[])
-// 		// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
-// 		return
-// 	}
-// 	console.info(`rxSocket ->`, MessageType, Data)
-// })
+rxSocket.subscribe(({ MessageType, Data }) => {
+	// if (['ScheduledTasksInfo'].includes(MessageType)) {
+	// 	// console.info(`rxSocket ->`, MessageType, '...')
+	// 	return
+	// }
+	// if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
+	if (MessageType == 'Sessions') {
+		// console.info(`rxSocket Sessions ->`, Data)
+		// let Sessions = emby.sessions.use(Data as emby.Session[])
+		// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
+		return
+	}
+	console.info(`rxSocket ->`, MessageType, Data)
+})
 
 // 	if (MessageType == 'LibraryChanged') {
 // 		console.warn(`rxSocket ->`, MessageType, Data)
