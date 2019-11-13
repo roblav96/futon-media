@@ -158,6 +158,7 @@ async function syncCollections() {
 		}
 		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, schema.items.length)
 
+		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
 		let Items = await emby.library
 			.addAll(schema.items.filter(item => !mIds.has(emby.library.itemStrmPath(item))))
 			.catch(error => {
@@ -195,6 +196,8 @@ async function toCollections(items: media.Item[], Items: emby.Item[]) {
 		console.log(`Collection ->`, name)
 		let cresults = await pAll(parts.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
 		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk(1000))
+		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
+		// @ts-ignore
 		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()
 		let Collection = Collections.find(v => v.Name == name)
 		if (Collection) {

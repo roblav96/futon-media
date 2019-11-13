@@ -1,79 +1,55 @@
 import * as _ from 'lodash'
 import * as fastParse from 'fast-json-parse'
 import * as fs from 'fs-extra'
-import * as level from 'level'
-import * as levelcodec from 'level-codec'
-import * as leveldown from 'leveldown'
-import * as levelup from 'levelup'
-import * as matcher from 'matcher'
+import * as IORedis from 'ioredis'
 import * as path from 'path'
-import * as pkgup from 'read-pkg-up'
-import * as ttl from 'level-ttl'
-import * as utils from '@/utils/utils'
-import * as xdgBasedir from 'xdg-basedir'
+import fastStringify from 'fast-safe-stringify'
 
 export class Db {
-	level: levelup.LevelUp<leveldown.LevelDown>
+	redis: IORedis.Redis
 
 	constructor(public name: string) {
 		if (fs.pathExistsSync(name)) {
-			this.name = path.relative(process.mainModule.path, name).replace(/\//g, '-')
+			this.name = path
+				.relative(process.mainModule.path, name)
+				.replace(/\//g, ':')
+				.slice(0, -3)
 		}
-		let pkg = pkgup.sync({ cwd: __dirname }).packageJson
-		let location = path.join(xdgBasedir.cache, `${pkg.name}@${pkg.version}`, this.name)
-		fs.ensureDirSync(path.dirname(location))
-		let db = level(`${location}.db`, {
-			valueEncoding: 'json',
-		} as Partial<leveldown.LevelDownOpenOptions & levelcodec.CodecOptions>)
-		this.level = ttl(db, { sub: level(`${location}.ttl.db`) })
+		this.redis = new IORedis(6379, '127.0.0.1', { connectionName: this.name, db: 0 })
 	}
 
-	get<T = any>(key: string) {
-		return new Promise<T>(resolve => {
-			this.level.get(key, (error, value) => resolve(value as any))
-		})
+	async get<T = any>(key: string) {
+		let value = await this.redis.get(`${this.name}:${key}`)
+		value = fastParse(value).value || value
+		return (value as any) as T
 	}
 
-	put(key: string, value: any, ttl?: number) {
-		let options = _.isFinite(ttl) ? { ttl } : {}
-		return new Promise(resolve => {
-			this.level.put(key, value, options, error => {
-				if (error) console.error(`[DB] ${this.name} put '${key}' -> %O`, error.message)
-				resolve()
-			})
-		})
+	async put(key: string, value: any, ttl?: number) {
+		value = fastStringify.stable(value)
+		if (!_.isFinite(ttl)) await this.redis.set(`${this.name}:${key}`, value)
+		else await this.redis.setex(`${this.name}:${key}`, ttl / 1000, value)
 	}
 
-	del(key: string) {
-		return new Promise(resolve => {
-			this.level.del(key, error => {
-				if (error) console.error(`[DB] ${this.name} del '${key}' -> %O`, error.message)
-				resolve()
-			})
-		})
-	}
-
-	entries<T = any>() {
-		return new Promise<[string, T][]>((resolve, reject) => {
-			let entries = [] as [string, T][]
-			let stream = this.level.createReadStream() as NodeJS.ReadStream
-			stream.once('error', error => reject(error))
-			stream.on('data', ({ key, value }: any) => entries.push([key, value]))
-			stream.on('end', () => resolve(entries))
-		})
-	}
-	async keys() {
-		return (await this.entries()).map(([key, value]) => key)
-	}
-	async values() {
-		return (await this.entries()).map(([key, value]) => value)
+	async del(key: string) {
+		await this.redis.del(`${this.name}:${key}`)
 	}
 
 	async flush(pattern = '*') {
-		let keys = (await this.keys()).filter(key => matcher.isMatch(key, pattern))
+		let keys = await this.redis.keys(`${this.name}:${pattern}`)
 		if (keys.length == 0) return
 		console.warn(`[DB] ${this.name} flush '${pattern}' ->`, keys.sort())
-		await Promise.all(keys.map(key => this.del(key)))
+		await this.pipeline(keys.map(v => ['del', v]))
+	}
+
+	async pipeline(coms = [] as string[][]) {
+		let results = ((await this.redis.pipeline(coms).exec()) || []) as any[]
+		for (let i = 0; i < results.length; i++) {
+			if (results[i][0]) {
+				throw new Error(`coms[${i}] ${coms[i]} results[${i}] ${results[i][0]}`)
+			}
+			results[i] = results[i][1]
+		}
+		return results
 	}
 }
 

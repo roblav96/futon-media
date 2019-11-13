@@ -114,6 +114,7 @@ export class Item {
 	}
 	isPopular(votes: number) {
 		if (!_.has(this.main, 'votes')) return false
+		if (this.show) votes = _.ceil(votes * 0.75)
 		let months = _.ceil((Date.now() - this.released.valueOf()) / utils.duration(1, 'month'))
 		let penalty = 1 - _.clamp(months, 1, 12) / 12
 		votes = votes - votes * penalty * 0.75

@@ -118,6 +118,7 @@
 		"@types/flat": "0.0.28",
 		"@types/fs-extra": "^8.0.0",
 		"@types/http-errors": "^1.6.2",
+		"@types/ioredis": "^4.0.19",
 		"@types/leveldown": "^4.0.0",
 		"@types/levelup": "^3.1.0",
 		"@types/lodash": "^4.14.141",

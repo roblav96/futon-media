@@ -9,6 +9,7 @@ interface Env {
 	EMBY_SERVER_ID: string
 	EMBY_WAN_ADDRESS: string
 	MAILBOXLAYER_API_KEY: string
+	NODE_ENV: string
 	OFFCLOUD_KEY: string
 	OMDB_KEY: string
 	ORION_APP: string

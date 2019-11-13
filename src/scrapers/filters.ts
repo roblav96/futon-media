@@ -9,7 +9,7 @@ export const SKIPS = [
 	// ...utils.NSFWS,
 	'3d',
 	// 'avi',
-	// 'bonus',
+	'bonus',
 	'cam',
 	'camhd',
 	'camrip',

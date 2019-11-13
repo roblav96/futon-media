@@ -25,7 +25,7 @@ process.nextTick(async () => {
 		timeout: 3000,
 		onerror({ error }) {
 			rxSocket.next({ MessageType: 'OnError' })
-			console.error(`socket onerror ->`, error.message)
+			console.error(`socket onerror -> %O`, error.message)
 		},
 		onclose({ code, reason }) {
 			rxSocket.next({ MessageType: 'OnClose' })
@@ -41,26 +41,30 @@ process.nextTick(async () => {
 		},
 		onmessage({ data }) {
 			let { err, value } = fastParse(data)
-			if (err) return console.error(`socket onmessage ->`, err.message)
+			if (err) return console.error(`socket onmessage -> %O`, err.message)
 			rxSocket.next(value)
 		},
 	})
 	exithook(() => ws.close())
 })
 
-rxSocket.subscribe(({ MessageType, Data }) => {
-	if (MessageType.startsWith('On')) return
-	if (MessageType == 'Sessions') return
-	if (MessageType == 'ScheduledTasksInfo') return
-	if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
-	// if (MessageType == 'Sessions') {
-	// 	// console.info(`rxSocket Sessions ->`, Data)
-	// 	// let Sessions = emby.sessions.use(Data as emby.Session[])
-	// 	// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
-	// 	return
-	// }
-	console.log(`rxSocket ->`, MessageType, Data)
-})
+// rxSocket.subscribe(({ MessageType, Data }) => {
+// 	if (MessageType.startsWith('On')) return
+// 	if (MessageType == 'Sessions') return
+// 	if (MessageType == 'ScheduledTasksInfo') return
+// 	if (MessageType == 'ActivityLogEntry' && _.isEmpty(Data)) return
+// 	if (MessageType == 'RefreshProgress') {
+// 		if (Data.ItemId == '4' || Data.ItemId == '5') return
+// 		// if (Data.Progress != '100') return
+// 	}
+// 	// if (MessageType == 'Sessions') {
+// 	// 	// console.info(`rxSocket Sessions ->`, Data)
+// 	// 	// let Sessions = emby.sessions.use(Data as emby.Session[])
+// 	// 	// console.info(`rxSocket Sessions ->`, Sessions.map(v => v.json))
+// 	// 	return
+// 	// }
+// 	console.log(`rxSocket ->`, MessageType, Data)
+// })
 
 //
 

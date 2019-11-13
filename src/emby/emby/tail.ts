@@ -57,19 +57,12 @@ export class Tail {
 		let args = ['--follow=name', '--lines=0', '--sleep-interval=0.1', path.basename(logfile)]
 		this.child = execa('tail', args, {
 			all: true,
+			buffer: false,
 			cwd: path.dirname(logfile),
+			reject: false,
 			stripFinalNewline: false,
 		})
-		this.child.then(() => Tail.disconnect())
-		this.child.catch(error => Tail.disconnect())
 		this.child.finally(() => Tail.disconnect())
-		this.child.on('close', (code, signal) => Tail.disconnect())
-		this.child.on('exit', (code, signal) => Tail.disconnect())
-		this.child.on('disconnect', () => Tail.disconnect())
-		this.child.on('error', error => Tail.disconnect())
-		this.child.all.on('close', () => Tail.disconnect())
-		this.child.all.on('end', () => Tail.disconnect())
-		this.child.all.on('error', () => Tail.disconnect())
 		console.info(`tail connected ->`, path.basename(logfile))
 
 		let limbo = ''
@@ -176,13 +169,13 @@ export const rxItemId = rxHttp.pipe(
 	Rx.op.map(v => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
 	// Rx.op.debounceTime(10),
 	// Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
-	// Rx.op.tap(({ ItemId }) => console.log(`rxItemId.tap ->`, ItemId)),
+	// Rx.op.tap(({ ItemId }) => console.log(`tap rxItemId ->`, ItemId)),
 	Rx.op.share(),
 )
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
 export const rxItem = rxItemId.pipe(
-	// Rx.op.debounceTime(100),
+	Rx.op.debounceTime(100),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),
 	// Rx.op.distinctUntilKeyChanged('ItemId'),
@@ -191,7 +184,7 @@ export const rxItem = rxItemId.pipe(
 		Item: await emby.library.byItemId(v.ItemId),
 		Session: await emby.sessions.byUserId(v.UserId),
 	})),
-	// Rx.op.tap(({ Item }) => console.info(`tap rxItem ->`, Item.Name)),
+	// Rx.op.tap(({ Item, url }) => console.log(`tap rxItem ->`, emby.library.toTitle(Item), url)),
 	Rx.op.share(),
 )
 // rxItem.subscribe(({ Item }) => console.log(`rxItem ->`, Item))
