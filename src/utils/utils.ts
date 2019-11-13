@@ -173,23 +173,26 @@ export function unisolate([a, b]: string[]) {
 	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
 }
 
-export interface SlugOptions {
-	lowercase: boolean
-	separator: string
-	squash: boolean
-	title: boolean
-}
-export function toSlug(value: string, options = {} as Partial<SlugOptions>) {
+export function toSlug(
+	value: string,
+	options = {} as Partial<{
+		lowercase: boolean
+		separator: string
+		squash: boolean
+		title: boolean
+	}>,
+) {
 	_.defaults(options, {
 		lowercase: options.title != true,
 		separator: ' ',
 		squash: options.title == true,
-	} as SlugOptions)
+	} as Parameters<typeof toSlug>[1])
 	value = clean(value)
 	if (options.squash) value = squash(value)
-	let slug = trim(value.replace(/[^a-z0-9\s]/gi, ' '))
+	// value = options.squash ? squash(value) : clean(value)
+	let slug = trim(value.replace(/[^a-z\d\s]/gi, ' '))
 	if (options.lowercase) slug = slug.toLowerCase()
-	if (options.separator != ' ') slug = slug.replace(/\s/g, options.separator)
+	if (options.separator != ' ') slug = slug.replace(/\s+/g, options.separator)
 	return slug
 }
 

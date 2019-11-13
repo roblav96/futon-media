@@ -8,21 +8,27 @@ process.nextTick(() => {
 		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
 	)
 	rxSubtitles.subscribe(async ({ ItemId }) => {
-		let { MediaStreams } = (await emby.library.Items({
+		let Item = (await emby.library.Items({
 			Fields: ['MediaStreams'],
 			Ids: [ItemId],
 		}))[0]
-		if (MediaStreams.find(v => v.Type == 'Subtitle')) return
 		for (let query of [
-			{ IsPerfectMatch: 'false' },
 			{ IsPerfectMatch: 'false', IsForced: 'true' },
+			{ IsPerfectMatch: 'false' },
 		]) {
-			let subtitles = (await emby.client.get(`/Items/${ItemId}/RemoteSearch/Subtitles/eng`, {
+			let Subtitle = Item.MediaStreams.find(
+				v => v.Type == 'Subtitle' && v.IsForced == !!query.IsForced,
+			)
+			if (Subtitle) continue
+			let Subtitles = (await emby.client.get(`/Items/${ItemId}/RemoteSearch/Subtitles/eng`, {
 				query,
 				silent: true,
 			})) as emby.RemoteSubtitle[]
-			if (_.isEmpty(subtitles)) continue
-			await emby.client.post(`/Items/${ItemId}/RemoteSearch/Subtitles/${subtitles[0].Id}`, {
+			let ItemName = Item.SeriesName || `${Item.Name} ${Item.ProductionYear}`
+			Subtitles = Subtitles.filter(v => v.Format == 'srt' && utils.contains(v.Name, ItemName))
+			Subtitles = _.orderBy(Subtitles, 'DownloadCount', 'desc')
+			if (_.isEmpty(Subtitles)) continue
+			await emby.client.post(`/Items/${ItemId}/RemoteSearch/Subtitles/${Subtitles[0].Id}`, {
 				silent: true,
 			})
 		}
