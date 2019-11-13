@@ -19,7 +19,7 @@ process.nextTick(() => {
 		}),
 		Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
 		Rx.op.concatMap(async ({ ItemId, UserId }) => {
-			let Item = await emby.library.byItemId(ItemId)
+			let Item = (await emby.library.Items({ Ids: [ItemId] }))[0]
 			let Session = await emby.sessions.byUserId(UserId)
 			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 			let PlaybackInfo = await Session.getPlaybackInfo()
@@ -37,7 +37,7 @@ process.nextTick(() => {
 				})) as trakt.Season[]
 				seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
 				let items = seasons.map(season =>
-					new media.Item(JSON.parse(JSON.stringify(item))).use({
+					new media.Item(item.result).use({
 						type: 'season',
 						season,
 					}),

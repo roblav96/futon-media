@@ -8,7 +8,10 @@ process.nextTick(() => {
 		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
 	)
 	rxSubtitles.subscribe(async ({ ItemId }) => {
-		let { MediaStreams } = await emby.library.byItemId(ItemId, { Fields: ['MediaStreams'] })
+		let { MediaStreams } = (await emby.library.Items({
+			Fields: ['MediaStreams'],
+			Ids: [ItemId],
+		}))[0]
 		if (MediaStreams.find(v => v.Type == 'Subtitle')) return
 		for (let query of [
 			{ IsPerfectMatch: 'false' },

@@ -81,7 +81,7 @@ fastify.get('/strm', async (request, reply) => {
 	let Query = _.mapValues(request.query, v =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
-	let Item = await emby.library.byPath(emby.library.toStrmPath(Query, true))
+	let Item = (await emby.library.Items({ Path: emby.library.toStrmPath(Query, true) }))[0]
 	let title = emby.library.toTitle(Item)
 	console.log(`/strm ->`, `'${title}'`)
 

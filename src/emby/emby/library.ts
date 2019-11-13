@@ -100,6 +100,7 @@ export const library = {
 	async Items(
 		query = {} as Partial<{
 			AnyProviderIdEquals: string[]
+			EnableImages: boolean
 			ExcludeItemIds: string[]
 			Fields: string[]
 			Filters: string
@@ -110,6 +111,7 @@ export const library = {
 			IsVirtualUnaired: boolean
 			Limit: number
 			MinDateLastSaved: string
+			MinIndexNumber: number
 			ParentId: string
 			Path: string
 			Recursive: boolean
@@ -118,48 +120,40 @@ export const library = {
 			StartIndex: number
 		}>,
 	) {
-		if (!query.ImageTypeLimit) query.ImageTypeLimit = 0
-		if (!query.Ids && !query.Recursive) query.Recursive = true
-		if (!query.Ids && !query.Path && !query.IncludeItemTypes) {
-			query.IncludeItemTypes = ['Movie', 'Series', 'Episode', 'Person']
+		if (!_.isBoolean(query.EnableImages)) query.EnableImages = false
+		if (!_.isArray(query.Ids)) {
+			if (!_.isBoolean(query.Recursive)) query.Recursive = true
+			if (!_.isString(query.Path) && !_.isArray(query.IncludeItemTypes)) {
+				query.IncludeItemTypes = ['Movie', 'Series', 'Episode', 'Person']
+			}
 		}
-		query.Fields = (query.Fields || []).concat([
-			'DateCreated',
-			'IndexNumber',
-			// 'MediaSources',
-			// 'MediaStreams',
-			'MediaType',
-			'ParentId',
-			'ParentIndexNumber',
-			'Path',
-			'ProductionYear',
-			'ProviderIds',
-			// 'RunTimeTicks',
-			'SeasonId',
-			'SeasonName',
-			'SeriesId',
-			'SeriesName',
-			'SortName',
-			// 'SupportsLocalMetadata',
-		])
+		if (!_.isArray(query.Fields) || !_.isEmpty(query.Fields)) {
+			query.Fields = (query.Fields || []).concat([
+				// 'DateCreated',
+				// 'MediaStreams',
+				// 'Overview',
+				// 'ParentId',
+				// 'PremiereDate',
+				'ProductionYear',
+				'ProviderIds',
+				// 'RunTimeTicks',
+				// 'SortName',
+			])
+		}
+		query.Fields.push('Path')
+		query.Fields.sort()
 		return ((await emby.client.get('/Items', {
 			query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
 			// profile: process.DEVELOPMENT,
 			silent: true,
 		})).Items || []) as emby.Item[]
 	},
-	async byItemId(ItemId: string, query = {} as any) {
-		return (await library.Items(_.merge({ Ids: [ItemId] }, query)))[0]
-	},
-	async byPath(Path: string, query = {} as any) {
-		return (await library.Items(_.merge({ Path }, query)))[0]
-	},
-	async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>, query = {} as any) {
-		let AnyProviderIdEquals = Object.entries(utils.compact(ids)).map(
-			([k, v]) => `${k.toLowerCase()}.${v}`,
-		)
-		return (await library.Items(_.merge({ AnyProviderIdEquals }, query)))[0]
-	},
+	// async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>, query = {} as any) {
+	// 	let AnyProviderIdEquals = Object.entries(utils.compact(ids)).map(
+	// 		([k, v]) => `${k.toLowerCase()}.${v}`,
+	// 	)
+	// 	return (await library.Items(_.merge({ AnyProviderIdEquals }, query)))[0]
+	// },
 
 	async item(Item: emby.Item) {
 		let ids = Item.Path ? library.pathIds(Item.Path) : (Item.ProviderIds as never)
@@ -251,6 +245,7 @@ export const library = {
 	},
 	toTitle(Item: emby.Item) {
 		let name = Item.Name
+		if (Item.Type == 'Movie') name += ` (${Item.ProductionYear})`
 		if (Item.Type == 'Season') name = `${Item.SeriesName} ${Item.Name}`
 		if (Item.Type == 'Episode') {
 			let base = path.basename(Item.Path).slice(0, -5)
@@ -274,7 +269,7 @@ export const library = {
 			Updates.push(await library.toStrmFile(item))
 		}
 		if (item.show) {
-			item = new media.Item(JSON.parse(JSON.stringify(item)))
+			item = new media.Item(item.result)
 			await utils.pRandom(100)
 			let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
 				silent: true,
@@ -303,15 +298,10 @@ export const library = {
 		let t = Date.now()
 
 		let TotalRecordCount = (await emby.client.get('/Items', {
-			query: {
-				IncludeItemTypes: ['Movie', 'Episode'].join(),
-				Recursive: 'true',
-				Limit: '0',
-			},
+			query: { IncludeItemTypes: 'Movie,Episode', Limit: '0', Recursive: 'true' },
 			silent: true,
 		})).TotalRecordCount as number
 
-		let itemPaths = items.map(v => library.itemStrmPath(v))
 		let Updates = (await pAll(items.map(v => () => library.add(v)), { concurrency: 1 })).flat()
 		console.log(`addAll Updates ->`, Updates.length)
 
@@ -328,11 +318,12 @@ export const library = {
 				Rx.op.debounceTime(900),
 				Rx.op.concatMap(async () => {
 					let Items = await library.Items({
+						Fields: [],
 						IncludeItemTypes: ['Movie', 'Episode'],
 						Limit: 999999,
-						StartIndex: TotalRecordCount,
 						SortBy: 'DateCreated',
 						SortOrder: 'Ascending',
+						StartIndex: TotalRecordCount,
 					})
 					return _.difference(CreationPaths, Items.map(v => v.Path))
 				}),

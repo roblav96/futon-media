@@ -181,7 +181,7 @@ export const rxItem = rxItemId.pipe(
 	// Rx.op.distinctUntilKeyChanged('ItemId'),
 	Rx.op.concatMap(async v => ({
 		...v,
-		Item: await emby.library.byItemId(v.ItemId),
+		Item: (await emby.library.Items({ Ids: [v.ItemId] }))[0],
 		Session: await emby.sessions.byUserId(v.UserId),
 	})),
 	// Rx.op.tap(({ Item, url }) => console.log(`tap rxItem ->`, emby.library.toTitle(Item), url)),

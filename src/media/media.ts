@@ -468,6 +468,10 @@ export class Item {
 		return _.uniq(stragglers.filter(Boolean))
 	}
 
+	get result() {
+		return JSON.parse(JSON.stringify(_.pick(this, TYPES))) as Partial<trakt.Result>
+	}
+
 	constructor(result: Partial<trakt.Result>) {
 		this.use(result)
 	}

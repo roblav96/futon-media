@@ -8,20 +8,30 @@ import * as utils from '@/utils/utils'
 process.nextTick(() => {
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)),
-		Rx.op.concatMap(async v => ({ ...v, item: await emby.library.item(v.Item) })),
+		Rx.op.concatMap(async ({ Item, Session }) => {
+			console.warn(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
+			let item = await emby.library.item(Item)
+			if (!item) {
+				console.warn(`rxRefresh !item ->`, Item)
+				throw new Error(`!item`)
+			}
+			if (['Movie', 'Series', 'Episode'].includes(Item.Type)) {
+				await emby.library.addQueue([item])
+			}
+			if (Item.Type == 'Person') {
+				let items = (await trakt.resultsFor(item.person)).map(v => new media.Item(v))
+				items = items.filter(v => !v.isJunk(1000))
+				items.sort((a, b) => b.main.votes - a.main.votes)
+				await emby.library.addQueue(items)
+			}
+			return { Item, item }
+		}),
+		Rx.op.catchError((error, caught) => {
+			console.error(`rxRefresh -> %O`, error)
+			return caught
+		}),
 	)
-	rxRefresh.subscribe(async ({ Item, item, Session }) => {
-		console.warn(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
-		if (!item) return
-		if (Item.Type == 'Person') {
-			let items = (await trakt.resultsFor(item.person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk(1000))
-			items.sort((a, b) => b.main.votes - a.main.votes)
-			await emby.library.addQueue(items)
-		}
-		if (['Movie', 'Series', 'Episode'].includes(Item.Type)) {
-			await emby.library.addQueue([item])
-		}
+	rxRefresh.subscribe(async ({ Item, item }) => {
 		if (item.show && item.show.status == 'returning series') {
 			let Id = Item.SeriesId || Item.Id
 			let Seasons = await emby.library.Items({ IncludeItemTypes: ['Season'], ParentId: Id })
