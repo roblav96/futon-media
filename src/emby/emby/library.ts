@@ -301,7 +301,6 @@ export const library = {
 	async addAll(items: media.Item[]) {
 		if (items.length == 0) return []
 		let t = Date.now()
-		let MinDate = dayjs().toISOString()
 
 		let TotalRecordCount = (await emby.client.get('/Items', {
 			query: {
@@ -318,77 +317,10 @@ export const library = {
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
-			console.info(`addAll Creations ->`, Creations.length, MinDate)
+			console.info(`addAll Creations ->`, Creations.length)
 
-			// await emby.client.post('/Library/Media/Updated', {
-			// 	body: { Updates: Creations },
-			// 	retries: [],
-			// 	// silent: true,
-			// 	timeout: utils.duration(1, 'minute'),
-			// })
-			// await library.refresh()
-
-			// await emby.client.post(`/Items/1/Refresh`, {
-			// 	query: {
-			// 		Recursive: 'true',
-			// 		ImageRefreshMode: 'Default',
-			// 		MetadataRefreshMode: 'Default',
-			// 		ReplaceAllImages: 'false',
-			// 		ReplaceAllMetadata: 'false',
-			// 	},
-			// 	retries: [],
-			// 	// silent: true,
-			// 	timeout: utils.duration(1, 'minute'),
-			// })
-
-			// for (let [type, folder] of Object.entries(library.folders)) {
-			// 	if (Creations.find(v => v.Path.startsWith(folder.Location))) {
-			// 	}
-			// }
-
-			await library.refresh()
-			// for (let [key, folder] of Object.entries(library.folders)) {
-			// 	if (Creations.find(v => v.Path.startsWith(folder.Location))) {
-			// 		await emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
-			// 			query: {
-			// 				Recursive: 'true',
-			// 				ImageRefreshMode: 'Default',
-			// 				MetadataRefreshMode: 'Default',
-			// 				ReplaceAllImages: 'false',
-			// 				ReplaceAllMetadata: 'false',
-			// 			},
-			// 			retries: [],
-			// 			// silent: true,
-			// 			timeout: utils.duration(1, 'minute'),
-			// 		})
-			// 		// // let rxRefreshProgress = emby.rxSocket.pipe(
-			// 		// // 	Rx.op.filter(({ MessageType, Data }) => {
-			// 		// // 		if (MessageType != 'RefreshProgress') return
-			// 		// // 		return Data.ItemId == folder.ItemId && Data.Progress == '100'
-			// 		// // 	}),
-			// 		// // 	Rx.op.take(1),
-			// 		// // )
-			// 		// await Promise.all([
-			// 		// 	// rxRefreshProgress.toPromise(),
-			// 		// 	emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
-			// 		// 		query: {
-			// 		// 			Recursive: 'true',
-			// 		// 			ImageRefreshMode: 'Default',
-			// 		// 			MetadataRefreshMode: 'Default',
-			// 		// 			ReplaceAllImages: 'false',
-			// 		// 			ReplaceAllMetadata: 'false',
-			// 		// 		},
-			// 		// 		retries: [],
-			// 		// 		// silent: true,
-			// 		// 		timeout: utils.duration(1, 'minute'),
-			// 		// 	}),
-			// 		// ])
-			// 	}
-			// }
-
-			let CreationPaths = Creations.map(v => v.Path).sort()
-			console.log(`CreationPaths ->`, CreationPaths, CreationPaths.length)
 			let FolderIds = Object.values(library.folders).map(v => v.ItemId)
+			let CreationPaths = Creations.map(v => v.Path).sort()
 			let rxRefreshProgress = emby.rxSocket.pipe(
 				Rx.op.filter(({ MessageType, Data }) => {
 					return MessageType == 'RefreshProgress' && FolderIds.includes(Data.ItemId)
@@ -405,104 +337,14 @@ export const library = {
 					return _.difference(CreationPaths, Items.map(v => v.Path))
 				}),
 				Rx.op.filter(difference => {
-					console.info(`CreationPaths difference ->`, difference.length)
+					console.log(`CreationPaths difference ->`, difference.length)
 					return difference.length == 0
 				}),
 				Rx.op.take(1),
 			)
-			await rxRefreshProgress.toPromise()
 
-			// while (true) {
-			// 	await utils.pTimeout(3000)
-			// 	let Items = await library.Items({
-			// 		IncludeItemTypes: ['Movie', 'Episode'],
-			// 		Limit: CreationPaths.length,
-			// 		SortBy: 'DateCreated',
-			// 		SortOrder: 'Descending',
-			// 	})
-			// 	let difference = _.difference(CreationPaths, Items.map(v => v.Path))
-			// 	console.log(`CreationPaths difference ->`, difference, difference.length)
-			// 	if (difference.length == 0) break
-			// }
-
-			// await utils.pTimeout(1000)
-			// let Items = await library.Items({
-			// 	IncludeItemTypes: ['Movie', 'Episode'],
-			// 	Limit: Creations.length,
-			// 	SortBy: 'DateCreated',
-			// 	SortOrder: 'Descending',
-			// })
-			// Items = Items.filter(
-			// 	v => new Date(v.DateCreated).valueOf() > new Date(MinDate).valueOf(),
-			// )
-			// console.log(`Items ->`, Items.map(v => v))
+			await Promise.all([library.refresh(), rxRefreshProgress.toPromise()])
 		}
-
-		// let Items = (await pAll(
-		// 	items.map(item => () => library.byPath(library.itemStrmPath(item))),
-		// 	{ concurrency: 1 },
-		// )).filter(Boolean)
-
-		// if (items.length != Items.length) {
-		// 	throw new Error(`items.length != Items.length`)
-		// }
-
-		// let pItems = items.map(item => () => library.byPath(library.itemStrmPath(item)))
-		// let Items = [] as emby.Item[]
-		// while (pItems.length > 0) {
-		// 	if (Date.now() > t + utils.duration(1, 'minute')) {
-		// 		throw new Error(`addAll duration > 1 minute`)
-		// 	}
-		// 	// console.log(`addAll while pItems ->`, pItems.length)
-		// 	for (let i = pItems.length; i--; ) {
-		// 		if (i < pItems.length - 1) await utils.pRandom(300)
-		// 		let pItem = pItems[i]
-		// 		let Item = await pItem()
-		// 		if (!Item) continue
-		// 		Items.push(Item)
-		// 		pItems.splice(i, 1)
-		// 	}
-		// 	if (pItems.length > 0) await utils.pRandom(1000)
-		// }
-
-		// if (Creations.length > 0) await library.unrefresh()
-		// for (let Item of Items) {
-		// 	let Creation = Creations.find(v => v.Path.startsWith(Item.Path))
-		// 	if (!Creation) continue
-		// 	console.log(`Creation Item ->`, `[${Item.Type}]`, Item.Name)
-		// 	await emby.client.post(`/Items/${Item.Id}/Refresh`, {
-		// 		query: {
-		// 			ImageRefreshMode: 'Default',
-		// 			MetadataRefreshMode: 'Default',
-		// 			Recursive: 'true',
-		// 			ReplaceAllImages: 'false',
-		// 			ReplaceAllMetadata: 'false',
-		// 		},
-		// 		silent: true,
-		// 	})
-		// 	// await utils.pRandom(1000)
-		// 	while (true) {
-		// 		await utils.pRandom(300)
-		// 		let Created = await library.byItemId(Item.Id)
-		// 		if (Created.Name != Item.Name) {
-		// 			console.log(`Creation Created ->`, `[${Item.Type}]`, Created.Name)
-		// 			break
-		// 		}
-		// 	}
-		// }
-
-		// let Sessions = await emby.sessions.get()
-		// for (let Session of Sessions) {
-		// 	await Session.command('LibraryChanged', {
-		// 		CollectionFolders: [],
-		// 		FoldersAddedTo: ['4'],
-		// 		FoldersRemovedFrom: [],
-		// 		IsEmpty: false,
-		// 		ItemsAdded: [],
-		// 		ItemsRemoved: [],
-		// 		ItemsUpdated: Items.map(v => v.Id),
-		// 	})
-		// }
 
 		console.info(Date.now() - t, `addAll ${Updates.length} Updates ->`, 'DONE')
 		return Updates
