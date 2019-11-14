@@ -90,6 +90,7 @@ export class Item {
 		return false
 	}
 	isJunk(votes: number) {
+		let is500 = this.isPopular(500)
 		if (this.invalid) return true
 		if (!this.main.overview) return true
 		if (!this.main.country && !this.main.language) return true
@@ -98,8 +99,8 @@ export class Item {
 			if (this.main.country != 'us' && this.main.language != 'en') return true
 		}
 		if (this.released.valueOf() > Date.now()) return true
-		if (!this.runtime || this.runtime < 10) return true
-		if (_.isEmpty(this.main.genres)) return true
+		if ((!this.runtime || this.runtime < 10) && !is500) return true
+		if (_.isEmpty(this.main.genres) && !is500) return true
 		if (this.movie) {
 			if (!this.movie.trailer) return true
 			if (!this.movie.certification) return true
@@ -109,6 +110,7 @@ export class Item {
 			if (!this.show.network) return true
 			if (!this.show.first_aired) return true
 			if (!this.show.aired_episodes) return true
+			if (!this.show.certification) return true
 		}
 		return !this.isPopular(votes)
 	}

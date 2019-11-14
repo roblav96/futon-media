@@ -13,7 +13,7 @@ process.nextTick(() => {
 			Ids: [ItemId],
 		}))[0]
 		if (Item.MediaStreams.find(v => v.Type == 'Subtitle')) return
-		console.warn(`[${Session.short}] rxSubtitles ->`, emby.library.toTitle(Item))
+		// console.warn(`[${Session.short}] rxSubtitles ->`, emby.library.toTitle(Item))
 		for (let query of [
 			{ IsPerfectMatch: 'false', IsForced: 'true' },
 			{ IsPerfectMatch: 'false' },

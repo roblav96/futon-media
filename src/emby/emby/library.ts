@@ -101,9 +101,11 @@ export const library = {
 		query = {} as Partial<{
 			AnyProviderIdEquals: string[]
 			EnableImages: boolean
+			EnableImageTypes: string[]
 			ExcludeItemIds: string[]
 			Fields: string[]
 			Filters: string
+			HasOverview: boolean
 			Ids: string[]
 			ImageTypeLimit: number
 			IncludeItemTypes: string[]

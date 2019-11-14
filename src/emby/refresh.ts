@@ -35,20 +35,32 @@ process.nextTick(() => {
 		}),
 	)
 	rxRefresh.subscribe(async ({ Item, item }) => {
-		if (item.show && item.show.status == 'returning series') {
-			let Id = Item.SeriesId || Item.Id
-			let Seasons = await emby.library.Items({ IncludeItemTypes: ['Season'], ParentId: Id })
-			let Season = _.last(_.sortBy(Seasons, 'IndexNumber'))
-			await emby.client.post(`/Items/${Season.Id}/Refresh`, {
-				query: {
-					Recursive: 'true',
-					ImageRefreshMode: 'FullRefresh',
-					MetadataRefreshMode: 'FullRefresh',
-					ReplaceAllImages: 'false',
-					ReplaceAllMetadata: 'false',
-				},
-				// silent: true,
+		// if (item.show && item.show.status == 'returning series') {
+		if (true) {
+			let Episodes = await emby.library.Items({
+				EnableImages: true,
+				EnableImageTypes: ['Primary'],
+				Fields: ['Overview'],
+				HasOverview: false,
+				ImageTypeLimit: 1,
+				IncludeItemTypes: ['Episode'],
+				ParentId: Item.SeriesId || Item.Id,
+				SortBy: 'PremiereDate',
+				SortOrder: 'Descending',
 			})
+			console.log(`Episodes ->`, Episodes, Episodes.length)
+
+			// let Season = _.last(_.sortBy(Seasons, 'IndexNumber'))
+			// await emby.client.post(`/Items/${Season.Id}/Refresh`, {
+			// 	query: {
+			// 		Recursive: 'true',
+			// 		ImageRefreshMode: 'FullRefresh',
+			// 		MetadataRefreshMode: 'FullRefresh',
+			// 		ReplaceAllImages: 'false',
+			// 		ReplaceAllMetadata: 'false',
+			// 	},
+			// 	// silent: true,
+			// })
 		}
 	})
 })
