@@ -2,16 +2,17 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"experimentalDecorators": true,
-		"lib": ["es2020"],
-		"module": "commonjs",
+		"importHelpers": true,
+		"lib": ["ESNext"],
+		"module": "CommonJS",
+		"noEmitHelpers": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,
-		"target": "esnext",
+		"target": "ES2015",
 		"paths": {
 			"@/*": ["src/*"]
 		}
 	},
-	"exclude": ["node_modules", "dist"],
 	"include": ["types/**/*.d.ts", "src/**/*.ts"]
 }

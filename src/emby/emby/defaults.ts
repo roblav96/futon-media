@@ -31,6 +31,7 @@ export const defaults = {
 			// 'items-Series-Person-sortorder': 'Descending',
 			'skipBackLength': '15000',
 			'skipForwardLength': '30000',
+			'stillwatchingms': '3600000',
 			'subtitleeditor-language': 'eng',
 			'tvhome': '',
 		},
