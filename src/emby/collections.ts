@@ -75,7 +75,7 @@ async function buildSchemas() {
 
 	lists.sort((a, b) => b.likes - a.likes)
 	lists = _.uniqWith(lists, (a, b) => {
-		if (a.ids.slug == b.ids.slug) return true
+		if (a.ids.trakt == b.ids.trakt) return true
 		if (utils.equals(a.name, b.name)) return true
 	})
 
@@ -83,7 +83,7 @@ async function buildSchemas() {
 		...lists.map(list => {
 			return {
 				name: utils.toSlug(list.name, { title: true }),
-				url: `/users/${list.user.ids.slug}/lists/${list.ids.slug}/items`,
+				url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
 			} as CollectionSchema
 		}),
 	)

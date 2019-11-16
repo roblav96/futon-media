@@ -35,8 +35,8 @@ process.nextTick(() => {
 		}),
 	)
 	rxRefresh.subscribe(async ({ Item, item }) => {
-		// if (item.show && item.show.status == 'returning series') {
-		if (true) {
+		if (item.show && item.show.status == 'returning series') {
+			// if (true) {
 			let Episodes = await emby.library.Items({
 				EnableImages: true,
 				EnableImageTypes: ['Primary'],
@@ -48,7 +48,8 @@ process.nextTick(() => {
 				SortBy: 'PremiereDate',
 				SortOrder: 'Descending',
 			})
-			console.log(`Episodes ->`, Episodes, Episodes.length)
+			let Episode = _.first(Episodes)
+			Episode.ParentIndexNumber
 
 			// let Season = _.last(_.sortBy(Seasons, 'IndexNumber'))
 			// await emby.client.post(`/Items/${Season.Id}/Refresh`, {

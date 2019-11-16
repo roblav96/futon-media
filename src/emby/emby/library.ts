@@ -42,7 +42,6 @@ export const library = {
 	},
 
 	folders: {
-		boxsets: { Location: '', ItemId: '' },
 		movies: { Location: '', ItemId: '' },
 		shows: { Location: '', ItemId: '' },
 	},
@@ -50,8 +49,6 @@ export const library = {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
-		let boxsets = Folders.find(v => v.CollectionType == 'boxsets')
-		library.folders.boxsets = { Location: boxsets.Locations[0], ItemId: boxsets.ItemId }
 		let movies = Folders.find(v => v.CollectionType == 'movies')
 		library.folders.movies = { Location: movies.Locations[0], ItemId: movies.ItemId }
 		let shows = Folders.find(v => v.CollectionType == 'tvshows')
@@ -174,17 +171,17 @@ export const library = {
 			if (['Movie', 'Person'].includes(Item.Type)) return item
 			let indexes = library.pathIndexes(Item.Path)
 			if (!item.season && ['Season', 'Episode'].includes(Item.Type)) {
-				let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
 					silent: true,
 				})) as trakt.Season[]
-				item.use({ type: 'season', season: seasons.find(v => v.number == indexes.season) })
+				item.use({ season: seasons.find(v => v.number == indexes.season) })
 			}
 			if (!item.episode && Item.Type == 'Episode') {
-				let url = `/shows/${item.slug}/seasons/${indexes.season}/episodes/${indexes.episode}`
+				let url = `/shows/${item.id}/seasons/${indexes.season}/episodes/${indexes.episode}`
 				let episode = (await trakt.client.get(url, {
 					silent: true,
 				})) as trakt.Episode
-				item.use({ type: 'episode', episode })
+				item.use({ episode })
 			}
 			return item
 		}
@@ -203,48 +200,6 @@ export const library = {
 		}
 		return { season, episode }
 	},
-
-	toStrmPath(query: StrmQuery, full = false) {
-		let file = `/${query.title} (${query.year})`
-		let dir = library.folders[`${query.type}s` as media.MainContentTypes].Location
-		if (query.imdb) file += ` [imdbid=${query.imdb}]`
-		if (query.tmdb) file += ` [tmdbid=${query.tmdb}]`
-		if (query.tvdb) file += ` [tvdbid=${query.tvdb}]`
-		if (query.type == 'movie') {
-			file += `/${query.title} (${query.year})`
-		}
-		if (full == false) {
-			let Path = `${dir}${file}`
-			return query.type == 'movie' ? `${Path}.strm` : Path
-		}
-		if (query.type == 'show') {
-			file += `/Season ${query.season}`
-			file += `/${query.title} `
-			file += `S${utils.zeroSlug(query.season)}`
-			file += `E${utils.zeroSlug(query.episode)}`
-		}
-		return `${dir}${file}.strm`
-	},
-	toStrmQuery(item: media.Item) {
-		let query = {
-			slug: item.ids.slug,
-			title: utils.toSlug(item.title, { title: true }),
-			type: item.type,
-			year: item.year,
-		} as StrmQuery
-		if (item.ids.imdb) query.imdb = item.ids.imdb
-		if (item.ids.tmdb) query.tmdb = item.ids.tmdb
-		if (item.ids.tvdb) query.tvdb = item.ids.tvdb
-		if (item.S.n) query.season = item.S.n
-		if (item.E.n) query.episode = item.E.n
-		return query
-	},
-	toStrmUrl(query: StrmQuery) {
-		return `${process.env.EMBY_WAN_ADDRESS}/strm?${qs.stringify(query)}`
-	},
-	itemStrmPath(item: media.Item, full?: boolean) {
-		return library.toStrmPath(library.toStrmQuery(item), full)
-	},
 	toTitle(Item: emby.Item) {
 		let name = Item.Name
 		if (Item.Type == 'Movie') name += ` (${Item.ProductionYear})`
@@ -254,6 +209,50 @@ export const library = {
 			name = `${Item.SeriesName} ${base.split(' ').pop()}`
 		}
 		return `[${Item.Type[0]}] ${name}`
+	},
+
+	toStrmPath(query: StrmQuery, full = false) {
+		let file = `/${query.slug} (${query.year})`
+		let dir = library.folders[`${query.type}s` as media.MainContentTypes].Location
+		if (query.imdb) file += ` [imdbid=${query.imdb}]`
+		if (query.tmdb) file += ` [tmdbid=${query.tmdb}]`
+		if (query.tvdb) file += ` [tvdbid=${query.tvdb}]`
+		// if (query.trakt) file += ` [traktid=${query.trakt}]`
+		if (query.type == 'movie') {
+			file += `/${query.slug}`
+		}
+		if (full == false) {
+			return query.type == 'movie' ? `${dir}${file}.strm` : `${dir}${file}`
+		}
+		if (query.type == 'show') {
+			file += `/Season ${query.season}`
+			file += `/${query.slug} `
+			file += `S${utils.zeroSlug(query.season)}`
+			file += `E${utils.zeroSlug(query.episode)}`
+		}
+		return `${dir}${file}.strm`
+	},
+	toStrmQuery(item: media.Item) {
+		let query = {
+			slug: item.ids.slug,
+			trakt: item.ids.trakt,
+			type: item.type,
+			year: item.year,
+		} as StrmQuery
+		if (item.ids.imdb) query.imdb = item.ids.imdb
+		if (item.ids.tmdb) query.tmdb = item.ids.tmdb
+		if (item.ids.tvdb) query.tvdb = item.ids.tvdb
+		if (item.episode) {
+			query.season = item.episode.season
+			query.episode = item.episode.number
+		}
+		return query
+	},
+	toStrmUrl(query: StrmQuery) {
+		return `${process.env.EMBY_WAN_ADDRESS}/strm?${qs.stringify(query)}`
+	},
+	itemStrmPath(item: media.Item, full?: boolean) {
+		return library.toStrmPath(library.toStrmQuery(item), full)
 	},
 
 	async toStrmFile(item: media.Item) {
@@ -268,22 +267,28 @@ export const library = {
 	async add(item: media.Item) {
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
-			Updates.push(await library.toStrmFile(item))
+			let Update = await library.toStrmFile(item)
+			// // if (Update.UpdateType == 'Created') {
+			// if (true) {
+			// 	let nfo = await emby.toMovieNfo(item)
+			// 	console.log('nfo ->\n\n', nfo)
+			// 	await fs.outputFile(Update.Path.replace('.strm', '.xml'), nfo)
+			// }
+			Updates.push(Update)
 		}
 		if (item.show) {
 			item = new media.Item(item.result)
 			await utils.pRandom(100)
-			let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+			let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
 				silent: true,
 			})) as trakt.Season[]
-			seasons = seasons.filter(v => v.number > 0 && v.episode_count > 0)
+			seasons = seasons.filter(
+				v => v.number > 0 && v.episode_count > 0 && v.aired_episodes > 0,
+			)
 			for (let season of seasons) {
-				item.use({ type: 'season', season })
-				for (let i = 1; i <= item.S.e; i++) {
-					item.use({
-						type: 'episode',
-						episode: { number: i, season: season.number } as trakt.Episode,
-					})
+				item.use({ season })
+				for (let i = 1; i <= item.season.episode_count; i++) {
+					item.use({ episode: { number: i, season: season.number } as trakt.Episode })
 					Updates.push(await library.toStrmFile(item))
 				}
 			}
@@ -349,8 +354,8 @@ export interface StrmQuery {
 	imdb: string
 	season: number
 	slug: string
-	title: string
 	tmdb: number
+	trakt: number
 	tvdb: number
 	type: media.MainContentType
 	year: number

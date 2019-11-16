@@ -46,6 +46,10 @@ export class Item {
 	get slug() {
 		return this.ids.slug
 	}
+	get id() {
+		if (isNaN(this.ids.slug as any)) return this.ids.slug
+		return this.ids.imdb || this.ids.trakt.toString()
+	}
 	get short() {
 		let short = `[${this.type[0].toUpperCase()}] ${this.slug}${
 			this.show ? ` [${this.show.aired_episodes} eps] ` : ' '
@@ -68,7 +72,7 @@ export class Item {
 		if (this.movie && this.movie.released) return new Date(this.movie.released)
 		if (this.episode && this.episode.first_aired) return new Date(this.episode.first_aired)
 		if (this.show && this.show.first_aired) return new Date(this.show.first_aired)
-		return new Date(new Date().setFullYear(this.year))
+		return new Date(new Date().setFullYear(this.year + 1))
 	}
 	get runtime() {
 		if (this.movie && this.movie.runtime) return this.movie.runtime
@@ -80,6 +84,7 @@ export class Item {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
 		if (this.ids.imdb && this.ids.imdb.startsWith('http')) return true
+		if (this.released.valueOf() > Date.now()) return true
 		if (this.movie) {
 			if (!this.ids.imdb) return true
 			if (!this.ids.tmdb) return true
@@ -90,7 +95,7 @@ export class Item {
 		return false
 	}
 	isJunk(votes: number) {
-		let is500 = this.isPopular(500)
+		let is100 = this.isPopular(100)
 		if (this.invalid) return true
 		if (!this.main.overview) return true
 		if (!this.main.country && !this.main.language) return true
@@ -98,9 +103,8 @@ export class Item {
 		if (this.main.country && this.main.language) {
 			if (this.main.country != 'us' && this.main.language != 'en') return true
 		}
-		if (this.released.valueOf() > Date.now()) return true
-		if ((!this.runtime || this.runtime < 10) && !is500) return true
-		if (_.isEmpty(this.main.genres) && !is500) return true
+		if ((!this.runtime || this.runtime < 10) && !is100) return true
+		if (_.isEmpty(this.main.genres) && !is100) return true
 		if (this.movie) {
 			if (!this.movie.trailer) return true
 			if (!this.movie.certification) return true
@@ -198,7 +202,7 @@ export class Item {
 	seasons: trakt.Season[]
 	async setSeasons() {
 		if (!this.show) return
-		this.seasons = ((await trakt.client.get(`/shows/${this.slug}/seasons`, {
+		this.seasons = ((await trakt.client.get(`/shows/${this.id}/seasons`, {
 			memoize: process.DEVELOPMENT,
 			silent: true,
 		})) as trakt.Season[]).filter(v => v.number > 0)
@@ -232,7 +236,7 @@ export class Item {
 	async setAliases() {
 		let aliases = [] as string[]
 
-		let response = (await trakt.client.get(`/${this.type}s/${this.slug}/aliases`, {
+		let response = (await trakt.client.get(`/${this.type}s/${this.id}/aliases`, {
 			memoize: process.DEVELOPMENT,
 			// silent: true,
 		})) as trakt.Alias[]
@@ -479,6 +483,10 @@ export class Item {
 	}
 
 	use(result: Partial<trakt.Result>) {
+		if (!result.type) {
+			let types = _.clone(TYPES).reverse()
+			result.type = types.find(v => result[v])
+		}
 		let picked = _.pick(result, TYPES)
 		_.merge(this, picked)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {

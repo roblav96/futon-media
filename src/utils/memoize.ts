@@ -16,10 +16,7 @@ function getter(desc: PropertyDescriptor, prop: string) {
 }
 
 export function Class({ prototype }) {
-	console.warn('Class ->')
-	console.log('prototype ->', prototype)
 	let descs = Object.getOwnPropertyDescriptors(prototype)
-	console.log('descs ->', descs)
 	Object.entries(descs).forEach(([prop, desc]) => {
 		if (_.isFunction(desc.get)) Object.defineProperty(prototype, prop, getter(desc, prop))
 	})
@@ -30,12 +27,8 @@ export function Desc(ctor: any, prop: string, desc: PropertyDescriptor) {
 }
 
 export function clear(ctor: any) {
-	console.warn('clear ->')
-	console.log('ctor ->', ctor)
 	let descs = Object.getOwnPropertyDescriptors(ctor)
-	console.log('descs ->', descs)
 	Object.entries(descs).forEach(([prop, desc]) => {
-		mem.clear(desc.value)
+		if (prop.startsWith(CACHE_KEY)) mem.clear(desc.value)
 	})
-	// Object.values(descs).forEach(desc => mem.clear(desc.value))
 }

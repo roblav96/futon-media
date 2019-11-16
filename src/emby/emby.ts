@@ -9,6 +9,7 @@ export const client = new http.Http({
 export * from '@/emby/config'
 export * from '@/emby/emby/defaults'
 export * from '@/emby/emby/library'
+export * from '@/emby/emby/metadata'
 export * from '@/emby/emby/playbackinfo'
 export * from '@/emby/emby/sessions'
 export * from '@/emby/emby/socket'

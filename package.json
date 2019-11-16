@@ -30,7 +30,7 @@
 		"watch:node": "just-wait --silent --pattern dist; sleep 1; nodemon --quiet",
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
 		"emby:restart": "echo 'killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
-		"emby:del": "echo 'rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*'",
+		"emby:del": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/library.*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/root/*; rm -rf ~/.config/emby-server/transcoding-temp;'",
 		"scripts:users-sync": "run-s build stop; node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {
@@ -75,7 +75,7 @@
 		"leven": "^3.1.0",
 		"lodash": "^4.17.15",
 		"matcher": "^2.0.0",
-		"mem": "^5.1.1",
+		"mem": "^6.0.0",
 		"module-alias": "^2.2.2",
 		"mri": "^1.1.4",
 		"multimatch": "^4.0.0",
@@ -108,7 +108,8 @@
 		"url-parse": "^1.4.7",
 		"validator": "^12.0.0",
 		"ws": "^7.1.2",
-		"xdg-basedir": "^4.0.0"
+		"xdg-basedir": "^4.0.0",
+		"xml-js": "^1.6.11"
 	},
 	"devDependencies": {
 		"@types/cheerio": "0.22.12",

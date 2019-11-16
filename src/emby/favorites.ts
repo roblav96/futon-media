@@ -32,7 +32,7 @@ process.nextTick(() => {
 				if (item.show && item.show.aired_episodes > 128) {
 					throw new Error(`${item.show.aired_episodes} aired_episodes greater than 128`)
 				}
-				let seasons = (await trakt.client.get(`/shows/${item.slug}/seasons`, {
+				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
 					silent: true,
 				})) as trakt.Season[]
 				seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)

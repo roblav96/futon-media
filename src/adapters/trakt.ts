@@ -83,6 +83,7 @@ export const client = new http.Http({
 })
 
 export const RESULT_ITEM = {
+	character: 'character',
 	collected_at: 'collected_at',
 	listed_at: 'listed_at',
 	rank: 'rank',
@@ -136,7 +137,7 @@ export function toFull(result: Result) {
 }
 
 export function uniqWith(results: Result[]) {
-	return _.uniqWith(results, (a, b) => toFull(a).ids.slug == toFull(b).ids.slug)
+	return _.uniqWith(results, (a, b) => toFull(a).ids.trakt == toFull(b).ids.trakt)
 }
 
 export interface IDs {
@@ -248,7 +249,6 @@ export interface Result extends Extras {
 export interface Extras {
 	character: string
 	collected_at: string
-	id: number
 	job: string
 	listed_at: string
 	rank: number
@@ -320,7 +320,9 @@ export interface User {
 	about: string
 	age: number
 	gender: string
-	ids: IDs
+	ids: {
+		slug: string
+	}
 	images: {
 		avatar: {
 			full: string

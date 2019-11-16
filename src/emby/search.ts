@@ -213,6 +213,6 @@ process.nextTick(() => {
 // 	if (!list) return []
 // 	console.warn(`list ->`, list)
 // 	return (await trakt.client.get(
-// 		`/users/${list.user.ids.slug}/lists/${list.ids.slug || list.ids.trakt}/items`
+// 		`/users/${list.user.ids.slug}/lists/${list.ids.trakt || list.ids.trakt}/items`
 // 	)) as trakt.Result[]
 // }

@@ -19,6 +19,7 @@ if (process.DEVELOPMENT) {
 			similarity: await import('string-similarity'),
 			ss: await import('simple-statistics'),
 			Url: await import('url-parse'),
+			xmljs: await import('xml-js'),
 		})
 	})
 }
