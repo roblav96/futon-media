@@ -268,12 +268,12 @@ export const library = {
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
 			let Update = await library.toStrmFile(item)
-			// // if (Update.UpdateType == 'Created') {
-			// if (true) {
-			// 	let nfo = await emby.toMovieNfo(item)
-			// 	console.log('nfo ->\n\n', nfo)
-			// 	await fs.outputFile(Update.Path.replace('.strm', '.xml'), nfo)
-			// }
+			// if (Update.UpdateType == 'Created') {
+			if (true) {
+				let xml = await emby.toMovieNfo(item)
+				console.log('xml ->\n\n', xml)
+				await fs.outputFile(Update.Path.replace('.strm', '.xml'), xml)
+			}
 			Updates.push(Update)
 		}
 		if (item.show) {

@@ -10,31 +10,30 @@ const _declaration = { _attributes: { version: '1.0', encoding: 'utf-8', standal
 
 export async function toMovieNfo(item: media.Item) {
 	// console.log('item ->', item)
-	let movie = {
-		plot: item.movie.overview,
-		outline: item.movie.tagline,
-		lockdata: false,
-		dateadded: dayjs().format('YYYY-MM-DD hh:mm:ss'),
-		title: item.movie.title,
-		originaltitle: item.movie.title,
-		year: item.movie.year,
-		mpaa: item.movie.certification,
-		imdbid: item.movie.ids.imdb,
-		tmdbid: item.movie.ids.tmdb,
-		premiered: item.movie.released,
-		releasedate: item.movie.released,
-		tagline: item.movie.tagline,
-		country: item.movie.country,
-		genre: item.movie.genres.map(v => _.startCase(v)),
-		id: item.movie.ids.imdb,
-		fileinfo: { streamdetails: { subtitle: [] } },
-		art: {
-			poster: 'https://image.tmdb.org/t/p/original/cOJsaT8jEmG9s1MziVIPpHBRpQ7.jpg',
-			fanart: 'https://image.tmdb.org/t/p/original/ut1svoui5yDO58PoSV7BC00udpj.jpg',
-		},
-	} as any
-	return xmljs.json2xml(JSON.stringify({ _declaration, movie }), {
+	let Item = {
+		CountryCode: item.movie.country,
+		Added: dayjs().format('YYYY-MM-DD'),
+		Language: item.movie.language,
+		// DateAdded: dayjs().format('YYYY-MM-DD hh:mm:ss'),
+		Genres: item.movie.genres.map(v => ({ Genre: _.startCase(v) })),
+		ContentRating: item.movie.certification,
+		OriginalTitle: item.movie.title,
+		LocalTitle: item.movie.title,
+		Overview: item.movie.overview,
+		PremiereDate: item.movie.released,
+		ProductionYear: item.movie.year,
+		Taglines: [{ Tagline: item.movie.tagline }],
+		// ProviderIds: {
+		// 	Imdb: item.movie.ids.imdb,
+		// 	Tmdb: item.movie.ids.tmdb.toString(),
+		// } as Partial<emby.ProviderIds>,
+		// Art: {
+		// 	Poster: 'https://image.tmdb.org/t/p/original/cOJsaT8jEmG9s1MziVIPpHBRpQ7.jpg',
+		// 	Fanart: 'https://image.tmdb.org/t/p/original/ut1svoui5yDO58PoSV7BC00udpj.jpg',
+		// },
+	} // as Partial<emby.Item>
+	return xmljs.json2xml(JSON.stringify({ _declaration, Item }), {
 		compact: true,
-		spaces: '\t',
+		spaces: '  ',
 	})
 }
