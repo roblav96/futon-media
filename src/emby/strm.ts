@@ -53,7 +53,11 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
 	let cacheds = torrents.filter(v => v.cached.length > 0)
-	console.log(`strm cacheds '${title}' ->`, cacheds.map(v => v.short), cacheds.length)
+	console.log(
+		`strm cacheds '${title}' ->`,
+		cacheds.map(v => v.short),
+		cacheds.length,
+	)
 
 	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
@@ -77,6 +81,10 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 
 fastify.get('/strm', async (request, reply) => {
 	if (_.isEmpty(request.query)) return reply.code(404).send(Buffer.from(''))
+
+	return reply.redirect(
+		`https://singingcavevirgin-sto.energycdn.com/dl/eeQ_trRJcfv6PGoTYLa4Kg/1575012201/675000842/5dd26e6dece535.37636901/Angel.Has.Fallen.2019.2160p.BluRay.REMUX.AVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv`,
+	)
 
 	let Query = _.mapValues(request.query, v =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,

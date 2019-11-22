@@ -22,6 +22,7 @@ export const VIDEO_EXTENSIONS = [
 export const UPLOADERS = [
 	'amiable',
 	'caffeine',
+	'cinefile',
 	'ctrlhd',
 	'dimension',
 	'epsilon',

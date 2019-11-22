@@ -9,13 +9,6 @@
 	"_moduleAliases": {
 		"@": "dist"
 	},
-	"nodemonConfig": {
-		"delay": "1000",
-		"exec": "NODE_ENV=development node --inspect dist/index.js",
-		"ext": "js",
-		"restartable": false,
-		"watch": "dist"
-	},
 	"scripts": {
 		"deploy": "run-s repo build restart",
 		"repo": "git pull; echo; git reset --hard origin/master",
@@ -27,7 +20,7 @@
 		"stop": "forever stop futon-media || true",
 		"start": "del dist; run-p --silent watch:*",
 		"watch:tsc": "tsc --watch --incremental",
-		"watch:node": "just-wait --silent --pattern dist; sleep 1; nodemon --quiet",
+		"watch:node": "just-wait --silent --pattern dist/index.js && watchexec --restart --debounce 100 --watch dist --exts js -- NODE_ENV=development node --inspect dist/index.js",
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
 		"emby:restart": "echo 'killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
 		"emby:del": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/library.*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/root/*; rm -rf ~/.config/emby-server/transcoding-temp;'",
@@ -82,6 +75,7 @@
 		"p-debounce": "^2.1.0",
 		"p-event": "^4.1.0",
 		"p-queue": "^6.2.1",
+		"pino": "^5.13.6",
 		"pretty-bytes": "^5.3.0",
 		"pretty-ms": "^5.0.0",
 		"prompts": "^2.3.0",
@@ -109,7 +103,6 @@
 	"devDependencies": {
 		"@types/cheerio": "0.22.12",
 		"@types/deep-diff": "^1.0.0",
-		"@types/encoding-down": "^5.0.0",
 		"@types/flat": "0.0.28",
 		"@types/fs-extra": "^8.0.0",
 		"@types/http-errors": "^1.6.2",
@@ -130,9 +123,7 @@
 		"@types/ws": "^6.0.3",
 		"del-cli": "^3.0.0",
 		"dts-generate": "^1.2.3",
-		"forever": "^1.0.0",
 		"just-wait": "^1.0.11",
-		"nodemon": "^1.19.3",
 		"npm-run-all": "^4.1.5",
 		"typescript": "^3.6.3"
 	},

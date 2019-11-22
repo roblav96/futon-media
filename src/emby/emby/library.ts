@@ -269,11 +269,11 @@ export const library = {
 		if (item.movie) {
 			let Update = await library.toStrmFile(item)
 			// if (Update.UpdateType == 'Created') {
-			if (true) {
-				let xml = await emby.toMovieNfo(item)
-				console.log('xml ->\n\n', xml)
-				await fs.outputFile(Update.Path.replace('.strm', '.xml'), xml)
-			}
+			// if (true) {
+			// 	let xml = await emby.toMovieXml(item)
+			// 	console.log('xml ->\n\n', xml)
+			// 	await fs.outputFile(Update.Path.replace('.strm', '.xml'), xml)
+			// }
 			Updates.push(Update)
 		}
 		if (item.show) {
@@ -438,6 +438,7 @@ export interface Item {
 	RunTimeTicks: number
 	ServerId: string
 	SortName: string
+	Status: string
 	Studios: {
 		Id: number
 		Name: string

@@ -11,7 +11,7 @@ import * as utils from '@/utils/utils'
 import exithook = require('exit-hook')
 
 process.nextTick(() => {
-	exithook(() => Tail.disconnect())
+	exithook(() => Tail.disconnect(true))
 	emby.rxSocket.subscribe(({ MessageType }) => {
 		if (['OnClose', 'OnError'].includes(MessageType)) Tail.disconnect()
 		if (['OnOpen'].includes(MessageType)) Tail.connect()
@@ -40,9 +40,9 @@ export class Tail {
 		Tail.busy = false
 	}
 	static reconnect = _.debounce(Tail.connect, 3000)
-	static disconnect() {
+	static disconnect(silent = false) {
 		if (Tail.tail) {
-			console.warn(`Tail disconnect ->`)
+			if (silent == false) console.warn(`Tail disconnect ->`)
 			Tail.tail.child.cancel()
 			Tail.tail.child.all.destroy()
 			Tail.tail.child.all.removeAllListeners()

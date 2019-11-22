@@ -4,6 +4,7 @@ import * as Rx from '@/shims/rxjs'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
+	if (process.DEVELOPMENT) return console.warn(`return`)
 	let rxSubtitles = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
 	)

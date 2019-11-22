@@ -8,11 +8,11 @@ import * as xmljs from 'xml-js'
 
 const _declaration = { _attributes: { version: '1.0', encoding: 'utf-8', standalone: 'yes' } }
 
-export async function toMovieNfo(item: media.Item) {
+export async function toMovieXml(item: media.Item) {
 	// console.log('item ->', item)
 	let Item = {
 		CountryCode: item.movie.country,
-		Added: dayjs().format('YYYY-MM-DD'),
+		// Added: dayjs().format('YYYY-MM-DD'),
 		Language: item.movie.language,
 		// DateAdded: dayjs().format('YYYY-MM-DD hh:mm:ss'),
 		Genres: item.movie.genres.map(v => ({ Genre: _.startCase(v) })),
@@ -23,6 +23,7 @@ export async function toMovieNfo(item: media.Item) {
 		PremiereDate: item.movie.released,
 		ProductionYear: item.movie.year,
 		Taglines: [{ Tagline: item.movie.tagline }],
+		Trailer: item.movie.trailer,
 		// ProviderIds: {
 		// 	Imdb: item.movie.ids.imdb,
 		// 	Tmdb: item.movie.ids.tmdb.toString(),
@@ -36,4 +37,36 @@ export async function toMovieNfo(item: media.Item) {
 		compact: true,
 		spaces: '  ',
 	})
+}
+
+// export async function toSeriesXml(item: media.Item) {
+// 	// console.log('item ->', item)
+// 	let Item = {
+// 		CountryCode: item.show.country,
+// 		// Added: dayjs().format('YYYY-MM-DD'),
+// 		Language: item.show.language,
+// 		// DateAdded: dayjs().format('YYYY-MM-DD hh:mm:ss'),
+// 		Genres: item.show.genres.map(v => ({ Genre: _.startCase(v) })),
+// 		ContentRating: item.show.certification,
+// 		OriginalTitle: item.show.title,
+// 		LocalTitle: item.show.title,
+// 		Overview: item.show.overview,
+// 		PremiereDate: item.show.released,
+// 		Status: _.capitalize(item.show.status),
+// 		ProductionYear: item.show.year,
+// 		Taglines: [{ Tagline: item.show.tagline }],
+// 		Trailer: item.show.trailer,
+// 		// ProviderIds: {
+// 		// 	Imdb: item.movie.ids.imdb,
+// 		// 	Tmdb: item.movie.ids.tmdb.toString(),
+// 		// } as Partial<emby.ProviderIds>,
+// 		// Art: {
+// 		// 	Poster: 'https://image.tmdb.org/t/p/original/cOJsaT8jEmG9s1MziVIPpHBRpQ7.jpg',
+// 		// 	Fanart: 'https://image.tmdb.org/t/p/original/ut1svoui5yDO58PoSV7BC00udpj.jpg',
+// 		// },
+// 	} // as Partial<emby.Item>
+// 	return xmljs.json2xml(JSON.stringify({ _declaration, Item }), {
+// 		compact: true,
+// 		spaces: '  ',
+// 	})
 }
