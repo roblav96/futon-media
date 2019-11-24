@@ -9,7 +9,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// process.DEVELOPMENT && (await db.flush())
+	// if (process.DEVELOPMENT) await db.flush()
 	schedule.scheduleJob('0 * * * *', () =>
 		sync().catch(error => console.error(`trackers sync -> %O`, error)),
 	)
@@ -18,9 +18,9 @@ process.nextTick(async () => {
 
 export let TRACKERS = [] as string[]
 
-async function sync(init = false) {
+async function sync(first = false) {
 	TRACKERS = (await db.get('trackers')) || []
-	if (init == true && TRACKERS.length > 0) return
+	if (TRACKERS.length > 0 && first == true) return
 	let resolved = (await Promise.all([
 		http.client.get(
 			'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt',

@@ -3,8 +3,14 @@ import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as trakt from '@/adapters/trakt'
+import * as tvdb from '@/adapters/tvdb'
 import * as utils from '@/utils/utils'
 import * as xmljs from 'xml-js'
+
+process.nextTick(async () => {
+	let all = await tvdb.getAll('71256')
+	console.log(`tvdb all ->`, all)
+})
 
 const _declaration = { _attributes: { version: '1.0', encoding: 'utf-8', standalone: 'yes' } }
 
