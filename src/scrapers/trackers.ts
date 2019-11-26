@@ -10,10 +10,10 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	// if (process.DEVELOPMENT) await db.flush()
+	await sync(true)
 	schedule.scheduleJob('0 * * * *', () =>
 		sync().catch(error => console.error(`trackers sync -> %O`, error)),
 	)
-	sync(true)
 })
 
 export let TRACKERS = [] as string[]

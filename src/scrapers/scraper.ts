@@ -14,6 +14,7 @@ import { UPLOADERS } from '@/utils/dicts'
 
 let providers = [] as typeof Scraper[]
 process.nextTick(async () => {
+	if (process.DEVELOPMENT) return console.warn(`return`)
 	// https://ibit.to/
 	// ████  https://www.putlockers.cr/  ████
 	// (await import('@/scrapers/providers/bitlord')).Bitlord,

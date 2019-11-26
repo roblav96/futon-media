@@ -19,29 +19,29 @@ declare module 'eventemitter3' {
 		on<Name extends Names>(
 			name: Name,
 			listener: EventEmitter3.Listener<Data>,
-			context?: any
+			context?: any,
 		): this
 		addListener<Name extends Names>(
 			name: Name,
 			listener: EventEmitter3.Listener<Data>,
-			context?: any
+			context?: any,
 		): this
 		once<Name extends Names>(
 			name: Name,
 			listener: EventEmitter3.Listener<Data>,
-			context?: any
+			context?: any,
 		): this
 		removeListener<Name extends Names>(
 			name: Name,
 			listener?: EventEmitter3.Listener<Data>,
 			context?: any,
-			once?: boolean
+			once?: boolean,
 		): this
 		off<Name extends Names>(
 			name: Name,
 			listener?: EventEmitter3.Listener<Data>,
 			context?: any,
-			once?: boolean
+			once?: boolean,
 		): this
 		removeAllListeners<Name extends Names>(name?: Name): this
 	}

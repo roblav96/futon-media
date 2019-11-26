@@ -1,8 +1,8 @@
 export * from 'httpie'
-import { HttpieResponse } from 'httpie'
-import { request } from 'https'
 import { globalAgent } from 'http'
+import { HttpieResponse } from 'httpie'
 import { parse, resolve } from 'url'
+import { request } from 'https'
 
 function toError(rej, res: Partial<HttpieResponse>, err?) {
 	err = err || new Error(res.statusMessage)
@@ -15,7 +15,6 @@ function toError(rej, res: Partial<HttpieResponse>, err?) {
 
 export function send(method, uri, opts = {} as any) {
 	return new Promise<HttpieResponse>((res, rej) => {
-		let out = ''
 		opts.method = method
 		let { redirect = true } = opts
 		if (uri && !!uri.toJSON) uri = uri.toJSON()
@@ -23,10 +22,12 @@ export function send(method, uri, opts = {} as any) {
 		opts.agent = opts.protocol === 'http:' ? globalAgent : void 0
 
 		let req = request(opts, (r: HttpieResponse) => {
-			r.setEncoding('utf8')
+			let encoding = r.headers['transfer-encoding'] || r.headers['content-transfer-encoding']
+			let binary = encoding == 'binary'
+			let out = (binary ? [] : '') as any
 
 			r.on('data', d => {
-				out += d
+				binary ? out.push(d) : (out += d)
 			})
 
 			r.on('end', () => {
@@ -38,14 +39,14 @@ export function send(method, uri, opts = {} as any) {
 						return toError(rej, r, err)
 					}
 				}
-				;(r as any).data = out
+				;(r as any).data = binary ? Buffer.concat(out) : out
 				if (r.statusCode >= 400) {
 					toError(rej, r)
 				} else if (r.statusCode > 300 && redirect && r.headers.location) {
 					opts.path = resolve(opts.path, r.headers.location)
 					return send(method, opts.path.startsWith('/') ? opts : opts.path, opts).then(
 						res,
-						rej
+						rej,
 					)
 				} else {
 					res(r as any)

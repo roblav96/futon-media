@@ -6,7 +6,6 @@ import * as normalize from 'normalize-url'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
 import * as request from 'request'
-import * as uastring from 'ua-string'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
 import { CookieJar, Store } from 'tough-cookie'
@@ -17,14 +16,16 @@ const db = new Db(__filename)
 // process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 export interface Config extends http.RequestOptions {
+	afterRequest?: Hooks<(options: Config) => Promise<void>>
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
+	beforeResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	body?: any
 	cloudflare?: string
 	debug?: boolean
 	form?: any
-	memoize?: boolean
+	memoize?: boolean | number
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'HEAD' | 'DELETE'
 	profile?: boolean
 	qsArrayFormat?: 'bracket' | 'index' | 'comma' | 'none'
@@ -53,9 +54,8 @@ export class Http {
 	static timeouts = [10000, 10001]
 	static defaults = {
 		headers: {
-			// 'content-type': 'application/json',
+			'accept': '*/*',
 			'user-agent': 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
-			// 'user-agent': uastring,
 		},
 		method: 'GET',
 		retries: [408],
@@ -175,14 +175,21 @@ export class Http {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
 		if (options.debug) {
-			options.memoize = false
+			_.unset(options, 'memoize')
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
+		}
+
+		if (options.afterRequest) {
+			let { prepend = [], append = [] } = options.afterRequest
+			for (let hook of _.concat(prepend, append)) {
+				await hook(options)
+			}
 		}
 
 		let t = Date.now()
 		let response: HttpieResponse
 		let mkey: string
-		if (options.memoize) {
+		if (!!options.memoize) {
 			mkey = utils.hash(config)
 			response = await db.get(mkey)
 		}
@@ -218,9 +225,20 @@ export class Http {
 				}
 				return Promise.reject(error)
 			}
-			if (options.memoize) {
-				let omits = ['client', 'connection', 'req', 'socket', '_readableState']
-				await db.put(mkey, _.omit(response, omits), utils.duration(1, 'hour'))
+
+			if (options.beforeResponse) {
+				let { prepend = [], append = [] } = options.beforeResponse
+				for (let hook of _.concat(prepend, append)) {
+					await hook(options, response)
+				}
+			}
+
+			if (!!options.memoize) {
+				await db.put(
+					mkey,
+					_.omit(response, ['client', 'connection', 'req', 'socket', '_readableState']),
+					_.isNumber(options.memoize) ? options.memoize : utils.duration(1, 'hour'),
+				)
 			}
 		}
 

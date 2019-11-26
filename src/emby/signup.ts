@@ -2,8 +2,8 @@ import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
 import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
-import * as validator from 'validator'
 import Fastify from '@/adapters/fastify'
+import validator from 'validator'
 
 const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 

@@ -8,7 +8,7 @@ import * as utils from '@/utils/utils'
 import * as xmljs from 'xml-js'
 
 process.nextTick(async () => {
-	let all = await tvdb.getAll('71256')
+	let all = await tvdb.getAll('361753' /** '71256' */)
 	console.log(`tvdb all ->`, all)
 })
 
