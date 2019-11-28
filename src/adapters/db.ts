@@ -1,9 +1,9 @@
 import * as _ from 'lodash'
-import * as fastParse from 'fast-json-parse'
 import * as fs from 'fs-extra'
 import * as IORedis from 'ioredis'
+import * as parse from 'fast-json-parse'
 import * as path from 'path'
-import fastStringify from 'fast-safe-stringify'
+import stringify from 'safe-stable-stringify'
 
 export class Db {
 	redis: IORedis.Redis
@@ -20,12 +20,12 @@ export class Db {
 
 	async get<T = any>(key: string) {
 		let value = await this.redis.get(`${this.name}:${key}`)
-		value = fastParse(value).value || value
+		value = parse(value).value || value
 		return (value as any) as T
 	}
 
 	async put(key: string, value: any, ttl?: number) {
-		value = fastStringify.stable(value)
+		value = stringify(value)
 		if (!_.isFinite(ttl)) await this.redis.set(`${this.name}:${key}`, value)
 		else await this.redis.setex(`${this.name}:${key}`, ttl / 1000, value)
 	}

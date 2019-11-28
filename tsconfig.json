@@ -3,13 +3,13 @@
 		"baseUrl": ".",
 		"experimentalDecorators": true,
 		"importHelpers": true,
-		"lib": ["ESNext"],
-		"module": "CommonJS",
+		"lib": ["esnext"],
+		"module": "commonjs",
 		"noEmitHelpers": true,
 		"outDir": "dist",
 		"preserveWatchOutput": true,
 		"sourceMap": true,
-		"target": "ES2015",
+		"target": "es2015",
 		"paths": {
 			"@/*": ["src/*"]
 		}

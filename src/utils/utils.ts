@@ -1,6 +1,5 @@
 import * as _ from 'lodash'
 import * as advancedFormat from 'dayjs/plugin/advancedFormat'
-import * as badwords from 'badwords-list/lib/array'
 import * as crypto from 'crypto'
 import * as customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as dayjs from 'dayjs'
@@ -12,7 +11,7 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import stripBom = require('strip-bom')
-import { COMMON_WORDS, STOP_WORDS, VIDEO_EXTENSIONS } from '@/utils/dicts'
+import { COMMON_WORDS, NAUGHTY_WORDS, STOP_WORDS, VIDEO_EXTENSIONS } from '@/utils/dicts'
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
@@ -169,7 +168,10 @@ export function unsquash(value: string) {
 	return a == b ? [a] : [a, b]
 }
 export function unisolate([a, b]: string[]) {
-	return excludes(a, accuracies(b, a).filter(v => v.length == 1))
+	return excludes(
+		a,
+		accuracies(b, a).filter(v => v.length == 1),
+	)
 	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
 }
 
@@ -201,6 +203,9 @@ export function stripStopWords(value: string) {
 }
 export function stripCommonWords(value: string) {
 	return excludes(value, COMMON_WORDS)
+}
+export function stripNaughtyWords(value: string) {
+	return excludes(value, NAUGHTY_WORDS)
 }
 
 export function isVideo(file: string) {
@@ -334,8 +339,6 @@ export function fromBytes(value: number) {
 	value = value / unit.num
 	return `${value.toFixed([2, 1, 1][value.toFixed(0).length])} ${unit.str}`
 }
-
-export const NSFWS = _.sortBy(_.uniq((badwords as string[]).map(v => minify(v))).filter(Boolean))
 
 if (process.DEVELOPMENT) {
 	process.nextTick(async () => _.defaults(global, await import('@/utils/utils')))

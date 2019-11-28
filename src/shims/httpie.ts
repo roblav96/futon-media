@@ -23,7 +23,7 @@ export function send(method, uri, opts = {} as any) {
 
 		let req = request(opts, (r: HttpieResponse) => {
 			let encoding = r.headers['transfer-encoding'] || r.headers['content-transfer-encoding']
-			let binary = encoding == 'binary'
+			let binary = encoding == 'binary' && !!r.headers['content-disposition']
 			let out = (binary ? [] : '') as any
 
 			r.on('data', d => {

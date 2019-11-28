@@ -43,39 +43,37 @@ export const client = new Http({
 export async function getAll(tvdbid: string) {
 	let t = Date.now()
 
-	let url = `https://thetvdb.com/api/${process.env.TVDB_KEY}/series/${tvdbid}/all/en.zip`
-	let response = await client.get(url, {
-		memoize: true,
-		beforeResponse: {
-			append: [
-				async (options, response) => {
-					console.log('response.data ->', response.data)
-					if (!Buffer.isBuffer(response.data)) return
-					let zipfile = (await new Promise((resolve, reject) =>
-						yauzl.fromBuffer(response.data, (error, zipfile) =>
-							error ? reject(error) : resolve(zipfile),
-						),
-					)) as yauzl.ZipFile
-					let iterator = pEvent.iterator(zipfile, 'entry', {
-						resolutionEvents: ['end'],
-					}) as AsyncIterableIterator<yauzl.Entry>
-					for await (let entry of iterator) {
-						let readable = (await new Promise((resolve, reject) =>
-							zipfile.openReadStream(entry, (error, readable) =>
-								error ? reject(error) : resolve(readable),
-							),
-						)) as Readable
-						let output = await getStream(readable)
-						let json = fastParse(
-							xmljs.xml2json(output, { compact: true, textKey: '_text' }),
-						).value
-						console.log('json ->', json)
-					}
-				},
-			],
-		},
+	let response = await client.request({
+		url: `https://thetvdb.com/api/${process.env.TVDB_KEY}/series/${tvdbid}/all/en.zip`,
+		// memoize: true,
 	})
-	// console.log(`response ->`, response)
+	console.log(`response ->`, response)
+
+	let zipfile = (await new Promise((resolve, reject) =>
+		yauzl.fromBuffer(response.data, (error, zipfile) =>
+			error ? reject(error) : resolve(zipfile),
+		),
+	)) as yauzl.ZipFile
+	let iterator = pEvent.iterator(zipfile, 'entry', {
+		resolutionEvents: ['end'],
+	}) as AsyncIterableIterator<yauzl.Entry>
+	for await (let entry of iterator) {
+		// if (!entry.fileName.includes('en')) continue
+		let readable = (await new Promise((resolve, reject) =>
+			zipfile.openReadStream(entry, (error, readable) =>
+				error ? reject(error) : resolve(readable),
+			),
+		)) as Readable
+		let json = fastParse(
+			xmljs.xml2json(await getStream(readable), {
+				compact: true,
+				nativeType: true,
+				// ignoreText: true,
+				// textKey: '_text',
+			}),
+		).value
+		console.log(`${entry.fileName} json ->`, json)
+	}
 
 	console.log(Date.now() - t, `tvdb.getAll`)
 }

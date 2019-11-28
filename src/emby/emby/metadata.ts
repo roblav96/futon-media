@@ -41,7 +41,7 @@ export async function toMovieXml(item: media.Item) {
 	} // as Partial<emby.Item>
 	return xmljs.json2xml(JSON.stringify({ _declaration, Item }), {
 		compact: true,
-		spaces: '  ',
+		spaces: 2,
 	})
 }
 

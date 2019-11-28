@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as fs from 'fs-extra'
 
 export const VIDEO_EXTENSIONS = [
 	'asf',
@@ -398,3 +399,6 @@ export const COMMON_WORDS = [
 	'your',
 	//
 ]
+
+let naughty = fs.readFileSync(require.resolve('no-naughty-words/data/words.txt')).toString()
+export const NAUGHTY_WORDS = naughty.split('\n').slice(611, -2)

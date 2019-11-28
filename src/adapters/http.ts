@@ -16,11 +16,9 @@ const db = new Db(__filename)
 // process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 export interface Config extends http.RequestOptions {
-	afterRequest?: Hooks<(options: Config) => Promise<void>>
 	afterResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	baseUrl?: string
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
-	beforeResponse?: Hooks<(options: Config, response: HttpieResponse) => Promise<void>>
 	body?: any
 	cloudflare?: string
 	debug?: boolean
@@ -179,13 +177,6 @@ export class Http {
 			console.log(`[DEBUG] ->`, options.method, options.url, options)
 		}
 
-		if (options.afterRequest) {
-			let { prepend = [], append = [] } = options.afterRequest
-			for (let hook of _.concat(prepend, append)) {
-				await hook(options)
-			}
-		}
-
 		let t = Date.now()
 		let response: HttpieResponse
 		let mkey: string
@@ -226,13 +217,6 @@ export class Http {
 				return Promise.reject(error)
 			}
 
-			if (options.beforeResponse) {
-				let { prepend = [], append = [] } = options.beforeResponse
-				for (let hook of _.concat(prepend, append)) {
-					await hook(options, response)
-				}
-			}
-
 			if (!!options.memoize) {
 				await db.put(
 					mkey,
@@ -260,16 +244,16 @@ export class Http {
 	}
 
 	get(url: string, config = {} as Config) {
-		return this.request({ method: 'GET', ...config, url }).then(({ data }) => data)
+		return this.request({ ...config, method: 'GET', url }).then(({ data }) => data)
 	}
 	post(url: string, config = {} as Config) {
-		return this.request({ method: 'POST', ...config, url }).then(({ data }) => data)
+		return this.request({ ...config, method: 'POST', url }).then(({ data }) => data)
 	}
 	put(url: string, config = {} as Config) {
-		return this.request({ method: 'PUT', ...config, url }).then(({ data }) => data)
+		return this.request({ ...config, method: 'PUT', url }).then(({ data }) => data)
 	}
 	delete(url: string, config = {} as Config) {
-		return this.request({ method: 'DELETE', ...config, url }).then(({ data }) => data)
+		return this.request({ ...config, method: 'DELETE', url }).then(({ data }) => data)
 	}
 
 	private static merge(...configs: Config[]) {

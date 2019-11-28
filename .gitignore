@@ -6,4 +6,3 @@ node_modules
 .*cache*
 .*env*
 .*local*
-.DS_Store

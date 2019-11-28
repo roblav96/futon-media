@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dicts from '@/utils/dicts'
 import * as media from '@/media/media'
 import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
@@ -43,10 +44,10 @@ export function results(result: scraper.Result, item: media.Item) {
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let nsfws = utils.accuracies(item.titles.join(' '), utils.NSFWS.join(' '))
-	let nsfwed = utils.accuracies(torrent.name, nsfws.join(' '))
-	if (nsfws.length - nsfwed.length >= 2) {
-		return // console.log(`❌ nsfw '${_.difference(nsfws, nsfwed)}' ->`, torrent.name)
+	let naughtys = utils.accuracies(item.titles.join(' '), dicts.NAUGHTY_WORDS.join(' '))
+	let nsfwed = utils.accuracies(torrent.name, naughtys.join(' '))
+	if (naughtys.length - nsfwed.length >= 2) {
+		return // console.log(`❌ nsfw '${_.difference(naughtys, nsfwed)}' ->`, torrent.name)
 	}
 
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
@@ -150,7 +151,7 @@ export const regex = {
 	season(item: media.Item, slug: string) {
 		let nstrs = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
 		let matches = slug.match(
-			/\ss(eason)?\s(one|two|three|four|five|six|seven|eight|nine|ten)\s/gi
+			/\ss(eason)?\s(one|two|three|four|five|six|seven|eight|nine|ten)\s/gi,
 		)
 		matches = (matches || []).map(v => v.trim())
 		let nstr = matches.map(v => v.split(' ').pop())[0]
