@@ -1,22 +1,21 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as execa from 'execa'
-import * as fastParse from 'fast-json-parse'
+import * as ffpath from 'ffprobe-binaries'
+import * as Json from '@/shims/json'
 import * as ms from 'pretty-ms'
 import * as utils from '@/utils/utils'
-import * as ffpath from 'ffprobe-binaries'
 
 export async function probe(
 	url: string,
 	options: { chapters?: boolean; format?: boolean; streams?: boolean },
 ) {
 	let flags = ['-print_format', 'json', '-show_error']
-	flags.push('-analyzeduration', '1000000', '-probesize', '1000000')
 	let pairs = Object.entries(options).filter(([k, v]) => v)
 	flags.push(...pairs.map(([k]) => `-show_${k}`))
 	let { stdout } = await execa(ffpath, flags.concat(url))
-	let { err, value } = fastParse(stdout) as { err: Error; value: Probe }
-	if (err) throw err
+	let { error, value } = Json.parse<Probe>(stdout)
+	if (error) throw error
 	if (value.format && value.format.tags) {
 		value.format.tags = _.mapKeys(value.format.tags, (v, k) => k.toLowerCase()) as any
 	}
@@ -25,9 +24,11 @@ export async function probe(
 			stream = _.mapKeys(stream, (v, k) => k.toLowerCase()) as any
 			stream = _.mapValues(stream, (v, k) => (_.isString(v) ? v.toLowerCase() : v)) as any
 			if (stream.tags) {
-				stream.tags = _.fromPairs(_.toPairs(stream.tags).map(v =>
-					v.map(vv => (_.isString(vv) ? vv.toLowerCase() : vv)),
-				) as any) as any
+				stream.tags = _.fromPairs(
+					_.toPairs(stream.tags).map(v =>
+						v.map(vv => (_.isString(vv) ? vv.toLowerCase() : vv)),
+					) as any,
+				) as any
 			}
 			return stream
 		})
@@ -50,7 +51,7 @@ export function json(format: Format) {
 			format.size = utils.fromBytes(_.parseInt(format.size))
 		}
 	} catch (error) {
-		console.error(`ffprobe json -> %O`, error)
+		console.error(`ffprobe json ${format.filename} -> %O`, error)
 	}
 	return format
 }

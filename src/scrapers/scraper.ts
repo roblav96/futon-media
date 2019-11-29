@@ -1,9 +1,9 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrids from '@/debrids/debrids'
-import * as fastParse from 'fast-json-parse'
 import * as filters from '@/scrapers/filters'
 import * as http from '@/adapters/http'
+import * as Json from '@/shims/json'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
@@ -207,7 +207,7 @@ export class Scraper {
 		})
 
 		// let jsons = combos.map(v =>
-		// 	v.map(vv => (vv && vv.startsWith('{') ? fastParse(vv).value : vv)),
+		// 	v.map(vv => (vv && vv.startsWith('{') ? Json.parse(vv).value : vv)),
 		// )
 		// console.info(Date.now() - t, ctor, combos.length, results.length, fastStringify(jsons))
 		console.info(Date.now() - t, ctor, combos.length, results.length)

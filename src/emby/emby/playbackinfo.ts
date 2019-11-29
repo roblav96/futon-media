@@ -1,8 +1,8 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
-import * as fastParse from 'fast-json-parse'
 import * as flatten from 'flat'
+import * as Json from '@/shims/json'
 import * as media from '@/media/media'
 import * as mocks from '@/mocks/mocks'
 import * as Rx from '@/shims/rxjs'
@@ -27,8 +27,8 @@ process.nextTick(async () => {
 		}),
 	)
 	rxPostedPlaybackInfo.subscribe(async ({ message }) => {
-		let { err, value } = fastParse(message.slice(message.indexOf('{')))
-		if (err) return console.error(`rxPostedPlaybackInfo ->`, err.message)
+		let { error, value } = Json.parse(message.slice(message.indexOf('{')))
+		if (error) return console.error(`rxPostedPlaybackInfo ->`, error.message)
 		let { Id, UserId } = value as PlaybackInfo
 		await db.put(UserId, value)
 		await db.put(Id, value, utils.duration(1, 'day'))

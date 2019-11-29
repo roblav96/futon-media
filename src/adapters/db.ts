@@ -1,48 +1,44 @@
 import * as _ from 'lodash'
 import * as fs from 'fs-extra'
 import * as IORedis from 'ioredis'
-import * as parse from 'fast-json-parse'
+import * as Json from '@/shims/json'
 import * as path from 'path'
-import stringify from 'safe-stable-stringify'
 
 export class Db {
-	redis: IORedis.Redis
+	static redis = new IORedis(6379, '127.0.0.1')
 
-	constructor(public name: string) {
-		if (fs.pathExistsSync(name)) {
-			this.name = path
-				.relative(process.mainModule.path, name)
-				.replace(/\//g, ':')
-				.slice(0, -3)
+	constructor(public prefix: string) {
+		if (fs.pathExistsSync(prefix)) {
+			this.prefix = path.relative(process.mainModule.path, prefix).replace(/\//g, ':')
+			this.prefix = this.prefix.slice(0, this.prefix.lastIndexOf('.')).trim()
 		}
-		this.redis = new IORedis(6379, '127.0.0.1', { connectionName: this.name, db: 0 })
 	}
 
 	async get<T = any>(key: string) {
-		let value = await this.redis.get(`${this.name}:${key}`)
-		value = parse(value).value || value
+		let value = await Db.redis.get(`${this.prefix}:${key}`)
+		value = Json.parse(value).value || value
 		return (value as any) as T
 	}
 
 	async put(key: string, value: any, ttl?: number) {
-		value = stringify(value)
-		if (!_.isFinite(ttl)) await this.redis.set(`${this.name}:${key}`, value)
-		else await this.redis.setex(`${this.name}:${key}`, ttl / 1000, value)
+		value = Json.stringify(value)
+		if (!_.isFinite(ttl)) await Db.redis.set(`${this.prefix}:${key}`, value)
+		else await Db.redis.setex(`${this.prefix}:${key}`, ttl / 1000, value)
 	}
 
 	async del(key: string) {
-		await this.redis.del(`${this.name}:${key}`)
+		await Db.redis.del(`${this.prefix}:${key}`)
 	}
 
 	async flush(pattern = '*') {
-		let keys = await this.redis.keys(`${this.name}:${pattern}`)
+		let keys = await Db.redis.keys(`${this.prefix}:${pattern}`)
 		if (keys.length == 0) return
-		console.warn(`[DB] ${this.name} flush '${pattern}' ->`, keys.sort())
+		console.warn(`Db flush '${this.prefix}:${pattern}' ->`, keys.sort())
 		await this.pipeline(keys.map(v => ['del', v]))
 	}
 
 	async pipeline(coms = [] as string[][]) {
-		let results = ((await this.redis.pipeline(coms).exec()) || []) as any[]
+		let results = ((await Db.redis.pipeline(coms).exec()) || []) as any[]
 		for (let i = 0; i < results.length; i++) {
 			if (results[i][0]) {
 				throw new Error(`coms[${i}] ${coms[i]} results[${i}] ${results[i][0]}`)

@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
-import * as fastParse from 'fast-json-parse'
 import * as getStream from 'get-stream'
+import * as Json from '@/shims/json'
 import * as media from '@/media/media'
 import * as pEvent from 'p-event'
 import * as Rx from '@/shims/rxjs'
@@ -30,7 +30,6 @@ async function refresh(first = false) {
 		retries: [500, 503],
 		silent: true,
 	})) as { token: string }
-	console.log(`response ->`, response)
 	await db.put('token', response.token)
 	client.config.headers['authorization'] = `Bearer ${response.token}`
 }
@@ -48,32 +47,36 @@ export async function getAll(tvdbid: string) {
 		// memoize: true,
 	})
 	console.log(`response ->`, response)
+	let stringified = Json.stringify(response)
+	console.log('stringified ->', stringified)
+	let parsed = Json.parse(stringified)
+	console.log('parsed ->', parsed)
 
-	let zipfile = (await new Promise((resolve, reject) =>
-		yauzl.fromBuffer(response.data, (error, zipfile) =>
-			error ? reject(error) : resolve(zipfile),
-		),
-	)) as yauzl.ZipFile
-	let iterator = pEvent.iterator(zipfile, 'entry', {
-		resolutionEvents: ['end'],
-	}) as AsyncIterableIterator<yauzl.Entry>
-	for await (let entry of iterator) {
-		// if (!entry.fileName.includes('en')) continue
-		let readable = (await new Promise((resolve, reject) =>
-			zipfile.openReadStream(entry, (error, readable) =>
-				error ? reject(error) : resolve(readable),
-			),
-		)) as Readable
-		let json = fastParse(
-			xmljs.xml2json(await getStream(readable), {
-				compact: true,
-				nativeType: true,
-				// ignoreText: true,
-				// textKey: '_text',
-			}),
-		).value
-		console.log(`${entry.fileName} json ->`, json)
-	}
+	// let zipfile = (await new Promise((resolve, reject) =>
+	// 	yauzl.fromBuffer(response.data, (error, zipfile) =>
+	// 		error ? reject(error) : resolve(zipfile),
+	// 	),
+	// )) as yauzl.ZipFile
+	// let iterator = pEvent.iterator(zipfile, 'entry', {
+	// 	resolutionEvents: ['end'],
+	// }) as AsyncIterableIterator<yauzl.Entry>
+	// for await (let entry of iterator) {
+	// 	// if (!entry.fileName.includes('en')) continue
+	// 	let readable = (await new Promise((resolve, reject) =>
+	// 		zipfile.openReadStream(entry, (error, readable) =>
+	// 			error ? reject(error) : resolve(readable),
+	// 		),
+	// 	)) as Readable
+	// 	let json = fastParse(
+	// 		xmljs.xml2json(await getStream(readable), {
+	// 			compact: true,
+	// 			nativeType: true,
+	// 			// ignoreText: true,
+	// 			// textKey: '_text',
+	// 		}),
+	// 	).value
+	// 	console.log(`${entry.fileName} json ->`, json)
+	// }
 
 	console.log(Date.now() - t, `tvdb.getAll`)
 }

@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as emby from '@/emby/emby'
-import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
+import * as Json from '@/shims/json'
 import Fastify from '@/adapters/fastify'
 import validator from 'validator'
 
@@ -41,7 +41,7 @@ fastify.post('/signup', async (request, reply) => {
 			console.error(`/signup emby connect register -> %O`, error)
 			return '{"Status":"ERROR","Message":"Emby connect user already exists."}'
 		})
-	connect = fastParse(connect).value || connect
+	connect = Json.parse(connect).value || connect
 	if (connect.Status != 'SUCCESS') return { error: connect.Message }
 
 	let User = new emby.User(await emby.client.post('/Users/New', { form: { Name } }))

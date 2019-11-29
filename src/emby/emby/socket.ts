@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
-import * as fastParse from 'fast-json-parse'
+import * as Json from '@/shims/json'
 import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
@@ -40,8 +40,8 @@ process.nextTick(async () => {
 			// ws.json({ MessageType: 'ActivityLogEntryStart', Data: '0,1500' })
 		},
 		onmessage({ data }) {
-			let { err, value } = fastParse(data)
-			if (err) return console.error(`socket onmessage -> %O`, err.message)
+			let { error, value } = Json.parse(data)
+			if (error) return console.error(`socket onmessage -> %O`, error.message)
 			rxSocket.next(value)
 		},
 	})

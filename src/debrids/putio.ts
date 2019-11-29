@@ -1,8 +1,8 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
-import * as fastParse from 'fast-json-parse'
 import * as http from '@/adapters/http'
+import * as Json from '@/shims/json'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
@@ -44,9 +44,9 @@ process.nextTick(() => {
 			ws.json([process.env.PUTIO_TOKEN])
 		},
 		onmessage({ data }: { data: string }) {
-			let { err, value } = fastParse(data.slice(1) || '[]') as { err: Error; value: any[] }
-			if (err) return console.error(`Putio onmessage -> %O`, err)
-			let values = value.map(v => fastParse(v).value || v)
+			let { error, value } = Json.parse(data.slice(1) || '[]')
+			if (error) return console.error(`Putio onmessage -> %O`, error)
+			let values = value.map(v => Json.parse(v).value || v)
 			values.forEach(({ type, value }) => {
 				if (!type) {
 					// process.DEVELOPMENT && console.log(`Putio !type '${type}' ->`, value)
