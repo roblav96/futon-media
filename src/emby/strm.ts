@@ -82,8 +82,9 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 fastify.get('/strm', async (request, reply) => {
 	if (_.isEmpty(request.query)) return reply.code(404).send(Buffer.from(''))
 
+	console.warn(`reply.redirect`)
 	return reply.redirect(
-		`https://singingcavevirgin-sto.energycdn.com/dl/eeQ_trRJcfv6PGoTYLa4Kg/1575012201/675000842/5dd26e6dece535.37636901/Angel.Has.Fallen.2019.2160p.BluRay.REMUX.AVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv`,
+		`https://electrifiedcandycane-sto.energycdn.com/dl/6wtiozo4fccgaVc_vQqkRQ/1576057813/675000842/5de734bf153e33.60144700/the.daily.show.2019.12.03.ta-nehisi.coates.extended.1080p.web.x264-tbs.mkv`,
 	)
 
 	let Query = _.mapValues(request.query, v =>

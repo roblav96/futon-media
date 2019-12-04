@@ -8,8 +8,8 @@ import * as utils from '@/utils/utils'
 import * as xmljs from 'xml-js'
 
 process.nextTick(async () => {
-	let all = await tvdb.getAll('361753' /** '71256' */)
-	console.log(`tvdb all ->`, all)
+	// let all = await tvdb.getAll('361753' /** '71256' */)
+	// console.log(`tvdb all ->`, all)
 })
 
 const _declaration = { _attributes: { version: '1.0', encoding: 'utf-8', standalone: 'yes' } }
