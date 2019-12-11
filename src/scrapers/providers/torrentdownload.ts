@@ -13,6 +13,11 @@ export const client = scraper.Scraper.http({
 })
 
 export class TorrentDownload extends scraper.Scraper {
+	/**
+	// ████  RSS Feed in XML  ████
+	sorts = ['feed_s', 'feed']
+	 */
+
 	sorts = ['searchs', 'search']
 
 	async getResults(slug: string, sort: string) {
