@@ -1,2 +1,2 @@
 ## Futon Media
-> Instantly stream movies and TV shows for [Emby Media](https://emby.media/)
+> Instantly stream Movies and TV Shows for free, forever, via [Emby Media](https://emby.media/)
