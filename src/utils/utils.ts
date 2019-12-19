@@ -11,7 +11,7 @@ import * as relativeTime from 'dayjs/plugin/relativeTime'
 import fastStringify from 'fast-safe-stringify'
 import numbro, { INumbro } from '@/shims/numbro'
 import stripBom = require('strip-bom')
-import { COMMON_WORDS, NAUGHTY_WORDS, STOP_WORDS, VIDEO_EXTENSIONS } from '@/utils/dicts'
+import { NAUGHTY_WORDS, STOP_WORDS, VIDEO_EXTENSIONS } from '@/utils/dicts'
 
 dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
@@ -200,9 +200,6 @@ export function toSlug(
 
 export function stripStopWords(value: string) {
 	return excludes(value, STOP_WORDS)
-}
-export function stripCommonWords(value: string) {
-	return excludes(value, COMMON_WORDS)
 }
 export function stripNaughtyWords(value: string) {
 	return excludes(value, NAUGHTY_WORDS)

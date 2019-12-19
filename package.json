@@ -1,7 +1,7 @@
 {
 	"name": "futon-media",
 	"version": "1.0.0",
-	"description": "Instantly stream movies and TV shows on Emby Media",
+	"description": "Instantly stream Movies and TV Shows via Emby Media",
 	"main": "dist/index.js",
 	"files": [
 		"dist"

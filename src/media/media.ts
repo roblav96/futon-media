@@ -401,7 +401,6 @@ export class Item {
 			slugs = slugs.map(v => [v, _.last(utils.colons(v))]).flat()
 			slugs = slugs.map(v => [v, ...Item.years(v, this.years)]).flat()
 			this.collection.name && slugs.push(utils.toSlug(this.collection.name))
-			slugs = slugs.filter(v => utils.stripCommonWords(v))
 		}
 		return _.uniq(slugs.filter(Boolean))
 	}

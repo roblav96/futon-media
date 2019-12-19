@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class ExtraTorrentCm extends scraper.Scraper {
-	async getResults(slug: string, sort: string) {
+	async getResults(slug: string) {
 		let category = this.item.show ? 'tv' : `${this.item.type}s`
 		let $ = cheerio.load(
 			await client.get('/search/', { query: { search: slug, category } as Partial<Query> }),
