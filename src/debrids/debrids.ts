@@ -29,7 +29,9 @@ export async function cached(hashes: string[]) {
 
 let queue = new pQueue({ concurrency: 1 })
 export async function download(torrents: torrent.Torrent[], item: media.Item) {
-	await RealDebrid.activeCount()
+	if (!(await RealDebrid.hasActiveCount())) {
+		return console.warn(`download RealDebrid.hasActiveCount == false`)
+	}
 
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
@@ -37,8 +39,11 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 		if (v.boosts(item.S.e).bytes < utils.toBytes(`${item.gigs} GB`)) return false
 		return v.seeders * v.providers.length >= 3
 	})
-	if (!process.DEVELOPMENT) console.log(`download torrents '${item.strm}' ->`, torrents.length)
-	console.log(`download torrents '${item.strm}' ->`, torrents.map(v => v.json), torrents.length)
+	console.log(
+		`download torrents '${item.strm}' ->`,
+		torrents.map(v => v.json),
+		torrents.length,
+	)
 
 	if (torrents.length == 0) return console.warn(`download torrents ->`, 'torrents.length == 0')
 
@@ -52,7 +57,7 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 				if (!success) success = await RealDebrid.download(torrent.magnet)
 				if (success) return console.log(`👍 download torrent success ->`, torrent.short)
 			} catch (error) {
-				console.error(`RealDebrid download '${torrent.short}' -> %O`, error.message)
+				console.error(`download RealDebrid '${torrent.short}' -> %O`, error.message)
 				if (!torrent.cached.includes('premiumize')) {
 					// await Premiumize.download(torrent.magnet)
 				}
@@ -82,9 +87,12 @@ export async function getStream(
 				console.warn(`!files ->`, torrent.short)
 				continue
 			}
-			files = files.filter(v => !v.path.toLowerCase().includes('rarbg.com.mp4'))
-			files = files.filter(v => !path.dirname(v.path.toLowerCase()).includes('extras'))
-			files = files.filter(v => !v.name.toLowerCase().includes('sample'))
+
+			_.remove(files, ({ path }) => {
+				let slug = ` ${utils.toSlug(path)} `
+				return ['rarbg com mp4', 'extras', 'sample'].find(v => slug.includes(` ${v} `))
+			})
+
 			if (files.length == 0) {
 				console.warn(`files.length == 0 ->`, torrent.short)
 				next = true
@@ -139,7 +147,10 @@ export async function getStream(
 				continue
 			}
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
-			console.log(`probe videos ->`, videos.map(v => _.pick(v, vkeys)))
+			console.log(
+				`probe videos ->`,
+				videos.map(v => _.pick(v, vkeys)),
+			)
 			if (_.size(VideoCodecs) > 0 && !VideoCodecs.includes(videos[0].codec_name)) {
 				console.warn(`probe !VideoCodecs ->`, torrent.short, videos[0].codec_name)
 				next = true
@@ -159,14 +170,25 @@ export async function getStream(
 				continue
 			}
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
-			console.log(`probe audios ->`, audios.map(v => _.pick(v, akeys)))
+			console.log(
+				`probe audios ->`,
+				audios.map(v => _.pick(v, akeys)),
+			)
 			if (!audios.find(v => v.channels <= AudioChannels)) {
-				console.warn(`probe !AudioChannels ->`, torrent.short, audios.map(v => v.channels))
+				console.warn(
+					`probe !AudioChannels ->`,
+					torrent.short,
+					audios.map(v => v.channels),
+				)
 				next = true
 				continue
 			}
 			if (_.size(AudioCodecs) > 0 && !audios.find(v => AudioCodecs.includes(v.codec_name))) {
-				console.warn(`probe !AudioCodecs ->`, torrent.short, audios.map(v => v.codec_name))
+				console.warn(
+					`probe !AudioCodecs ->`,
+					torrent.short,
+					audios.map(v => v.codec_name),
+				)
 				next = true
 				continue
 			}

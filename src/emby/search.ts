@@ -22,12 +22,13 @@ process.nextTick(() => {
 		Rx.op.filter(({ SearchTerm }) => utils.squash(SearchTerm).length >= 2),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilKeyChanged('SearchTerm'),
-		Rx.op.concatMap(async ({ SearchTerm, imdb, slug, UserId }) => {
-			let Session = await emby.sessions.byUserId(UserId)
+		Rx.op.mergeMap(async ({ SearchTerm, imdb, slug, UserId }) => {
+			let Session = await emby.Session.byUserId(UserId)
 			console.warn(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)
 
 			if (imdb) {
 				let results = (await trakt.client.get(`/search/imdb/${imdb}`, {
+					memoize: true,
 					silent: true,
 				})) as trakt.Result[]
 				let item = results.map(v => new media.Item(v))[0]
@@ -40,6 +41,7 @@ process.nextTick(() => {
 				for (let type of types) {
 					try {
 						let full = (await trakt.client.get(`/${type}s/${slug}`, {
+							memoize: true,
 							silent: true,
 						})) as trakt.Full
 						return { slug, item: new media.Item({ [type]: full }) }
@@ -52,7 +54,7 @@ process.nextTick(() => {
 				[`${SearchTerm}*`, `${SearchTerm} *`].map(query => async () =>
 					(await trakt.client.get('/search/movie,show', {
 						query: { query, fields: 'title,translations', limit: 100 },
-						memoize: process.DEVELOPMENT,
+						memoize: true,
 						silent: true,
 					})) as trakt.Result[],
 				),
@@ -64,7 +66,7 @@ process.nextTick(() => {
 			return { SearchTerm, items }
 		}),
 		Rx.op.catchError((error, caught) => {
-			console.error(`rxSearch concatMap -> %O`, error)
+			console.error(`rxSearch -> %O`, error)
 			return caught
 		}),
 	)
@@ -115,7 +117,6 @@ process.nextTick(() => {
 			}
 			return !item.isJunk(mean)
 		})
-		console.info(`rxSearch adding ->`, items.map(v => v.short))
 
 		return emby.library.addQueue(items)
 	})

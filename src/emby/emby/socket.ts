@@ -16,12 +16,12 @@ export interface EmbyEvent<T = any> {
 }
 export const rxSocket = new Rx.Subject<Partial<EmbyEvent>>()
 
-process.nextTick(async () => {
+process.nextTick(() => {
 	let url = `${process.env.EMBY_LAN_ADDRESS}/embywebsocket?${qs.stringify({
 		api_key: process.env.EMBY_ADMIN_TOKEN || process.env.EMBY_API_KEY,
 		deviceId: process.env.EMBY_SERVER_ID,
 	})}`
-	const ws = new Sockette(url, {
+	let ws = new Sockette(url, {
 		timeout: 3000,
 		onerror({ error }) {
 			rxSocket.next({ MessageType: 'OnError' })

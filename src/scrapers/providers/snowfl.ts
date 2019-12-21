@@ -21,7 +21,8 @@ async function getToken() {
 	let html = (await client.get('/b.min.js', {
 		query: { v: utils.nonce() } as Partial<Query>,
 	})) as string
-	token = html.match(/\=\"(\w{33})\"\,/i)[1]
+	Object.assign(global, { html })
+	token = _.first(html.match(/\b(\w{33,47})\b/))
 	if (!token) throw new Error('snowfl token not found')
 	await db.put('snowfl:token', token, utils.duration(1, 'day'))
 	return token

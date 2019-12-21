@@ -26,13 +26,13 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 	let t = Date.now()
 	let title = emby.library.toTitle(Item)
 
-	let Session = (await emby.sessions.get()).find(v => v.ItemPath == Item.Path)
+	let Session = (await emby.Session.get()).find(v => v.ItemPath == Item.Path)
 	let PlaybackInfo: emby.PlaybackInfo
 	while (!PlaybackInfo) {
 		PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, Session && Session.UserId)
 		if (!PlaybackInfo) await utils.pTimeout(300)
 	}
-	if (!Session) Session = (await emby.sessions.get()).find(v => v.UserId == PlaybackInfo.UserId)
+	if (!Session) Session = (await emby.Session.get()).find(v => v.UserId == PlaybackInfo.UserId)
 	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
@@ -82,10 +82,10 @@ async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
 fastify.get('/strm', async (request, reply) => {
 	if (_.isEmpty(request.query)) return reply.code(404).send(Buffer.from(''))
 
-	console.warn(`reply.redirect`)
-	return reply.redirect(
-		`https://electrifiedcandycane-sto.energycdn.com/dl/6wtiozo4fccgaVc_vQqkRQ/1576057813/675000842/5de734bf153e33.60144700/the.daily.show.2019.12.03.ta-nehisi.coates.extended.1080p.web.x264-tbs.mkv`,
-	)
+	// console.warn(`reply.redirect`)
+	// return reply.redirect(
+	// 	`https://electrifiedcandycane-sto.energycdn.com/dl/6wtiozo4fccgaVc_vQqkRQ/1576057813/675000842/5de734bf153e33.60144700/the.daily.show.2019.12.03.ta-nehisi.coates.extended.1080p.web.x264-tbs.mkv`,
+	// )
 
 	let Query = _.mapValues(request.query, v =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,

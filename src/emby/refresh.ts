@@ -11,7 +11,7 @@ process.nextTick(() => {
 		Rx.op.distinctUntilChanged(
 			(a, b) => `${a.Item.SeriesId || a.Item.Id}` == `${b.Item.SeriesId || b.Item.Id}`,
 		),
-		Rx.op.concatMap(async ({ Item, Session }) => {
+		Rx.op.mergeMap(async ({ Item, Session }) => {
 			console.warn(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
 			let item = await emby.library.item(Item)
 			if (!item) {

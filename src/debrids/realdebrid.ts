@@ -10,7 +10,6 @@ import * as utils from '@/utils/utils'
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
 	headers: { authorization: `Bearer ${process.env.REALDEBRID_SECRET}` },
-	// query: { auth_token: process.env.REALDEBRID_SECRET },
 })
 
 process.nextTick(async () => {
@@ -24,7 +23,10 @@ process.nextTick(async () => {
 	}
 	console.log(`RealDebrid transfers ->`, transfers)
 	let tkeys = ['original_filename', 'progress', 'seeders']
-	console.log(`RealDebrid transfers ->`, transfers.map(v => _.pick(v, tkeys)))
+	console.log(
+		`RealDebrid transfers ->`,
+		transfers.map(v => _.pick(v, tkeys)),
+	)
 })
 
 export class RealDebrid extends debrid.Debrid<Transfer> {
@@ -37,7 +39,10 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 				await utils.pRandom(300)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client
-					.get(url, { memoize: process.DEVELOPMENT, silent: true })
+					.get(url, {
+						memoize: process.DEVELOPMENT,
+						silent: true,
+					})
 					.catch(error => {
 						console.error(`RealDebrid cache -> %O`, error)
 						return {}
@@ -53,20 +58,14 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		return cached
 	}
 
-	static async activeCount() {
+	static async hasActiveCount() {
 		let actives = (await client.get('/torrents/activeCount', {
 			silent: true,
 		})) as ActiveCount
-		if (actives.list.length >= _.ceil(actives.limit * 0.8)) {
-			throw new Error(
-				`${actives.list.length} RealDebrid actives greater than ${actives.limit}`,
-			)
-		}
+		return actives.list.length < _.ceil(actives.limit * 0.8)
 	}
 
 	static async download(magnet: string) {
-		throw new Error(`RealDebrid download -> disabled`)
-
 		let { dn, infoHash } = magnetlink.decode(magnet)
 
 		let transfers = (await client.get('/torrents')) as Transfer[]
@@ -139,8 +138,6 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 	}
 
 	async streamUrl(file: debrid.File) {
-		throw new Error(`RealDebrid streamUrl -> disabled`)
-
 		let transfers = (await client.get('/torrents')) as Transfer[]
 		let transfer = transfers.find(v => v.hash.toLowerCase() == this.infoHash)
 
@@ -173,6 +170,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 			return
 		}
 
+		// throw new Error(`RealDebrid streamUrl -> disabled`)
 		let { download } = (await client.post(`/unrestrict/link`, { form: { link } })) as Unrestrict
 		return download
 	}

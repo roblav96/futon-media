@@ -64,10 +64,6 @@ export const client = new http.Http({
 	afterResponse: {
 		append: [
 			async (options, response) => {
-				const debloat = value => {
-					let keys = ['available_translations', 'images']
-					keys.forEach(key => _.unset(value, key))
-				}
 				if (_.isPlainObject(response.data)) {
 					debloat(response.data)
 				}
@@ -81,6 +77,10 @@ export const client = new http.Http({
 		],
 	},
 })
+function debloat(value) {
+	let keys = ['available_translations', 'images']
+	keys.forEach(key => _.unset(value, key))
+}
 
 export const RESULT_ITEM = {
 	character: 'character',
@@ -121,6 +121,7 @@ export async function resultsFor(person: Person) {
 	for (let type of media.MAIN_TYPESS) {
 		let credits = (await client.get(`/people/${person.ids.slug}/${type}`, {
 			query: { limit: 100 },
+			memoize: true,
 			silent: true,
 		})) as Credits
 		let { cast, crew } = { cast: [], crew: [], ...credits }

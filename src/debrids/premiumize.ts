@@ -33,8 +33,8 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 				await utils.pRandom(300)
 				let response = (await client
 					.post(`/cache/check`, {
-						memoize: process.DEVELOPMENT,
 						query: { items: chunk },
+						memoize: process.DEVELOPMENT,
 						silent: true,
 					})
 					.catch(error => {
@@ -47,7 +47,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 					}
 				})
 			}),
-			{ concurrency: 3 }
+			{ concurrency: 3 },
 		)
 		return cached
 	}
@@ -81,9 +81,11 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 	}
 
 	async getFiles() {
-		let downloads = (await client.post(`/transfer/directdl`, {
-			query: { src: this.magnet },
-		})).content as Download[]
+		let downloads = (
+			await client.post(`/transfer/directdl`, {
+				query: { src: this.magnet },
+			})
+		).content as Download[]
 
 		this.files = (downloads || []).map(file => {
 			let name = path.basename(`/${file.path}`)

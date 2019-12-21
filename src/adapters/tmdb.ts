@@ -11,10 +11,6 @@ export const client = new Http({
 		append: [
 			async (options, response) => {
 				if (_.isPlainObject(response.data)) {
-					const debloat = value => {
-						let keys = ['crew', 'guest_stars', 'production_companies']
-						keys.forEach(key => _.unset(value, key))
-					}
 					debloat(response.data)
 					let bloated = ['results', 'seasons', 'episodes']
 					bloated.forEach(key => {
@@ -26,6 +22,10 @@ export const client = new Http({
 		],
 	},
 })
+function debloat(value) {
+	let keys = ['crew', 'guest_stars', 'production_companies']
+	keys.forEach(key => _.unset(value, key))
+}
 
 // export async function search(query: string, type = 'multi' as media.MainContentType) {
 // 	let response = (await client.get(`/search/${type}`, {

@@ -108,7 +108,7 @@ export const rxLine = rxTail.pipe(
 // })
 
 export const rxHttp = rxLine.pipe(
-	// Rx.op.tap(line => console.log(`rxHttp line ->`, line)),
+	// Rx.op.tap(line => console.log(`tap rxHttp line ->`, line)),
 	Rx.op.filter(({ level, category }) => level == 'Info' && category == 'HttpServer'),
 	Rx.op.map(({ message }) => ({
 		match: message.match(/^HTTP (?<method>[DGOP]\w+) (?<url>.+)\. UserAgent\: (?<ua>.+)/),
@@ -137,18 +137,15 @@ export const rxHttp = rxLine.pipe(
 				query.UserId = query.UserId || next
 			}
 			let types = [
+				'collections',
+				'episodes',
+				'favoriteitems',
 				'items',
 				'movies',
-				'shows',
-				'episodes',
-				'videos',
-				'collections',
-				'favoriteitems',
-				'playeditems',
-				'playingitems',
 				'playlists',
-				'subtitles',
+				'shows',
 				'trailers',
+				'videos',
 			]
 			if (types.includes(part) && (utils.isNumeric(next) || next.length == 32)) {
 				query.ItemId = query.ItemId || next
@@ -178,12 +175,13 @@ export const rxItem = rxItemId.pipe(
 	Rx.op.debounceTime(100),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),
-	// Rx.op.distinctUntilKeyChanged('ItemId'),
-	Rx.op.concatMap(async v => ({
-		...v,
-		Item: (await emby.library.Items({ Ids: [v.ItemId] }))[0],
-		Session: await emby.sessions.byUserId(v.UserId),
-	})),
+	Rx.op.mergeMap(async v => {
+		let [Item, Session] = await Promise.all([
+			emby.library.byItemId(v.ItemId),
+			emby.Session.byUserId(v.UserId),
+		])
+		return { ...v, Item, Session }
+	}),
 	// Rx.op.tap(({ Item, url }) => console.log(`tap rxItem ->`, emby.library.toTitle(Item), url)),
 	Rx.op.share(),
 )
@@ -192,7 +190,7 @@ export const rxItem = rxItemId.pipe(
 // export const rxItem = rxItemId.pipe(
 // 	Rx.op.filter(({ ItemId }) => ItemId.length != 32),
 // 	// Rx.op.tap(({ ItemId }) => console.log(`rxItem.tap ->`, ItemId)),
-// 	Rx.op.concatMap(async v => {
+// 	Rx.op.mergeMap(async v => {
 // 		return { ...v, Item: await emby.library.byItemId(v.ItemId) }
 // 	}),
 // 	Rx.op.filter(({ Item }) => !!Item && ITEM_TYPES.includes(Item.Type)),

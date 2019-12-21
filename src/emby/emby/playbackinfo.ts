@@ -16,9 +16,10 @@ process.nextTick(async () => {
 	// process.DEVELOPMENT && (await db.flush())
 
 	emby.rxSocket.subscribe(async ({ MessageType }) => {
-		if (MessageType != 'OnOpen') return
-		let Users = await emby.User.get()
-		Users.forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
+		if (MessageType == 'OnOpen') {
+			let Users = await emby.User.get()
+			Users.forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
+		}
 	})
 
 	let rxPostedPlaybackInfo = emby.rxLine.pipe(
@@ -26,13 +27,15 @@ process.nextTick(async () => {
 			return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
 		}),
 	)
-	rxPostedPlaybackInfo.subscribe(async ({ message }) => {
+	rxPostedPlaybackInfo.subscribe(({ message }) => {
 		let { error, value } = Json.parse(message.slice(message.indexOf('{')))
 		if (error) return console.error(`rxPostedPlaybackInfo ->`, error.message)
 		let { Id, UserId } = value as PlaybackInfo
-		await db.put(UserId, value)
-		await db.put(Id, value, utils.duration(1, 'day'))
-		await db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day'))
+		Promise.all([
+			db.put(UserId, value),
+			db.put(Id, value, utils.duration(1, 'day')),
+			db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day')),
+		])
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)

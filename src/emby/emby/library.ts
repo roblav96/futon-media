@@ -88,7 +88,10 @@ export const library = {
 	async deleteMissingItems() {
 		let Items = await library.Items({ IsMissing: true })
 		if (Items.length == 0) return
-		console.warn(`MissingItems ->`, Items.map(v => `${v.SeriesName} ${v.SeasonName} ${v.Name}`))
+		console.warn(
+			`MissingItems ->`,
+			Items.map(v => `${v.SeriesName} ${v.SeasonName} ${v.Name}`),
+		)
 		// let Ids = Items.map(v => v.Id)
 		// await emby.client.delete('/Items', { query: { Ids: Ids.join() } })
 		// await library.refresh()
@@ -141,11 +144,16 @@ export const library = {
 		}
 		query.Fields.push('Path')
 		query.Fields.sort()
-		return ((await emby.client.get('/Items', {
-			query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
-			// profile: process.DEVELOPMENT,
-			silent: true,
-		})).Items || []) as emby.Item[]
+		return ((
+			await emby.client.get('/Items', {
+				query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
+				profile: process.DEVELOPMENT,
+				silent: true,
+			})
+		).Items || []) as emby.Item[]
+	},
+	async byItemId(ItemId: string) {
+		return (await emby.library.Items({ Ids: [ItemId] }))[0]
 	},
 	// async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>, query = {} as any) {
 	// 	let AnyProviderIdEquals = Object.entries(utils.compact(ids)).map(
@@ -163,6 +171,7 @@ export const library = {
 		for (let key in ids) {
 			let results = (await trakt.client.get(`/search/${key}/${ids[key]}`, {
 				query: { type },
+				memoize: true,
 				silent: true,
 			})) as trakt.Result[]
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
@@ -172,6 +181,7 @@ export const library = {
 			let indexes = library.pathIndexes(Item.Path)
 			if (!item.season && ['Season', 'Episode'].includes(Item.Type)) {
 				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
+					memoize: true,
 					silent: true,
 				})) as trakt.Season[]
 				item.use({ season: seasons.find(v => v.number == indexes.season) })
@@ -179,6 +189,7 @@ export const library = {
 			if (!item.episode && Item.Type == 'Episode') {
 				let url = `/shows/${item.id}/seasons/${indexes.season}/episodes/${indexes.episode}`
 				let episode = (await trakt.client.get(url, {
+					memoize: true,
 					silent: true,
 				})) as trakt.Episode
 				item.use({ episode })
@@ -188,7 +199,11 @@ export const library = {
 	},
 	pathIds(Path: string) {
 		let matches = Array.from(Path.matchAll(/\[(?<key>\w{4})id=(?<value>(tt)?\d*)\]/g))
-		return _.fromPairs(matches.map(match => [match.groups.key, match.groups.value]))
+		return _.fromPairs(
+			matches.map(match => {
+				return [match.groups.key, match.groups.value]
+			}),
+		) as Record<string, string>
 	},
 	pathIndexes(Path: string) {
 		let [season, episode] = [] as number[]
@@ -200,6 +215,7 @@ export const library = {
 		}
 		return { season, episode }
 	},
+
 	toTitle(Item: emby.Item) {
 		let name = Item.Name
 		if (Item.Type == 'Movie') name += ` (${Item.ProductionYear})`
@@ -279,6 +295,7 @@ export const library = {
 			item = new media.Item(item.result)
 			await utils.pRandom(100)
 			let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
+				memoize: true,
 				silent: true,
 			})) as trakt.Season[]
 			seasons = seasons.filter(
@@ -302,18 +319,32 @@ export const library = {
 	async addAll(items: media.Item[]) {
 		if (items.length == 0) return []
 		let t = Date.now()
+		let dateiso = new Date().toISOString()
 
-		let TotalRecordCount = (await emby.client.get('/Items', {
-			query: { IncludeItemTypes: 'Movie,Episode', Limit: '0', Recursive: 'true' },
-			silent: true,
-		})).TotalRecordCount as number
+		console.log(
+			`library addAll items ->`,
+			items.map(v => v.short),
+			items.length,
+		)
 
-		let Updates = (await pAll(items.map(v => () => library.add(v)), { concurrency: 1 })).flat()
-		console.log(`addAll Updates ->`, Updates.length)
+		// let TotalRecordCount = (
+		// 	await emby.client.get('/Items', {
+		// 		query: { IncludeItemTypes: 'Movie,Episode', Limit: '0', Recursive: 'true' },
+		// 		silent: true,
+		// 	})
+		// ).TotalRecordCount as number
+
+		let Updates = (
+			await pAll(
+				items.map(v => () => library.add(v)),
+				{ concurrency: 1 },
+			)
+		).flat()
+		console.log(`library addAll Updates ->`, Updates.length)
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		if (Creations.length > 0) {
-			console.info(`addAll Creations ->`, Creations.length)
+			console.info(`library addAll Creations ->`, Creations.length)
 
 			let FolderIds = Object.values(library.folders).map(v => v.ItemId)
 			let CreationPaths = Creations.map(v => v.Path).sort()
@@ -322,16 +353,16 @@ export const library = {
 					return MessageType == 'RefreshProgress' && FolderIds.includes(Data.ItemId)
 				}),
 				Rx.op.debounceTime(900),
-				Rx.op.concatMap(async () => {
+				Rx.op.mergeMap(async () => {
 					let Items = await library.Items({
 						Fields: [],
 						IncludeItemTypes: ['Movie', 'Episode'],
-						Limit: 999999,
-						SortBy: 'DateCreated',
-						SortOrder: 'Ascending',
-						StartIndex: TotalRecordCount,
+						MinDateLastSaved: dateiso,
 					})
-					return _.difference(CreationPaths, Items.map(v => v.Path))
+					return _.difference(
+						CreationPaths,
+						Items.map(v => v.Path),
+					)
 				}),
 				Rx.op.filter(difference => {
 					console.log(`CreationPaths difference ->`, difference.length)
@@ -343,7 +374,7 @@ export const library = {
 			await Promise.all([library.refresh(), rxRefreshProgress.toPromise()])
 		}
 
-		console.info(Date.now() - t, `addAll ${Updates.length} Updates ->`, 'DONE')
+		console.info(Date.now() - t, `library addAll ${Updates.length} Updates ->`, 'DONE')
 		return Updates
 	},
 }

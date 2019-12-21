@@ -17,37 +17,37 @@ process.nextTick(() => {
 		Rx.op.filter(({ method, parts }) => {
 			return method == 'POST' && parts.includes('favoriteitems')
 		}),
-		Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
-		Rx.op.concatMap(async ({ ItemId, UserId }) => {
+		Rx.op.distinctUntilChanged((a, b) => {
+			return `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`
+		}),
+		Rx.op.mergeMap(async ({ ItemId, UserId }) => {
 			let Item = (await emby.library.Items({ Ids: [ItemId] }))[0]
-			let Session = await emby.sessions.byUserId(UserId)
+			let Session = await emby.Session.byUserId(UserId)
 			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 			let PlaybackInfo = await Session.getPlaybackInfo()
 			return { Item, PlaybackInfo }
 		}),
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode'].includes(Item.Type)),
-		Rx.op.concatMap(async ({ Item, PlaybackInfo }) => {
+		Rx.op.mergeMap(async ({ Item, PlaybackInfo }) => {
 			let item = await emby.library.item(Item)
 			if (Item.Type == 'Series') {
 				if (item.show && item.show.aired_episodes > 128) {
 					throw new Error(`${item.show.aired_episodes} aired_episodes greater than 128`)
 				}
 				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
+					memoize: true,
 					silent: true,
 				})) as trakt.Season[]
 				seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
 				let items = seasons.map(season =>
-					new media.Item(item.result).use({
-						type: 'season',
-						season,
-					}),
+					new media.Item(item.result).use({ type: 'season', season }),
 				)
 				return { items, PlaybackInfo }
 			}
 			return { items: [item], PlaybackInfo }
 		}),
 		Rx.op.catchError((error, caught) => {
-			console.error(`rxFavorite concatMap -> %O`, error)
+			console.error(`rxFavorite -> %O`, error)
 			return caught
 		}),
 	)
@@ -58,7 +58,11 @@ process.nextTick(() => {
 				console.warn(`rxFavorite download '${item.strm}' ->`, gigs)
 
 				let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
-				console.log(`rxFavorite torrents '${item.strm}' ->`, torrents.map(v => v.short))
+				console.log(
+					`rxFavorite torrents '${item.strm}' ->`,
+					torrents.map(v => v.short),
+					torrents.length,
+				)
 
 				// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 

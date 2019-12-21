@@ -75,7 +75,9 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			if (name.includes(' duology ')) torrent.packs = 2
 			else if (name.includes(' trilogy ')) torrent.packs = 3
 			else if (name.includes(' triology ')) torrent.packs = 3
+			else if (name.includes(' quadrilogy ')) torrent.packs = 4
 			else if (name.includes(' quadriology ')) torrent.packs = 4
+			else if (name.includes(' tetralogy ')) torrent.packs = 4
 			else if (name.includes(' pentalogy ')) torrent.packs = 5
 			else if (name.includes(' hexalogy ')) torrent.packs = 6
 			else if (name.includes(' heptalogy ')) torrent.packs = 7

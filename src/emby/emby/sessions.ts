@@ -20,8 +20,8 @@ process.nextTick(async () => {
 	// })
 })
 
-export const sessions = {
-	parse(Sessions: Session[]) {
+export class Session {
+	static parse(Sessions: Session[]) {
 		_.remove(Sessions, ({ DeviceId, RemoteEndPoint, UserName }) => {
 			if (!UserName) return true
 			if (DeviceId == process.env.EMBY_SERVER_ID) return true
@@ -30,22 +30,20 @@ export const sessions = {
 		return Sessions.sort((a, b) => {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
 		})
-	},
-	use(Sessions: Session[]) {
-		return sessions.parse(Sessions).map(v => new Session(v))
-	},
-	async get() {
-		return sessions.use(await emby.client.get('/Sessions', { silent: true }))
-	},
-	async byUserId(UserId: string) {
-		return (await sessions.get()).find(v => v.UserId == UserId)
-	},
-	broadcast(message: string) {
-		sessions.get().then(sessions => sessions.forEach(v => v.message(message)))
-	},
-}
+	}
+	static use(Sessions: Session[]) {
+		return Session.parse(Sessions).map(v => new Session(v))
+	}
+	static async get() {
+		return Session.use(await emby.client.get('/Sessions', { silent: true }))
+	}
+	static async byUserId(UserId: string) {
+		return (await Session.get()).find(v => v.UserId == UserId)
+	}
+	static broadcast(message: string) {
+		Session.get().then(sessions => sessions.forEach(v => v.message(message)))
+	}
 
-export class Session {
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}

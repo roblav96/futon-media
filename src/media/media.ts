@@ -308,16 +308,18 @@ export class Item {
 		simkls.forEach(v => collisions.push(...Item.aliases(v.title, v.year)))
 		// console.log(`collisions ->`, collisions)
 
-		let results = (await pAll(
-			queries.map(query => async () =>
-				(await trakt.client.get(`/search/movie,show`, {
-					query: { query, fields: 'title,translations,aliases', limit: 100 },
-					memoize: process.DEVELOPMENT,
-					silent: true,
-				})) as trakt.Result[],
-			),
-			// { concurrency: 1 }
-		)).flat()
+		let results = (
+			await pAll(
+				queries.map(query => async () =>
+					(await trakt.client.get(`/search/movie,show`, {
+						query: { query, fields: 'title,translations,aliases', limit: 100 },
+						memoize: process.DEVELOPMENT,
+						silent: true,
+					})) as trakt.Result[],
+				),
+				// { concurrency: 1 }
+			)
+		).flat()
 
 		let items = results.map(v => new Item(v)).filter(v => v.slug != this.slug)
 		items = _.sortBy(_.uniqBy(items, 'slug'), ['slug'])
