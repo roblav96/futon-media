@@ -35,7 +35,7 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
-		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
@@ -56,7 +56,7 @@ process.nextTick(async () => {
 
 export async function scrapeAll(item: media.Item, isHD: boolean) {
 	let t = Date.now()
-	// if (process.DEVELOPMENT) isHD = true
+	if (process.DEVELOPMENT) isHD = true
 
 	await item.setAll()
 	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
@@ -117,6 +117,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
+		v.boost += v.providers.length * 0.05
 		let name = ` ${v.name} `
 		let sds = ['720p', '480p', '360p', '720', '480', '360', 'avi']
 		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
@@ -134,9 +135,11 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		}
 		let bits = ['8bit', '8 bit', '10bit', '10 bit']
 		if (bits.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		let remuxes = ['bdremux', 'remux']
+		if (remuxes.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
-		if (['bdremux', 'remux'].find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (v.providers.includes('Rarbg')) v.boost *= 1.5
 		if (name.includes(' fgt ')) v.boost *= 1.5
 	}
 

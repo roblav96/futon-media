@@ -9,19 +9,21 @@ import * as utils from '@/utils/utils'
 export const SKIPS = [
 	// ...utils.NSFWS,
 	'3d',
-	// 'avi',
 	'bonus',
 	'cam',
 	'camhd',
 	'camrip',
+	'hd ts',
+	'hdcam',
+	'hdts',
+	'sample',
+	'trailer',
+	// 'avi',
 	// 'enhanced',
 	// 'extras',
 	// 'french',
-	'hdcam',
 	// 'latino',
 	// 'protected',
-	'sample',
-	'trailer',
 ]
 
 export function results(result: scraper.Result, item: media.Item) {
@@ -92,6 +94,10 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			) {
 				torrent.packs = item.collection.name ? item.collection.fulls.length : years.length
 			}
+
+			// if (item.collection.name && torrent.packs) {
+			if (!item.years.find(year => name.includes(` ${year} `))) return
+			// }
 
 			return true
 		} catch (error) {
