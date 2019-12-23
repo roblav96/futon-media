@@ -4,7 +4,7 @@ import * as http from 'http'
 import * as HttpErrors from 'http-errors'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
-import * as qs from '@/shims/query-string'
+import * as qs from 'query-string'
 import * as request from 'request'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
@@ -181,7 +181,7 @@ export class Http {
 		let response: HttpieResponse
 		let mkey: string
 		if (!!options.memoize) {
-			mkey = utils.hash(config)
+			mkey = utils.hash(_.pick(options, ['body', 'headers', 'method', 'url']))
 			response = await db.get(mkey)
 		}
 		if (!response) {

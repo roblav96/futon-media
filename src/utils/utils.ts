@@ -8,8 +8,7 @@ import * as matcher from 'matcher'
 import * as path from 'path'
 import * as pDelay from 'delay'
 import * as relativeTime from 'dayjs/plugin/relativeTime'
-import fastStringify from 'fast-safe-stringify'
-import numbro, { INumbro } from '@/shims/numbro'
+import safeStringify from 'safe-stable-stringify'
 import stripBom = require('strip-bom')
 import { NAUGHTY_WORDS, STOP_WORDS, VIDEO_EXTENSIONS } from '@/utils/dicts'
 
@@ -23,7 +22,7 @@ export function duration(amount: number, unit: dayjs.OpUnitType) {
 }
 
 export function hash(value: any) {
-	if (!_.isString(value)) value = fastStringify.stable(value)
+	if (!_.isString(value)) value = safeStringify(value)
 	let sha256 = crypto.createHash('sha256').update(value)
 	return sha256.digest('hex')
 }

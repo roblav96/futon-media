@@ -22,7 +22,7 @@ process.nextTick(async () => {
 	process.DEVELOPMENT && (await db.flush())
 })
 
-async function getDebridStream(Query: emby.StrmQuery, Item: emby.Item) {
+async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
 	let title = emby.library.toTitle(Item)
 
@@ -98,7 +98,7 @@ fastify.get('/strm', async (request, reply) => {
 	if (!_.isString(stream)) {
 		if (!emitter.eventNames().includes(Item.Id)) {
 			try {
-				stream = await getDebridStream(Query, Item)
+				stream = await getDebridStream(Item)
 			} catch (error) {
 				console.error(`/strm '${title}' -> %O`, error.message)
 				stream = 'null'

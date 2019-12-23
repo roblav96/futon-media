@@ -1,8 +1,8 @@
-import JsonStringify from 'safe-stable-stringify'
+import safeStringify from 'safe-stable-stringify'
 import { replacer, reviver } from 'buffer-json'
 
 export function stringify(value: any) {
-	return JsonStringify(value, replacer)
+	return safeStringify(value, replacer)
 }
 
 export function parse<T = any>(text: string) {

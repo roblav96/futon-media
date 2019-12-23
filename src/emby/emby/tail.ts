@@ -68,23 +68,18 @@ export class Tail {
 		let limbo = ''
 		this.child.all.on('data', (chunk: string) => {
 			chunk = limbo + (chunk || '').toString()
-			// console.warn(`████  chunk  ████ ->`, JSON.stringify(chunk))
 			let regex = /(?<stamp>\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (?<level>\w+) (?<category>[^\:]+)\: /g
 			let matches = Array.from(chunk.matchAll(regex))
-			// console.log(`matches ->`, matches)
 			for (let i = 0; i < matches.length; i++) {
 				let [match, next] = [matches[i], matches[i + 1]]
-				// console.log(`match ->`, match)
 				let message = chunk.slice(match.index, next ? next.index : Infinity)
 				if (next || message.endsWith('\n')) {
 					delete match.input
-					// console.warn(`tail ->`, message, match)
 					rxTail.next({ message, match })
 					limbo = ''
 					continue
 				}
 				limbo += message
-				// console.warn(`limbo ->`, limbo)
 			}
 		})
 	}
@@ -100,7 +95,7 @@ export const rxLine = rxTail.pipe(
 		message: message.slice(match[0].length).trim(),
 	})),
 	Rx.op.share(),
-	// Rx.op.tap(line => console.log(`rxTail line ->`, line))
+	// Rx.op.tap(line => console.log(`rxTail line ->`, line)),
 )
 // rxLine.subscribe(({ level, category, message }) => {
 // 	if (level == 'Info' && category == 'HttpServer') return

@@ -23,7 +23,8 @@
 		"watch:node": "just-wait --silent --pattern dist/index.js && watchexec --restart --debounce 100 --watch dist --exts js -- NODE_ENV=development node --inspect dist/index.js",
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
 		"emby:restart": "echo 'killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
-		"emby:del": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/library.*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/root/*; rm -rf ~/.config/emby-server/transcoding-temp;'",
+		"emby:del": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/transcoding-temp/*;'",
+		"emby:del:all": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/displaypreferences.*; rm -rf ~/.config/emby-server/data/library.*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/root/default/*; rm -rf ~/.config/emby-server/transcoding-temp/*;'",
 		"scripts:users-sync": "run-s build stop; node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {
@@ -78,7 +79,7 @@
 		"p-event": "^4.1.0",
 		"p-queue": "^6.2.1",
 		"pify": "^4.0.1",
-		"pino": "^5.15.0",
+		"popsicle": "^12.0.5",
 		"pretty-bytes": "^5.3.0",
 		"pretty-ms": "^5.1.0",
 		"prompts": "^2.3.0",

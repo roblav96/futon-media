@@ -50,16 +50,18 @@ process.nextTick(() => {
 				return { slug }
 			}
 
-			let results = (await pAll(
-				[`${SearchTerm}*`, `${SearchTerm} *`].map(query => async () =>
-					(await trakt.client.get('/search/movie,show', {
-						query: { query, fields: 'title,translations', limit: 100 },
-						memoize: true,
-						silent: true,
-					})) as trakt.Result[],
-				),
-				{ concurrency: 1 },
-			)).flat()
+			let results = (
+				await pAll(
+					[`${SearchTerm}*`, `${SearchTerm} *`].map(query => async () =>
+						(await trakt.client.get('/search/movie,show', {
+							query: { query, fields: 'title,translations', limit: 100 },
+							memoize: true,
+							silent: true,
+						})) as trakt.Result[],
+					),
+					{ concurrency: 1 },
+				)
+			).flat()
 			results = trakt.uniqWith(results.filter(Boolean))
 			let items = results.map(v => new media.Item(v)).filter(v => !v.invalid)
 			items.sort((a, b) => b.main.votes - a.main.votes)
@@ -85,7 +87,11 @@ process.nextTick(() => {
 			if (SearchTerm.includes(' ')) return utils.includes(v.title, SearchTerm)
 			return utils.contains(v.title, SearchTerm)
 		})
-		console.log(`rxSearch items ->`, items.map(v => v.short), items.length)
+		console.log(
+			`rxSearch items ->`,
+			items.map(v => v.short),
+			items.length,
+		)
 
 		let means = [1]
 		let votes = items.map(v => v.main.votes).filter(Boolean)
@@ -94,29 +100,38 @@ process.nextTick(() => {
 		}
 		means = means.map(v => _.floor(v))
 
-		let spaces = utils.stripStopWords(SearchTerm).split(' ').length - 1
+		// SearchTerm = utils.stripStopWords(SearchTerm)
+		let spaces = SearchTerm.split(' ').length - 1
 		let index = _.clamp(spaces, 0, means.length - 1)
 		let mean = means[index]
 		if (spaces == 0) mean -= _.last(means)
 		if (spaces >= 2) mean = 1
-		console.log(`rxSearch mean ->`, mean, means)
+		console.log(`rxSearch mean ->`, mean, means, spaces)
 
+		SearchTerm = utils.stripStopWords(SearchTerm)
 		items = items.filter(item => {
-			if (spaces <= 2 && utils.equals(item.title, SearchTerm)) {
+			let title = utils.stripStopWords(item.title)
+			if (spaces <= 2 && utils.equals(title, SearchTerm)) {
 				if (spaces == 0) return !item.isJunk(_.floor(_.last(means) / 2))
 				return !item.isJunk(_.last(means))
 			}
-			if (spaces == 0 && !utils.startsWith(item.title, SearchTerm)) {
+			if (spaces == 0 && !utils.startsWith(title, SearchTerm)) {
 				return false
 			}
-			if (spaces == 1 && utils.startsWith(item.title, SearchTerm)) {
+			if (spaces == 1 && utils.startsWith(title, SearchTerm)) {
 				return !item.isJunk(_.last(means))
 			}
-			if (spaces == 1 && utils.contains(item.title, SearchTerm)) {
+			if (spaces == 1 && utils.contains(title, SearchTerm)) {
 				return !item.isJunk(_.last(means))
 			}
 			return !item.isJunk(mean)
 		})
+
+		console.info(
+			`rxSearch addQueue ->`,
+			items.map(v => v.short),
+			items.length,
+		)
 
 		return emby.library.addQueue(items)
 	})

@@ -11,45 +11,39 @@ process.nextTick(() => {
 		Rx.op.distinctUntilChanged(
 			(a, b) => `${a.Item.SeriesId || a.Item.Id}` == `${b.Item.SeriesId || b.Item.Id}`,
 		),
-		Rx.op.mergeMap(async ({ Item, Session }) => {
-			console.warn(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
-			let item = await emby.library.item(Item)
-			if (!item) {
-				console.warn(`rxRefresh !item ->`, Item)
-				throw new Error(`!item`)
-			}
-			if (['Movie', 'Series', 'Episode'].includes(Item.Type)) {
-				await emby.library.addQueue([item])
-			}
-			if (Item.Type == 'Person') {
-				let items = (await trakt.resultsFor(item.person)).map(v => new media.Item(v))
-				items = items.filter(v => !v.isJunk(1000))
-				items.sort((a, b) => b.main.votes - a.main.votes)
-				await emby.library.addQueue(items)
-			}
-			return { Item, item }
-		}),
-		Rx.op.catchError((error, caught) => {
-			console.error(`rxRefresh -> %O`, error)
-			return caught
-		}),
 	)
-	rxRefresh.subscribe(async ({ Item, item }) => {
-		if (item.show && item.show.status == 'returning series') {
-			// if (true) {
-			let Episodes = await emby.library.Items({
-				EnableImages: true,
-				EnableImageTypes: ['Primary'],
-				Fields: ['Overview'],
-				HasOverview: false,
-				ImageTypeLimit: 1,
-				IncludeItemTypes: ['Episode'],
-				ParentId: Item.SeriesId || Item.Id,
-				SortBy: 'PremiereDate',
-				SortOrder: 'Descending',
-			})
-			let Episode = _.first(Episodes)
-			Episode.ParentIndexNumber
+	rxRefresh.subscribe(async ({ Item, Session }) => {
+		console.warn(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
+		let item = await emby.library.item(Item)
+		if (!item) return console.warn(`rxRefresh !item ->`, Item)
+
+		if (Item.Type == 'Person') {
+			let items = (await trakt.resultsFor(item.person)).map(v => new media.Item(v))
+			items = items.filter(v => !v.isJunk(1000))
+			items.sort((a, b) => b.main.votes - a.main.votes)
+			return emby.library.addQueue(items)
+		}
+
+		if (Item.Type == 'Movie') {
+			return emby.library.addQueue([item])
+		}
+
+		if (['Series', 'Episode'].includes(Item.Type)) {
+			let Updates = await emby.library.addQueue([item])
+			if (Updates.filter(v => v.UpdateType == 'Created').length > 0) return
+
+			// let Episodes = await emby.library.Items({
+			// 	EnableImages: true,
+			// 	EnableImageTypes: ['Primary'],
+			// 	Fields: ['Overview'],
+			// 	HasOverview: false,
+			// 	ImageTypeLimit: 1,
+			// 	IncludeItemTypes: ['Episode'],
+			// 	ParentId: Item.SeriesId || Item.Id,
+			// 	SortBy: 'PremiereDate',
+			// 	SortOrder: 'Ascending',
+			// })
+			// console.log(`Episodes ->`, Episodes)
 
 			// let Season = _.last(_.sortBy(Seasons, 'IndexNumber'))
 			// await emby.client.post(`/Items/${Season.Id}/Refresh`, {

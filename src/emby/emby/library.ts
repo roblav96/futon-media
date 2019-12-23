@@ -23,14 +23,6 @@ process.nextTick(async () => {
 
 export const library = {
 	async refresh() {
-		await library.unrefresh()
-		await emby.client.post('/Library/Refresh', {
-			retries: [],
-			silent: true,
-			timeout: utils.duration(1, 'minute'),
-		})
-	},
-	async unrefresh() {
 		let Tasks = (await emby.client.get('/ScheduledTasks', {
 			silent: true,
 		})) as ScheduledTasksInfo[]
@@ -39,6 +31,7 @@ export const library = {
 			await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
 			await utils.pTimeout(300)
 		}
+		await emby.client.post('/Library/Refresh', { silent: true })
 	},
 
 	folders: {
@@ -147,7 +140,7 @@ export const library = {
 		return ((
 			await emby.client.get('/Items', {
 				query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
-				profile: process.DEVELOPMENT,
+				// profile: process.DEVELOPMENT,
 				silent: true,
 			})
 		).Items || []) as emby.Item[]
@@ -218,7 +211,7 @@ export const library = {
 
 	toTitle(Item: emby.Item) {
 		let name = Item.Name
-		if (Item.Type == 'Movie') name += ` (${Item.ProductionYear})`
+		if (['Movie', 'Series'].includes(Item.Type)) name += ` (${Item.ProductionYear})`
 		if (Item.Type == 'Season') name = `${Item.SeriesName} ${Item.Name}`
 		if (Item.Type == 'Episode') {
 			let base = path.basename(Item.Path).slice(0, -5)
@@ -228,21 +221,21 @@ export const library = {
 	},
 
 	toStrmPath(query: StrmQuery, full = false) {
-		let file = `/${query.slug} (${query.year})`
-		let dir = library.folders[`${query.type}s` as media.MainContentTypes].Location
+		let title = utils.toSlug(query.title, { title: true })
+		let file = `/${title} (${query.year})`
 		if (query.imdb) file += ` [imdbid=${query.imdb}]`
 		if (query.tmdb) file += ` [tmdbid=${query.tmdb}]`
 		if (query.tvdb) file += ` [tvdbid=${query.tvdb}]`
-		// if (query.trakt) file += ` [traktid=${query.trakt}]`
+		let dir = library.folders[`${query.type}s` as media.MainContentTypes].Location
 		if (query.type == 'movie') {
-			file += `/${query.slug}`
+			file += `/${title} (${query.year})`
 		}
 		if (full == false) {
 			return query.type == 'movie' ? `${dir}${file}.strm` : `${dir}${file}`
 		}
 		if (query.type == 'show') {
 			file += `/Season ${query.season}`
-			file += `/${query.slug} `
+			file += `/${title} `
 			file += `S${utils.zeroSlug(query.season)}`
 			file += `E${utils.zeroSlug(query.episode)}`
 		}
@@ -251,6 +244,7 @@ export const library = {
 	toStrmQuery(item: media.Item) {
 		let query = {
 			slug: item.ids.slug,
+			title: item.title,
 			trakt: item.ids.trakt,
 			type: item.type,
 			year: item.year,
@@ -279,17 +273,15 @@ export const library = {
 		await fs.outputFile(Path, library.toStrmUrl(library.toStrmQuery(item)))
 		return Updated
 	},
-
 	async add(item: media.Item) {
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
-			let Update = await library.toStrmFile(item)
+			Updates.push(await library.toStrmFile(item))
 			// if (Update.UpdateType == 'Created') {
 			// 	let xml = await emby.toMovieXml(item)
 			// 	console.log(`${item.strm} xml ->\n\n`, xml)
 			// 	await fs.outputFile(Update.Path.replace('.strm', '.xml'), xml)
 			// }
-			Updates.push(Update)
 		}
 		if (item.show) {
 			item = new media.Item(item.result)
@@ -321,19 +313,6 @@ export const library = {
 		let t = Date.now()
 		let dateiso = new Date().toISOString()
 
-		console.log(
-			`library addAll items ->`,
-			items.map(v => v.short),
-			items.length,
-		)
-
-		// let TotalRecordCount = (
-		// 	await emby.client.get('/Items', {
-		// 		query: { IncludeItemTypes: 'Movie,Episode', Limit: '0', Recursive: 'true' },
-		// 		silent: true,
-		// 	})
-		// ).TotalRecordCount as number
-
 		let Updates = (
 			await pAll(
 				items.map(v => () => library.add(v)),
@@ -346,35 +325,47 @@ export const library = {
 		if (Creations.length > 0) {
 			console.info(`library addAll Creations ->`, Creations.length)
 
-			let FolderIds = Object.values(library.folders).map(v => v.ItemId)
-			let CreationPaths = Creations.map(v => v.Path).sort()
-			let rxRefreshProgress = emby.rxSocket.pipe(
-				Rx.op.filter(({ MessageType, Data }) => {
-					return MessageType == 'RefreshProgress' && FolderIds.includes(Data.ItemId)
-				}),
-				Rx.op.debounceTime(900),
-				Rx.op.mergeMap(async () => {
-					let Items = await library.Items({
-						Fields: [],
-						IncludeItemTypes: ['Movie', 'Episode'],
-						MinDateLastSaved: dateiso,
-					})
-					return _.difference(
-						CreationPaths,
-						Items.map(v => v.Path),
-					)
-				}),
-				Rx.op.filter(difference => {
-					console.log(`CreationPaths difference ->`, difference.length)
-					return difference.length == 0
-				}),
-				Rx.op.take(1),
-			)
+			await library.refresh()
+			let CreationPaths = Creations.map(v => v.Path)
+			while (CreationPaths.length > 0) {
+				await utils.pRandom(1000)
+				let Items = await library.Items({
+					Fields: [],
+					IncludeItemTypes: ['Movie', 'Episode'],
+					MinDateLastSaved: dateiso,
+				})
+				let ItemPaths = Items.map(v => v.Path)
+				_.remove(CreationPaths, v => ItemPaths.includes(v))
+			}
 
-			await Promise.all([library.refresh(), rxRefreshProgress.toPromise()])
+			// let FolderIds = Object.values(library.folders).map(v => v.ItemId)
+			// let CreationPaths = Creations.map(v => v.Path).sort()
+			// let rxRefreshProgress = emby.rxSocket.pipe(
+			// 	Rx.op.filter(({ MessageType, Data }) => {
+			// 		return MessageType == 'RefreshProgress' && FolderIds.includes(Data.ItemId)
+			// 	}),
+			// 	Rx.op.debounceTime(900),
+			// 	Rx.op.mergeMap(async () => {
+			// 		let Items = await library.Items({
+			// 			Fields: [],
+			// 			IncludeItemTypes: ['Movie', 'Episode'],
+			// 			MinDateLastSaved: dateiso,
+			// 		})
+			// 		return _.difference(
+			// 			CreationPaths,
+			// 			Items.map(v => v.Path),
+			// 		)
+			// 	}),
+			// 	Rx.op.filter(difference => {
+			// 		console.log(`CreationPaths difference ->`, difference.length)
+			// 		return difference.length == 0
+			// 	}),
+			// 	Rx.op.take(1),
+			// )
+			// await Promise.all([library.refresh(), rxRefreshProgress.toPromise()])
 		}
 
-		console.info(Date.now() - t, `library addAll ${Updates.length} Updates ->`, 'DONE')
+		console.info(Date.now() - t, `library addAll ${Updates.length} ->`, 'DONE')
 		return Updates
 	},
 }
@@ -384,6 +375,7 @@ export interface StrmQuery {
 	imdb: string
 	season: number
 	slug: string
+	title: string
 	tmdb: number
 	trakt: number
 	tvdb: number
