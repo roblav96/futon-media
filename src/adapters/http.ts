@@ -187,6 +187,14 @@ export class Http {
 		if (!response) {
 			try {
 				response = await send(options.method, options.url, options)
+				// let res = await popsicle.fetch(options.url, {
+				// 	body: options.body,
+				// 	headers: options.headers,
+				// 	method: options.method,
+				// })
+				// console.log(`[RES] ${options.method} ${options.url} -> %O`, res)
+				// response = {data}
+				// console.dir(res)
 			} catch (err) {
 				let error = err as HTTPError
 				if (options.debug) {

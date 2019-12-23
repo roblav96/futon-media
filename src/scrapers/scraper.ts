@@ -35,22 +35,22 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
-		// (await import('@/scrapers/providers/bitsnoop')).BitSnoop,
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/btsow')).Btsow,
-		// (await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/bitsnoop')).BitSnoop,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/btsow')).Btsow,
+		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
+		(await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		(await import('@/scrapers/providers/yts')).Yts,
 	]
 })
 
@@ -178,7 +178,6 @@ export class Scraper {
 		if (this.item.movie) return this.item.slugs
 		let queries = this.item.queries.map(v => `${this.item.slugs[0]} ${v}`)
 		let slugs = this.item.slugs.concat(queries)
-		// if (process.DEVELOPMENT) return slugs.slice(0, 1)
 		return slugs
 	}
 

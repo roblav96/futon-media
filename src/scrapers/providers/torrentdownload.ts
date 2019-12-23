@@ -19,10 +19,18 @@ export class TorrentDownload extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let response = await client.get(`/${sort}`, { query: { q: slug } as Partial<Query> })
-		// let xml = xmljs.xml2js(response, { compact: true, nativeType: true })
-		console.log(`xmljs.xml2js(response, { compact: true, nativeType: true }) ->`, xmljs.xml2js(response, { compact: true, nativeType: true }))
-		console.log(`Json.parse(xmljs.xml2json(response, { compact: true, nativeType: true })) ->`, Json.parse(xmljs.xml2json(response, { compact: true, nativeType: true })))
-		return []
+		let xml = xmljs.xml2js(response, { compact: true, textKey: 'value' }) as any
+		return (xml.rss.channel.item as XmlItem[]).map(v => {
+			let regex = /Size: (?<size>.*).*Seeds: (?<seeds>.*).*,.*Peers: (?<peers>.*).*Hash: (?<hash>.*)/g
+			let group = Array.from(v.description.value.matchAll(regex))[0].groups
+			return {
+				bytes: utils.toBytes(group.size.trim()),
+				magnet: `magnet:?xt=urn:btih:${group.hash}&dn=${v.title.value}`,
+				name: v.title.value,
+				seeders: _.parseInt(group.seeds.trim()),
+				stamp: dayjs(v.pubDate.value).valueOf(),
+			} as scraper.Result
+		})
 	}
 
 	// sorts = ['searchs', 'search']
@@ -55,4 +63,23 @@ export class TorrentDownload extends scraper.Scraper {
 
 interface Query {
 	q: string
+}
+
+interface XmlItem {
+	category: {}
+	description: {
+		value: string
+	}
+	guid: {
+		value: string
+	}
+	link: {
+		value: string
+	}
+	pubDate: {
+		value: string
+	}
+	title: {
+		value: string
+	}
 }
