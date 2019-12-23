@@ -25,11 +25,7 @@ async function getDebridStream(Item: emby.Item) {
 	let title = emby.library.toTitle(Item)
 
 	let Session = (await emby.Session.get()).find(v => v.ItemPath == Item.Path)
-	let PlaybackInfo: emby.PlaybackInfo
-	while (!PlaybackInfo) {
-		PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, Session && Session.UserId)
-		if (!PlaybackInfo) await utils.pTimeout(300)
-	}
+	let PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, Session && Session.UserId)
 	if (!Session) Session = (await emby.Session.get()).find(v => v.UserId == PlaybackInfo.UserId)
 	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 

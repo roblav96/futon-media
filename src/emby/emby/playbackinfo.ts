@@ -46,7 +46,9 @@ process.nextTick(async () => {
 export class PlaybackInfo {
 	static async get(ItemId: string, UserId = '') {
 		let value = (await db.get(UserId ? `${ItemId}:${UserId}` : ItemId)) as PlaybackInfo
-		return value ? new PlaybackInfo(value) : value
+		if (value) return new PlaybackInfo(value)
+		await utils.pTimeout(300)
+		return PlaybackInfo.get(ItemId, UserId)
 	}
 	static async byUserId(UserId: string) {
 		return new PlaybackInfo(await db.get(UserId))
