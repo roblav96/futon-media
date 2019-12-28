@@ -28,7 +28,7 @@ export class Session {
 	}
 	static async broadcast(text: string) {
 		await pAll(
-			(await Session.get()).map(v => () => v.message(text)),
+			(await Session.get()).map(v => () => v.Message(text)),
 			{ concurrency: 1 },
 		)
 	}
@@ -113,34 +113,30 @@ export class Session {
 		return await emby.PlaybackInfo.byUserId(this.UserId)
 	}
 	async getDevice() {
-		return (await emby.client.get(`/Devices/Info`, { query: { Id: this.DeviceId } })) as Device
+		return (await emby.client.get(`/Devices/Info`, {
+			query: { Id: this.DeviceId },
+			silent: true,
+		})) as Device
 	}
 
-	async command(Name: string, body: any) {
-		// console.log(`command '${Name}' ->`, body)
-		let response = await emby.client.post(`/Sessions/${this.Id}/Command/LibraryChanged`, {
-			query: {
-				// messageId: utils.hash(utils.nonce(), 'md5'),
-				api_key: process.env.EMBY_ADMIN_TOKEN,
-			},
-			body,
-		})
-		// console.log(`response ->`, response)
-	}
-
-	async message(text: string | Error) {
-		let body = { Text: `🔵 ${text}`, TimeoutMs: utils.duration(5, 'second') }
-		if (_.isError(text)) {
-			body.Text = `🔴 [Error] ${text.message}`
-			body.TimeoutMs = utils.duration(10, 'second')
-		}
+	async Message(text: string | Error) {
+		let body = { Text: `🔶 ${text}` }
+		if (_.isError(text)) body.Text = `⛔ [ERROR] ${text.message}`
+		Object.assign(body, { TimeoutMs: _.clamp(body.Text.length * 100, 5000, 15000) })
 		try {
-			await emby.client.post(`/Sessions/${this.Id}/Message`, {
-				body,
-				// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
-				// silent: true,
-			})
-		} catch (error) {}
+			await emby.client.post(`/Sessions/${this.Id}/Message`, { body, silent: true })
+		} catch {}
+	}
+
+	async GoToSearch(String: string) {
+		await emby.client.post(`/Sessions/${this.Id}/Command/GoToSearch`, {
+			// query: {api_key: process.env.EMBY_ADMIN_TOKEN, },
+		})
+		await emby.client.post(`/Sessions/${this.Id}/Command/SendString`, {
+			body: { Arguments: { String } },
+			// query: {api_key: process.env.EMBY_ADMIN_TOKEN, },
+			debug: true,
+		})
 	}
 }
 
