@@ -22,7 +22,7 @@ export const LINK = `https://38.rdeb.io/d/JHXH54RZIXZ6O/Mission.Impossible.Fallo
 
 export const TRAKT_LIST_ITEMS_URL = `/users/lish408/lists/4440958/items`
 
-export const SLUG = ` the Cosmos: A Space of · time Odyssey  WALL·E 90 Day Fiancé: What   Now? & black-ish ? é  é   `
+export const SLUG = ` the Cosmos: A_Space_of · time.Odyssey  WALL·E 90 Day Fiancé: What  . Now? & black-ish ? é  é /\// // . @#$% \0 \\0 ??`
 
 export const PLAYBACK_INFO = {
 	ANDROID: JSON.parse(

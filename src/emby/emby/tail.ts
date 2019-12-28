@@ -157,7 +157,7 @@ export const rxHttp = rxLine.pipe(
 // })
 
 export const rxItemId = rxHttp.pipe(
-	Rx.op.filter(({ query }) => !!(query.ItemId && query.UserId)),
+	Rx.op.filter(({ query }) => !!query.ItemId && !!query.UserId),
 	Rx.op.map(v => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
 	// Rx.op.debounceTime(10),
 	// Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
@@ -167,6 +167,7 @@ export const rxItemId = rxHttp.pipe(
 // rxItemId.subscribe(({ ItemId }) => console.log(`rxItemId ->`, ItemId))
 
 export const rxItem = rxItemId.pipe(
+	Rx.op.filter(({ method, parts }) => method != 'DELETE' && !parts.includes('deleteinfo')),
 	Rx.op.debounceTime(100),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),

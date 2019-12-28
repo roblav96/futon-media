@@ -74,7 +74,6 @@ export function stripAnsi(value: string) {
 export function isForeign(value: string) {
 	return /[^\x01-\xFF]/gi.test(value) == true
 	// return /[^\x00-\x7F]/gi.test(value) == false
-	// return /[^\x01-\xFF]/gi.test(value) == false
 }
 export function stripForeign(value: string) {
 	return trim(clean(value).replace(/[^\x01-\xFF]/gi, ' '))

@@ -20,7 +20,7 @@ export class TorrentDownload extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let response = await client.get(`/${sort}`, { query: { q: slug } as Partial<Query> })
 		let xml = xmljs.xml2js(response, { compact: true, textKey: 'value' }) as any
-		return (xml.rss.channel.item as XmlItem[]).map(v => {
+		return ((xml.rss.channel.item || []) as XmlItem[]).map(v => {
 			let regex = /Size: (?<size>.*).*Seeds: (?<seeds>.*).*,.*Peers: (?<peers>.*).*Hash: (?<hash>.*)/g
 			let group = Array.from(v.description.value.matchAll(regex))[0].groups
 			return {

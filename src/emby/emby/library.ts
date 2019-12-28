@@ -18,20 +18,23 @@ process.nextTick(async () => {
 	await library.setFolders()
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
-	// await library.deleteMissingItems()
+	// await library.missingItems()
+	// console.log(`IsMissing ->`, await library.Items({ IsMissing: true }))
 })
 
 export const library = {
 	async refresh() {
+		await emby.client.post('/Library/Refresh', { silent: true })
+	},
+	async unrefresh() {
 		let Tasks = (await emby.client.get('/ScheduledTasks', {
 			silent: true,
 		})) as ScheduledTasksInfo[]
 		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 		if (State != 'Idle') {
 			await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
-			await utils.pTimeout(300)
+			await utils.pTimeout(100)
 		}
-		await emby.client.post('/Library/Refresh', { silent: true })
 	},
 
 	folders: {
@@ -66,9 +69,9 @@ export const library = {
 		let Configuration = (await emby.client.get('/System/Configuration', {
 			silent: true,
 		})) as emby.SystemConfiguration
-		const DELAY = utils.duration(1, 'month') / utils.duration(1, 'second')
-		if (Configuration.LibraryMonitorDelay != DELAY) {
-			Configuration.LibraryMonitorDelay = DELAY
+		let delay = utils.duration(1, 'month') / 1000
+		if (Configuration.LibraryMonitorDelay != delay) {
+			Configuration.LibraryMonitorDelay = delay
 			await emby.client.post('/System/Configuration', {
 				body: Configuration,
 				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
@@ -78,16 +81,27 @@ export const library = {
 		}
 	},
 
-	async deleteMissingItems() {
-		let Items = await library.Items({ IsMissing: true })
-		if (Items.length == 0) return
-		console.warn(
-			`MissingItems ->`,
-			Items.map(v => `${v.SeriesName} ${v.SeasonName} ${v.Name}`),
-		)
-		// let Ids = Items.map(v => v.Id)
-		// await emby.client.delete('/Items', { query: { Ids: Ids.join() } })
-		// await library.refresh()
+	// async missingItems() {
+	// 	let Items = await library.Items({ IsMissing: true })
+	// 	if (Items.length == 0) return
+	// 	console.warn(
+	// 		`MissingItems ->`,
+	// 		Items.map(v => `${v.SeriesName} ${v.SeasonName} ${v.Name}`),
+	// 	)
+	// 	// let Ids = Items.map(v => v.Id)
+	// 	// await emby.client.delete('/Items', { query: { Ids: Ids.join() } })
+	// 	// await library.refresh()
+	// },
+
+	toTitle(Item: emby.Item) {
+		let name = Item.Name
+		if (['Movie', 'Series'].includes(Item.Type)) name += ` (${Item.ProductionYear})`
+		if (Item.Type == 'Season') name = `${Item.SeriesName} ${Item.Name}`
+		if (Item.Type == 'Episode') {
+			let base = path.basename(Item.Path).slice(0, -5)
+			name = `${Item.SeriesName} ${base.split(' ').pop()}`
+		}
+		return `[${Item.Type[0]}] ${name}`
 	},
 
 	async Items(
@@ -96,6 +110,7 @@ export const library = {
 			EnableImages: boolean
 			EnableImageTypes: string[]
 			ExcludeItemIds: string[]
+			ExcludeLocationTypes: string[]
 			Fields: string[]
 			Filters: string
 			HasOverview: boolean
@@ -108,6 +123,7 @@ export const library = {
 			MinDateLastSaved: string
 			MinIndexNumber: number
 			ParentId: string
+			ParentIndexNumber: number
 			Path: string
 			Recursive: boolean
 			SortBy: string
@@ -115,12 +131,19 @@ export const library = {
 			StartIndex: number
 		}>,
 	) {
-		if (!_.isBoolean(query.EnableImages)) query.EnableImages = false
-		if (!_.isArray(query.Ids)) {
-			if (!_.isBoolean(query.Recursive)) query.Recursive = true
-			if (!_.isString(query.Path) && !_.isArray(query.IncludeItemTypes)) {
+		if (!_.isBoolean(query.EnableImages)) {
+			query.EnableImages = false
+		}
+		if (!_.isArray(query.Ids) && !_.isString(query.Path)) {
+			if (!_.isBoolean(query.Recursive)) {
+				query.Recursive = true
+			}
+			if (!_.isArray(query.IncludeItemTypes)) {
 				query.IncludeItemTypes = ['Movie', 'Series', 'Episode', 'Person']
 			}
+		}
+		if (!_.isBoolean(query.IsMissing) && !_.isArray(query.ExcludeLocationTypes)) {
+			query.ExcludeLocationTypes = ['Virtual']
 		}
 		if (!_.isArray(query.Fields) || !_.isEmpty(query.Fields)) {
 			query.Fields = (query.Fields || []).concat([
@@ -148,15 +171,16 @@ export const library = {
 	async byItemId(ItemId: string) {
 		return (await emby.library.Items({ Ids: [ItemId] }))[0]
 	},
-	// async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>, query = {} as any) {
-	// 	let AnyProviderIdEquals = Object.entries(utils.compact(ids)).map(
-	// 		([k, v]) => `${k.toLowerCase()}.${v}`,
-	// 	)
-	// 	return (await library.Items(_.merge({ AnyProviderIdEquals }, query)))[0]
-	// },
+	async byPath(Path: string) {
+		return (await emby.library.Items({ Path }))[0]
+	},
+	async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>) {
+		let AnyProviderIdEquals = Object.entries(ids).map(([k, v]) => `${k.toLowerCase()}.${v}`)
+		return (await library.Items({ AnyProviderIdEquals }))[0]
+	},
 
 	async item(Item: emby.Item) {
-		let ids = Item.Path ? library.pathIds(Item.Path) : (Item.ProviderIds as never)
+		let ids = Item.Path ? library.pathProviderIds(Item.Path) : (Item.ProviderIds as never)
 		if (_.isEmpty(ids)) return
 		ids = utils.sortKeys(_.mapKeys(ids, (v, k) => k.toLowerCase())) as any
 		let type = Item.Type.toLowerCase() as media.ContentType
@@ -171,16 +195,16 @@ export const library = {
 			if (!result) continue
 			let item = new media.Item(result)
 			if (['Movie', 'Person'].includes(Item.Type)) return item
-			let indexes = library.pathIndexes(Item.Path)
+			let numbers = library.pathNumbers(Item.Path)
 			if (!item.season && ['Season', 'Episode'].includes(Item.Type)) {
 				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
 					memoize: true,
 					silent: true,
 				})) as trakt.Season[]
-				item.use({ season: seasons.find(v => v.number == indexes.season) })
+				item.use({ season: seasons.find(v => v.number == numbers.season) })
 			}
 			if (!item.episode && Item.Type == 'Episode') {
-				let url = `/shows/${item.id}/seasons/${indexes.season}/episodes/${indexes.episode}`
+				let url = `/shows/${item.id}/seasons/${numbers.season}/episodes/${numbers.episode}`
 				let episode = (await trakt.client.get(url, {
 					memoize: true,
 					silent: true,
@@ -190,7 +214,7 @@ export const library = {
 			return item
 		}
 	},
-	pathIds(Path: string) {
+	pathProviderIds(Path: string) {
 		let matches = Array.from(Path.matchAll(/\[(?<key>\w{4})id=(?<value>(tt)?\d*)\]/g))
 		return _.fromPairs(
 			matches.map(match => {
@@ -198,7 +222,7 @@ export const library = {
 			}),
 		) as Record<string, string>
 	},
-	pathIndexes(Path: string) {
+	pathNumbers(Path: string) {
 		let [season, episode] = [] as number[]
 		let match = Path.match(/\sS(?<season>\d+)E(?<episode>\d+)\.strm/)
 		if (!match) match = Path.match(/\/Season\s(?<season>\d+)/)
@@ -209,42 +233,31 @@ export const library = {
 		return { season, episode }
 	},
 
-	toTitle(Item: emby.Item) {
-		let name = Item.Name
-		if (['Movie', 'Series'].includes(Item.Type)) name += ` (${Item.ProductionYear})`
-		if (Item.Type == 'Season') name = `${Item.SeriesName} ${Item.Name}`
-		if (Item.Type == 'Episode') {
-			let base = path.basename(Item.Path).slice(0, -5)
-			name = `${Item.SeriesName} ${base.split(' ').pop()}`
+	toStrmPath(item: media.Item) {
+		let file = library.folders[`${item.type}s` as media.MainContentTypes].Location
+		let title = utils.trim(utils.clean(item.title).replace(/[^a-z\d\s_.-]/gi, ''))
+		file += `/${title} (${item.year})`
+		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
+		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
+		if (item.ids.tvdb) file += ` [tvdbid=${item.ids.tvdb}]`
+		if (item.movie) {
+			return `${file}/${title} (${item.year}).strm`
 		}
-		return `[${Item.Type[0]}] ${name}`
-	},
-
-	toStrmPath(query: StrmQuery, full = false) {
-		let title = utils.toSlug(query.title, { title: true })
-		let file = `/${title} (${query.year})`
-		if (query.imdb) file += ` [imdbid=${query.imdb}]`
-		if (query.tmdb) file += ` [tmdbid=${query.tmdb}]`
-		if (query.tvdb) file += ` [tvdbid=${query.tvdb}]`
-		let dir = library.folders[`${query.type}s` as media.MainContentTypes].Location
-		if (query.type == 'movie') {
-			file += `/${title} (${query.year})`
-		}
-		if (full == false) {
-			return query.type == 'movie' ? `${dir}${file}.strm` : `${dir}${file}`
-		}
-		if (query.type == 'show') {
-			file += `/Season ${query.season}`
+		if (item.episode) {
+			file += `/Season ${item.episode.season}`
 			file += `/${title} `
-			file += `S${utils.zeroSlug(query.season)}`
-			file += `E${utils.zeroSlug(query.episode)}`
+			file += `S${utils.zeroSlug(item.episode.season)}`
+			file += `E${utils.zeroSlug(item.episode.number)}`
+			return `${file}.strm`
 		}
-		return `${dir}${file}.strm`
+		if (item.season) {
+			return `${file}/Season ${item.season.number}`
+		}
+		return file
 	},
 	toStrmQuery(item: media.Item) {
 		let query = {
 			slug: item.ids.slug,
-			title: item.title,
 			trakt: item.ids.trakt,
 			type: item.type,
 			year: item.year,
@@ -252,39 +265,33 @@ export const library = {
 		if (item.ids.imdb) query.imdb = item.ids.imdb
 		if (item.ids.tmdb) query.tmdb = item.ids.tmdb
 		if (item.ids.tvdb) query.tvdb = item.ids.tvdb
+		if (item.season) {
+			query.season = item.season.number
+		}
 		if (item.episode) {
 			query.season = item.episode.season
 			query.episode = item.episode.number
 		}
 		return query
 	},
-	toStrmUrl(query: StrmQuery) {
-		return `${process.env.EMBY_WAN_ADDRESS}/strm?${qs.stringify(query)}`
-	},
-	itemStrmPath(item: media.Item, full?: boolean) {
-		return library.toStrmPath(library.toStrmQuery(item), full)
-	},
-
 	async toStrmFile(item: media.Item) {
-		let Path = library.itemStrmPath(item, true)
+		let Path = library.toStrmPath(item)
 		let Updated = { Path, UpdateType: 'Modified' } as emby.MediaUpdated
 		if (await fs.pathExists(Path)) return Updated
 		Updated.UpdateType = 'Created'
-		await fs.outputFile(Path, library.toStrmUrl(library.toStrmQuery(item)))
+		if (Path.endsWith('.strm')) {
+			let strmquery = qs.stringify(library.toStrmQuery(item))
+			await fs.outputFile(Path, `${process.env.EMBY_WAN_ADDRESS}/strm?${strmquery}`)
+		}
 		return Updated
 	},
 	async add(item: media.Item) {
 		let Updates = [] as emby.MediaUpdated[]
 		if (item.movie) {
-			Updates.push(await library.toStrmFile(item))
-			// if (Update.UpdateType == 'Created') {
-			// 	let xml = await emby.toMovieXml(item)
-			// 	console.log(`${item.strm} xml ->\n\n`, xml)
-			// 	await fs.outputFile(Update.Path.replace('.strm', '.xml'), xml)
-			// }
+			Updates.push(await library.toStrmFile(new media.Item({ movie: item.result.movie })))
 		}
 		if (item.show) {
-			item = new media.Item(item.result)
+			Updates.push(await library.toStrmFile(new media.Item({ show: item.result.show })))
 			await utils.pRandom(100)
 			let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
 				memoize: true,
@@ -294,10 +301,19 @@ export const library = {
 				v => v.number > 0 && v.episode_count > 0 && v.aired_episodes > 0,
 			)
 			for (let season of seasons) {
-				item.use({ season })
-				for (let i = 1; i <= item.season.episode_count; i++) {
-					item.use({ episode: { number: i, season: season.number } as trakt.Episode })
-					Updates.push(await library.toStrmFile(item))
+				Updates.push(
+					await library.toStrmFile(new media.Item({ show: item.result.show, season })),
+				)
+				for (let i = 1; i <= season.episode_count; i++) {
+					Updates.push(
+						await library.toStrmFile(
+							new media.Item({
+								show: item.result.show,
+								season,
+								episode: { number: i, season: season.number } as trakt.Episode,
+							}),
+						),
+					)
 				}
 			}
 		}
@@ -309,6 +325,11 @@ export const library = {
 		return await library.pAddQueue.add(() => library.addAll(items))
 	},
 	async addAll(items: media.Item[]) {
+		console.warn(
+			`library addAll items ->`,
+			items.map(v => v.short),
+			items.length,
+		)
 		if (items.length == 0) return []
 		let t = Date.now()
 		let dateiso = new Date().toISOString()
@@ -321,48 +342,31 @@ export const library = {
 		).flat()
 		console.log(`library addAll Updates ->`, Updates.length)
 
-		let Creations = Updates.filter(v => v.UpdateType == 'Created')
-		if (Creations.length > 0) {
-			console.info(`library addAll Creations ->`, Creations.length)
-
+		let StrmCreations = Updates.filter(
+			v => v.UpdateType == 'Created' && v.Path.endsWith('.strm'),
+		)
+		if (StrmCreations.length > 0) {
+			console.info(`library addAll StrmCreations ->`, StrmCreations.length)
+			await library.unrefresh()
 			await library.refresh()
-			let CreationPaths = Creations.map(v => v.Path)
-			while (CreationPaths.length > 0) {
-				await utils.pRandom(1000)
+
+			let ExcludeItemIds = [] as string[]
+			while (StrmCreations.length > 0) {
+				await utils.pTimeout(1000)
 				let Items = await library.Items({
+					ExcludeItemIds,
 					Fields: [],
 					IncludeItemTypes: ['Movie', 'Episode'],
 					MinDateLastSaved: dateiso,
 				})
-				let ItemPaths = Items.map(v => v.Path)
-				_.remove(CreationPaths, v => ItemPaths.includes(v))
+				_.remove(StrmCreations, StrmCreation => {
+					let Item = Items.find(v => v.Path == StrmCreation.Path)
+					if (Item) {
+						ExcludeItemIds.push(Item.Id)
+						return true
+					}
+				})
 			}
-
-			// let FolderIds = Object.values(library.folders).map(v => v.ItemId)
-			// let CreationPaths = Creations.map(v => v.Path).sort()
-			// let rxRefreshProgress = emby.rxSocket.pipe(
-			// 	Rx.op.filter(({ MessageType, Data }) => {
-			// 		return MessageType == 'RefreshProgress' && FolderIds.includes(Data.ItemId)
-			// 	}),
-			// 	Rx.op.debounceTime(900),
-			// 	Rx.op.mergeMap(async () => {
-			// 		let Items = await library.Items({
-			// 			Fields: [],
-			// 			IncludeItemTypes: ['Movie', 'Episode'],
-			// 			MinDateLastSaved: dateiso,
-			// 		})
-			// 		return _.difference(
-			// 			CreationPaths,
-			// 			Items.map(v => v.Path),
-			// 		)
-			// 	}),
-			// 	Rx.op.filter(difference => {
-			// 		console.log(`CreationPaths difference ->`, difference.length)
-			// 		return difference.length == 0
-			// 	}),
-			// 	Rx.op.take(1),
-			// )
-			// await Promise.all([library.refresh(), rxRefreshProgress.toPromise()])
 		}
 
 		console.info(Date.now() - t, `library addAll ${Updates.length} ->`, 'DONE')
@@ -375,7 +379,6 @@ export interface StrmQuery {
 	imdb: string
 	season: number
 	slug: string
-	title: string
 	tmdb: number
 	trakt: number
 	tvdb: number

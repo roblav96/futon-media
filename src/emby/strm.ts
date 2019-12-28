@@ -58,7 +58,7 @@ async function getDebridStream(Item: emby.Item) {
 	if (cacheds.length == 0) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'null', utils.duration(1, 'hour'))
-		throw new Error(`cacheds.length == 0`)
+		throw new Error(`debrids.getStream cacheds.length == 0 -> '${title}'`)
 	}
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
@@ -84,7 +84,7 @@ fastify.get('/strm', async (request, reply) => {
 	let Query = _.mapValues(request.query, v =>
 		utils.isNumeric(v) ? _.parseInt(v) : v,
 	) as emby.StrmQuery
-	let Item = (await emby.library.Items({ Path: emby.library.toStrmPath(Query, true) }))[0]
+	let Item = (await emby.library.Items({ Path: emby.library.toStrmPath(Query) }))[0]
 	let title = emby.library.toTitle(Item)
 	console.log(`/strm ->`, `'${title}'`)
 

@@ -54,8 +54,8 @@ export class Item {
 		let short = `[${this.type[0].toUpperCase()}] ${this.slug}${
 			this.show ? ` [${this.show.aired_episodes} eps] ` : ' '
 		}[${this.main.votes}]`
-		if (this.invalid) short += ' [INVALID]'
-		else if (this.isJunk(1)) short += ' [JUNK]'
+		if (this.invalid) return `${short} [INVALID]`
+		if (this.junk) return `${short} [JUNK]`
 		return short
 	}
 	get strm() {
@@ -94,8 +94,7 @@ export class Item {
 		}
 		return false
 	}
-	isJunk(votes: number) {
-		let is100 = this.isPopular(100)
+	get junk() {
 		if (this.invalid) return true
 		if (!this.main.overview) return true
 		if (!this.main.country && !this.main.language) return true
@@ -103,22 +102,24 @@ export class Item {
 		if (this.main.country && this.main.language) {
 			if (this.main.country != 'us' && this.main.language != 'en') return true
 		}
-		if ((!this.runtime || this.runtime < 10) && !is100) return true
-		if (_.isEmpty(this.main.genres) && !is100) return true
+		if (!this.isPopular(100)) {
+			if (!this.runtime || this.runtime < 10) return true
+			if (_.isEmpty(this.main.genres)) return true
+		}
 		if (this.movie) {
 			if (!this.movie.trailer) return true
 			if (!this.movie.certification) return true
 		}
 		if (this.show) {
-			if (!this.ids.imdb) return true
+			if (!this.ids.imdb && !this.ids.tmdb) return true
 			if (!this.show.network) return true
 			if (!this.show.first_aired) return true
 			if (!this.show.aired_episodes) return true
-			if (!this.show.certification) return true
 		}
-		return !this.isPopular(votes)
+		return !this.isPopular(1)
 	}
 	isPopular(votes: number) {
+		votes = _.max([votes, 1])
 		if (!_.has(this.main, 'votes')) return false
 		if (this.show) votes = _.ceil(votes * 0.75)
 		let months = _.ceil((Date.now() - this.released.valueOf()) / utils.duration(1, 'month'))
@@ -178,7 +179,7 @@ export class Item {
 	async setOmdb() {
 		this.omdb = (await omdb.client.get('/', {
 			query: { i: this.ids.imdb },
-			memoize: process.DEVELOPMENT,
+			memoize: true,
 			silent: true,
 		})) as omdb.Result
 	}
@@ -188,13 +189,13 @@ export class Item {
 		if (!this.ids.tmdb) return
 		let type = this.show ? 'tv' : 'movie'
 		this.tmdb = (await tmdb.client.get(`/${type}/${this.ids.tmdb}`, {
-			memoize: process.DEVELOPMENT,
+			memoize: true,
 			silent: true,
 		})) as tmdb.Full
 		if (this.tmdb.belongs_to_collection) {
 			this.tmdb.belongs_to_collection = (await tmdb.client.get(
 				`/collection/${this.tmdb.belongs_to_collection.id}`,
-				{ memoize: process.DEVELOPMENT, silent: true },
+				{ memoize: true, silent: true },
 			)) as tmdb.Collection
 		}
 	}
@@ -203,7 +204,7 @@ export class Item {
 	async setSeasons() {
 		if (!this.show) return
 		this.seasons = ((await trakt.client.get(`/shows/${this.id}/seasons`, {
-			memoize: process.DEVELOPMENT,
+			memoize: true,
 			silent: true,
 		})) as trakt.Season[]).filter(v => v.number > 0)
 	}
@@ -214,7 +215,7 @@ export class Item {
 	// 	this.episodes = (await Promise.all(
 	// 		['last_episode', 'next_episode'].map(url =>
 	// 			trakt.client.get(`/shows/${this.slug}/${url}`, {
-	// 				memoize: process.DEVELOPMENT,
+	// 				memoize: true,
 	// 				silent: true,
 	// 			})
 	// 		)
@@ -237,7 +238,7 @@ export class Item {
 		let aliases = [] as string[]
 
 		let response = (await trakt.client.get(`/${this.type}s/${this.id}/aliases`, {
-			memoize: process.DEVELOPMENT,
+			memoize: true,
 			// silent: true,
 		})) as trakt.Alias[]
 		let trakts = (response || []).filter(v => ['gb', 'nl', 'us'].includes(v.country))
@@ -246,7 +247,7 @@ export class Item {
 		if (this.ids.tmdb) {
 			let { titles } = (await tmdb.client
 				.get(`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`, {
-					memoize: process.DEVELOPMENT,
+					memoize: true,
 					// silent: true,
 				})
 				.catch(() => ({ titles: [] }))) as tmdb.AlternativeTitles
@@ -313,7 +314,7 @@ export class Item {
 				queries.map(query => async () =>
 					(await trakt.client.get(`/search/movie,show`, {
 						query: { query, fields: 'title,translations,aliases', limit: 100 },
-						memoize: process.DEVELOPMENT,
+						memoize: true,
 						silent: true,
 					})) as trakt.Result[],
 				),
@@ -478,20 +479,22 @@ export class Item {
 	get result() {
 		return JSON.parse(JSON.stringify(_.pick(this, TYPES))) as Partial<trakt.Result>
 	}
-
 	constructor(result: Partial<trakt.Result>) {
 		this.use(result)
 	}
-
 	use(result: Partial<trakt.Result>) {
 		if (!result.type) {
 			let types = _.clone(TYPES).reverse()
 			result.type = types.find(v => result[v])
+			if (!result.type && process.DEVELOPMENT) {
+				console.warn(`!result.type ->`, result)
+				throw new Error(`!result.type`)
+			}
 		}
 		let picked = _.pick(result, TYPES)
 		_.merge(this, picked)
 		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
-			let ikey = trakt.RESULT_ITEM[rkey]
+			let ikey = trakt.RESULT_EXTRAS[rkey]
 			if (ikey) this[ikey] = rvalue
 		}
 		Memoize.clear(this)

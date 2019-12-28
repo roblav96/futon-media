@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
@@ -9,39 +10,27 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-process.nextTick(async () => {
-	process.DEVELOPMENT && (await db.flush())
-	// global.dts(await emby.client.get('/Sessions', { silent: true }), 'Sessions')
-	// await sessions.sync()
-	// emby.rxSocket.subscribe(({ MessageType, Data }) => {
-	// 	if (MessageType != 'Sessions') return
-	// 	emby.Sessions.splice(0, Infinity, ...sessions.use(Data))
-	// 	console.info(`rxSocket Session ->`, emby.Sessions[0] && emby.Sessions[0].json)
-	// })
-})
+process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 export class Session {
-	static parse(Sessions: Session[]) {
-		_.remove(Sessions, ({ DeviceId, RemoteEndPoint, UserName }) => {
-			if (!UserName) return true
-			if (DeviceId == process.env.EMBY_SERVER_ID) return true
-			// if (RemoteEndPoint && (urlParseLax(RemoteEndPoint) as Url).port) return true
+	static async get() {
+		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
+		Sessions = Sessions.filter(({ DeviceId, UserName }) => {
+			return !!UserName && DeviceId != process.env.EMBY_SERVER_ID
 		})
-		return Sessions.sort((a, b) => {
+		Sessions.sort((a, b) => {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
 		})
-	}
-	static use(Sessions: Session[]) {
-		return Session.parse(Sessions).map(v => new Session(v))
-	}
-	static async get() {
-		return Session.use(await emby.client.get('/Sessions', { silent: true }))
+		return Sessions.map(v => new Session(v))
 	}
 	static async byUserId(UserId: string) {
 		return (await Session.get()).find(v => v.UserId == UserId)
 	}
-	static broadcast(message: string) {
-		Session.get().then(sessions => sessions.forEach(v => v.message(message)))
+	static async broadcast(text: string) {
+		await pAll(
+			(await Session.get()).map(v => () => v.message(text)),
+			{ concurrency: 1 },
+		)
 	}
 
 	get Stamp() {
@@ -139,13 +128,19 @@ export class Session {
 		// console.log(`response ->`, response)
 	}
 
-	message(data: string | Error) {
-		let body = { Text: `✅ ${data}`, TimeoutMs: 5000 }
-		if (_.isError(data)) {
-			body.Text = `❌ Error: ${data.message}`
-			body.TimeoutMs *= 2
+	async message(text: string | Error) {
+		let body = { Text: `🔵 ${text}`, TimeoutMs: utils.duration(5, 'second') }
+		if (_.isError(text)) {
+			body.Text = `🔴 [Error] ${text.message}`
+			body.TimeoutMs = utils.duration(10, 'second')
 		}
-		return emby.client.post(`/Sessions/${this.Id}/Message`, { body }).catch(_.noop)
+		try {
+			await emby.client.post(`/Sessions/${this.Id}/Message`, {
+				body,
+				// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
+				// silent: true,
+			})
+		} catch (error) {}
 	}
 }
 

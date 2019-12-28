@@ -129,8 +129,14 @@ async function syncCollections() {
 		// console.log(`schemas.length ->`, schemas.length)
 	}
 
-	if (!process.DEVELOPMENT) console.log(`syncCollections schemas ->`, schemas.length)
-	else console.log(`syncCollections schemas ->`, _.sortBy(schemas, 'name').map(v => v.name))
+	if (!process.DEVELOPMENT) {
+		console.log(`syncCollections schemas ->`, schemas.length)
+	} else {
+		console.log(
+			`syncCollections schemas ->`,
+			_.sortBy(schemas, 'name').map(v => v.name),
+		)
+	}
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
@@ -150,8 +156,8 @@ async function syncCollections() {
 			return v
 		})
 		results = trakt.uniqWith(results.filter(v => !v.season && !v.episode && !v.person))
-		schema.items = results.map(v => new media.Item(v))
-		schema.items = schema.items.filter(v => (schema.all ? !v.isJunk(1) : !v.isJunk(1000)))
+		schema.items = results.map(v => new media.Item(v)).filter(v => !v.junk)
+		schema.items = schema.items.filter(v => (schema.all ? v.isPopular(1) : v.isPopular(1000)))
 		if (schema.items.length == 0) {
 			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
 			continue
@@ -160,16 +166,14 @@ async function syncCollections() {
 
 		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
 		let Items = await emby.library
-			.addAll(schema.items.filter(item => !mIds.has(emby.library.itemStrmPath(item))))
+			.addAll(schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item))))
 			.catch(error => {
 				console.error(`syncCollections addAll -> %O`, error)
 				return []
 			})
 		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
 
-		let Ids = schema.items
-			.map(item => mIds.get(emby.library.itemStrmPath(item)))
-			.filter(Boolean)
+		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).filter(Boolean)
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
@@ -194,8 +198,11 @@ async function toCollections(items: media.Item[], Items: emby.Item[]) {
 	for (let tmcolid of tmcolids) {
 		let { name, parts } = (await tmdb.client.get(`/collection/${tmcolid}`)) as tmdb.Collection
 		console.log(`Collection ->`, name)
-		let cresults = await pAll(parts.map(v => () => tmdb.toTrakt(v)), { concurrency: 1 })
-		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.isJunk(1000))
+		let cresults = await pAll(
+			parts.map(v => () => tmdb.toTrakt(v)),
+			{ concurrency: 1 },
+		)
+		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.junk && v.isPopular(1000))
 		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
 		// @ts-ignore
 		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()

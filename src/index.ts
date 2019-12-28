@@ -20,6 +20,6 @@ process.nextTick(async () => {
 		await import('@/emby/subtitles')
 		await import('@/emby/webhooks')
 	} catch (error) {
-		console.error(`index process.nextTick -> %O`, error)
+		console.error(`process.nextTick -> %O`, error)
 	}
 })

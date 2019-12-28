@@ -49,7 +49,7 @@ export async function config() {
 		`emby config ->`,
 		Object.fromEntries(
 			Object.entries(process.env).filter(
-				([k, v]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
+				([k]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
 			)
 		)
 	)

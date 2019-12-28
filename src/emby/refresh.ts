@@ -18,8 +18,8 @@ process.nextTick(() => {
 		if (!item) return console.warn(`rxRefresh !item ->`, Item)
 
 		if (Item.Type == 'Person') {
-			let items = (await trakt.resultsFor(item.person)).map(v => new media.Item(v))
-			items = items.filter(v => !v.isJunk(1000))
+			let items = (await trakt.resultsForPerson(item.person)).map(v => new media.Item(v))
+			items = items.filter(v => !v.junk && v.isPopular(1000))
 			items.sort((a, b) => b.main.votes - a.main.votes)
 			return emby.library.addQueue(items)
 		}

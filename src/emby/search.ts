@@ -11,48 +11,51 @@ import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
 	let rxSearch = emby.rxHttp.pipe(
-		Rx.op.filter(({ query }) => !!(query.UserId && query.SearchTerm)),
+		Rx.op.filter(({ query }) => !!query.UserId && !!query.SearchTerm),
 		Rx.op.map(({ query }) => {
-			let SearchTerm = utils.trim(query.SearchTerm).toLowerCase()
-			let imdb = /^tt\d+$/.test(SearchTerm) && SearchTerm
-			let slug = /^(\w+\-)+\w+$/.test(SearchTerm) && SearchTerm
-			if (!SearchTerm.includes(' ')) SearchTerm = utils.stripStopWords(SearchTerm)
-			return { SearchTerm, imdb, slug, UserId: query.UserId }
+			// let slug = /^(\w+-)+\w+$/.test(SearchTerm) && SearchTerm
+			// if (!SearchTerm.includes(' ')) SearchTerm = utils.stripStopWords(SearchTerm)
+			return {
+				SearchTerm: utils.trim(query.SearchTerm).toLowerCase(),
+				UserId: query.UserId,
+			}
 		}),
-		Rx.op.filter(({ SearchTerm }) => utils.squash(SearchTerm).length >= 2),
+		Rx.op.filter(({ SearchTerm }) => utils.stripStopWords(SearchTerm).length >= 2),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilKeyChanged('SearchTerm'),
-		Rx.op.mergeMap(async ({ SearchTerm, imdb, slug, UserId }) => {
+		Rx.op.concatMap(async ({ SearchTerm, UserId }) => {
 			let Session = await emby.Session.byUserId(UserId)
 			console.warn(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)
 
-			if (imdb) {
-				let results = (await trakt.client.get(`/search/imdb/${imdb}`, {
+			if (/^tt\d+$/.test(SearchTerm)) {
+				let results = (await trakt.client.get(`/search/imdb/${SearchTerm}`, {
+					query: { type: 'movie,show' },
 					memoize: true,
 					silent: true,
 				})) as trakt.Result[]
-				let item = results.map(v => new media.Item(v))[0]
-				return { imdb, item }
+				return { Session, SearchTerm, results }
 			}
 
-			if (slug) {
-				let types = ['movie', 'show']
-				if (!/\d$/.test(slug)) types.reverse()
+			if (/^(\w+-)+\w+$/.test(SearchTerm)) {
+				let types = /-\d{4}$/.test(SearchTerm) ? ['movie', 'show'] : ['show', 'movie']
 				for (let type of types) {
 					try {
-						let full = (await trakt.client.get(`/${type}s/${slug}`, {
+						let full = (await trakt.client.get(`/${type}s/${SearchTerm}`, {
 							memoize: true,
 							silent: true,
 						})) as trakt.Full
-						return { slug, item: new media.Item({ [type]: full }) }
+						return {
+							Session,
+							SearchTerm,
+							results: [({ [type]: full } as any) as trakt.Result],
+						}
 					} catch {}
 				}
-				return { slug }
 			}
 
 			let results = (
 				await pAll(
-					[`${SearchTerm}*`, `${SearchTerm} *`].map(query => async () =>
+					[SearchTerm, `${SearchTerm}*`].map(query => async () =>
 						(await trakt.client.get('/search/movie,show', {
 							query: { query, fields: 'title,translations', limit: 100 },
 							memoize: true,
@@ -65,7 +68,7 @@ process.nextTick(() => {
 			results = trakt.uniqWith(results.filter(Boolean))
 			let items = results.map(v => new media.Item(v)).filter(v => !v.invalid)
 			items.sort((a, b) => b.main.votes - a.main.votes)
-			return { SearchTerm, items }
+			return { Session, SearchTerm, items }
 		}),
 		Rx.op.catchError((error, caught) => {
 			console.error(`rxSearch -> %O`, error)
@@ -73,20 +76,41 @@ process.nextTick(() => {
 		}),
 	)
 
-	rxSearch.subscribe(async ({ SearchTerm, imdb, slug, item, items }) => {
+	rxSearch.subscribe(async ({ Session, SearchTerm, results, items }) => {
+		if (_.isArray(results)) {
+			if (_.isEmpty(results)) {
+				return Session.message(new Error(`Invalid ID match '${SearchTerm}'`))
+			}
+			let Updates = await emby.library.addQueue(results.map(v => new media.Item(v)))
+			let Created =
+			let CreationPaths = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
+			let itemPaths = items.map(v => emby.library.toStrmPath(v))
+			let itemCreationPaths = itemPaths.filter(v => CreationPaths.includes(v))
+			return Session.message(`Added `)
+		}
 		if (imdb || slug) {
 			if (!item || item.invalid) {
 				return console.error(`rxSearch invalid imdb || slug ->`, `'${imdb || slug}'`)
 			}
-			console.info(`rxSearch adding ->`, [item.short])
 			return emby.library.addQueue([item])
 		}
 
-		items = items.filter(v => !v.isJunk(1))
+		console.log(
+			`rxSearch results ->`,
+			items.map(v => v.short),
+			items.length,
+		)
+
+		// SearchTerm = utils.stripStopWords(SearchTerm)
+		let words = SearchTerm.split(' ').length
+		if (words <= 3) {
+			items = items.filter(v => !v.junk)
+		}
 		items = items.filter(v => {
-			if (SearchTerm.includes(' ')) return utils.includes(v.title, SearchTerm)
-			return utils.contains(v.title, SearchTerm)
+			if (words == 1) return utils.contains(v.title, SearchTerm)
+			return utils.includes(v.title, SearchTerm)
 		})
+
 		console.log(
 			`rxSearch items ->`,
 			items.map(v => v.short),
@@ -98,40 +122,33 @@ process.nextTick(() => {
 		if (votes.length > 0) {
 			means = [ss.rootMeanSquare(votes), ss.mean(votes), ss.harmonicMean(votes)]
 		}
-		means = means.map(v => _.floor(v))
+		means = means.map(v => _.clamp(_.floor(v), 1, 1000))
 
-		// SearchTerm = utils.stripStopWords(SearchTerm)
-		let spaces = SearchTerm.split(' ').length - 1
-		let index = _.clamp(spaces, 0, means.length - 1)
-		let mean = means[index]
-		if (spaces == 0) mean -= _.last(means)
-		if (spaces >= 2) mean = 1
-		console.log(`rxSearch mean ->`, mean, means, spaces)
+		let mean = means[_.clamp(words - 1, 0, means.length - 1)]
+		if (words == 1) mean -= _.last(means)
+		if (words >= 3) mean = 1
+		console.log(`rxSearch means ->`, means, `mean ->`, mean, `words ->`, words)
 
 		SearchTerm = utils.stripStopWords(SearchTerm)
 		items = items.filter(item => {
 			let title = utils.stripStopWords(item.title)
-			if (spaces <= 2 && utils.equals(title, SearchTerm)) {
-				if (spaces == 0) return !item.isJunk(_.floor(_.last(means) / 2))
-				return !item.isJunk(_.last(means))
+			if (words <= 3 && utils.equals(title, SearchTerm)) {
+				if (words == 1) {
+					return item.isPopular(_.floor(_.last(means) * 0.5))
+				}
+				return item.isPopular(_.last(means))
 			}
-			if (spaces == 0 && !utils.startsWith(title, SearchTerm)) {
+			if (words == 1 && !utils.startsWith(title, SearchTerm)) {
 				return false
 			}
-			if (spaces == 1 && utils.startsWith(title, SearchTerm)) {
-				return !item.isJunk(_.last(means))
+			if (words == 2 && utils.startsWith(title, SearchTerm)) {
+				return item.isPopular(_.last(means))
 			}
-			if (spaces == 1 && utils.contains(title, SearchTerm)) {
-				return !item.isJunk(_.last(means))
+			if (words == 3 && utils.contains(title, SearchTerm)) {
+				return item.isPopular(_.last(means))
 			}
-			return !item.isJunk(mean)
+			return item.isPopular(mean)
 		})
-
-		console.info(
-			`rxSearch addQueue ->`,
-			items.map(v => v.short),
-			items.length,
-		)
 
 		return emby.library.addQueue(items)
 	})
@@ -207,7 +224,7 @@ process.nextTick(() => {
 // 		let result = ((await trakt.client.get(`/search/tmdb/${id}`, {
 // 			query: { type: 'person' },
 // 		})) as trakt.Result[]).find(v => trakt.toFull(v).ids.tmdb == id)
-// 		if (result) results.push(...(await trakt.resultsFor(result.person)))
+// 		if (result) results.push(...(await trakt.resultsForPerson(result.person)))
 // 	}
 
 // 	fulls = fulls.filter(v => ['movie', 'tv'].includes(v.media_type))

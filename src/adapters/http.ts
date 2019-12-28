@@ -8,6 +8,7 @@ import * as qs from 'query-string'
 import * as request from 'request'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
+import safeStringify from 'safe-stable-stringify'
 import { CookieJar, Store } from 'tough-cookie'
 import { Db } from '@/adapters/db'
 import { send, HttpieResponse } from '@/shims/httpie'
@@ -128,19 +129,10 @@ export class Http {
 		_.defaultsDeep(options.query, query)
 
 		let min = {
-			url: _.truncate(
-				normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
-				{ length: 100 },
-			),
-			query: _.truncate(_.size(config.query) > 0 ? JSON.stringify(config.query) : '', {
-				length: 100 - url.length,
-			}),
-			form: _.truncate(_.size(config.form) > 0 ? JSON.stringify(config.form) : '', {
-				length: 100 - url.length,
-			}),
-			body: _.truncate(_.size(config.body) > 0 ? JSON.stringify(config.body) : '', {
-				length: 100 - url.length,
-			}),
+			url: normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
+			body: safeStringify(config.body) || '',
+			form: safeStringify(config.form) || '',
+			query: safeStringify(config.query) || '',
 		}
 
 		if (options.beforeRequest) {
@@ -151,6 +143,9 @@ export class Http {
 		}
 
 		if (_.size(options.query)) {
+			if (!!options.memoize && _.isPlainObject(options.query)) {
+				options.query = utils.sortKeys(options.query)
+			}
 			let stringify = qs.stringify(
 				options.query,
 				options.qsArrayFormat && { arrayFormat: options.qsArrayFormat },
@@ -159,8 +154,15 @@ export class Http {
 		}
 
 		if (_.size(options.form)) {
+			if (!!options.memoize && _.isPlainObject(options.form)) {
+				options.form = utils.sortKeys(options.form)
+			}
 			options.headers['content-type'] = 'application/x-www-form-urlencoded'
 			options.body = qs.stringify(options.form)
+		}
+
+		if (!!options.memoize && _.isPlainObject(options.body)) {
+			options.body = utils.sortKeys(options.body)
 		}
 
 		if (options.cloudflare) {
@@ -169,20 +171,33 @@ export class Http {
 			else options.headers['cookie'] = cookie
 		}
 
+		if (!!options.memoize && _.isPlainObject(options.headers)) {
+			options.headers = utils.sortKeys(options.headers)
+		}
+
 		if (!options.silent) {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
 		}
 		if (options.debug) {
 			_.unset(options, 'memoize')
-			console.log(`[DEBUG] ->`, options.method, options.url, options)
+			console.log(`[DEBUG] -> [${options.method}]`, options.url, options)
 		}
 
 		let t = Date.now()
 		let response: HttpieResponse
 		let mkey: string
 		if (!!options.memoize) {
-			mkey = utils.hash(_.pick(options, ['body', 'headers', 'method', 'url']))
+			let picked = utils.sortKeys(_.pick(options, ['body', 'method', 'url']))
+			mkey = utils.hash(picked)
 			response = await db.get(mkey)
+			// if (!response && process.DEVELOPMENT) {
+			// 	console.log(
+			// 		`memoize !response ->`,
+			// 		options.method,
+			// 		options.url,
+			// 		JSON.stringify(picked),
+			// 	)
+			// }
 		}
 		if (!response) {
 			try {
@@ -235,10 +250,10 @@ export class Http {
 		}
 
 		if (options.profile) {
-			console.log(Date.now() - t, options.url) // min.url)
+			console.log(Date.now() - t, `[${options.method}]`, options.url)
 		}
 		if (options.debug) {
-			console.log(`[DEBUG] <-`, options.method, options.url, response)
+			console.log(`[DEBUG] <- [${options.method}]`, options.url, response)
 		}
 
 		if (options.afterResponse) {

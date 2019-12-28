@@ -82,13 +82,14 @@ function debloat(value) {
 	keys.forEach(key => _.unset(value, key))
 }
 
-export const RESULT_ITEM = {
+export const RESULT_EXTRAS = {
 	character: 'character',
 	collected_at: 'collected_at',
 	listed_at: 'listed_at',
+	job: 'job',
 	rank: 'rank',
 	score: 'score',
-} as Record<keyof Result, keyof media.Item>
+} as Record<keyof Extras, keyof Extras>
 
 // export async function search(query: string, type = 'movie,show' as media.MainContentType) {
 // 	let results = (await client.get(`/search/${type}`, {
@@ -115,7 +116,7 @@ export function person(results: Result[], name: string) {
 	return sizes[0] && sizes[0].person
 }
 
-export async function resultsFor(person: Person) {
+export async function resultsForPerson(person: Person) {
 	if (!person) return []
 	let results = [] as Result[]
 	for (let type of media.MAIN_TYPESS) {

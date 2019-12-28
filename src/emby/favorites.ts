@@ -21,8 +21,10 @@ process.nextTick(() => {
 			return `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`
 		}),
 		Rx.op.mergeMap(async ({ ItemId, UserId }) => {
-			let Item = (await emby.library.Items({ Ids: [ItemId] }))[0]
-			let Session = await emby.Session.byUserId(UserId)
+			let [Item, Session] = await Promise.all([
+				emby.library.byItemId(ItemId),
+				emby.Session.byUserId(UserId),
+			])
 			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 			let PlaybackInfo = await Session.getPlaybackInfo()
 			return { Item, PlaybackInfo }
@@ -31,7 +33,7 @@ process.nextTick(() => {
 		Rx.op.mergeMap(async ({ Item, PlaybackInfo }) => {
 			let item = await emby.library.item(Item)
 			if (Item.Type == 'Series') {
-				if (item.show && item.show.aired_episodes > 128) {
+				if (item.show.aired_episodes > 128) {
 					throw new Error(`${item.show.aired_episodes} aired_episodes greater than 128`)
 				}
 				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
@@ -39,8 +41,8 @@ process.nextTick(() => {
 					silent: true,
 				})) as trakt.Season[]
 				seasons = seasons.filter(v => v.number > 0 && v.aired_episodes > 0)
-				let items = seasons.map(season =>
-					new media.Item(item.result).use({ type: 'season', season }),
+				let items = seasons.map(
+					season => new media.Item({ show: item.result.show, season }),
 				)
 				return { items, PlaybackInfo }
 			}
