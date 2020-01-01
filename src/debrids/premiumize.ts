@@ -26,11 +26,10 @@ process.nextTick(async () => {
 export class Premiumize extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 40)
+		let chunks = utils.chunks(hashes, 100)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
-				await utils.pRandom(300)
 				let response = (await client
 					.post(`/cache/check`, {
 						query: { items: chunk },

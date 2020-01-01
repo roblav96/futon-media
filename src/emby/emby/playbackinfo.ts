@@ -47,7 +47,7 @@ export class PlaybackInfo {
 	static async get(ItemId: string, UserId = '') {
 		let value = (await db.get(UserId ? `${ItemId}:${UserId}` : ItemId)) as PlaybackInfo
 		if (value) return new PlaybackInfo(value)
-		await utils.pTimeout(300)
+		await utils.pTimeout(1000)
 		return PlaybackInfo.get(ItemId, UserId)
 	}
 	static async byUserId(UserId: string) {

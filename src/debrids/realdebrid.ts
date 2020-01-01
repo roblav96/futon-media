@@ -18,7 +18,6 @@ process.nextTick(async () => {
 	let transfers = (await client.get('/torrents', { silent: true })) as Transfer[]
 	transfers = transfers.filter(v => v.status != 'downloaded' || !v.filename)
 	for (let i = 0; i < transfers.length; i++) {
-		utils.pRandom(100)
 		transfers[i] = (await client.get(`/torrents/info/${transfers[i].id}`)) as Transfer
 	}
 	console.log(`RealDebrid transfers ->`, transfers)
@@ -32,11 +31,10 @@ process.nextTick(async () => {
 export class RealDebrid extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 40)
+		let chunks = utils.chunks(hashes, 100)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
-				await utils.pRandom(300)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client
 					.get(url, {
