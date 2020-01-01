@@ -311,6 +311,7 @@ export const library = {
 		}
 		if (item.show) {
 			Updates.push(await library.toStrmFile(new media.Item({ show: item.result.show })))
+			await utils.pRandom(300)
 			let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
 				memoize: true,
 				silent: true,

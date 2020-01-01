@@ -202,6 +202,7 @@ export class Scraper {
 		let results = (
 			await pAll(
 				combos.map(([slug, sort], index) => async () => {
+					if (index > 0) await utils.pRandom(300)
 					return (
 						await this.getResults(slug, sort).catch(error => {
 							console.error(`${ctor} getResults -> %O`, error)

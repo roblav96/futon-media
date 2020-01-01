@@ -96,6 +96,7 @@ export class Putio extends debrid.Debrid<Transfer> {
 	static async cached(magnets: string[]) {
 		return (await pAll(
 			magnets.map(magnet => async () => {
+				await utils.pRandom(300)
 				let { transfer } = (await client.post('/transfers/add', {
 					form: { url: magnet },
 					silent: true,
