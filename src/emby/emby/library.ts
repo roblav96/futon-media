@@ -347,15 +347,13 @@ export const library = {
 				'Trakt Rating': _.round(item.main.rating, 1).toFixed(1),
 				'Trakt Votes': item.main.votes.toLocaleString(),
 			}
-			let Tags = _.map(tags, (v, k) => `${k}: ${v}`)
-			console.log('setTags ->', item.short, Tags)
 			await emby.client.post(`/Items/${ItemId}`, {
 				body: _.merge(
 					await library.Item(ItemId),
 					utils.compact({
 						CommunityRating: Number.parseFloat(tags['IMDb Rating']),
 						CriticRating: Number.parseFloat(tags['Rotten Tomatoes']),
-						Tags,
+						Tags: _.map(tags, (v, k) => `${k}: ${v}`),
 					} as Item),
 				),
 				silent: true,
