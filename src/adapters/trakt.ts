@@ -50,6 +50,7 @@ process.nextTick(async () => {
 	}
 	if (!token) throw new Error(`trakt oauth !token`)
 	await db.put('refresh_token', token.refresh_token)
+	await db.put('access_token', token.access_token)
 	client.config.headers['authorization'] = `Bearer ${token.access_token}`
 })
 

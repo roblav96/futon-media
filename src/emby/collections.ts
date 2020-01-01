@@ -13,72 +13,64 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// process.DEVELOPMENT && syncCollections()
-	if (!process.DEVELOPMENT) {
-		schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
-	}
+	if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
+	if (!process.DEVELOPMENT) schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 })
 
-const STATIC_SCHEMAS = [
-	['Watchlist', '/sync/watchlist/<%= type %>', true],
-	['Collection', '/sync/collection/<%= type %>', true],
-	['Recommendations', '/recommendations/<%= type %>'],
-	['Popular', '/<%= type %>/popular'],
-	['Trending', '/<%= type %>/trending'],
-	['Most Played Weekly', '/<%= type %>/played/weekly'],
-	['Most Played Monthly', '/<%= type %>/played/monthly'],
-	['Most Played Yearly', '/<%= type %>/played/yearly'],
-	['Most Played All Time', '/<%= type %>/played/all'],
-	['Most Watched Weekly', '/<%= type %>/watched/weekly'],
-	['Most Watched Monthly', '/<%= type %>/watched/monthly'],
-	['Most Watched Yearly', '/<%= type %>/watched/yearly'],
-	['Most Watched All Time', '/<%= type %>/watched/all'],
-	['Most Collected Weekly', '/<%= type %>/collected/weekly'],
-	['Most Collected Monthly', '/<%= type %>/collected/monthly'],
-	['Most Collected Yearly', '/<%= type %>/collected/yearly'],
-	['Most Collected All Time', '/<%= type %>/collected/all'],
-] as [string, string, boolean][]
+const SCHEMAS = [
+	{ name: 'Watchlist', url: '/sync/watchlist/${type}', all: true },
+	{ name: 'Collection', url: '/sync/collection/${type}', all: true },
+	{ name: 'Recommendations', url: '/recommendations/${type}' },
+	{ name: 'Popular', url: '/${type}/popular' },
+	{ name: 'Trending', url: '/${type}/trending' },
+	{ name: 'Most Played Weekly', url: '/${type}/played/weekly' },
+	{ name: 'Most Played Monthly', url: '/${type}/played/monthly' },
+	{ name: 'Most Played Yearly', url: '/${type}/played/yearly' },
+	{ name: 'Most Played All Time', url: '/${type}/played/all' },
+	{ name: 'Most Watched Weekly', url: '/${type}/watched/weekly' },
+	{ name: 'Most Watched Monthly', url: '/${type}/watched/monthly' },
+	{ name: 'Most Watched Yearly', url: '/${type}/watched/yearly' },
+	{ name: 'Most Watched All Time', url: '/${type}/watched/all' },
+	{ name: 'Most Collected Weekly', url: '/${type}/collected/weekly' },
+	{ name: 'Most Collected Monthly', url: '/${type}/collected/monthly' },
+	{ name: 'Most Collected Yearly', url: '/${type}/collected/yearly' },
+	{ name: 'Most Collected All Time', url: '/${type}/collected/all' },
+] as CollectionSchema[]
 
-async function buildSchemas() {
+async function syncCollections() {
+	let t = Date.now()
+
 	let schemas = [] as CollectionSchema[]
-
-	schemas.push(
-		...STATIC_SCHEMAS.map(schema =>
-			media.MAIN_TYPESS.map((type, i) => {
-				return {
-					all: schema[2],
-					limit: schema[2] ? 999 : i == 0 ? 100 : 50,
-					name: `${['Movies', 'TV Shows'][i]} ${schema[0]}`,
-					type: media.MAIN_TYPES[i],
-					url: _.template(schema[1])({ type }),
-				} as CollectionSchema
-			}),
-		).flat(),
-	)
+	for (let SCHEMA of SCHEMAS) {
+		for (let type of media.MAIN_TYPES) {
+			schemas.push({
+				all: !!SCHEMA.all,
+				limit: type == 'movie' ? 100 : 50,
+				name: `${_.capitalize(type)}s ${SCHEMA.name}`,
+				type: type,
+				url: _.template(SCHEMA.url)({ type: `${type}s` }),
+			})
+		}
+	}
 
 	let lists = [] as trakt.List[]
-	for (let type of ['popular', 'trending']) {
-		await utils.pRandom(100)
-		let response = (await trakt.client.get(`/lists/${type}`, {
-			query: { limit: 100, extended: '' },
+	for (let { url, limit } of [
+		{ url: '/lists/popular', limit: 100 },
+		{ url: '/lists/trending', limit: 100 },
+		{ url: '/users/likes/lists', limit: 999 },
+	]) {
+		let response = (await trakt.client.get(url, {
+			query: { limit, extended: '' },
+			memoize: process.DEVELOPMENT,
 			silent: true,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map(v => v.list))
 	}
-
-	await utils.pRandom(100)
-	let liked = (await trakt.client.get('/users/likes/lists', {
-		query: { limit: 999, extended: '' },
-		silent: true,
-	})) as trakt.ResponseList[]
-	lists.push(...liked.map(v => v.list))
-
 	lists.sort((a, b) => b.likes - a.likes)
 	lists = _.uniqWith(lists, (a, b) => {
 		if (a.ids.trakt == b.ids.trakt) return true
 		if (utils.equals(a.name, b.name)) return true
 	})
-
 	schemas.push(
 		...lists.map(list => {
 			return {
@@ -87,19 +79,6 @@ async function buildSchemas() {
 			} as CollectionSchema
 		}),
 	)
-
-	schemas.forEach(schema => {
-		schema.name = _.capitalize(utils.trim(schema.name))
-		if (schema.name.startsWith('The ')) schema.name = schema.name.slice(4)
-		schema.name = _.capitalize(utils.trim(schema.name))
-	})
-
-	return schemas
-}
-
-async function syncCollections() {
-	let t = Date.now()
-	let schemas = await buildSchemas()
 
 	if (process.DEVELOPMENT) {
 		// console.log(`schemas ->`, schemas.map(v => v.name))
@@ -124,72 +103,64 @@ async function syncCollections() {
 		// 	// 'Worlds of DC',
 		// ]
 		// schemas = schemas.filter(v => lists.includes(v.name))
-		schemas = schemas.filter(v => v.name.endsWith('watchlist'))
+		schemas = schemas.filter(v => utils.endsWith(v.name, 'watchlist'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
 
-	if (!process.DEVELOPMENT) {
-		console.log(`syncCollections schemas ->`, schemas.length)
-	} else {
-		console.log(
-			`syncCollections schemas ->`,
-			_.sortBy(schemas, 'name').map(v => v.name),
-		)
-	}
+	if (!process.DEVELOPMENT) console.log(`syncCollections schemas ->`, schemas.length)
+	else console.log(`syncCollections schemas ->`, schemas.map(v => v.name).sort())
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+	console.log('Collections ->', Collections)
 
-	let mIds = new Map<string, string>()
 	for (let schema of schemas) {
-		await utils.pRandom(100)
-		let results = (await trakt.client
-			.get(schema.url, { query: schema.limit ? { limit: schema.limit } : {}, silent: true })
-			.catch(error => {
-				console.error(`trakt get ${schema.url} -> %O`, error)
-				return []
-			})) as trakt.Result[]
-		results = results.map(v => {
-			if (!v[schema.type] && schema.type) v = { [schema.type]: v } as any
-			return v
-		})
+		let results = [] as trakt.Result[]
+		try {
+			results = await trakt.client.get(schema.url, {
+				query: schema.limit ? { limit: schema.limit } : {},
+				silent: true,
+			})
+		} catch (error) {
+			console.error(`schema '${schema.name}' ${schema.url} -> %O`, error)
+		}
+		results = results.map(result =>
+			!result[schema.type] && schema.type ? ({ [schema.type]: result } as any) : result,
+		)
 		results = trakt.uniqWith(results.filter(v => !v.season && !v.episode && !v.person))
-		schema.items = results.map(v => new media.Item(v)).filter(v => !v.junk)
-		schema.items = schema.items.filter(v => (schema.all ? v.isPopular(1) : v.isPopular(1000)))
-		if (schema.items.length == 0) {
-			console.warn(`schema '${schema.name}' ->`, 'schema.items.length == 0')
+		let items = results.map(v => new media.Item(v)).filter(v => !v.junk)
+		items = items.filter(v => (schema.all ? v.isPopular(1) : v.isPopular(1000)))
+		if (items.length == 0) {
+			console.warn(`schema '${schema.name}' ->`, 'items.length == 0')
 			continue
 		}
-		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, schema.items.length)
+		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, items.length)
 
-		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
-		let Items = await emby.library
-			.addAll(schema.items.filter(item => !mIds.has(emby.library.toStrmPath(item))))
-			.catch(error => {
-				console.error(`syncCollections addAll -> %O`, error)
-				return []
-			})
-		Items.forEach(({ Id, Path }) => mIds.set(Path, Id))
+		let Updates = await emby.library.addAll(items)
+		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
+		let Ids = items.map(item => {
+			let Path = emby.library.toStrmPath(item)
+			return Items.find(v => v.Path == Path).Id
+		})
 
-		let Ids = schema.items.map(item => mIds.get(emby.library.toStrmPath(item))).filter(Boolean)
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
 				query: { Ids: Ids.join() },
-				silent: !process.DEVELOPMENT,
+				silent: true,
 			})
 		} else {
 			await emby.client.post('/Collections', {
 				query: { Ids: Ids.join(), Name: schema.name },
-				silent: !process.DEVELOPMENT,
+				silent: true,
 			})
 		}
 	}
 
-	// await emby.library.refresh()
-	console.info(Date.now() - t, `syncCollections ${mIds.size} Items ->`, 'DONE')
+	await emby.library.refresh()
+	console.info(Date.now() - t, `syncCollections ${schemas.length} schemas ->`, 'DONE')
 }
 
 async function toCollections(items: media.Item[], Items: emby.Item[]) {
@@ -217,7 +188,6 @@ async function toCollections(items: media.Item[], Items: emby.Item[]) {
 
 export interface CollectionSchema {
 	all: boolean
-	items: media.Item[]
 	limit: number
 	name: string
 	type: media.MainContentType

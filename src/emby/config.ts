@@ -1,13 +1,13 @@
 import * as _ from 'lodash'
 import * as http from '@/adapters/http'
+import * as internalIp from 'internal-ip'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
-import * as internalIp from 'internal-ip'
 
 export async function config() {
 	if (!process.env.EMBY_API_KEY) {
 		throw new Error(
-			`Undefined EMBY_API_KEY -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`
+			`Undefined EMBY_API_KEY -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`,
 		)
 	}
 
@@ -49,9 +49,9 @@ export async function config() {
 		`emby config ->`,
 		Object.fromEntries(
 			Object.entries(process.env).filter(
-				([k]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY')
-			)
-		)
+				([k]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY'),
+			),
+		),
 	)
 }
 
