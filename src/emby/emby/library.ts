@@ -383,21 +383,14 @@ export const library = {
 		).flat()
 		console.log(`library addAll Updates ->`, Updates.length)
 
-		let StrmCreations = Updates.filter(
-			v => v.UpdateType == 'Created' /** && v.Path.endsWith('.strm') */,
-		)
+		let StrmCreations = Updates.filter(v => v.UpdateType == 'Created')
 		if (StrmCreations.length > 0) {
 			console.info(`library addAll StrmCreations ->`, StrmCreations.length)
 			await library.refresh()
-
 			let ExcludeItemIds = [] as string[]
 			while (StrmCreations.length > 0) {
 				await utils.pTimeout(1000)
-				let Items = await library.Items({
-					ExcludeItemIds,
-					Fields: [],
-					MinDateLastSaved,
-				})
+				let Items = await library.Items({ ExcludeItemIds, Fields: [], MinDateLastSaved })
 				_.remove(StrmCreations, StrmCreation => {
 					let Item = Items.find(v => v.Path == StrmCreation.Path)
 					if (Item) {
