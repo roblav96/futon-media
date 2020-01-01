@@ -18,6 +18,7 @@ if (process.DEVELOPMENT) {
 			qs: await import('query-string'),
 			similarity: await import('string-similarity'),
 			ss: await import('simple-statistics'),
+			stringFn: await import('string-fn'),
 			Url: await import('url-parse'),
 			xmljs: await import('xml-js'),
 		})

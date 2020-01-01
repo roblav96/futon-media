@@ -62,11 +62,11 @@ process.nextTick(() => {
 				let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
 				console.log(
 					`rxFavorite torrents '${item.strm}' ->`,
-					torrents.map(v => v.short),
+					torrents.map(v => v.json),
 					torrents.length,
 				)
 
-				// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+				if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 				// let index = torrents.findIndex(({ cached }) => cached.length > 0)
 				// if (index == -1) console.warn(`download best cached ->`, 'index == -1')

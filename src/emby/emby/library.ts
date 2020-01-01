@@ -4,6 +4,7 @@ import * as emby from '@/emby/emby'
 import * as fs from 'fs-extra'
 import * as isIp from 'is-ip'
 import * as media from '@/media/media'
+import * as omdb from '@/adapters/omdb'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
@@ -19,11 +20,16 @@ process.nextTick(async () => {
 	// await library.setCollections()
 	await library.setLibraryMonitorDelay()
 	// await library.missingItems()
-	// console.log(`IsMissing ->`, await library.Items({ IsMissing: true }))
+	// console.log(`IsMissing: true ->`, await library.Items({ IsMissing: true }))
+	// console.log(`HasOverview: false ->`, await library.Items({ HasOverview: false }))
+	// console.log(`BoxSets ->`, await library.Items({ IncludeItemTypes: ['BoxSet'] }))
+	// let Series = await library.Items({ Fields: ['Status'], IncludeItemTypes: ['Series'] })
+	// console.log(`Status ->`, _.uniq(Series.map(v => v.Status)))
 })
 
 export const library = {
 	async refresh() {
+		await library.unrefresh()
 		await emby.client.post('/Library/Refresh', { silent: true })
 	},
 	async unrefresh() {
@@ -110,6 +116,7 @@ export const library = {
 			EnableImages: boolean
 			EnableImageTypes: string[]
 			ExcludeItemIds: string[]
+			ExcludeItemTypes: string[]
 			ExcludeLocationTypes: string[]
 			Fields: string[]
 			Filters: string
@@ -120,12 +127,14 @@ export const library = {
 			IsMissing: boolean
 			IsVirtualUnaired: boolean
 			Limit: number
+			LocationTypes: string[]
 			MinDateLastSaved: string
 			MinIndexNumber: number
 			ParentId: string
 			ParentIndexNumber: number
 			Path: string
 			Recursive: boolean
+			SeriesStatus: string
 			SortBy: string
 			SortOrder: string
 			StartIndex: number
@@ -138,16 +147,21 @@ export const library = {
 			if (!_.isBoolean(query.Recursive)) {
 				query.Recursive = true
 			}
-			if (!_.isArray(query.IncludeItemTypes)) {
-				query.IncludeItemTypes = ['Movie', 'Series', 'Episode', 'Person']
+			if (!_.isArray(query.IncludeItemTypes) && !_.isArray(query.AnyProviderIdEquals)) {
+				query.IncludeItemTypes = ['Movie', 'Series', 'Season', 'Episode']
 			}
 		}
-		if (!_.isBoolean(query.IsMissing) && !_.isArray(query.ExcludeLocationTypes)) {
-			query.ExcludeLocationTypes = ['Virtual']
-		}
+		// if (!_.isArray(query.ExcludeItemTypes) && query.HasOverview == false) {
+		// 	query.ExcludeItemTypes = ['Movie', 'Series', 'Episode']
+		// 	query.IncludeItemTypes.splice(query.IncludeItemTypes.indexOf('Season'), 1)
+		// }
+		// if (!_.isArray(query.ExcludeLocationTypes) && query.IsMissing != true) {
+		// 	query.ExcludeLocationTypes = ['Virtual']
+		// }
 		if (!_.isArray(query.Fields) || !_.isEmpty(query.Fields)) {
 			query.Fields = (query.Fields || []).concat([
 				// 'DateCreated',
+				// 'LocationType',
 				// 'MediaStreams',
 				// 'Overview',
 				// 'ParentId',
@@ -177,6 +191,11 @@ export const library = {
 	async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>) {
 		let AnyProviderIdEquals = Object.entries(ids).map(([k, v]) => `${k.toLowerCase()}.${v}`)
 		return (await library.Items({ AnyProviderIdEquals }))[0]
+	},
+	async Item(ItemId: string) {
+		return (await emby.client.get(`/Users/${process.env.EMBY_SERVER_ID}/Items/${ItemId}`, {
+			silent: true,
+		})) as Item
 	},
 
 	async item(Item: emby.Item) {
@@ -235,7 +254,7 @@ export const library = {
 
 	toStrmPath(item: media.Item) {
 		let file = library.folders[`${item.type}s` as media.MainContentTypes].Location
-		let title = utils.trim(utils.clean(item.title).replace(/[^a-z\d\s_.-]/gi, ''))
+		let title = utils.toTitle(item.title)
 		file += `/${title} (${item.year})`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
@@ -320,19 +339,43 @@ export const library = {
 		return Updates
 	},
 
+	pSetTagsQueue: new pQueue({ concurrency: 1 }),
+	setTags(item: media.Item, ItemId: string) {
+		return library.pSetTagsQueue.add(async () => {
+			let tags = {
+				...(await omdb.toTags(item)),
+				'Trakt Rating': _.round(item.main.rating, 1).toFixed(1),
+				'Trakt Votes': item.main.votes.toLocaleString(),
+			}
+			let Tags = _.map(tags, (v, k) => `${k}: ${v}`)
+			console.log('setTags ->', item.short, Tags)
+			await emby.client.post(`/Items/${ItemId}`, {
+				body: _.merge(
+					await library.Item(ItemId),
+					utils.compact({
+						CommunityRating: Number.parseFloat(tags['IMDb Rating']),
+						CriticRating: Number.parseFloat(tags['Rotten Tomatoes']),
+						Tags,
+					} as Item),
+				),
+				silent: true,
+			})
+		})
+	},
+
 	pAddQueue: new pQueue({ concurrency: 1 }),
-	async addQueue(items: media.Item[]) {
-		return await library.pAddQueue.add(() => library.addAll(items))
+	addQueue(items: media.Item[]) {
+		return library.pAddQueue.add(() => library.addAll(items))
 	},
 	async addAll(items: media.Item[]) {
-		console.warn(
-			`library addAll items ->`,
-			items.map(v => v.short),
-			items.length,
-		)
+		// console.warn(
+		// 	`library addAll items ->`,
+		// 	items.map(v => v.short),
+		// 	items.length,
+		// )
 		if (items.length == 0) return []
 		let t = Date.now()
-		let dateiso = new Date().toISOString()
+		let MinDateLastSaved = new Date().toISOString()
 
 		let Updates = (
 			await pAll(
@@ -343,11 +386,10 @@ export const library = {
 		console.log(`library addAll Updates ->`, Updates.length)
 
 		let StrmCreations = Updates.filter(
-			v => v.UpdateType == 'Created' && v.Path.endsWith('.strm'),
+			v => v.UpdateType == 'Created' /** && v.Path.endsWith('.strm') */,
 		)
 		if (StrmCreations.length > 0) {
 			console.info(`library addAll StrmCreations ->`, StrmCreations.length)
-			await library.unrefresh()
 			await library.refresh()
 
 			let ExcludeItemIds = [] as string[]
@@ -356,20 +398,23 @@ export const library = {
 				let Items = await library.Items({
 					ExcludeItemIds,
 					Fields: [],
-					IncludeItemTypes: ['Movie', 'Episode'],
-					MinDateLastSaved: dateiso,
+					MinDateLastSaved,
 				})
 				_.remove(StrmCreations, StrmCreation => {
 					let Item = Items.find(v => v.Path == StrmCreation.Path)
 					if (Item) {
 						ExcludeItemIds.push(Item.Id)
+						if (['Movie', 'Series'].includes(Item.Type)) {
+							let item = items.find(v => library.toStrmPath(v) == Item.Path)
+							library.setTags(item, Item.Id)
+						}
 						return true
 					}
 				})
 			}
 		}
 
-		console.info(Date.now() - t, `library addAll ${Updates.length} ->`, 'DONE')
+		console.log(Date.now() - t, `library addAll ->`, Updates.length, 'DONE')
 		return Updates
 	},
 }

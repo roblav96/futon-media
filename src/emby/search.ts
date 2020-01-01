@@ -29,7 +29,6 @@ process.nextTick(() => {
 					memoize: true,
 					silent: true,
 				})) as trakt.Result[]
-				console.log(`results ->`, results)
 				if (_.isEmpty(results)) {
 					await Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
 				}
@@ -129,6 +128,11 @@ process.nextTick(() => {
 	)
 	rxSearch.subscribe(async ({ Session, SearchTerm, items }) => {
 		if (_.isEmpty(items)) return
+		console.warn(
+			`rxSearch library addAll items ->`,
+			items.map(v => v.short),
+			items.length,
+		)
 		let Updates = await emby.library.addQueue(items)
 		let CreationPaths = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
 		let added = items.filter(v => CreationPaths.includes(emby.library.toStrmPath(v)))

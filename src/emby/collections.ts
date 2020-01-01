@@ -13,7 +13,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
+	// if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
 	if (!process.DEVELOPMENT) schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 })
 
@@ -74,7 +74,7 @@ async function syncCollections() {
 	schemas.push(
 		...lists.map(list => {
 			return {
-				name: utils.toSlug(list.name, { title: true }),
+				name: utils.toTitle(list.name),
 				url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
 			} as CollectionSchema
 		}),
@@ -136,7 +136,7 @@ async function syncCollections() {
 			console.warn(`schema '${schema.name}' ->`, 'items.length == 0')
 			continue
 		}
-		process.DEVELOPMENT && console.log(`schema '${schema.name}' ->`, items.length)
+		if (process.DEVELOPMENT) console.log(`schema '${schema.name}' ->`, items.length)
 
 		let Updates = await emby.library.addAll(items)
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
