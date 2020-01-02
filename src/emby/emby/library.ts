@@ -143,7 +143,7 @@ export const library = {
 		if (!_.isBoolean(query.EnableImages)) {
 			query.EnableImages = false
 		}
-		if (!_.isArray(query.Ids) && !_.isString(query.Path)) {
+		if (!_.isArray(query.Ids)) {
 			if (!_.isBoolean(query.Recursive)) {
 				query.Recursive = true
 			}
@@ -151,13 +151,6 @@ export const library = {
 				query.IncludeItemTypes = ['Movie', 'Series', 'Season', 'Episode']
 			}
 		}
-		// if (!_.isArray(query.ExcludeItemTypes) && query.HasOverview == false) {
-		// 	query.ExcludeItemTypes = ['Movie', 'Series', 'Episode']
-		// 	query.IncludeItemTypes.splice(query.IncludeItemTypes.indexOf('Season'), 1)
-		// }
-		// if (!_.isArray(query.ExcludeLocationTypes) && query.IsMissing != true) {
-		// 	query.ExcludeLocationTypes = ['Virtual']
-		// }
 		if (!_.isArray(query.Fields) || !_.isEmpty(query.Fields)) {
 			query.Fields = (query.Fields || []).concat([
 				// 'DateCreated',
@@ -252,46 +245,28 @@ export const library = {
 		return { season, episode }
 	},
 
-	toStrmPath(item: media.Item) {
-		let file = library.folders[`${item.type}s` as media.MainContentTypes].Location
+	toStrmPath(item: media.Item, relative = false) {
+		let dir = library.folders[`${item.type}s` as media.MainContentTypes].Location
+		if (relative == true) dir = ''
 		let title = utils.toTitle(item.title)
-		file += `/${title} (${item.year})`
+		let file = `${title} (${item.year})`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
 		if (item.ids.tvdb) file += ` [tvdbid=${item.ids.tvdb}]`
 		if (item.movie) {
-			return `${file}/${title} (${item.year}).strm`
+			return `${dir}/${file}/${title} (${item.year}).strm`
 		}
 		if (item.episode) {
 			file += `/Season ${item.episode.season}`
 			file += `/${title} `
 			file += `S${utils.zeroSlug(item.episode.season)}`
 			file += `E${utils.zeroSlug(item.episode.number)}`
-			return `${file}.strm`
+			return `${dir}/${file}.strm`
 		}
 		if (item.season) {
-			return `${file}/Season ${item.season.number}`
+			return `${dir}/${file}/Season ${item.season.number}`
 		}
-		return file
-	},
-	toStrmQuery(item: media.Item) {
-		let query = {
-			slug: item.ids.slug,
-			trakt: item.ids.trakt,
-			type: item.type,
-			year: item.year,
-		} as StrmQuery
-		if (item.ids.imdb) query.imdb = item.ids.imdb
-		if (item.ids.tmdb) query.tmdb = item.ids.tmdb
-		if (item.ids.tvdb) query.tvdb = item.ids.tvdb
-		if (item.season) {
-			query.season = item.season.number
-		}
-		if (item.episode) {
-			query.season = item.episode.season
-			query.episode = item.episode.number
-		}
-		return query
+		return `${dir}/${file}`
 	},
 	async toStrmFile(item: media.Item) {
 		let Path = library.toStrmPath(item)
@@ -299,8 +274,11 @@ export const library = {
 		if (await fs.pathExists(Path)) return Updated
 		Updated.UpdateType = 'Created'
 		if (Path.endsWith('.strm')) {
-			let strmquery = qs.stringify(library.toStrmQuery(item))
-			await fs.outputFile(Path, `${process.env.EMBY_WAN_ADDRESS}/strm?${strmquery}`)
+			let query = qs.stringify({
+				Path: library.toStrmPath(item, true),
+				type: item.type,
+			} as StrmQuery)
+			await fs.outputFile(Path, `${process.env.EMBY_WAN_ADDRESS}/strm?${query}`)
 		}
 		return Updated
 	},
@@ -411,15 +389,8 @@ export const library = {
 }
 
 export interface StrmQuery {
-	episode: number
-	imdb: string
-	season: number
-	slug: string
-	tmdb: number
-	trakt: number
-	tvdb: number
+	Path: string
 	type: media.MainContentType
-	year: number
 }
 
 export interface MediaUpdated {

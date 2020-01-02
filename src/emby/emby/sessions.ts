@@ -130,11 +130,11 @@ export class Session {
 
 	async GoToSearch(String: string) {
 		await emby.client.post(`/Sessions/${this.Id}/Command/GoToSearch`, {
-			// query: {api_key: process.env.EMBY_ADMIN_TOKEN, },
+			// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 		})
 		await emby.client.post(`/Sessions/${this.Id}/Command/SendString`, {
 			body: { Arguments: { String } },
-			// query: {api_key: process.env.EMBY_ADMIN_TOKEN, },
+			// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			debug: true,
 		})
 	}

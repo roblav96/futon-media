@@ -81,12 +81,10 @@ fastify.get('/strm', async (request, reply) => {
 	// 	`https://electrifiedcandycane-sto.energycdn.com/dl/6wtiozo4fccgaVc_vQqkRQ/1576057813/675000842/5de734bf153e33.60144700/the.daily.show.2019.12.03.ta-nehisi.coates.extended.1080p.web.x264-tbs.mkv`,
 	// )
 
-	let Query = _.mapValues(request.query, v =>
-		utils.isNumeric(v) ? _.parseInt(v) : v,
-	) as emby.StrmQuery
-	let Item = (await emby.library.Items({ Path: emby.library.toStrmPath(Query) }))[0]
-	let title = emby.library.toTitle(Item)
-	console.log(`/strm ->`, `'${title}'`)
+	let { Path, type } = request.query as emby.StrmQuery
+	Path = emby.library.folders[`${type}s` as media.MainContentTypes].Location + Path
+	let Item = await emby.library.byPath(Path)
+	console.log(`/strm ->`, `'${emby.library.toTitle(Item)}'`)
 
 	let stream = (await db.get(Item.Id)) as string
 	if (!_.isString(stream)) {
@@ -94,7 +92,7 @@ fastify.get('/strm', async (request, reply) => {
 			try {
 				stream = await getDebridStream(Item)
 			} catch (error) {
-				console.error(`/strm '${title}' -> %O`, error.message)
+				console.error(`/strm '${emby.library.toTitle(Item)}' -> %O`, error.message)
 				stream = 'null'
 			}
 			await db.put(Item.Id, stream, utils.duration(1, 'minute'))
