@@ -15,6 +15,7 @@ process.nextTick(() => process.DEVELOPMENT && db.flush())
 export class Session {
 	static async get() {
 		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
+		// Sessions = Sessions.filter(v => !_.isEmpty(v.PlayableMediaTypes))
 		Sessions = Sessions.filter(({ DeviceId, UserName }) => {
 			return !!UserName && DeviceId != process.env.EMBY_SERVER_ID
 		})

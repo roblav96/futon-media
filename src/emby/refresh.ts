@@ -10,6 +10,7 @@ const db = new Db(__filename)
 process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 process.nextTick(() => {
+	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)),
 		Rx.op.distinctUntilChanged(

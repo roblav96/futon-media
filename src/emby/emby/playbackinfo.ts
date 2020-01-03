@@ -13,7 +13,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// process.DEVELOPMENT && (await db.flush())
+	if (process.DEVELOPMENT) await db.flush()
 
 	emby.rxSocket.subscribe(async ({ MessageType }) => {
 		if (MessageType == 'OnOpen') {

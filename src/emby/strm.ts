@@ -29,7 +29,7 @@ async function getDebridStream(Item: emby.Item) {
 		ItemId: Item.Id,
 		UserId: Session && Session.UserId,
 	})
-	if (!Session) Session = (await emby.Session.get()).find(v => v.UserId == PlaybackInfo.UserId)
+	if (!Session) Session = await emby.Session.byUserId(PlaybackInfo.UserId)
 	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
@@ -86,12 +86,10 @@ fastify.get('/strm', async (request, reply) => {
 
 	let { file, type } = request.query as emby.StrmQuery
 	let Item = await emby.library.byPath(emby.library.getFolder(type) + file)
-	console.log('Item ->', Item)
 	let title = emby.library.toTitle(Item)
 	console.log(`/strm ->`, `'${title}'`)
 
 	let stream = (await db.get(Item.Id)) as string
-	console.log('stream ->', stream)
 	if (!_.isString(stream)) {
 		if (!emitter.eventNames().includes(Item.Id)) {
 			try {

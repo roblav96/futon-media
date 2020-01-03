@@ -15,7 +15,7 @@ import { RealDebrid } from '@/debrids/realdebrid'
 
 export const debrids = {
 	premiumize: Premiumize,
-	realdebrid: RealDebrid,
+	// realdebrid: RealDebrid,
 	// offcloud: Offcloud,
 }
 
