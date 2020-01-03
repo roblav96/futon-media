@@ -25,7 +25,10 @@ async function getDebridStream(Item: emby.Item) {
 	let title = emby.library.toTitle(Item)
 
 	let Session = (await emby.Session.get()).find(v => v.ItemPath == Item.Path)
-	let PlaybackInfo = await emby.PlaybackInfo.get(Item.Id, Session && Session.UserId)
+	let PlaybackInfo = await emby.PlaybackInfo.get({
+		ItemId: Item.Id,
+		UserId: Session && Session.UserId,
+	})
 	if (!Session) Session = (await emby.Session.get()).find(v => v.UserId == PlaybackInfo.UserId)
 	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
@@ -42,7 +45,7 @@ async function getDebridStream(Item: emby.Item) {
 	let { Quality, AudioChannels, AudioCodecs, VideoCodecs } = PlaybackInfo
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
 	let stream = await db.get(skey)
-	if (stream && stream != 'null') return stream
+	if (stream) return stream
 
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
@@ -57,14 +60,14 @@ async function getDebridStream(Item: emby.Item) {
 
 	if (cacheds.length == 0) {
 		debrids.download(torrents, item)
-		await db.put(skey, 'null', utils.duration(1, 'hour'))
+		await db.put(skey, 'error', utils.duration(1, 'hour'))
 		throw new Error(`debrids.getStream cacheds.length == 0 -> '${title}'`)
 	}
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
 	if (!stream) {
 		debrids.download(torrents, item)
-		await db.put(skey, 'null', utils.duration(1, 'hour'))
+		await db.put(skey, 'error', utils.duration(1, 'hour'))
 		throw new Error(`debrids.getStream !stream -> '${title}'`)
 	}
 
@@ -81,19 +84,21 @@ fastify.get('/strm', async (request, reply) => {
 	// 	`https://electrifiedcandycane-sto.energycdn.com/dl/6wtiozo4fccgaVc_vQqkRQ/1576057813/675000842/5de734bf153e33.60144700/the.daily.show.2019.12.03.ta-nehisi.coates.extended.1080p.web.x264-tbs.mkv`,
 	// )
 
-	let { Path, type } = request.query as emby.StrmQuery
-	Path = emby.library.folders[`${type}s` as media.MainContentTypes].Location + Path
-	let Item = await emby.library.byPath(Path)
-	console.log(`/strm ->`, `'${emby.library.toTitle(Item)}'`)
+	let { file, type } = request.query as emby.StrmQuery
+	let Item = await emby.library.byPath(emby.library.getFolder(type) + file)
+	console.log('Item ->', Item)
+	let title = emby.library.toTitle(Item)
+	console.log(`/strm ->`, `'${title}'`)
 
 	let stream = (await db.get(Item.Id)) as string
+	console.log('stream ->', stream)
 	if (!_.isString(stream)) {
 		if (!emitter.eventNames().includes(Item.Id)) {
 			try {
 				stream = await getDebridStream(Item)
 			} catch (error) {
-				console.error(`/strm '${emby.library.toTitle(Item)}' -> %O`, error.message)
-				stream = 'null'
+				console.error(`/strm '${title}' -> %O`, error.message)
+				stream = 'error'
 			}
 			await db.put(Item.Id, stream, utils.duration(1, 'minute'))
 			emitter.emit(Item.Id, stream)
@@ -102,6 +107,6 @@ fastify.get('/strm', async (request, reply) => {
 		}
 	}
 
-	if (!stream || stream == 'null') return reply.code(404).send(Buffer.from(''))
+	if (!stream || stream == 'error') return reply.code(404).send(Buffer.from(''))
 	reply.redirect(stream)
 })

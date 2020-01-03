@@ -1,8 +1,8 @@
 import * as _ from 'lodash'
 import * as fs from 'fs-extra'
 import * as IORedis from 'ioredis'
-import * as Json from '@/shims/json'
 import * as path from 'path'
+import safeStringify from 'safe-stable-stringify'
 
 export class Db {
 	static redis = new IORedis(6379, '127.0.0.1')
@@ -14,14 +14,18 @@ export class Db {
 		}
 	}
 
-	async get<T = any>(key: string) {
+	async get(key: string) {
 		let value = await Db.redis.get(`${this.prefix}:${key}`)
-		value = Json.parse(value).value || value
-		return (value as any) as T
+		try {
+			return JSON.parse(value)
+		} catch (error) {
+			console.error(`Db get '${this.prefix}:${key}' -> %O`, error.message)
+			return value
+		}
 	}
 
 	async put(key: string, value: any, ttl?: number) {
-		value = Json.stringify(value)
+		value = safeStringify(value)
 		if (!_.isFinite(ttl)) await Db.redis.set(`${this.prefix}:${key}`, value)
 		else await Db.redis.setex(`${this.prefix}:${key}`, ttl / 1000, value)
 	}

@@ -109,9 +109,6 @@ export class Session {
 	async getUser() {
 		return await emby.User.byUserId(this.UserId)
 	}
-	async getPlaybackInfo() {
-		return await emby.PlaybackInfo.byUserId(this.UserId)
-	}
 	async getDevice() {
 		return (await emby.client.get(`/Devices/Info`, {
 			query: { Id: this.DeviceId },

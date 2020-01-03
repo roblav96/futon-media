@@ -27,15 +27,15 @@ process.nextTick(async () => {
 			return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
 		}),
 	)
-	rxPostedPlaybackInfo.subscribe(({ message }) => {
-		let { error, value } = Json.parse(message.slice(message.indexOf('{')))
-		if (error) return console.error(`rxPostedPlaybackInfo ->`, error.message)
-		let { Id, UserId } = value as PlaybackInfo
-		Promise.all([
-			db.put(UserId, value),
-			db.put(Id, value, utils.duration(1, 'day')),
-			db.put(`${Id}:${UserId}`, value, utils.duration(1, 'day')),
+	rxPostedPlaybackInfo.subscribe(async ({ message }) => {
+		let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
+		await Promise.all([
+			db.put(value.UserId, value),
+			db.put(value.Id, value, utils.duration(1, 'day')),
+			db.put(`${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
 		])
+		let Session = await emby.Session.byUserId(value.UserId)
+		console.warn(`[${Session.short}] rxPostedPlaybackInfo ->`, new PlaybackInfo(value).json)
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
@@ -44,14 +44,18 @@ process.nextTick(async () => {
 })
 
 export class PlaybackInfo {
-	static async get(ItemId: string, UserId = '') {
-		let value = (await db.get(UserId ? `${ItemId}:${UserId}` : ItemId)) as PlaybackInfo
-		if (value) return new PlaybackInfo(value)
-		await utils.pTimeout(1000)
-		return PlaybackInfo.get(ItemId, UserId)
-	}
-	static async byUserId(UserId: string) {
-		return new PlaybackInfo(await db.get(UserId))
+	static async get({ ItemId, UserId } = {} as { ItemId?: string; UserId?: string }) {
+		if (!ItemId && !UserId) throw new Error(`!ItemId && !UserId`)
+		let value: PlaybackInfo
+		for (let i = 0; i < 3; i++) {
+			if (!value && !!ItemId && !!UserId) value = await db.get(`${ItemId}:${UserId}`)
+			if (!value && !!ItemId && !UserId) value = await db.get(ItemId)
+			if (!value && !!UserId && !ItemId) value = await db.get(UserId)
+			if (value) break
+			await utils.pTimeout(1000)
+		}
+		if (!value) throw new Error(`!value`)
+		return new PlaybackInfo(value)
 	}
 
 	static UserNames = {} as Record<string, string>

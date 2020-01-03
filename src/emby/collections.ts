@@ -141,7 +141,7 @@ async function syncCollections() {
 		let Updates = await emby.library.addAll(items)
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
 		let Ids = items.map(item => {
-			let Path = emby.library.toStrmPath(item)
+			let Path = emby.library.toPath(item)
 			return Items.find(v => v.Path == Path).Id
 		})
 

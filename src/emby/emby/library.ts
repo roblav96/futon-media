@@ -38,7 +38,7 @@ export const library = {
 		})) as ScheduledTasksInfo[]
 		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 		if (State != 'Idle') {
-			await emby.client.delete(`/ScheduledTasks/Running/${Id}`)
+			await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
 			await utils.pTimeout(100)
 		}
 	},
@@ -46,6 +46,9 @@ export const library = {
 	folders: {
 		movies: { Location: '', ItemId: '' },
 		shows: { Location: '', ItemId: '' },
+	},
+	getFolder(type: media.MainContentType) {
+		return library.folders[`${type}s` as media.MainContentTypes].Location
 	},
 	async setFolders() {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
@@ -245,37 +248,36 @@ export const library = {
 		return { season, episode }
 	},
 
-	toStrmPath(item: media.Item, relative = false) {
-		let dir = library.folders[`${item.type}s` as media.MainContentTypes].Location
-		if (relative == true) dir = ''
+	toPath(item: media.Item) {
+		let folder = library.getFolder(item.type)
 		let title = utils.toTitle(item.title)
 		let file = `${title} (${item.year})`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`
 		if (item.ids.tvdb) file += ` [tvdbid=${item.ids.tvdb}]`
 		if (item.movie) {
-			return `${dir}/${file}/${title} (${item.year}).strm`
+			return `${folder}/${file}/${title} (${item.year}).strm`
 		}
 		if (item.episode) {
 			file += `/Season ${item.episode.season}`
 			file += `/${title} `
 			file += `S${utils.zeroSlug(item.episode.season)}`
 			file += `E${utils.zeroSlug(item.episode.number)}`
-			return `${dir}/${file}.strm`
+			return `${folder}/${file}.strm`
 		}
 		if (item.season) {
-			return `${dir}/${file}/Season ${item.season.number}`
+			return `${folder}/${file}/Season ${item.season.number}`
 		}
-		return `${dir}/${file}`
+		return `${folder}/${file}`
 	},
 	async toStrmFile(item: media.Item) {
-		let Path = library.toStrmPath(item)
+		let Path = library.toPath(item)
 		let Updated = { Path, UpdateType: 'Modified' } as emby.MediaUpdated
 		if (await fs.pathExists(Path)) return Updated
 		Updated.UpdateType = 'Created'
 		if (Path.endsWith('.strm')) {
 			let query = qs.stringify({
-				Path: library.toStrmPath(item, true),
+				file: Path.replace(library.getFolder(item.type), ''),
 				type: item.type,
 			} as StrmQuery)
 			await fs.outputFile(Path, `${process.env.EMBY_WAN_ADDRESS}/strm?${query}`)
@@ -374,7 +376,7 @@ export const library = {
 					if (Item) {
 						ExcludeItemIds.push(Item.Id)
 						if (['Movie', 'Series'].includes(Item.Type)) {
-							let item = items.find(v => library.toStrmPath(v) == Item.Path)
+							let item = items.find(v => library.toPath(v) == Item.Path)
 							library.setTags(item, Item.Id)
 						}
 						return true
@@ -389,7 +391,7 @@ export const library = {
 }
 
 export interface StrmQuery {
-	Path: string
+	file: string
 	type: media.MainContentType
 }
 

@@ -1,3 +1,4 @@
+import * as _ from 'lodash'
 import safeStringify from 'safe-stable-stringify'
 import { replacer, reviver } from 'buffer-json'
 
@@ -13,4 +14,8 @@ export function parse<T = any>(text: string) {
 		parsed.error = error
 	}
 	return parsed
+}
+
+if (process.DEVELOPMENT) {
+	process.nextTick(async () => _.defaults(global, await import('@/shims/json')))
 }

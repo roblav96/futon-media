@@ -26,7 +26,7 @@ process.nextTick(() => {
 				emby.Session.byUserId(UserId),
 			])
 			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
-			let PlaybackInfo = await Session.getPlaybackInfo()
+			let PlaybackInfo = await emby.PlaybackInfo.get({ UserId: Session.UserId })
 			return { Item, PlaybackInfo }
 		}),
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode'].includes(Item.Type)),
