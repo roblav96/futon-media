@@ -8,6 +8,10 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	// if (process.DEVELOPMENT) await db.flush()
+	let dbtoken = ((await db.get('token')) || {}) as OauthToken
+	if (dbtoken.access_token) {
+		client.config.headers['authorization'] = `Bearer ${dbtoken.access_token}`
+	}
 	let token: OauthToken
 	try {
 		token = await http.client.post('https://api.trakt.tv/oauth/token', {
@@ -16,7 +20,7 @@ process.nextTick(async () => {
 				client_secret: process.env.TRAKT_CLIENT_SECRET,
 				grant_type: 'refresh_token',
 				redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
-				refresh_token: await db.get('refresh_token'),
+				refresh_token: dbtoken.refresh_token,
 			} as OauthRequest,
 			retries: [500, 503],
 			silent: true,
@@ -49,8 +53,7 @@ process.nextTick(async () => {
 		}
 	}
 	if (!token) throw new Error(`trakt oauth !token`)
-	await db.put('refresh_token', token.refresh_token)
-	await db.put('access_token', token.access_token)
+	await db.put('token', token)
 	client.config.headers['authorization'] = `Bearer ${token.access_token}`
 })
 
