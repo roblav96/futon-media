@@ -122,6 +122,8 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
 		if (name.includes(' proper ')) v.boost *= 1.25
 		if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
+		if (['rus', 'ita'].find(vv => name.includes(` ${vv} `))) v.boost *= 0.25
+		if (v.providers.includes('Rarbg')) v.boost *= 1.5
 		if (!isHD) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
 			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
@@ -138,7 +140,6 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (remuxes.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
 		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
-		if (v.providers.includes('Rarbg')) v.boost *= 1.5
 		if (name.includes(' fgt ')) v.boost *= 1.5
 	}
 
