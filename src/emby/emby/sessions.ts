@@ -24,9 +24,10 @@ export class Session {
 	static db = db
 	static async get() {
 		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
-		// Sessions = Sessions.filter(v => !_.isEmpty(v.PlayableMediaTypes))
-		Sessions = Sessions.filter(({ DeviceId, UserName }) => {
-			return !!UserName && DeviceId != process.env.EMBY_SERVER_ID
+		_.remove(Sessions, ({ DeviceId, PlayableMediaTypes, UserName }) => {
+			if (!UserName) return true
+			if (_.isEmpty(PlayableMediaTypes)) return true
+			if (DeviceId == process.env.EMBY_SERVER_ID) return true
 		})
 		Sessions.sort((a, b) => {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
