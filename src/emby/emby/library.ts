@@ -18,7 +18,6 @@ import pQueue from 'p-queue'
 process.nextTick(async () => {
 	await library.setFolders()
 	// await library.setCollections()
-	await library.setLibraryMonitorDelay()
 	// await library.missingItems()
 	// console.log(`IsMissing: true ->`, await library.Items({ IsMissing: true }))
 	// console.log(`HasOverview: false ->`, await library.Items({ HasOverview: false }))
@@ -72,23 +71,6 @@ export const library = {
 	// 		await emby.client.post('/Collections', { query: { Name } })
 	// 	}
 	// },
-
-	async setLibraryMonitorDelay() {
-		if (!process.env.EMBY_ADMIN_TOKEN) return
-		let Configuration = (await emby.client.get('/System/Configuration', {
-			silent: true,
-		})) as emby.SystemConfiguration
-		let delay = utils.duration(1, 'month') / 1000
-		if (Configuration.LibraryMonitorDelay != delay) {
-			Configuration.LibraryMonitorDelay = delay
-			await emby.client.post('/System/Configuration', {
-				body: Configuration,
-				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
-				silent: true,
-			})
-			console.warn(`Configuration.LibraryMonitorDelay ->`, Configuration.LibraryMonitorDelay)
-		}
-	},
 
 	// async missingItems() {
 	// 	let Items = await library.Items({ IsMissing: true })

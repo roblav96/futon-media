@@ -77,7 +77,7 @@ async function getDebridStream(Item: emby.Item) {
 	}
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
-	console.log(Date.now() - t, `👍 stream '${title}' ->`, stream)
+	console.log(Date.now() - t, `👍 ->`, title, stream)
 	return stream
 }
 

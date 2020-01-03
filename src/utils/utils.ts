@@ -88,6 +88,9 @@ export function colons(value: string) {
 	let index = value.indexOf(': ')
 	return index == -1 ? [value] : [value, value.slice(0, index), value.slice(index + 2)]
 }
+export function splitsColonHyphen(value: string) {
+	return [': ', ' - '].map(v => value.split(v)).flat()
+}
 // export function uncolons(value: string) {
 // 	let index = value.indexOf(': ')
 // 	return index == -1 ? [value] : [value, value.slice(0, index)]

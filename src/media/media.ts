@@ -243,7 +243,7 @@ export class Item {
 			aliases.push(...(await tmdb.aliases(this.type, this.ids.tmdb)))
 		}
 		if (this.movie) {
-			// if (this.collection.name) aliases.push(this.collection.name)
+			if (this.collection.name) aliases.push(this.collection.name)
 		}
 		if (this.show) {
 			if (this.E.t) aliases.push(this.E.t)
