@@ -18,18 +18,22 @@ const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
 
 const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush())
+// process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
 	let title = emby.library.toTitle(Item)
 
-	let Session = (await emby.Session.get()).find(v => v.ItemPath == Item.Path)
+	let [Sessions, UserId] = await Promise.all([
+		emby.Session.get(),
+		emby.Session.db.get<string>(Item.Id),
+	])
+	let Session = Sessions.find(v => v.ItemPath == Item.Path)
+	if (!Session && UserId) Session = Sessions.find(v => v.UserId == UserId)
 	let PlaybackInfo = await emby.PlaybackInfo.get({
 		ItemId: Item.Id,
 		UserId: Session && Session.UserId,
 	})
-	// if (!Session) Session = await emby.Session.byUserId(PlaybackInfo.UserId)
 	if (!Session) {
 		let Sessions = (await emby.Session.get()).filter(v => !v.ItemPath)
 		Session = Sessions.find(v => v.UserId == PlaybackInfo.UserId)
@@ -60,19 +64,19 @@ async function getDebridStream(Item: emby.Item) {
 		cacheds.length,
 	)
 
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	if (cacheds.length == 0) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
-		throw new Error(`debrids.getStream cacheds.length == 0 -> '${title}'`)
+		throw new Error(`cacheds.length == 0 -> '${title}'`)
 	}
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
 	if (!stream) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
-		throw new Error(`debrids.getStream !stream -> '${title}'`)
+		throw new Error(`!stream -> '${title}'`)
 	}
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
@@ -99,7 +103,7 @@ fastify.get('/strm', async (request, reply) => {
 			try {
 				stream = await getDebridStream(Item)
 			} catch (error) {
-				console.error(`/strm '${title}' -> %O`, error.message)
+				console.error(`/strm '${title}' -> %O`, error)
 				stream = 'error'
 			}
 			await db.put(Item.Id, stream, utils.duration(1, 'minute'))

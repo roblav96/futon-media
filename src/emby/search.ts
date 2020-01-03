@@ -32,7 +32,7 @@ process.nextTick(() => {
 				if (_.isEmpty(results)) {
 					await Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
 				}
-				return { Session, SearchTerm, items: results.map(v => new media.Item(v)) }
+				return { Session, items: results.map(v => new media.Item(v)) }
 			}
 
 			if (/^(\w+-)+\w+$/.test(SearchTerm)) {
@@ -43,7 +43,7 @@ process.nextTick(() => {
 							memoize: true,
 							silent: true,
 						})) as trakt.Full
-						return { Session, SearchTerm, items: [new media.Item({ [type]: full })] }
+						return { Session, items: [new media.Item({ [type]: full })] }
 					} catch {}
 				}
 			}
@@ -99,34 +99,34 @@ process.nextTick(() => {
 			means[means.length - 1] = _.min([mean, _.last(means)])
 			console.log(`rxSearch means ->`, means, `mean ->`, mean, `words ->`, words)
 
-			SearchTerm = utils.stripStopWords(SearchTerm)
+			let stopterm = utils.stripStopWords(SearchTerm)
 			items = items.filter(item => {
 				let title = utils.stripStopWords(item.title)
-				if (words <= 3 && utils.equals(title, SearchTerm)) {
+				if (words <= 3 && utils.equals(title, stopterm)) {
 					if (words == 1) {
 						return item.isPopular(_.floor(_.last(means) * 0.5))
 					}
 					return item.isPopular(_.last(means))
 				}
-				if (words == 1 && !utils.startsWith(title, SearchTerm)) {
+				if (words == 1 && !utils.startsWith(title, stopterm)) {
 					return false
 				}
-				if (words == 2 && utils.startsWith(title, SearchTerm)) {
+				if (words == 2 && utils.startsWith(title, stopterm)) {
 					return item.isPopular(_.last(means))
 				}
-				if (words == 3 && utils.contains(title, SearchTerm)) {
+				if (words == 3 && utils.contains(title, stopterm)) {
 					return item.isPopular(_.last(means))
 				}
 				return item.isPopular(mean)
 			})
-			return { Session, SearchTerm, items }
+			return { Session, items }
 		}),
 		Rx.op.catchError((error, caught) => {
 			console.error(`rxSearch -> %O`, error)
 			return caught
 		}),
 	)
-	rxSearch.subscribe(async ({ Session, SearchTerm, items }) => {
+	rxSearch.subscribe(async ({ Session, items }) => {
 		if (_.isEmpty(items)) return
 		console.warn(
 			`rxSearch library addAll items ->`,
@@ -138,6 +138,5 @@ process.nextTick(() => {
 		let added = items.filter(v => CreationPaths.includes(emby.library.toPath(v)))
 		if (_.isEmpty(added)) return
 		await Session.Message(`Added to library: '${added.map(v => v.title).join(`', '`)}'`)
-		// await Session.GoToSearch(SearchTerm)
 	})
 })

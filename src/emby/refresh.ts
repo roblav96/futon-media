@@ -7,10 +7,10 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush())
-
-process.nextTick(() => {
+process.nextTick(async () => {
+	if (process.DEVELOPMENT) await db.flush()
 	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)),
 		Rx.op.distinctUntilChanged(

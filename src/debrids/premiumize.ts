@@ -10,6 +10,7 @@ export const client = new http.Http({
 	baseUrl: 'https://www.premiumize.me/api',
 	query: { customer_id: process.env.PREMIUMIZE_ID, pin: process.env.PREMIUMIZE_PIN },
 	qsArrayFormat: 'bracket',
+	silent: true,
 })
 
 process.nextTick(async () => {
@@ -26,7 +27,7 @@ process.nextTick(async () => {
 export class Premiumize extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 100)
+		let chunks = utils.chunks(hashes, 40)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
@@ -35,7 +36,6 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 					.post(`/cache/check`, {
 						query: { items: chunk },
 						memoize: process.DEVELOPMENT,
-						silent: true,
 					})
 					.catch(error => {
 						console.error(`Premiumize cache -> %O`, error)

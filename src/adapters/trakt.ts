@@ -103,6 +103,18 @@ export const RESULT_EXTRAS = {
 // 	return items.filter(v => !v.isJunk())
 // }
 
+export async function aliases(type: media.MainContentType, id: string) {
+	try {
+		let titles = (await client.get(`/${type}s/${id}/aliases`, {
+			memoize: true,
+			silent: true,
+		})) as Alias[]
+		return titles.filter(v => ['gb', 'nl', 'us'].includes(v.country)).map(v => v.title)
+	} catch {
+		return []
+	}
+}
+
 export function person(results: Result[], name: string) {
 	results = results.filter(v => {
 		return (

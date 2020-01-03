@@ -13,7 +13,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	if (process.DEVELOPMENT) await db.flush()
+	// if (process.DEVELOPMENT) await db.flush()
 
 	emby.rxSocket.subscribe(async ({ MessageType }) => {
 		if (MessageType == 'OnOpen') {
@@ -34,8 +34,8 @@ process.nextTick(async () => {
 			db.put(value.Id, value, utils.duration(1, 'day')),
 			db.put(`${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
 		])
-		let Session = await emby.Session.byUserId(value.UserId)
-		console.warn(`[${Session.short}] rxPostedPlaybackInfo ->`, new PlaybackInfo(value).json)
+		// let Session = await emby.Session.byUserId(value.UserId)
+		// console.warn(`[${Session.short}] rxPostedPlaybackInfo ->`, new PlaybackInfo(value).json)
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
@@ -49,8 +49,8 @@ export class PlaybackInfo {
 		let value: PlaybackInfo
 		for (let i = 0; i < 3; i++) {
 			if (!value && !!ItemId && !!UserId) value = await db.get(`${ItemId}:${UserId}`)
-			if (!value && !!ItemId && !UserId) value = await db.get(ItemId)
-			if (!value && !!UserId && !ItemId) value = await db.get(UserId)
+			if (!value && !!ItemId) value = await db.get(ItemId)
+			if (!value && !!UserId) value = await db.get(UserId)
 			if (value) break
 			await utils.pTimeout(1000)
 		}

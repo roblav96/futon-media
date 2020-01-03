@@ -10,12 +10,13 @@ import * as utils from '@/utils/utils'
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
 	headers: { authorization: `Bearer ${process.env.REALDEBRID_SECRET}` },
+	silent: true,
 })
 
 process.nextTick(async () => {
 	if (!process.DEVELOPMENT) return
 	if (process.DEVELOPMENT) return
-	let transfers = (await client.get('/torrents', { silent: true })) as Transfer[]
+	let transfers = (await client.get('/torrents')) as Transfer[]
 	transfers = transfers.filter(v => v.status != 'downloaded' || !v.filename)
 	for (let i = 0; i < transfers.length; i++) {
 		transfers[i] = (await client.get(`/torrents/info/${transfers[i].id}`)) as Transfer
@@ -31,17 +32,14 @@ process.nextTick(async () => {
 export class RealDebrid extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
-		let chunks = utils.chunks(hashes, 100)
+		let chunks = utils.chunks(hashes, 40)
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
 				await utils.pRandom(300)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client
-					.get(url, {
-						memoize: process.DEVELOPMENT,
-						silent: true,
-					})
+					.get(url, { memoize: process.DEVELOPMENT })
 					.catch(error => {
 						console.error(`RealDebrid cache -> %O`, error)
 						return {}
@@ -58,9 +56,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 	}
 
 	static async hasActiveCount() {
-		let actives = (await client.get('/torrents/activeCount', {
-			silent: true,
-		})) as ActiveCount
+		let actives = (await client.get('/torrents/activeCount')) as ActiveCount
 		return actives.list.length < _.ceil(actives.limit * 0.8)
 	}
 

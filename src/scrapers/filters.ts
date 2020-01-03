@@ -6,60 +6,33 @@ import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
-export const SKIPS = [
-	// ...utils.NSFWS,
-	'3d',
-	'bonus',
-	'cam',
-	'camhd',
-	'camrip',
-	'hd ts',
-	'hdcam',
-	'hdts',
-	'sample',
-	'trailer',
-	// 'avi',
-	// 'enhanced',
-	// 'extras',
-	// 'french',
-	// 'latino',
-	// 'protected',
-]
-
 export function results(result: scraper.Result, item: media.Item) {
 	result.magnet = utils.clean(result.magnet)
 	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (!_.isString(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
-	if (magnet.xt.length != 49) return // console.log(`⛔ magnet.xt != 49 ->`, result.name)
+	if (_.isEmpty(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
+	if (magnet.xt.length != 41 && magnet.xt.length != 49) {
+		return // console.log(`⛔ magnet.xt.length != (41 || 49) ->`, result.name)
+	}
 
 	result.name = result.name || magnet.dn
-	if (!result.name) return // console.log(`⛔ !result.name ->`, result.name)
+	if (_.isEmpty(result.name)) return // console.log(`⛔ !result.name ->`, result.name)
 	result.name = utils.toSlug(utils.stripForeign(result.name))
 
-	let skips = utils.accuracies(item.titles.join(' '), SKIPS.join(' '))
-	let skipped = utils.accuracies(result.name, skips.join(' '))
-	if (skips.length - skipped.length >= 1) {
-		return // console.log(`⛔ skipped '${_.difference(skips, skipped)}' ->`, result.name)
-	}
+	let skipping = item.skips.find(v => ` ${result.name} `.includes(` ${v} `))
+	if (skipping) return // console.log(`⛔ skipping '${skipping}' ->`, result.name)
 
 	return true
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let naughtys = utils.accuracies(item.titles.join(' '), dicts.NAUGHTY_WORDS.join(' '))
-	let nsfwed = utils.accuracies(torrent.name, naughtys.join(' '))
-	if (naughtys.length - nsfwed.length >= 2) {
-		return // console.log(`❌ nsfw '${_.difference(naughtys, nsfwed)}' ->`, torrent.name)
-	}
-
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
-	if (collision) return // console.log(`❌ collisions '${collision}' ->`, torrent.name)
+	if (collision) return console.log(`⛔ collisions '${collision}' ->`, torrent.name)
 
 	// let filters = item.filters.concat(item.collection.name ? [item.collection.name] : [])
 	let packed = false
 	if (!item.filters.find(v => utils.contains(torrent.name, v))) {
 		if (!item.collection.name || !utils.contains(torrent.name, item.collection.name)) {
-			return // console.log(`❌ aliases ->`, torrent.name)
+			return console.log(`⛔ aliases ->`, torrent.name)
 		}
 		packed = true
 	}
@@ -95,13 +68,15 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 				torrent.packs = item.collection.name ? item.collection.fulls.length : years.length
 			}
 
-			// if (item.collection.name && torrent.packs) {
-			if (!item.years.find(year => name.includes(` ${year} `))) return
-			// }
+			if (!item.collection.name && !torrent.packs) {
+				if (!item.years.find(year => name.includes(` ${year} `))) {
+					return console.log(`⛔ movie !item.years ->`, torrent.name)
+				}
+			}
 
 			return true
 		} catch (error) {
-			return // console.log(`❌ movie ${error.message} ->`, torrent.name)
+			return console.log(`⛔ movie ${error.message} ->`, torrent.name)
 		}
 	}
 
@@ -117,13 +92,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			})
 			if (s00e00) return true
 
-			let e00s = item.e00.map(v => name.match(v)).filter(v => v && v.length == 2)
-			let e00 = e00s.find(v => {
-				if (_.isEqual([item.E.n], [v[1]].map(utils.parseInt))) return true
-				throw new Error(`'${v[0].trim()}'`)
-			})
-			if (e00) return true
-
 			if (torrent.packs != undefined) {
 				torrent.packs = 1
 				if (regex.nthseason(item, name)) return true
@@ -137,12 +105,19 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 				}
 			}
 
+			let e00s = item.e00.map(v => name.match(v)).filter(v => v && v.length == 2)
+			let e00 = e00s.find(v => {
+				if (_.isEqual([item.E.n], [v[1]].map(utils.parseInt))) return true
+				throw new Error(`'${v[0].trim()}'`)
+			})
+			if (e00) return true
+
 			let straggler = item.stragglers.find(v => utils.accuracy(name, v))
 			if (straggler) return true
 
-			return // console.log(`⛔ show return false ->`, torrent.name)
+			return console.log(`⛔ show return false ->`, torrent.name)
 		} catch (error) {
-			return // console.log(`⛔ show ${error.message} ->`, torrent.name)
+			return console.log(`⛔ show ${error.message} ->`, torrent.name)
 		}
 	}
 }

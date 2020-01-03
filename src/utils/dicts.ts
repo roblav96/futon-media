@@ -2,24 +2,40 @@ import * as _ from 'lodash'
 import * as fs from 'fs-extra'
 
 let naughty = fs.readFileSync(require.resolve('no-naughty-words/data/words.txt')).toString()
-export const NAUGHTY_WORDS = naughty.split('\n').slice(611, -2)
+export const NAUGHTY_WORDS = _.uniq(naughty.split('\n').slice(611, -2)).filter(v => v.length >= 3)
+
+export const SKIPS = [
+	...NAUGHTY_WORDS,
+	'3d',
+	'bonus',
+	'cam',
+	'camhd',
+	'camrip',
+	'hd ts',
+	'hdcam',
+	'hdts',
+	'hsbs',
+	'preview',
+	'sample',
+	'trailer',
+]
 
 export const VIDEO_EXTENSIONS = [
-	'asf',
+	// 'asf',
 	'avi',
-	'flv',
+	// 'flv',
 	'm4v',
 	'mkv',
 	'mov',
-	'mp2',
+	// 'mp2',
 	'mp4',
 	'mpeg',
-	'ogg',
-	'ogm',
-	'vob',
+	// 'ogg',
+	// 'ogm',
+	// 'vob',
 	'webm',
 	'wmv',
-	'xvid',
+	// 'xvid',
 	//
 ]
 

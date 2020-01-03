@@ -58,16 +58,16 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	if (process.DEVELOPMENT) isHD = true
 
 	await item.setAll()
-	console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
+	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
 	// // console.log(`item ->`, ((global as any).item = item))
-	// console.log(`item.titles ->`, item.titles)
-	// console.log(`item.years ->`, item.years)
-	// console.log(`item.slugs ->`, item.slugs)
-	// console.log(`item.queries ->`, item.queries)
-	// console.log(`item.aliases ->`, item.aliases)
-	// console.log(`item.filters ->`, item.filters)
-	// console.log(`item.collisions ->`, item.collisions)
+	console.log(`item.titles ->`, item.titles)
+	console.log(`item.years ->`, item.years)
+	console.log(`item.slugs ->`, item.slugs)
+	console.log(`item.queries ->`, item.queries)
+	console.log(`item.aliases ->`, item.aliases)
+	console.log(`item.filters ->`, item.filters)
+	console.log(`item.collisions ->`, item.collisions)
 	// // console.log(`item.s00e00 ->`, item.s00e00)
 	// // console.log(`item.e00 ->`, item.e00)
 	// // console.log(`item.matches ->`, item.matches)
@@ -146,13 +146,14 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	if (isHD) torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	else torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
 
-	if (!process.DEVELOPMENT) console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
-	console.info(
-		Date.now() - t,
-		`scrapeAll ->`,
-		torrents.map(v => v.short),
-		torrents.length,
-	)
+	if (process.DEVELOPMENT) {
+		console.info(
+			Date.now() - t,
+			`scrapeAll ->`,
+			torrents.map(v => v.short),
+			torrents.length,
+		)
+	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
 
 	return torrents
 }
@@ -216,7 +217,7 @@ export class Scraper {
 		).flat()
 
 		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(v => {
-			return v && filters.results(v, this.item)
+			return !!v && filters.results(v, this.item)
 		})
 
 		// let jsons = combos.map(v =>

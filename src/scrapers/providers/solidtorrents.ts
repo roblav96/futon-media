@@ -13,7 +13,7 @@ export const client = scraper.Scraper.http({
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size', 'seeders']
 	concurrency = 1
-	max = 2
+	max = 3
 
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/search', {

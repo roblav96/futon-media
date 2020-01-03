@@ -140,7 +140,7 @@ export function contains(value: string, target: string) {
 	return ` ${toSlug(value)} `.includes(` ${toSlug(target)} `)
 }
 
-/** `accuracies.length == 0` when all of `target` is included in `value` */
+/** accuracies.length == 0 when all of target is included in value */
 export function accuracies(value: string, target: string) {
 	let values = _.uniq(toSlug(value).split(' '))
 	let targets = _.uniq(toSlug(target).split(' '))
@@ -150,7 +150,7 @@ export function accuracy(value: string, target: string) {
 	return accuracies(value, target).length == 0
 }
 
-/** `levens == 0` when all of `target` is included in `value` */
+/** levens == 0 when all of target is included in value */
 export function levens(value: string, target: string) {
 	value = minify(value)
 	target = minify(target)

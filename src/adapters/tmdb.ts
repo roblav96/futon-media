@@ -42,6 +42,18 @@ function debloat(value) {
 // 	return items.filter(v => !v.isJunk())
 // }
 
+export async function aliases(type: media.MainContentType, id: number) {
+	try {
+		let { titles } = (await client.get(
+			`/${type == 'show' ? 'tv' : type}/${id}/alternative_titles`,
+			{ memoize: true, silent: true },
+		)) as AlternativeTitles
+		return titles.filter(v => ['GB', 'NL', 'US'].includes(v.iso_3166_1)).map(v => v.title)
+	} catch {
+		return []
+	}
+}
+
 export async function toTrakt({ id, media_type }: Full) {
 	let results = (await trakt.client.get(`/search/tmdb/${id}`, {
 		query: { type: toType(media_type) },

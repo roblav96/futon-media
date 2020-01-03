@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
+import * as dicts from '@/utils/dicts'
 import * as http from '@/adapters/http'
 import * as Memoize from '@/utils/memoize'
 import * as omdb from '@/adapters/omdb'
@@ -130,8 +131,7 @@ export class Item {
 
 	get isDaily() {
 		if (this.movie) return false
-		let genres = ['game-show', 'news', 'talk-show']
-		return this.main.genres.filter(v => genres.includes(v)).length > 0
+		return !!this.main.genres.find(v => ['game-show', 'news', 'talk-show'].includes(v))
 	}
 
 	/** season */
@@ -177,6 +177,7 @@ export class Item {
 
 	omdb: omdb.Result
 	async setOmdb() {
+		if (!this.ids.imdb) return
 		this.omdb = (await omdb.client.get('/', {
 			query: { i: this.ids.imdb },
 			memoize: true,
@@ -236,42 +237,22 @@ export class Item {
 	aliases: string[]
 	async setAliases() {
 		let aliases = [] as string[]
-
-		let response = (await trakt.client.get(`/${this.type}s/${this.id}/aliases`, {
-			memoize: true,
-			// silent: true,
-		})) as trakt.Alias[]
-		let trakts = (response || []).filter(v => ['gb', 'nl', 'us'].includes(v.country))
-		aliases.push(...trakts.map(v => v.title))
-
-		if (this.ids.tmdb) {
-			let { titles } = (await tmdb.client
-				.get(`/${this.movie ? 'movie' : 'tv'}/${this.ids.tmdb}/alternative_titles`, {
-					memoize: true,
-					// silent: true,
-				})
-				.catch(() => ({ titles: [] }))) as tmdb.AlternativeTitles
-			let tmdbs = (titles || []).filter(v => ['GB', 'NL', 'US'].includes(v.iso_3166_1))
-			aliases.push(...tmdbs.map(v => v.title))
-		}
-
-		// _.remove(aliases, alias => {
-		// 	if (utils.isForeign(alias)) return true
-		// })
-
-		aliases = _.uniq(aliases.map(v => utils.clean(v)))
-		// console.log(`setAliases '${this.slug}' aliases ->`, utils.byLength(aliases))
-
 		aliases.push(...this.titles)
+		aliases.push(...(await trakt.aliases(this.type, this.id)))
+		if (this.ids.tmdb) {
+			aliases.push(...(await tmdb.aliases(this.type, this.ids.tmdb)))
+		}
 		if (this.movie) {
-			if (this.collection.name) aliases.push(this.collection.name)
+			// if (this.collection.name) aliases.push(this.collection.name)
 		}
 		if (this.show) {
-			if (this.S.t) aliases.push(this.S.t)
 			if (this.E.t) aliases.push(this.E.t)
-			if (this.main.network) {
-				aliases = aliases.map(v => [v, `${this.main.network.split(' ')[0]} ${v}`]).flat()
-			}
+			if (this.E.a && this.isDaily) aliases.push(this.E.a)
+			if (!utils.includes(this.S.t, 'season')) aliases.push(this.S.t)
+			// if (this.E.t) aliases = aliases.map(v => [v, `${v} ${this.E.t}`]).flat()
+			// if (this.show.network) {
+			// 	aliases = aliases.map(v => [v, `${this.show.network.split(' ')[0]} ${v}`]).flat()
+			// }
 		}
 
 		aliases = aliases.map(v => [v, _.last(utils.colons(v))]).flat()
@@ -285,10 +266,9 @@ export class Item {
 	get filters() {
 		return this.aliases.filter(v => {
 			if (utils.equals(v, this.collection.name)) return false
-			if (!isNaN(v.split(' ').pop() as any)) return true
-			if (!utils.stripStopWords(v).includes(' '))
-				console.error(`get filters !stops includes ->`, v)
-			return true // utils.stops(v).includes(' ')
+			if (!isNaN(_.last(v.split(' ')) as any)) return true
+			if (!utils.stripStopWords(v).includes(' ')) return false
+			return true
 		})
 	}
 
@@ -359,7 +339,12 @@ export class Item {
 		await this.setCollisions()
 		Memoize.clear(this)
 	}
-
+	get skips() {
+		let strings = this.titles.join(' ')
+		if (this.S.t) strings += ` ${this.S.t}`
+		if (this.E.t) strings += ` ${this.E.t}`
+		return dicts.SKIPS.filter(v => !` ${strings.toLowerCase()} `.includes(` ${v} `))
+	}
 	get titles() {
 		let titles = [
 			this.title,

@@ -14,13 +14,13 @@ export class Db {
 		}
 	}
 
-	async get(key: string) {
+	async get<T = any>(key: string) {
 		let value = await Db.redis.get(`${this.prefix}:${key}`)
 		try {
-			return JSON.parse(value)
+			return JSON.parse(value) as T
 		} catch (error) {
 			console.error(`Db get '${this.prefix}:${key}' -> %O`, error.message)
-			return value
+			return value as never
 		}
 	}
 

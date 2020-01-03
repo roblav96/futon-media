@@ -10,9 +10,18 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush())
+process.nextTick(async () => {
+	// if (process.DEVELOPMENT) await db.flush()
+	let rxSession = emby.rxItemId.pipe(
+		Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
+	)
+	rxSession.subscribe(async ({ ItemId, UserId }) => {
+		await db.put(ItemId, UserId, utils.duration(1, 'day'))
+	})
+})
 
 export class Session {
+	static db = db
 	static async get() {
 		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
 		// Sessions = Sessions.filter(v => !_.isEmpty(v.PlayableMediaTypes))
