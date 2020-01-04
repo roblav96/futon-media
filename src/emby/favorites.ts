@@ -62,7 +62,7 @@ process.nextTick(() => {
 				let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
 				console.log(
 					`rxFavorite torrents '${item.strm}' ->`,
-					torrents.map(v => v.json),
+					torrents.map(v => v.short),
 					torrents.length,
 				)
 

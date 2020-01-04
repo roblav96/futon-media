@@ -137,6 +137,6 @@ process.nextTick(() => {
 		let CreationPaths = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
 		let added = items.filter(v => CreationPaths.includes(emby.library.toPath(v)))
 		if (_.isEmpty(added)) return
-		await Session.Message(`Added to library: '${added.map(v => v.title).join(`', '`)}'`)
+		await Session.Message(`👍 Added to library: '${added.map(v => v.title).join(`', '`)}'`)
 	})
 })

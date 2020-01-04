@@ -15,13 +15,7 @@ export class Db {
 	}
 
 	async get<T = any>(key: string) {
-		let value = await Db.redis.get(`${this.prefix}:${key}`)
-		try {
-			return JSON.parse(value) as T
-		} catch (error) {
-			console.error(`Db get '${this.prefix}:${key}' -> %O`, error.message)
-			return value as never
-		}
+		return JSON.parse(await Db.redis.get(`${this.prefix}:${key}`)) as T
 	}
 
 	async put(key: string, value: any, ttl?: number) {
@@ -39,6 +33,15 @@ export class Db {
 		if (keys.length == 0) return
 		console.warn(`Db flush '${this.prefix}:${pattern}' ->`, keys.sort())
 		await this.pipeline(keys.map(v => ['del', v]))
+	}
+
+	async entries<T = any>(pattern = '*') {
+		let keys = await Db.redis.keys(`${this.prefix}:${pattern}`)
+		if (keys.length == 0) return [] as never
+		let values = await this.pipeline(keys.map(v => ['get', v]))
+		return _.fromPairs(
+			keys.map((key, i) => [key.replace(`${this.prefix}:`, ''), JSON.parse(values[i])]),
+		) as Record<string, T>
 	}
 
 	async pipeline(coms = [] as string[][]) {

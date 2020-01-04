@@ -20,7 +20,7 @@
 		"stop": "forever stop futon-media || true",
 		"start": "del dist; run-p --silent watch:*",
 		"watch:tsc": "tsc --watch --incremental",
-		"watch:node": "wait-for-change dist/index.js && watchexec --restart --debounce 100 --watch dist --exts js -- NODE_ENV=development node --inspect dist/index.js",
+		"watch:node": "wait-for-change dist/index.js && sleep 0.1 && watchexec --restart --debounce 100 --watch dist --exts js -- NODE_ENV=development node --inspect dist/index.js",
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
 		"emby:restart": "echo 'killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
 		"emby:del": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/transcoding-temp/*;'",

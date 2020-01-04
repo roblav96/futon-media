@@ -18,24 +18,27 @@ const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush())
+process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
 	let title = emby.library.toTitle(Item)
 
-	let [Sessions, UserId] = await Promise.all([
-		emby.Session.get(),
-		emby.Session.db.get<string>(Item.Id),
-	])
-	let Session = Sessions.find(v => v.ItemPath == Item.Path)
-	if (!Session && UserId) Session = Sessions.find(v => v.UserId == UserId)
-	let PlaybackInfo = await emby.PlaybackInfo.get({
-		ItemId: Item.Id,
-		UserId: Session && Session.UserId,
-	})
-	if (!Session) Session = Sessions.find(v => !v.ItemPath && v.UserId == PlaybackInfo.UserId)
-	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
+	// let [Sessions, UserId] = await Promise.all([
+	// 	emby.Session.get(),
+	// 	emby.Session.db.get<string>(Item.Id),
+	// ])
+	// let Session = Sessions.find(v => v.ItemPath == Item.Path)
+	// if (!Session && UserId) Session = Sessions.find(v => v.UserId == UserId)
+	// let PlaybackInfo = await emby.PlaybackInfo.get({
+	// 	ItemId: Item.Id,
+	// 	UserId: Session && Session.UserId,
+	// })
+	// if (!Session) Session = Sessions.find(v => !v.ItemPath && v.UserId == PlaybackInfo.UserId)
+	// console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
+
+	let PlaybackInfo = await emby.PlaybackInfo.get({ ItemId: Item.Id })
+	console.warn(`getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
@@ -86,7 +89,7 @@ fastify.get('/strm', async (request, reply) => {
 
 	// console.warn(`reply.redirect`)
 	// return reply.redirect(
-	// 	`https://electrifiedcandycane-sto.energycdn.com/dl/6wtiozo4fccgaVc_vQqkRQ/1576057813/675000842/5de734bf153e33.60144700/the.daily.show.2019.12.03.ta-nehisi.coates.extended.1080p.web.x264-tbs.mkv`,
+	// 	`https://tealstoneward-sto.energycdn.com/dl/CQCk4z67jAqvUbLqzRHg4w/1578715724/675000842/5e0ced5357ca93.06370112/Rogue.One.A.Star.Wars.Story.%282016%29.%284K%2010bit%20H265%29.%28Fantascienza%29.%28%29.mkv`,
 	// )
 
 	let { file, type } = request.query as emby.StrmQuery

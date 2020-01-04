@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
 import * as media from '@/media/media'
+import * as pAll from 'p-all'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
@@ -113,6 +114,25 @@ export async function aliases(type: media.MainContentType, id: string) {
 	} catch {
 		return []
 	}
+}
+
+export async function titles(queries: string[]) {
+	let results = (
+		await pAll(
+			queries.map((query, i) => async () => {
+				if (i > 0) await utils.pRandom(300)
+				return (await client.get(`/search/movie,show`, {
+					query: { query, fields: 'title,translations,aliases', limit: 100 },
+					memoize: true,
+					silent: true,
+				})) as Result[]
+			}),
+			{ concurrency: 1 },
+		)
+	).flat()
+	let fulls = results.filter(Boolean).map(v => toFull(v))
+	fulls = _.uniqBy(fulls, 'ids.trakt').filter(v => !!v.title && !!v.year)
+	return fulls.map(v => ({ title: v.title, year: v.year }))
 }
 
 export function person(results: Result[], name: string) {

@@ -66,7 +66,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	console.log(`item.slugs ->`, item.slugs)
 	console.log(`item.queries ->`, item.queries)
 	console.log(`item.aliases ->`, item.aliases)
-	console.log(`item.filters ->`, item.filters)
+	// console.log(`item.filters ->`, item.filters)
 	console.log(`item.collisions ->`, item.collisions)
 	// // console.log(`item.s00e00 ->`, item.s00e00)
 	// // console.log(`item.e00 ->`, item.e00)
@@ -94,6 +94,16 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (item.released.valueOf() - utils.duration(1, 'day') > v.stamp) return
 		return true
 	})
+
+	if (isHD) torrents.sort((a, b) => b.bytes - a.bytes)
+	else torrents.sort((a, b) => b.seeders - a.seeders)
+	if (process.DEVELOPMENT) {
+		console.info(
+			Date.now() - t,
+			`scrapeAll results ${torrents.length} ->`,
+			torrents.map(v => v.short),
+		)
+	}
 
 	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
@@ -149,7 +159,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	if (process.DEVELOPMENT) {
 		console.info(
 			Date.now() - t,
-			`scrapeAll ->`,
+			`scrapeAll torrents ->`,
 			torrents.map(v => v.short),
 			torrents.length,
 		)
@@ -165,7 +175,7 @@ export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
 			// debug: process.DEVELOPMENT,
-			memoize: !process.DEVELOPMENT,
+			memoize: true,
 			// profile: process.DEVELOPMENT,
 			retries: [],
 			silent: true,

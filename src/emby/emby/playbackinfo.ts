@@ -13,7 +13,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	if (process.DEVELOPMENT) await db.flush()
 
 	emby.rxSocket.subscribe(async ({ MessageType }) => {
 		if (MessageType == 'OnOpen') {
@@ -22,21 +22,61 @@ process.nextTick(async () => {
 		}
 	})
 
-	let rxPostedPlaybackInfo = emby.rxLine.pipe(
-		Rx.op.filter(({ level, message }) => {
-			return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
-		}),
-	)
-	rxPostedPlaybackInfo.subscribe(async ({ message }) => {
+	let rxPlaybackInfo = Rx.merge(
+		emby.rxHttp.pipe(Rx.op.filter(({ parts }) => parts.includes('playbackinfo'))),
+		emby.rxLine.pipe(
+			Rx.op.filter(({ level, message }) => {
+				return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
+			}),
+		),
+	).pipe(Rx.op.bufferCount(2))
+	rxPlaybackInfo.subscribe(async (buffers: any[]) => {
+		// console.log('rxPlaybackInfo buffers ->', buffers)
+		let message = _.get(
+			buffers.find(({ message }) => {
+				return _.isString(message) && message.startsWith('GetPostedPlaybackInfo')
+			}),
+			'message',
+		) as string
+		if (!message) return console.warn(`rxPlaybackInfo !message buffers ->`, buffers)
+		let ua = _.get(
+			buffers.find(({ ua }) => _.isString(ua)),
+			'ua',
+		) as string
+		if (!ua) return console.warn(`rxPlaybackInfo !ua buffers ->`, buffers)
 		let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
 		await Promise.all([
-			db.put(value.UserId, value),
-			db.put(value.Id, value, utils.duration(1, 'day')),
-			db.put(`${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
+			db.put(`ua:${ua}`, value),
+			db.put(`UserId:${value.UserId}`, value),
+			db.put(`ItemId:${value.Id}`, value, utils.duration(1, 'day')),
+			db.put(`ItemId:UserId:${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
 		])
-		// let Session = await emby.Session.byUserId(value.UserId)
-		// console.warn(`[${Session.short}] rxPostedPlaybackInfo ->`, new PlaybackInfo(value).json)
 	})
+
+	// let rxPlaybackInfo = emby.rxHttp.pipe(
+	// 	Rx.op.filter(({ parts }) => parts.includes('playbackinfo')),
+	// )
+	// rxPlaybackInfo.subscribe(async ({ query, ua }) => {
+	// 	await db.put(`${query.ItemId}:ua`, ua, utils.duration(1, 'day'))
+	// })
+
+	// let rxPostedPlaybackInfo = emby.rxLine.pipe(
+	// 	Rx.op.filter(({ level, message }) => {
+	// 		return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
+	// 	}),
+	// )
+	// rxPostedPlaybackInfo.subscribe(async ({ message }) => {
+	// 	let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
+	// 	await Promise.all([
+	// 		db.put(`${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
+	// 		db.put(value.Id, value, utils.duration(1, 'day')),
+	// 		db.put(value.UserId, value),
+	// 	])
+	// 	// await db.put(value.Id, value, utils.duration(1, 'minute'))
+	// 	// await db.put(value.UserId, value)
+	// 	// let Session = await emby.Session.byUserId(value.UserId)
+	// 	// console.warn(`[${Session.short}] rxPostedPlaybackInfo ->`, new PlaybackInfo(value).json)
+	// })
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
 	// console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
@@ -44,17 +84,27 @@ process.nextTick(async () => {
 })
 
 export class PlaybackInfo {
-	static async get({ ItemId, UserId } = {} as { ItemId?: string; UserId?: string }) {
-		if (!ItemId && !UserId) throw new Error(`!ItemId && !UserId`)
+	static async get(
+		{ ItemId, UserId, ua } = {} as { ItemId?: string; UserId?: string; ua?: string },
+	) {
 		let value: PlaybackInfo
 		for (let i = 0; i < 3; i++) {
-			if (!value && !!ItemId && !!UserId) value = await db.get(`${ItemId}:${UserId}`)
-			if (!value && !!ItemId) value = await db.get(ItemId)
-			if (!value && !!UserId) value = await db.get(UserId)
+			if (!value && !!ua) {
+				value = await db.get(`ua:${ua}`)
+			}
+			if (!value && !!ItemId && !!UserId) {
+				value = await db.get(`ItemId:UserId:${ItemId}:${UserId}`)
+			}
+			if (!value && !!ItemId) {
+				value = await db.get(`ItemId:${ItemId}`)
+			}
+			if (!value && !!UserId) {
+				value = await db.get(`UserId:${UserId}`)
+			}
 			if (value) break
-			await utils.pTimeout(1000)
+			await utils.pTimeout(300)
 		}
-		if (!value) throw new Error(`!value`)
+		if (!value) throw new Error(`!value -> ${arguments}`)
 		return new PlaybackInfo(value)
 	}
 

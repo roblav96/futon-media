@@ -155,6 +155,7 @@ export const library = {
 		return ((
 			await emby.client.get('/Items', {
 				query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
+				timeout: utils.duration(1, 'minute'),
 				// profile: process.DEVELOPMENT,
 				silent: true,
 			})
@@ -345,25 +346,30 @@ export const library = {
 		).flat()
 		console.log(`library addAll Updates ->`, Updates.length)
 
-		let StrmCreations = Updates.filter(v => v.UpdateType == 'Created')
-		if (StrmCreations.length > 0) {
-			console.info(`library addAll StrmCreations ->`, StrmCreations.length)
-			await library.refresh()
-			let ExcludeItemIds = [] as string[]
-			while (StrmCreations.length > 0) {
-				await utils.pTimeout(1000)
-				let Items = await library.Items({ ExcludeItemIds, Fields: [], MinDateLastSaved })
-				_.remove(StrmCreations, StrmCreation => {
-					let Item = Items.find(v => v.Path == StrmCreation.Path)
-					if (Item) {
-						ExcludeItemIds.push(Item.Id)
-						if (['Movie', 'Series'].includes(Item.Type)) {
-							let item = items.find(v => library.toPath(v) == Item.Path)
-							library.setTags(item, Item.Id)
-						}
-						return true
-					}
-				})
+		let PathCreations = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
+		if (PathCreations.length > 0) {
+			console.info(`library addAll PathCreations ->`, PathCreations.length)
+			let StrmCreations = PathCreations.filter(v => v.endsWith('.strm'))
+			let rxFFProbes = emby.rxLine.pipe(
+				Rx.op.filter(({ level, message }) => {
+					return level == 'Debug' && message.startsWith('Running FFProbeProvider for ')
+				}),
+				Rx.op.filter(({ message }) => {
+					let Path = message.replace('Running FFProbeProvider for ', '')
+					let index = StrmCreations.indexOf(Path)
+					if (index >= 0) StrmCreations.splice(index, 1)
+					return StrmCreations.length == 0
+				}),
+				Rx.op.take(1),
+			)
+			await Promise.all([rxFFProbes.toPromise(), library.refresh()])
+			let Items = await library.Items({
+				Fields: [],
+				IncludeItemTypes: ['Movie', 'Series'],
+				MinDateLastSaved,
+			})
+			for (let item of items.filter(v => PathCreations.includes(library.toPath(v)))) {
+				library.setTags(item, Items.find(v => v.Path == library.toPath(item)).Id)
 			}
 		}
 

@@ -9,7 +9,7 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
-	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)),

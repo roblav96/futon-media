@@ -15,17 +15,21 @@ export const client = new http.Http({
 
 export async function titles(queries: string[]) {
 	let combos = queries.map(v => ['movie', 'tv'].map(vv => [v, vv])).flat()
-	let results = (await pAll(
-		combos.map(([query, type]) => async () =>
-			(await client.get(`/search/${type}`, {
-				query: { q: query, limit: 50 },
-				memoize: process.DEVELOPMENT,
-				silent: true,
-			})) as Result[],
-		),
-		// { concurrency: 1 },
-	)).flat()
-	return _.uniqBy(results.filter(v => v.title && v.year), 'ids.simkl_id')
+	let results = (
+		await pAll(
+			combos.map(([query, type], i) => async () => {
+				if (i > 0) await utils.pRandom(300)
+				return (await client.get(`/search/${type}`, {
+					query: { q: query, limit: 50 },
+					memoize: true,
+					silent: true,
+				})) as Result[]
+			}),
+			{ concurrency: 2 },
+		)
+	).flat()
+	results = _.uniqBy(results, 'ids.simkl_id').filter(v => !!v.title && !!v.year)
+	return results.map(v => ({ title: v.title, year: v.year }))
 }
 
 // if (process.DEVELOPMENT) {

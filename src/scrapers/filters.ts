@@ -26,13 +26,13 @@ export function results(result: scraper.Result, item: media.Item) {
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
-	if (collision) return console.log(`⛔ collisions '${collision}' ->`, torrent.name)
+	if (collision) return console.log(`⛔ collisions '${collision}' ->`, torrent.short)
 
 	// let filters = item.filters.concat(item.collection.name ? [item.collection.name] : [])
 	let packed = false
-	if (!item.filters.find(v => utils.contains(torrent.name, v))) {
+	if (!item.aliases.find(v => utils.contains(torrent.name, v))) {
 		if (!item.collection.name || !utils.contains(torrent.name, item.collection.name)) {
-			return console.log(`⛔ aliases ->`, torrent.name)
+			return console.log(`⛔ aliases ->`, torrent.short)
 		}
 		packed = true
 	}
@@ -70,13 +70,13 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 			if (!item.collection.name && !torrent.packs) {
 				if (!item.years.find(year => name.includes(` ${year} `))) {
-					return console.log(`⛔ movie !item.years ->`, torrent.name)
+					return console.log(`⛔ movie !item.years ->`, torrent.short)
 				}
 			}
 
 			return true
 		} catch (error) {
-			return console.log(`⛔ movie ${error.message} ->`, torrent.name)
+			return console.log(`⛔ movie ${error.message} ->`, torrent.short)
 		}
 	}
 
@@ -115,9 +115,9 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			let straggler = item.stragglers.find(v => utils.accuracy(name, v))
 			if (straggler) return true
 
-			return console.log(`⛔ show return false ->`, torrent.name)
+			return console.log(`⛔ show return false ->`, torrent.short)
 		} catch (error) {
-			return console.log(`⛔ show ${error.message} ->`, torrent.name)
+			return console.log(`⛔ show ${error.message} ->`, torrent.short)
 		}
 	}
 }

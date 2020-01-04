@@ -80,16 +80,13 @@ export function stripForeign(value: string) {
 }
 
 export function simplify(value: string) {
-	let squashes = unsquash(value)
+	let squashes = allSlugs(value)
 	if (squashes.length == 1) return value
 	return excludes(value, accuracies(squashes[0], squashes[1]))
 }
 export function colons(value: string) {
 	let index = value.indexOf(': ')
 	return index == -1 ? [value] : [value, value.slice(0, index), value.slice(index + 2)]
-}
-export function splitsColonHyphen(value: string) {
-	return [': ', ' - '].map(v => value.split(v)).flat()
 }
 // export function uncolons(value: string) {
 // 	let index = value.indexOf(': ')
@@ -100,7 +97,7 @@ export function splitsColonHyphen(value: string) {
 // 	let simple = simplify(value)
 // 	let slug = simple.includes(' ') && toSlug(simple)
 // 	if (!slug) {
-// 		let squashes = unsquash(value)
+// 		let squashes = allSlugs(value)
 // 		let isolates = unisolate(squashes)
 // 		slug = toSlug(value)
 // 		// let unisolate = unisolate(slug)
@@ -152,6 +149,13 @@ export function accuracies(value: string, target: string) {
 export function accuracy(value: string, target: string) {
 	return accuracies(value, target).length == 0
 }
+export function unisolate([a, b]: string[]) {
+	return excludes(
+		a,
+		accuracies(b, a).filter(v => v.length == 1),
+	)
+	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
+}
 
 /** levens == 0 when all of target is included in value */
 export function levens(value: string, target: string) {
@@ -164,22 +168,26 @@ export function leven(value: string, target: string) {
 }
 export { levenshtein }
 
-export function unsquash(value: string) {
+export function allSlugs(value: string) {
 	let [a, b] = [toSlug(value), toSlug(value, { squash: true })]
 	return a == b ? [a] : [a, b]
 }
-export function unisolate([a, b]: string[]) {
-	return excludes(
-		a,
-		accuracies(b, a).filter(v => v.length == 1),
-	)
-	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
+export function allParts(value: string) {
+	return value.split(/(: )|( - )/).filter(v => !!v && v != ': ' && v != ' - ')
+	// let parts = [value]
+	// 	.map(v => v.split(': '))
+	// 	.flat()
+	// 	.map(v => v.split(' - '))
+	// 	.flat()
+	// 	.map(v => v.trim())
+	// return parts
+	// return [': ', ' - '].map(v => value.split(v)).flat()
+	// return _.last(_.last(value.split(': ')).split(' - ')).trim()
 }
 
 export function toTitle(value: string) {
 	return trim(clean(value).replace(/[^a-z\d\s_.-]/gi, ''))
 }
-
 export function toSlug(
 	value: string,
 	options = {} as Partial<{

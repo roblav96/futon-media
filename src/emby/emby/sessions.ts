@@ -11,12 +11,16 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	if (process.DEVELOPMENT) await db.flush()
 	let rxSession = emby.rxItemId.pipe(
-		Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
+		Rx.op.distinctUntilKeyChanged('ItemId'),
+		// Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
 	)
-	rxSession.subscribe(async ({ ItemId, UserId }) => {
-		await db.put(ItemId, UserId, utils.duration(1, 'day'))
+	rxSession.subscribe(async ({ ItemId, UserId, ua }) => {
+		await Promise.all([
+			db.put(`${ItemId}:UserId`, UserId, utils.duration(1, 'day')),
+			db.put(`${ItemId}:ua`, ua, utils.duration(1, 'day')),
+		])
 	})
 })
 
@@ -49,6 +53,10 @@ export class Session {
 	}
 	get Age() {
 		return Date.now() - this.Stamp
+	}
+	get Agent() {
+		return [this.Client, this.DeviceName].join(' ')
+		// return [this.Client, this.DeviceName].map(v => v.replace(/\s+/g, '')).join('.')
 	}
 
 	get AudioStreamIndex() {
@@ -128,7 +136,7 @@ export class Session {
 	}
 
 	async Message(text: string | Error) {
-		let body = { Text: `🔶 ${text}` }
+		let body = { Text: `${text}` }
 		if (_.isError(text)) body.Text = `⛔ [ERROR] ${text.message}`
 		Object.assign(body, { TimeoutMs: _.clamp(body.Text.length * 100, 5000, 15000) })
 		try {
