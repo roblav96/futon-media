@@ -26,7 +26,7 @@ process.nextTick(async () => {
 			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			silent: true,
 		})
-		console.warn(`EmbyServer restart required! SystemConfiguration modified ->`, body)
+		throw new Error(`EmbyServer restart required!`)
 	}
 })
 

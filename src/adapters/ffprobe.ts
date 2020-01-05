@@ -1,10 +1,13 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as execa from 'execa'
-import * as ffpath from 'ffprobe-binaries'
 import * as Json from '@/shims/json'
 import * as ms from 'pretty-ms'
 import * as utils from '@/utils/utils'
+
+process.nextTick(() => {
+	if (!process.env.FFPROBE_PATH) throw new Error(`!process.env.FFPROBE_PATH`)
+})
 
 export async function probe(
 	url: string,
@@ -13,7 +16,7 @@ export async function probe(
 	let flags = ['-print_format', 'json', '-show_error']
 	let pairs = Object.entries(options).filter(([k, v]) => v)
 	flags.push(...pairs.map(([k]) => `-show_${k}`))
-	let { stdout } = await execa(ffpath, flags.concat(url))
+	let { stdout } = await execa(process.env.FFPROBE_PATH, flags.concat(url))
 	let { error, value } = Json.parse<Probe>(stdout)
 	if (error) throw error
 	if (value.format && value.format.tags) {

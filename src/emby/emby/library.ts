@@ -305,6 +305,7 @@ export const library = {
 	pSetTagsQueue: new pQueue({ concurrency: 1 }),
 	setTags(item: media.Item, ItemId: string) {
 		return library.pSetTagsQueue.add(async () => {
+			await utils.pRandom(300)
 			let tags = {
 				...(await omdb.toTags(item)),
 				'Trakt Rating': _.round(item.main.rating, 1).toFixed(1),
@@ -316,7 +317,7 @@ export const library = {
 					utils.compact({
 						CommunityRating: Number.parseFloat(tags['IMDb Rating']),
 						CriticRating: Number.parseFloat(tags['Rotten Tomatoes']),
-						Tags: _.map(tags, (v, k) => `${k}: ${v}`),
+						Tags: _.sortBy(_.map(tags, (v, k) => `${k}: ${v}`)),
 					} as Item),
 				),
 				silent: true,
@@ -347,29 +348,34 @@ export const library = {
 		console.log(`library addAll Updates ->`, Updates.length)
 
 		let PathCreations = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
-		if (PathCreations.length > 0) {
-			console.info(`library addAll PathCreations ->`, PathCreations.length)
-			let StrmCreations = PathCreations.filter(v => v.endsWith('.strm'))
-			let rxFFProbes = emby.rxLine.pipe(
-				Rx.op.filter(({ level, message }) => {
-					return level == 'Debug' && message.startsWith('Running FFProbeProvider for ')
-				}),
+		let StrmCreations = PathCreations.filter(v => v.endsWith('.strm'))
+		if (StrmCreations.length > 0) {
+			console.info(`library addAll StrmCreations ->`, StrmCreations.length)
+
+			let rxFFProbe = emby.rxLine.pipe(
 				Rx.op.filter(({ message }) => {
+					if (!message.startsWith('Running FFProbeProvider for ')) return false
 					let Path = message.replace('Running FFProbeProvider for ', '')
-					let index = StrmCreations.indexOf(Path)
-					if (index >= 0) StrmCreations.splice(index, 1)
+					_.remove(StrmCreations, v => v == Path)
 					return StrmCreations.length == 0
 				}),
 				Rx.op.take(1),
 			)
-			await Promise.all([rxFFProbes.toPromise(), library.refresh()])
+			await Promise.all([rxFFProbe.toPromise(), library.refresh()])
+
 			let Items = await library.Items({
 				Fields: [],
 				IncludeItemTypes: ['Movie', 'Series'],
 				MinDateLastSaved,
 			})
-			for (let item of items.filter(v => PathCreations.includes(library.toPath(v)))) {
-				library.setTags(item, Items.find(v => v.Path == library.toPath(item)).Id)
+			let tagging = items.filter(v => PathCreations.includes(library.toPath(v)))
+			for (let item of tagging) {
+				let Item = Items.find(v => v.Path == library.toPath(item))
+				if (!Item) {
+					console.error(`library addAll tagging !Item ->`, item.short)
+					continue
+				}
+				library.setTags(item, Item.Id)
 			}
 		}
 
@@ -466,7 +472,7 @@ export interface Item {
 		Name: string
 	}[]
 	Taglines: string[]
-	Tags: any[]
+	Tags: string[]
 	Type: string
 	UserData: {
 		IsFavorite: boolean

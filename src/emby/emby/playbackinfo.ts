@@ -161,7 +161,7 @@ export class PlaybackInfo {
 				AudioCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
 			}
 		}
-		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean)))
+		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean).map(v => v.replace(/^[^\w]/, ''))))
 	}
 	get VideoCodecs() {
 		let VideoCodecs = [] as string[]
@@ -175,7 +175,7 @@ export class PlaybackInfo {
 				VideoCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
 			}
 		}
-		return _.sortBy(_.uniq(VideoCodecs.filter(Boolean)))
+		return _.sortBy(_.uniq(VideoCodecs.filter(Boolean).map(v => v.replace(/^[^\w]/, ''))))
 	}
 
 	get json() {

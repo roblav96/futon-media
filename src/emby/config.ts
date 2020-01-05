@@ -27,7 +27,7 @@ export async function config() {
 	if (process.DEVELOPMENT) {
 		let ip = await internalIp.v4()
 		if (!Info.WanAddress.includes(ip)) {
-			throw new Error(`config Info.WanAddress -> ${Info.WanAddress} != ${ip}`)
+			throw new Error(`Info.WanAddress -> '${Info.WanAddress}' != '${ip}'`)
 		}
 	}
 

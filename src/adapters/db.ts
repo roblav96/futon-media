@@ -31,7 +31,7 @@ export class Db {
 	async flush(pattern = '*') {
 		let keys = await Db.redis.keys(`${this.prefix}:${pattern}`)
 		if (keys.length == 0) return
-		console.warn(`Db flush '${this.prefix}:${pattern}' ->`, keys.sort())
+		console.warn(`Db flush '${pattern}' ->`, keys.sort())
 		await this.pipeline(keys.map(v => ['del', v]))
 	}
 
