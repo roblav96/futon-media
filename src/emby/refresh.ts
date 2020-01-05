@@ -9,7 +9,7 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
-	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)),
@@ -38,7 +38,7 @@ process.nextTick(async () => {
 
 			let ItemId = Item.SeriesId || Item.Id
 			if (await db.get(ItemId)) return
-			await db.put(ItemId, true, utils.duration(1, 'hour'))
+			await db.put(ItemId, true, utils.duration(1, 'day'))
 
 			let Series = (await emby.library.Items({ Fields: ['Status'], Ids: [ItemId] }))[0]
 			if (Series.Status == 'Ended') return

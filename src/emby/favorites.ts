@@ -14,19 +14,15 @@ import pQueue from 'p-queue'
 let queue = new pQueue({ concurrency: 1 })
 process.nextTick(() => {
 	let rxFavorite = emby.rxItemId.pipe(
-		Rx.op.filter(({ method, parts }) => {
-			return method == 'POST' && parts.includes('favoriteitems')
-		}),
-		Rx.op.distinctUntilChanged((a, b) => {
-			return `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`
-		}),
-		Rx.op.mergeMap(async ({ ItemId, UserId }) => {
-			let [Item, Session] = await Promise.all([
+		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
+		Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
+		Rx.op.mergeMap(async ({ ItemId, UserId, useragent }) => {
+			let [Item, Session, PlaybackInfo] = await Promise.all([
 				emby.library.byItemId(ItemId),
 				emby.Session.byUserId(UserId),
+				emby.PlaybackInfo.get(useragent, UserId),
 			])
 			console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
-			let PlaybackInfo = await emby.PlaybackInfo.get({ UserId: Session.UserId })
 			return { Item, PlaybackInfo }
 		}),
 		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode'].includes(Item.Type)),

@@ -277,7 +277,7 @@ export class Item {
 		queries = queries.map(v => utils.allSlugs(v)).flat()
 		queries = queries.map(v => utils.stripStopWords(v))
 		queries = utils.byLength(_.uniq(queries.filter(Boolean)))
-		console.log('queries ->', queries)
+		// console.log('queries ->', queries)
 		let titles = (await Promise.all([trakt.titles(queries), simkl.titles(queries)])).flat()
 		let collisions = titles.map(v => Item.toTitles([v.title], [v.year])).flat()
 		_.remove(collisions, collision => {

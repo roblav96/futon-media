@@ -24,21 +24,36 @@ async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
 	let title = emby.library.toTitle(Item)
 
-	// let [Sessions, UserId] = await Promise.all([
-	// 	emby.Session.get(),
-	// 	emby.Session.db.get<string>(Item.Id),
-	// ])
+	// let Sessions = await emby.Session.get()
 	// let Session = Sessions.find(v => v.ItemPath == Item.Path)
-	// if (!Session && UserId) Session = Sessions.find(v => v.UserId == UserId)
-	// let PlaybackInfo = await emby.PlaybackInfo.get({
-	// 	ItemId: Item.Id,
-	// 	UserId: Session && Session.UserId,
-	// })
-	// if (!Session) Session = Sessions.find(v => !v.ItemPath && v.UserId == PlaybackInfo.UserId)
+	// if(!Session) Session = Sessions.find(v => !v.ItemPath)
+
+	let Sessions = await emby.Session.get()
+	console.log(
+		'Sessions ->',
+		Sessions.map(v => v.json),
+	)
+	let Session = Sessions.find(v => v.ItemPath == Item.Path)
+	if (!Session) Session = _.first(Sessions.filter(v => !v.ItemPath))
+	let useragent = await emby.PlaybackInfo.useragent(Session.UserId, Item.Id)
+	console.log('useragent ->', useragent)
+	let PlaybackInfo = await emby.PlaybackInfo.get(useragent, Session.UserId, Item.Id)
+	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
+
+	// let [useragent, UserId] = await Promise.all([
+	// 	emby.Session.db.get<string>(`${Item.Id}:useragent`),
+	// 	emby.Session.db.get<string>(`${Item.Id}:UserId`),
+	// ])
+	// console.log(`useragent ->`, useragent)
+	// console.log(`UserId ->`, UserId)
+	// let Session = Sessions.find(v => v.ItemPath == Item.Path)
+	// if (!Session && UserId) Session = Sessions.find(v => !v.ItemPath && v.UserId == UserId)
+
+	// let PlaybackInfo = await emby.PlaybackInfo.get({ ItemId: Item.Id, useragent, UserId })
 	// console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
-	let PlaybackInfo = await emby.PlaybackInfo.get({ ItemId: Item.Id })
-	console.warn(`getDebridStream '${title}' ->`, PlaybackInfo.json)
+	// let PlaybackInfo = await emby.PlaybackInfo.get({ ItemId: Item.Id })
+	// console.warn(`getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
@@ -103,10 +118,10 @@ fastify.get('/strm', async (request, reply) => {
 			try {
 				stream = await getDebridStream(Item)
 			} catch (error) {
-				console.error(`/strm '${title}' -> %O`, error)
+				console.error(`/strm '${title}' -> %O`, error.message)
 				stream = 'error'
 			}
-			await db.put(Item.Id, stream, utils.duration(1, 'minute'))
+			await db.put(Item.Id, stream, utils.duration(1, 'second'))
 			emitter.emit(Item.Id, stream)
 		} else {
 			stream = await emitter.toPromise(Item.Id)

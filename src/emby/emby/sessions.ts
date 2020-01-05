@@ -2,30 +2,14 @@ import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
+import * as ms from 'pretty-ms'
 import * as pAll from 'p-all'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
-import { Db } from '@/adapters/db'
-
-const db = new Db(__filename)
-process.nextTick(async () => {
-	if (process.DEVELOPMENT) await db.flush()
-	let rxSession = emby.rxItemId.pipe(
-		Rx.op.distinctUntilKeyChanged('ItemId'),
-		// Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
-	)
-	rxSession.subscribe(async ({ ItemId, UserId, ua }) => {
-		await Promise.all([
-			db.put(`${ItemId}:UserId`, UserId, utils.duration(1, 'day')),
-			db.put(`${ItemId}:ua`, ua, utils.duration(1, 'day')),
-		])
-	})
-})
 
 export class Session {
-	static db = db
 	static async get() {
 		let Sessions = (await emby.client.get('/Sessions', { silent: true })) as Session[]
 		_.remove(Sessions, ({ DeviceId, PlayableMediaTypes, UserName }) => {
@@ -41,6 +25,7 @@ export class Session {
 	static async byUserId(UserId: string) {
 		return (await Session.get()).find(v => v.UserId == UserId)
 	}
+
 	static async broadcast(text: string) {
 		await pAll(
 			(await Session.get()).map(v => () => v.Message(text)),
@@ -56,7 +41,6 @@ export class Session {
 	}
 	get Agent() {
 		return [this.Client, this.DeviceName].join(' ')
-		// return [this.Client, this.DeviceName].map(v => v.replace(/\s+/g, '')).join('.')
 	}
 
 	get AudioStreamIndex() {
@@ -100,16 +84,17 @@ export class Session {
 	}
 	get json() {
 		return utils.compact({
-			Age: this.Age,
+			Age: ms(this.Age),
+			Agent: this.Agent,
 			// Audio: JSON.stringify(this.Codecs.audio),
 			// Bitrate: this.Bitrate && `${utils.fromBytes(this.Bitrate)}/s`,
 			// Channels: this.Channels,
 			Client: this.Client,
-			DeviceId: this.DeviceId,
+			// DeviceId: this.DeviceId,
 			DeviceName: this.DeviceName,
 			Id: this.Id,
-			IsPlayState: this.IsPlayState || null,
-			IsStreaming: this.IsStreaming || null,
+			IsPlayState: this.IsPlayState,
+			IsStreaming: this.IsStreaming,
 			ItemId: this.ItemId,
 			ItemPath: this.ItemPath,
 			// Quality: this.Quality,

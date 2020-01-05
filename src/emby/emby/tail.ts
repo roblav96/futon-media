@@ -106,13 +106,15 @@ export const rxHttp = rxLine.pipe(
 	// Rx.op.tap(line => console.log(`tap rxHttp line ->`, line)),
 	Rx.op.filter(({ level, category }) => level == 'Info' && category == 'HttpServer'),
 	Rx.op.map(({ message }) => ({
-		match: message.match(/^HTTP (?<method>[DGOP]\w+) (?<url>.+)\. UserAgent\: (?<ua>.+)/),
+		match: message.match(
+			/^HTTP (?<method>[DGOP]\w+) (?<url>.+)\. UserAgent\: (?<useragent>.+)/,
+		),
 	})),
 	Rx.op.filter(({ match }) => _.isArray(match)),
 	Rx.op.map(({ match }) => ({
 		...qs.parseUrl(match.groups.url),
 		method: match.groups.method.toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'OPTIONS',
-		ua: match.groups.ua,
+		useragent: match.groups.useragent,
 	})),
 	Rx.op.filter(({ url, method }) => {
 		url = url.toLowerCase()
@@ -121,7 +123,7 @@ export const rxHttp = rxLine.pipe(
 		if (url.includes('/images/') || url.includes('/web/')) return false
 		return new Url(url).host != new Url(process.env.EMBY_LAN_ADDRESS).host
 	}),
-	Rx.op.map(({ method, url, query, ua }) => {
+	Rx.op.map(({ method, url, query, useragent }) => {
 		query = _.mapKeys(query, (v, k) => _.upperFirst(k))
 		let pathname = new Url(url).pathname
 		let parts = _.compact(pathname.toLowerCase().split('/'))
@@ -148,12 +150,12 @@ export const rxHttp = rxLine.pipe(
 		}
 		// if (query.ListItemIds) query.ItemId = query.ItemId || query.ListItemIds
 		// if (query.SeriesId) query.ItemId = query.ItemId || query.SeriesId
-		return { method, url, pathname, parts, query, ua }
+		return { method, url, pathname, parts, query, useragent }
 	}),
 	Rx.op.share(),
 )
-// rxHttp.subscribe(({ method, pathname, query, ua }) => {
-// 	console.log(`rxHttp ->`, method, pathname, query /** , `\n${ua}` */)
+// rxHttp.subscribe(({ method, pathname, query, useragent }) => {
+// 	console.log(`rxHttp ->`, method, pathname, query /** , `\n${useragent}` */)
 // })
 
 export const rxItemId = rxHttp.pipe(

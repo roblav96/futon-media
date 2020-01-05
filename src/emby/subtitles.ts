@@ -4,7 +4,8 @@ import * as Rx from '@/shims/rxjs'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+
 	let rxSubtitles = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) => ['Movie', 'Episode'].includes(Item.Type)),
 	)
@@ -17,6 +18,7 @@ process.nextTick(() => {
 		)[0]
 		if (Item.MediaStreams.find(v => v.Type == 'Subtitle')) return
 		// console.warn(`[${Session.short}] rxSubtitles ->`, emby.library.toTitle(Item))
+
 		for (let query of [
 			{ IsPerfectMatch: 'false', IsForced: 'true' },
 			{ IsPerfectMatch: 'false' },

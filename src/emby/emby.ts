@@ -9,20 +9,20 @@ export const client = new http.Http({
 })
 
 process.nextTick(async () => {
-	let Configuration = (await emby.client.get('/System/Configuration', {
+	let SystemConfiguration = (await emby.client.get('/System/Configuration', {
 		silent: true,
 	})) as emby.SystemConfiguration
 	let body = {} as emby.SystemConfiguration
 	let delay = utils.duration(1, 'month') / 1000
-	if (Configuration.LibraryMonitorDelay != delay) {
+	if (SystemConfiguration.LibraryMonitorDelay != delay) {
 		body.LibraryMonitorDelay = delay
 	}
-	if (Configuration.EnableDebugLevelLogging != true) {
+	if (SystemConfiguration.EnableDebugLevelLogging != true) {
 		body.EnableDebugLevelLogging = true
 	}
 	if (!_.isEmpty(body)) {
 		await emby.client.post('/System/Configuration', {
-			body: _.merge(Configuration, body),
+			body: _.merge(SystemConfiguration, body),
 			query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 			silent: true,
 		})

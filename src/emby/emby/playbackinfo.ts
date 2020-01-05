@@ -15,68 +15,62 @@ const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
 
-	emby.rxSocket.subscribe(async ({ MessageType }) => {
-		if (MessageType == 'OnOpen') {
-			let Users = await emby.User.get()
-			Users.forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
-		}
+	schedule.scheduleJob('* * * * *', () => PlaybackInfo.setUserNames())
+	emby.rxSocket.subscribe(({ MessageType }) => {
+		if (MessageType == 'OnOpen') PlaybackInfo.setUserNames()
+	})
+
+	let rxUserAgent = emby.rxItemId.pipe(
+		Rx.op.distinctUntilChanged((a, b) => {
+			return `${a.ItemId}${a.UserId}${a.useragent}` == `${b.ItemId}${b.UserId}${b.useragent}`
+		}),
+	)
+	rxUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
+		// console.time(`rxUserAgent`)
+		await db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'day'))
+		// console.timeEnd(`rxUserAgent`)
 	})
 
 	let rxPlaybackInfo = Rx.merge(
-		emby.rxHttp.pipe(Rx.op.filter(({ parts }) => parts.includes('playbackinfo'))),
+		emby.rxHttp.pipe(
+			Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('playbackinfo')),
+			// Rx.op.map(({ useragent }) => useragent),
+		),
 		emby.rxLine.pipe(
 			Rx.op.filter(({ level, message }) => {
-				return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
+				return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo ')
 			}),
+			// Rx.op.map(({ message }) => message),
 		),
 	).pipe(Rx.op.bufferCount(2))
 	rxPlaybackInfo.subscribe(async (buffers: any[]) => {
+		// console.time(`rxPlaybackInfo`)
 		// console.log('rxPlaybackInfo buffers ->', buffers)
+
+		let useragent = _.get(
+			buffers.find(({ useragent }) => _.isString(useragent)),
+			'useragent',
+		) as string
+		if (!useragent) return console.error(`rxPlaybackInfo !useragent buffers ->`, buffers)
+
 		let message = _.get(
-			buffers.find(({ message }) => {
-				return _.isString(message) && message.startsWith('GetPostedPlaybackInfo')
-			}),
+			buffers.find(({ message }) => _.isString(message)),
 			'message',
 		) as string
-		if (!message) return console.warn(`rxPlaybackInfo !message buffers ->`, buffers)
-		let ua = _.get(
-			buffers.find(({ ua }) => _.isString(ua)),
-			'ua',
-		) as string
-		if (!ua) return console.warn(`rxPlaybackInfo !ua buffers ->`, buffers)
+		if (!message) return console.error(`rxPlaybackInfo !message buffers ->`, buffers)
+
 		let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
 		await Promise.all([
-			db.put(`ua:${ua}`, value),
-			db.put(`UserId:${value.UserId}`, value),
-			db.put(`ItemId:${value.Id}`, value, utils.duration(1, 'day')),
-			db.put(`ItemId:UserId:${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
+			db.put(`PlaybackInfo:${useragent}:${value.UserId}`, value),
+			db.put(
+				`PlaybackInfo:${useragent}:${value.UserId}:${value.Id}`,
+				value,
+				utils.duration(1, 'day'),
+			),
 		])
+
+		// console.timeEnd(`rxPlaybackInfo`)
 	})
-
-	// let rxPlaybackInfo = emby.rxHttp.pipe(
-	// 	Rx.op.filter(({ parts }) => parts.includes('playbackinfo')),
-	// )
-	// rxPlaybackInfo.subscribe(async ({ query, ua }) => {
-	// 	await db.put(`${query.ItemId}:ua`, ua, utils.duration(1, 'day'))
-	// })
-
-	// let rxPostedPlaybackInfo = emby.rxLine.pipe(
-	// 	Rx.op.filter(({ level, message }) => {
-	// 		return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo')
-	// 	}),
-	// )
-	// rxPostedPlaybackInfo.subscribe(async ({ message }) => {
-	// 	let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
-	// 	await Promise.all([
-	// 		db.put(`${value.Id}:${value.UserId}`, value, utils.duration(1, 'day')),
-	// 		db.put(value.Id, value, utils.duration(1, 'day')),
-	// 		db.put(value.UserId, value),
-	// 	])
-	// 	// await db.put(value.Id, value, utils.duration(1, 'minute'))
-	// 	// await db.put(value.UserId, value)
-	// 	// let Session = await emby.Session.byUserId(value.UserId)
-	// 	// console.warn(`[${Session.short}] rxPostedPlaybackInfo ->`, new PlaybackInfo(value).json)
-	// })
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)
 	// console.log(`PLAYBACK_INFO flatten ->`, _.mapValues(mocks.PLAYBACK_INFO, v => flatten(v)))
@@ -84,34 +78,38 @@ process.nextTick(async () => {
 })
 
 export class PlaybackInfo {
-	static async get(
-		{ ItemId, UserId, ua } = {} as { ItemId?: string; UserId?: string; ua?: string },
-	) {
-		let value: PlaybackInfo
-		for (let i = 0; i < 3; i++) {
-			if (!value && !!ua) {
-				value = await db.get(`ua:${ua}`)
-			}
-			if (!value && !!ItemId && !!UserId) {
-				value = await db.get(`ItemId:UserId:${ItemId}:${UserId}`)
-			}
-			if (!value && !!ItemId) {
-				value = await db.get(`ItemId:${ItemId}`)
-			}
-			if (!value && !!UserId) {
-				value = await db.get(`UserId:${UserId}`)
-			}
-			if (value) break
+	static async useragent(UserId: string, ItemId: string) {
+		for (let i = 0; i < 5; i++) {
+			let useragent = (await db.get(`useragent:${UserId}:${ItemId}`)) as string
+			if (useragent) return useragent
 			await utils.pTimeout(300)
 		}
-		if (!value) throw new Error(`!value -> ${arguments}`)
-		return new PlaybackInfo(value)
+		throw new Error(`PlaybackInfo !useragent -> ${UserId} ${ItemId}`)
+	}
+
+	static async get(useragent: string, UserId: string, ItemId?: string) {
+		for (let i = 0; i < 5; i++) {
+			let value: PlaybackInfo
+			if (useragent && UserId && ItemId) {
+				value = await db.get(`PlaybackInfo:${useragent}:${UserId}:${ItemId}`)
+			} else if (useragent && UserId) {
+				value = await db.get(`PlaybackInfo:${useragent}:${UserId}`)
+			}
+			if (value) return new PlaybackInfo(value)
+			await utils.pTimeout(300)
+		}
+		throw new Error(`PlaybackInfo !value -> ${ItemId} ${useragent} ${UserId}`)
 	}
 
 	static UserNames = {} as Record<string, string>
+	static async setUserNames() {
+		let Users = await emby.User.get()
+		Users.forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
+	}
 	get UserName() {
 		return PlaybackInfo.UserNames[this.UserId]
 	}
+
 	get UHD() {
 		let UHDs = ['developer', 'robert']
 		return UHDs.includes(this.UserName.toLowerCase())

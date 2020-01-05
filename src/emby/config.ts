@@ -24,11 +24,9 @@ export async function config() {
 	}
 	if (!Info) throw new Error(`!SystemInfo -> Could not find emby server on any ports '${ports}'`)
 
-	if (process.DEVELOPMENT) {
-		let ip = await internalIp.v4()
-		if (!Info.WanAddress.includes(ip)) {
-			throw new Error(`Info.WanAddress -> '${Info.WanAddress}' != '${ip}'`)
-		}
+	let [ip] = _.compact(await Promise.all([internalIp.v4(), internalIp.v6()]))
+	if (!Info.WanAddress.includes(ip)) {
+		throw new Error(`Info.WanAddress -> '${Info.WanAddress}' != '${ip}'`)
 	}
 
 	_.defaults(process.env, {

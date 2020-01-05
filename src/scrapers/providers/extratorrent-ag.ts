@@ -33,10 +33,10 @@ export class ExtraTorrentAg extends scraper.Scraper {
 				if (!added.includes(' ')) return results.push(result)
 				let [a, b] = added.split(' ') as any[]
 				let day = dayjs()
-				if (!isNaN(a[0]) && !isNaN(b[0])) {
+				if (utils.isNumeric(a[0]) && utils.isNumeric(b[0])) {
 					day = day.subtract(a[0], a[1])
 					result.stamp = day.subtract(b[0], b[1]).valueOf()
-				} else if (!isNaN(a) && b) {
+				} else if (utils.isNumeric(a) && b) {
 					result.stamp = day.subtract(a, b).valueOf()
 				}
 				results.push(result)
