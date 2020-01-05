@@ -32,22 +32,22 @@ export async function toTags(item: media.Item) {
 		silent: true,
 	})) as Result
 	return utils.compact({
-		'Awards': result.Awards,
-		'BluRay': result.DVD && new Date(result.DVD).toLocaleDateString(),
-		'IMDb Votes': result.imdbVotes,
-		'IMDb Rating':
+		'⭐ Awards': result.Awards,
+		'💿 BluRay': result.DVD && new Date(result.DVD).toLocaleDateString(),
+		'🍿 IMDb Votes': result.imdbVotes,
+		'🍿 IMDb Rating':
 			result.imdbRating ||
 			_.get(
 				result.Ratings.find(v => v.Source == 'Internet Movie Database'),
 				'Value',
 			),
-		'Metacritic':
+		'💙 Metacritic':
 			result.Metascore ||
 			_.get(
 				result.Ratings.find(v => v.Source == 'Metacritic'),
 				'Value',
 			),
-		'Rotten Tomatoes':
+		'🍎 Rotten Tomatoes':
 			result.tomatoRating ||
 			_.get(
 				result.Ratings.find(v => v.Source == 'Rotten Tomatoes'),

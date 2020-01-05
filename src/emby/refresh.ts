@@ -9,54 +9,73 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
-	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 
 	let rxRefresh = emby.rxItem.pipe(
-		Rx.op.filter(({ Item }) => ['Movie', 'Series', 'Episode', 'Person'].includes(Item.Type)),
+		Rx.op.filter(({ Item }) =>
+			['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type),
+		),
 		Rx.op.distinctUntilChanged(
 			(a, b) => `${a.Item.SeriesId || a.Item.Id}` == `${b.Item.SeriesId || b.Item.Id}`,
 		),
 	)
 	rxRefresh.subscribe(async ({ Item, Session }) => {
-		console.warn(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
-		let item = await emby.library.item(Item)
+		let ItemId = Item.SeriesId || Item.Id
+		if (await db.get(ItemId)) return
+		await db.put(ItemId, true, utils.duration(1, 'hour'))
+
+		console.log(`[${Session.short}] rxRefresh ->`, emby.library.toTitle(Item))
+		let item = await emby.library.item(Item, true)
 		if (!item) return console.warn(`rxRefresh !item ->`, Item)
 
 		if (Item.Type == 'Person') {
 			let items = (await trakt.resultsForPerson(item.person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.junk && v.isPopular(1000))
 			items.sort((a, b) => b.main.votes - a.main.votes)
-			return emby.library.addQueue(items)
+			return emby.library.addQueue(items, Session)
 		}
 
-		if (Item.Type == 'Movie') {
-			return emby.library.addQueue([item])
+		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
+			await emby.library.setTags(item, ItemId)
 		}
 
-		if (['Series', 'Episode'].includes(Item.Type)) {
-			let Updates = await emby.library.addQueue([item])
+		if (['Series', 'Season', 'Episode'].includes(Item.Type)) {
+			let CreatedPaths = await emby.library.addQueue([item])
+			if (!_.isEmpty(CreatedPaths)) {
+				await Session.Message(
+					`🔄 ${CreatedPaths.length} episodes added to '${item.title}', reload this page!`,
+				)
+			}
 
-			let ItemId = Item.SeriesId || Item.Id
-			if (await db.get(ItemId)) return
-			await db.put(ItemId, true, utils.duration(1, 'day'))
+			// let Series = (await emby.library.Items({ Fields: ['Status'], Ids: [ItemId] }))[0]
+			// console.log('Series ->', Series)
+			// if (Series.Status == 'Ended') return
 
-			let Series = (await emby.library.Items({ Fields: ['Status'], Ids: [ItemId] }))[0]
-			if (Series.Status == 'Ended') return
-
-			let Missings = await emby.library.Items({
-				HasOverview: false,
-				IncludeItemTypes: ['Episode'],
-			})
-			Missings = Missings.filter(v => v.SeriesId == (Item.SeriesId || Item.Id))
-			if (Missings.length == 0) return
+			// let Missings = await emby.library.Items({
+			// 	IsMissing: true,
+			// 	IncludeItemTypes: ['Episode'],
+			// })
+			// Missings = Missings.filter(v => v.SeriesId == ItemId)
+			// if (Missings.length == 0) return
 
 			let Seasons = await emby.library.Items({
 				IncludeItemTypes: ['Season'],
 				ParentId: ItemId,
 			})
 			let Season = _.last(_.sortBy(Seasons, 'IndexNumber'))
-			Missings = Missings.filter(v => v.SeasonId == Season.Id)
-			if (Missings.length == 0) return
+
+			let Episodes = await emby.library.Items({
+				Fields: ['Overview', 'PremiereDate'],
+				IncludeItemTypes: ['Episode'],
+				ParentId: Season.Id,
+			})
+			Episodes = Episodes.filter(({ LocationType, Overview, PremiereDate }) => {
+				if (LocationType == 'Virtual') return true
+				if (_.isEmpty(Overview)) return true
+				if (_.isEmpty(PremiereDate)) return true
+				if (new Date(PremiereDate).valueOf() > Date.now()) return true
+			})
+			if (_.isEmpty(Episodes)) return
 
 			await emby.client.post(`/Items/${Season.Id}/Refresh`, {
 				query: {

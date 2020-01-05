@@ -21,7 +21,7 @@ process.nextTick(() => {
 		Rx.op.distinctUntilKeyChanged('SearchTerm'),
 		Rx.op.concatMap(async ({ SearchTerm, UserId }) => {
 			let Session = await emby.Session.byUserId(UserId)
-			console.warn(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)
+			console.log(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)
 
 			if (/^tt\d+$/.test(SearchTerm)) {
 				let results = (await trakt.client.get(`/search/imdb/${SearchTerm}`, {
@@ -32,7 +32,7 @@ process.nextTick(() => {
 				if (_.isEmpty(results)) {
 					await Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
 				}
-				return { Session, items: results.map(v => new media.Item(v)) }
+				return { SearchTerm, Session, items: results.map(v => new media.Item(v)) }
 			}
 
 			if (/^(\w+-)+\w+$/.test(SearchTerm)) {
@@ -43,10 +43,13 @@ process.nextTick(() => {
 							memoize: true,
 							silent: true,
 						})) as trakt.Full
-						return { Session, items: [new media.Item({ [type]: full })] }
+						return { SearchTerm, Session, items: [new media.Item({ [type]: full })] }
 					} catch {}
 				}
 			}
+
+			SearchTerm = utils.stripStopWords(SearchTerm)
+			let words = SearchTerm.split(' ').length
 
 			let results = (
 				await pAll(
@@ -66,21 +69,21 @@ process.nextTick(() => {
 
 			if (process.DEVELOPMENT) {
 				console.log(
-					`rxSearch results ->`,
+					`rxSearch '${SearchTerm}' results ->`,
 					items.map(v => v.short),
 					items.length,
 				)
 			}
 
-			let words = SearchTerm.split(' ').length
 			items = items.filter(v => {
 				if (v.junk) return false
-				if (words == 1) return utils.contains(v.title, SearchTerm)
-				return utils.includes(v.title, SearchTerm)
+				let title = utils.stripStopWords(v.title)
+				if (words == 1) return utils.contains(title, SearchTerm)
+				return utils.includes(title, SearchTerm)
 			})
 
 			console.log(
-				`rxSearch items ->`,
+				`rxSearch '${SearchTerm}' items ->`,
 				items.map(v => v.short),
 				items.length,
 			)
@@ -91,52 +94,46 @@ process.nextTick(() => {
 				means = [ss.rootMeanSquare(votes), ss.mean(votes), ss.harmonicMean(votes)]
 			}
 			means = means.map(v => _.clamp(_.floor(v), 1, 1000))
-
 			let mean = means[_.clamp(words - 1, 0, means.length - 1)]
-			if (words == 1) mean -= _.last(means)
+			if (words == 1) mean -= _.last(means) * 2
 			if (words >= 3) mean = 1
 			mean = _.max([mean, 1])
 			means[means.length - 1] = _.min([mean, _.last(means)])
 			console.log(`rxSearch means ->`, means, `mean ->`, mean, `words ->`, words)
 
-			let stopterm = utils.stripStopWords(SearchTerm)
 			items = items.filter(item => {
 				let title = utils.stripStopWords(item.title)
-				if (words <= 3 && utils.equals(title, stopterm)) {
+				if (words <= 3 && utils.equals(title, SearchTerm)) {
 					if (words == 1) {
 						return item.isPopular(_.floor(_.last(means) * 0.5))
 					}
 					return item.isPopular(_.last(means))
 				}
-				if (words == 1 && !utils.startsWith(title, stopterm)) {
+				if (words == 1 && !utils.startsWith(title, SearchTerm)) {
 					return false
 				}
-				if (words == 2 && utils.startsWith(title, stopterm)) {
+				if (words == 2 && utils.startsWith(title, SearchTerm)) {
 					return item.isPopular(_.last(means))
 				}
-				if (words == 3 && utils.contains(title, stopterm)) {
+				if (words == 3 && utils.contains(title, SearchTerm)) {
 					return item.isPopular(_.last(means))
 				}
 				return item.isPopular(mean)
 			})
-			return { Session, items }
+			return { SearchTerm, Session, items }
 		}),
 		Rx.op.catchError((error, caught) => {
 			console.error(`rxSearch -> %O`, error)
 			return caught
 		}),
 	)
-	rxSearch.subscribe(async ({ Session, items }) => {
+	rxSearch.subscribe(async ({ SearchTerm, Session, items }) => {
 		if (_.isEmpty(items)) return
 		console.warn(
-			`rxSearch library addAll items ->`,
+			`rxSearch '${SearchTerm}' library addAll items ->`,
 			items.map(v => v.short),
 			items.length,
 		)
-		let Updates = await emby.library.addQueue(items)
-		let CreationPaths = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
-		let added = items.filter(v => CreationPaths.includes(emby.library.toPath(v)))
-		if (_.isEmpty(added)) return
-		await Session.Message(`👍 Added to library: '${added.map(v => v.title).join(`', '`)}'`)
+		await emby.library.addQueue(items, Session)
 	})
 })

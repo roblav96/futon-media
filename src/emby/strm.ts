@@ -24,36 +24,12 @@ async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
 	let title = emby.library.toTitle(Item)
 
-	// let Sessions = await emby.Session.get()
-	// let Session = Sessions.find(v => v.ItemPath == Item.Path)
-	// if(!Session) Session = Sessions.find(v => !v.ItemPath)
-
 	let Sessions = await emby.Session.get()
-	console.log(
-		'Sessions ->',
-		Sessions.map(v => v.json),
-	)
 	let Session = Sessions.find(v => v.ItemPath == Item.Path)
 	if (!Session) Session = _.first(Sessions.filter(v => !v.ItemPath))
 	let useragent = await emby.PlaybackInfo.useragent(Session.UserId, Item.Id)
-	console.log('useragent ->', useragent)
 	let PlaybackInfo = await emby.PlaybackInfo.get(useragent, Session.UserId, Item.Id)
-	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
-
-	// let [useragent, UserId] = await Promise.all([
-	// 	emby.Session.db.get<string>(`${Item.Id}:useragent`),
-	// 	emby.Session.db.get<string>(`${Item.Id}:UserId`),
-	// ])
-	// console.log(`useragent ->`, useragent)
-	// console.log(`UserId ->`, UserId)
-	// let Session = Sessions.find(v => v.ItemPath == Item.Path)
-	// if (!Session && UserId) Session = Sessions.find(v => !v.ItemPath && v.UserId == UserId)
-
-	// let PlaybackInfo = await emby.PlaybackInfo.get({ ItemId: Item.Id, useragent, UserId })
-	// console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
-
-	// let PlaybackInfo = await emby.PlaybackInfo.get({ ItemId: Item.Id })
-	// console.warn(`getDebridStream '${title}' ->`, PlaybackInfo.json)
+	console.warn(`[${Session.short}] getDebridStream ->`, title, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
@@ -84,14 +60,22 @@ async function getDebridStream(Item: emby.Item) {
 	if (cacheds.length == 0) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
-		throw new Error(`cacheds.length == 0 -> '${title}'`)
+		let error = new Error(
+			`Instant cached stream not available for '${title}', downloading now, try again in 1 hour`,
+		)
+		await Session.Message(error)
+		throw error
 	}
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
 	if (!stream) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
-		throw new Error(`!stream -> '${title}'`)
+		let error = new Error(
+			`Compatible stream not available for '${title}' with '${Session.DeviceName}', downloading now, try again in 1 hour`,
+		)
+		await Session.Message(error)
+		throw error
 	}
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
@@ -118,10 +102,10 @@ fastify.get('/strm', async (request, reply) => {
 			try {
 				stream = await getDebridStream(Item)
 			} catch (error) {
-				console.error(`/strm '${title}' -> %O`, error.message)
+				console.error(`/strm '${title}' -> %O`, error)
 				stream = 'error'
 			}
-			await db.put(Item.Id, stream, utils.duration(1, 'second'))
+			await db.put(Item.Id, stream, utils.duration(1, 'minute'))
 			emitter.emit(Item.Id, stream)
 		} else {
 			stream = await emitter.toPromise(Item.Id)

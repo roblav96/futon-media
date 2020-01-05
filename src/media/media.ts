@@ -15,7 +15,6 @@ export const MAIN_TYPES = ['movie', 'show'] as MainContentType[]
 export const TYPESS = ['movies', 'shows', 'seasons', 'episodes', 'people'] as ContentTypes[]
 export const MAIN_TYPESS = ['movies', 'shows'] as MainContentTypes[]
 
-export interface Item extends trakt.Extras {}
 @Memoize.Class
 export class Item {
 	movie: trakt.Movie
@@ -52,7 +51,8 @@ export class Item {
 		return this.ids.imdb || this.ids.trakt.toString()
 	}
 	get short() {
-		let short = `[${this.type[0].toUpperCase()}] ${this.slug}${
+		// let short = `[${this.type[0].toUpperCase()}] ${this.slug}${
+		let short = `[${this.type[0].toUpperCase()}] ${this.title} (${this.year}) [${this.slug}]${
 			this.show ? ` [${this.show.aired_episodes} eps] ` : ' '
 		}[${this.main.votes}]`
 		if (this.invalid) return `${short} [INVALID]`
@@ -432,12 +432,7 @@ export class Item {
 				throw new Error(`!result.type`)
 			}
 		}
-		let picked = _.pick(result, TYPES)
-		_.merge(this, picked)
-		for (let [rkey, rvalue] of Object.entries(_.omit(result, TYPES))) {
-			let ikey = trakt.RESULT_EXTRAS[rkey]
-			if (ikey) this[ikey] = rvalue
-		}
+		_.merge(this, _.pick(result, TYPES))
 		Memoize.clear(this)
 		return this
 	}

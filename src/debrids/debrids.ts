@@ -27,7 +27,7 @@ export async function cached(hashes: string[]) {
 	}) as Debrids[][]
 }
 
-let queue = new pQueue({ concurrency: 1 })
+let pDownloadQueue = new pQueue({ concurrency: 1 })
 export async function download(torrents: torrent.Torrent[], item: media.Item) {
 	if (!(await RealDebrid.hasActiveCount())) {
 		return console.warn(`download RealDebrid.hasActiveCount == false`)
@@ -49,7 +49,7 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 
 	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-	return queue.add(async () => {
+	return pDownloadQueue.add(async () => {
 		for (let torrent of torrents) {
 			console.log(`download torrent ->`, torrent.short)
 			let success = torrent.cached.length > 0

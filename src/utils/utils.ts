@@ -223,7 +223,9 @@ export function isVideo(file: string) {
 }
 
 export function sortKeys<T>(value: T) {
-	return (_.fromPairs(_.sortBy(_.toPairs(value as any))) as any) as T
+	return (_.fromPairs(
+		_.toPairs(value as any).sort((a, b) => alphabetically(a[0], b[0])),
+	) as any) as T
 }
 export function compact<T>(value: T) {
 	return _.pickBy(value as any, v => !!v) as T

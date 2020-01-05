@@ -138,12 +138,9 @@ async function syncCollections() {
 		}
 		if (process.DEVELOPMENT) console.log(`schema '${schema.name}' ->`, items.length)
 
-		let Updates = await emby.library.addAll(items)
+		await emby.library.addAll(items)
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
-		let Ids = items.map(item => {
-			let Path = emby.library.toPath(item)
-			return Items.find(v => v.Path == Path).Id
-		})
+		let Ids = items.map(item => Items.find(v => v.Path == emby.library.toPath(item)).Id)
 
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
@@ -163,29 +160,6 @@ async function syncCollections() {
 	console.info(Date.now() - t, `syncCollections ${schemas.length} schemas ->`, 'DONE')
 }
 
-async function toCollections(items: media.Item[], Items: emby.Item[]) {
-	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	let tmcolids = _.uniq(Items.map(v => v.ProviderIds.TmdbCollection).filter(Boolean))
-	for (let tmcolid of tmcolids) {
-		let { name, parts } = (await tmdb.client.get(`/collection/${tmcolid}`)) as tmdb.Collection
-		console.log(`Collection ->`, name)
-		let cresults = await pAll(
-			parts.map(v => () => tmdb.toTrakt(v)),
-			{ concurrency: 1 },
-		)
-		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.junk && v.isPopular(1000))
-		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
-		// @ts-ignore
-		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()
-		let Collection = Collections.find(v => v.Name == name)
-		if (Collection) {
-			await emby.client.post(`/Collections/${Collection.Id}/Items`, { query: { Ids } })
-		} else {
-			await emby.client.post('/Collections', { query: { Ids, Name: name } })
-		}
-	}
-}
-
 export interface CollectionSchema {
 	all: boolean
 	limit: number
@@ -193,3 +167,25 @@ export interface CollectionSchema {
 	type: media.MainContentType
 	url: string
 }
+
+// async function toCollections(items: media.Item[], Items: emby.Item[]) {
+// 	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
+// 	let tmcolids = _.uniq(Items.map(v => v.ProviderIds.TmdbCollection).filter(Boolean))
+// 	for (let tmcolid of tmcolids) {
+// 		let { name, parts } = (await tmdb.client.get(`/collection/${tmcolid}`)) as tmdb.Collection
+// 		console.log(`Collection ->`, name)
+// 		let cresults = await pAll(
+// 			parts.map(v => () => tmdb.toTrakt(v)),
+// 			{ concurrency: 1 },
+// 		)
+// 		let citems = cresults.map(v => new media.Item(v)).filter(v => !v.junk && v.isPopular(1000))
+// 		throw new Error(`emby.library.addAll doesn't return emby.Item[]`)
+// 		let Ids = (await emby.library.addAll(citems)).map(v => v.Id).join()
+// 		let Collection = Collections.find(v => v.Name == name)
+// 		if (Collection) {
+// 			await emby.client.post(`/Collections/${Collection.Id}/Items`, { query: { Ids } })
+// 		} else {
+// 			await emby.client.post('/Collections', { query: { Ids, Name: name } })
+// 		}
+// 	}
+// }

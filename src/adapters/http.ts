@@ -130,9 +130,9 @@ export class Http {
 
 		let min = {
 			url: normalize(url, { stripProtocol: true, stripWWW: true, stripHash: true }),
-			body: safeStringify(config.body) || '',
-			form: safeStringify(config.form) || '',
-			query: safeStringify(config.query) || '',
+			body: _.truncate(safeStringify(config.body) || '', { length: 256 }),
+			form: _.truncate(safeStringify(config.form) || '', { length: 256 }),
+			query: _.truncate(safeStringify(config.query) || '', { length: 256 }),
 		}
 
 		if (options.beforeRequest) {

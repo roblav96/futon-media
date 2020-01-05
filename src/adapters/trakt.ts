@@ -13,6 +13,7 @@ process.nextTick(async () => {
 	if (dbtoken.access_token) {
 		client.config.headers['authorization'] = `Bearer ${dbtoken.access_token}`
 	}
+	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 	let token: OauthToken
 	try {
 		token = await http.client.post('https://api.trakt.tv/oauth/token', {
@@ -27,7 +28,7 @@ process.nextTick(async () => {
 			silent: true,
 		})
 	} catch (error) {
-		console.error(`trakt oauth refresh token ->`, error.message)
+		console.error(`trakt oauth refresh token -> %O`, error.message)
 		let code = (await http.client.post('https://api.trakt.tv/oauth/device/code', {
 			body: {
 				client_id: process.env.TRAKT_CLIENT_ID,
@@ -87,14 +88,14 @@ function debloat(value) {
 	keys.forEach(key => _.unset(value, key))
 }
 
-export const RESULT_EXTRAS = {
-	character: 'character',
-	collected_at: 'collected_at',
-	listed_at: 'listed_at',
-	job: 'job',
-	rank: 'rank',
-	score: 'score',
-} as Record<keyof Extras, keyof Extras>
+// export const RESULT_EXTRAS = {
+// 	character: 'character',
+// 	collected_at: 'collected_at',
+// 	listed_at: 'listed_at',
+// 	job: 'job',
+// 	rank: 'rank',
+// 	score: 'score',
+// } as Record<keyof Extras, keyof Extras>
 
 // export async function search(query: string, type = 'movie,show' as media.MainContentType) {
 // 	let results = (await client.get(`/search/${type}`, {
@@ -135,36 +136,38 @@ export async function titles(queries: string[]) {
 	return fulls.map(v => ({ title: v.title, year: v.year }))
 }
 
-export function person(results: Result[], name: string) {
-	results = results.filter(v => {
-		return (
-			v.person &&
-			utils.equals(v.person.name, name) &&
-			_.values(v.person).filter(Boolean).length > 3
-		)
-	})
-	if (results.length == 0) return
-	let sizes = results.map(({ person }) => ({
-		person,
-		size: _.values({ ...person, ...person.ids }).filter(Boolean).length,
-	}))
-	sizes.sort((a, b) => b.size - a.size)
-	return sizes[0] && sizes[0].person
-}
+// export function person(results: Result[], name: string) {
+// 	results = results.filter(v => {
+// 		return (
+// 			v.person &&
+// 			utils.equals(v.person.name, name) &&
+// 			_.values(v.person).filter(Boolean).length > 3
+// 		)
+// 	})
+// 	if (results.length == 0) return
+// 	let sizes = results.map(({ person }) => ({
+// 		person,
+// 		size: _.values({ ...person, ...person.ids }).filter(Boolean).length,
+// 	}))
+// 	sizes.sort((a, b) => b.size - a.size)
+// 	return sizes[0] && sizes[0].person
+// }
 
 export async function resultsForPerson(person: Person) {
 	if (!person) return []
 	let results = [] as Result[]
 	for (let type of media.MAIN_TYPESS) {
+		await utils.pRandom(300)
 		let credits = (await client.get(`/people/${person.ids.slug}/${type}`, {
+			timeout: 30000,
 			query: { limit: 100 },
 			memoize: true,
+			// profile: true,
 			silent: true,
 		})) as Credits
-		let { cast, crew } = { cast: [], crew: [], ...credits }
-		results.push(...cast.filter(v => !!v.character))
-		for (let job in crew) {
-			results.push(...crew[job].filter(v => !!v.job))
+		results.push(...credits.cast.filter(v => !!v.character && v.series_regular != false))
+		for (let job in credits.crew) {
+			results.push(...credits.crew[job].filter(v => !!v.job))
 		}
 	}
 	return uniqWith(results.filter(v => !v.person))
@@ -286,11 +289,15 @@ export interface Result extends Extras {
 
 export interface Extras {
 	character: string
+	characters: string[]
 	collected_at: string
+	episode_count: number
 	job: string
+	jobs: string[]
 	listed_at: string
 	rank: number
 	score: number
+	series_regular: boolean
 }
 
 export interface Credits {

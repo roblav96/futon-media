@@ -51,13 +51,13 @@ process.nextTick(async () => {
 			buffers.find(({ useragent }) => _.isString(useragent)),
 			'useragent',
 		) as string
-		if (!useragent) return console.error(`rxPlaybackInfo !useragent buffers ->`, buffers)
+		if (!useragent) return console.error(`rxPlaybackInfo !useragent buffers -> %O`, buffers)
 
 		let message = _.get(
 			buffers.find(({ message }) => _.isString(message)),
 			'message',
 		) as string
-		if (!message) return console.error(`rxPlaybackInfo !message buffers ->`, buffers)
+		if (!message) return console.error(`rxPlaybackInfo !message buffers -> %O`, buffers)
 
 		let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
 		await Promise.all([
@@ -84,7 +84,7 @@ export class PlaybackInfo {
 			if (useragent) return useragent
 			await utils.pTimeout(300)
 		}
-		throw new Error(`PlaybackInfo !useragent -> ${UserId} ${ItemId}`)
+		console.error(`PlaybackInfo !useragent -> %O`, UserId, ItemId)
 	}
 
 	static async get(useragent: string, UserId: string, ItemId?: string) {
@@ -98,7 +98,7 @@ export class PlaybackInfo {
 			if (value) return new PlaybackInfo(value)
 			await utils.pTimeout(300)
 		}
-		throw new Error(`PlaybackInfo !value -> ${ItemId} ${useragent} ${UserId}`)
+		console.error(`PlaybackInfo !value -> %O`, useragent, UserId, ItemId)
 	}
 
 	static UserNames = {} as Record<string, string>

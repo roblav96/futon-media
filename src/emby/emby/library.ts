@@ -38,7 +38,7 @@ export const library = {
 		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 		if (State != 'Idle') {
 			await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
-			await utils.pTimeout(100)
+			await utils.pTimeout(300)
 		}
 	},
 
@@ -110,6 +110,7 @@ export const library = {
 			ImageTypeLimit: number
 			IncludeItemTypes: string[]
 			IsMissing: boolean
+			IsUnaired: boolean
 			IsVirtualUnaired: boolean
 			Limit: number
 			LocationTypes: string[]
@@ -139,7 +140,7 @@ export const library = {
 		if (!_.isArray(query.Fields) || !_.isEmpty(query.Fields)) {
 			query.Fields = (query.Fields || []).concat([
 				// 'DateCreated',
-				// 'LocationType',
+				// 'ImageTags',
 				// 'MediaStreams',
 				// 'Overview',
 				// 'ParentId',
@@ -177,7 +178,7 @@ export const library = {
 		})) as Item
 	},
 
-	async item(Item: emby.Item) {
+	async item(Item: emby.Item, main = false) {
 		let ids = Item.Path ? library.pathProviderIds(Item.Path) : (Item.ProviderIds as never)
 		if (_.isEmpty(ids)) return
 		ids = utils.sortKeys(_.mapKeys(ids, (v, k) => k.toLowerCase())) as any
@@ -192,7 +193,7 @@ export const library = {
 			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
 			if (!result) continue
 			let item = new media.Item(result)
-			if (['Movie', 'Person'].includes(Item.Type)) return item
+			if (['Movie', 'Person'].includes(Item.Type) || main == true) return item
 			let numbers = library.pathNumbers(Item.Path)
 			if (!item.season && ['Season', 'Episode'].includes(Item.Type)) {
 				let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
@@ -202,11 +203,10 @@ export const library = {
 				item.use({ season: seasons.find(v => v.number == numbers.season) })
 			}
 			if (!item.episode && Item.Type == 'Episode') {
-				let url = `/shows/${item.id}/seasons/${numbers.season}/episodes/${numbers.episode}`
-				let episode = (await trakt.client.get(url, {
-					memoize: true,
-					silent: true,
-				})) as trakt.Episode
+				let episode = (await trakt.client.get(
+					`/shows/${item.id}/seasons/${numbers.season}/episodes/${numbers.episode}`,
+					{ memoize: true, silent: true },
+				)) as trakt.Episode
 				item.use({ episode })
 			}
 			return item
@@ -303,39 +303,37 @@ export const library = {
 	},
 
 	pSetTagsQueue: new pQueue({ concurrency: 1 }),
-	setTags(item: media.Item, ItemId: string) {
-		return library.pSetTagsQueue.add(async () => {
-			await utils.pRandom(300)
-			let tags = {
-				...(await omdb.toTags(item)),
-				'Trakt Rating': _.round(item.main.rating, 1).toFixed(1),
-				'Trakt Votes': item.main.votes.toLocaleString(),
-			}
-			await emby.client.post(`/Items/${ItemId}`, {
-				body: _.merge(
-					await library.Item(ItemId),
-					utils.compact({
-						CommunityRating: Number.parseFloat(tags['IMDb Rating']),
-						CriticRating: Number.parseFloat(tags['Rotten Tomatoes']),
-						Tags: _.sortBy(_.map(tags, (v, k) => `${k}: ${v}`)),
-					} as Item),
-				),
-				silent: true,
-			})
+	setTagsQueue(item: media.Item, ItemId: string) {
+		return library.pSetTagsQueue.add(() => library.setTags(item, ItemId))
+	},
+	async setTags(item: media.Item, ItemId: string) {
+		await utils.pRandom(300)
+		let tags = utils.sortKeys({
+			...(await omdb.toTags(item)),
+			'⭕ Trakt Rating': _.round(item.main.rating, 1).toFixed(1),
+			'⭕ Trakt Votes': item.main.votes.toLocaleString(),
+		})
+		let Tags = _.map(tags, (v, k) => `${k.split(' ')[0]} ${v} - ${k.slice(2).trim()}`)
+		// console.log(`setTags ->`, item.short, Tags)
+		await emby.client.post(`/Items/${ItemId}`, {
+			body: _.merge(
+				await library.Item(ItemId),
+				utils.compact({
+					CommunityRating: Number.parseFloat(tags['🍿 IMDb Rating']),
+					CriticRating: Number.parseFloat(tags['🍎 Rotten Tomatoes']),
+					Tags,
+				} as Item),
+			),
+			// debug: true,
+			silent: true,
 		})
 	},
 
 	pAddQueue: new pQueue({ concurrency: 1 }),
-	addQueue(items: media.Item[]) {
-		return library.pAddQueue.add(() => library.addAll(items))
+	addQueue(items: media.Item[], Session?: emby.Session) {
+		return library.pAddQueue.add(() => library.addAll(items, Session))
 	},
-	async addAll(items: media.Item[]) {
-		// console.warn(
-		// 	`library addAll items ->`,
-		// 	items.map(v => v.short),
-		// 	items.length,
-		// )
-		if (items.length == 0) return []
+	async addAll(items: media.Item[], Session?: emby.Session) {
 		let t = Date.now()
 		let MinDateLastSaved = new Date().toISOString()
 
@@ -346,41 +344,46 @@ export const library = {
 			)
 		).flat()
 		console.log(`library addAll Updates ->`, Updates.length)
+		if (_.isEmpty(Updates)) return []
 
-		let PathCreations = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
-		let StrmCreations = PathCreations.filter(v => v.endsWith('.strm'))
-		if (StrmCreations.length > 0) {
-			console.info(`library addAll StrmCreations ->`, StrmCreations.length)
+		let CreatedPaths = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
+		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
+		if (Session && !_.isEmpty(created)) {
+			await Session.Message(
+				`🍿 Adding to library 🔶 ${created.map(v => v.title).join(` 🔶 `)}`,
+			)
+		}
+
+		let CreatedStrmPaths = CreatedPaths.filter(v => v.endsWith('.strm'))
+		if (CreatedStrmPaths.length > 0) {
+			console.info(`library addAll CreatedStrmPaths ->`, CreatedStrmPaths.length)
 
 			let rxFFProbe = emby.rxLine.pipe(
 				Rx.op.filter(({ message }) => {
 					if (!message.startsWith('Running FFProbeProvider for ')) return false
 					let Path = message.replace('Running FFProbeProvider for ', '')
-					_.remove(StrmCreations, v => v == Path)
-					return StrmCreations.length == 0
+					_.remove(CreatedStrmPaths, v => v == Path)
+					return CreatedStrmPaths.length == 0
 				}),
 				Rx.op.take(1),
 			)
 			await Promise.all([rxFFProbe.toPromise(), library.refresh()])
+			await utils.pTimeout(1000)
 
 			let Items = await library.Items({
 				Fields: [],
 				IncludeItemTypes: ['Movie', 'Series'],
 				MinDateLastSaved,
 			})
-			let tagging = items.filter(v => PathCreations.includes(library.toPath(v)))
-			for (let item of tagging) {
+			for (let item of created) {
 				let Item = Items.find(v => v.Path == library.toPath(item))
-				if (!Item) {
-					console.error(`library addAll tagging !Item ->`, item.short)
-					continue
-				}
-				library.setTags(item, Item.Id)
+				if (Item) library.setTagsQueue(item, Item.Id)
+				else console.error(`library addAll tagging !Item -> %O`, item.short)
 			}
 		}
 
-		console.log(Date.now() - t, `library addAll ->`, Updates.length, 'DONE')
-		return Updates
+		console.log(Date.now() - t, `library addAll '${Updates.length}' ->`, 'DONE')
+		return CreatedPaths
 	},
 }
 
@@ -435,6 +438,7 @@ export interface Item {
 	}
 	IsFolder: boolean
 	LocalTrailerCount: number
+	LocationType: string
 	LockData: boolean
 	LockedFields: any[]
 	MediaSources: MediaSource[]
@@ -473,6 +477,10 @@ export interface Item {
 	}[]
 	Taglines: string[]
 	Tags: string[]
+	TagItems: {
+		Id: number
+		Name: string
+	}[]
 	Type: string
 	UserData: {
 		IsFavorite: boolean
