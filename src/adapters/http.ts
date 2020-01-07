@@ -123,6 +123,7 @@ export class Http {
 				removeQueryParameters: null,
 				removeTrailingSlash: false, // !config.url.endsWith('/'),
 				sortQueryParameters: false,
+				stripWWW: false,
 			}),
 		)
 		options.url = url

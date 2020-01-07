@@ -21,7 +21,7 @@ process.nextTick(() => {
 		Rx.op.distinctUntilKeyChanged('SearchTerm'),
 		Rx.op.concatMap(async ({ SearchTerm, UserId }) => {
 			let Session = await emby.Session.byUserId(UserId)
-			console.log(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)
+			console.warn(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)
 
 			if (/^tt\d+$/.test(SearchTerm)) {
 				let results = (await trakt.client.get(`/search/imdb/${SearchTerm}`, {
@@ -129,7 +129,7 @@ process.nextTick(() => {
 	)
 	rxSearch.subscribe(async ({ SearchTerm, Session, items }) => {
 		if (_.isEmpty(items)) return
-		console.warn(
+		console.info(
 			`rxSearch '${SearchTerm}' library addAll items ->`,
 			items.map(v => v.short),
 			items.length,

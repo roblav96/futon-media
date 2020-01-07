@@ -18,7 +18,7 @@ export class iDope extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get(`/torrent-list/${slug}/`, {
 				query: { c, o: sort } as Partial<Query>,
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('.resultdiv').each((i, el) => {
@@ -27,7 +27,7 @@ export class iDope extends scraper.Scraper {
 				let infos = $el.find('.hideinfohash')
 				let result = {
 					bytes: utils.toBytes($el.find('.resultdivbottonlength').text()),
-					name: utils.trim(infos.last().text()),
+					name: _.trim(infos.last().text()),
 					seeders: utils.parseInt($el.find('.resultdivbottonseed').text()),
 					stamp: utils.toStamp($el.find('.resultdivbottontime').text()),
 				} as scraper.Result

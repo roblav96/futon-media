@@ -246,10 +246,10 @@ export class Item {
 		if (options.stops) {
 			titles = titles.map(v => [v, utils.stripStopWords(v)]).flat()
 		}
+		titles = _.uniq(titles.map(v => v.trim()).filter(Boolean))
 		if (!_.isEmpty(options.years)) {
 			titles = titles.map(v => [v, ...Item.toYears(v, options.years)]).flat()
 		}
-		titles = _.uniq(titles.filter(Boolean))
 		return options.bylength ? utils.byLength(titles) : titles
 	}
 
@@ -272,13 +272,6 @@ export class Item {
 			}
 		}
 		this.aliases = Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years })
-		// aliases = aliases.map(v => [v, ...utils.allParts(v)]).flat()
-		// aliases = aliases.map(v => utils.allSlugs(v)).flat()
-		// aliases = aliases.map(v => [v, utils.stripStopWords(v)]).flat()
-		// aliases = aliases.map(v => [v, ...Item.toYears(v, this.years)]).flat()
-		// this.aliases = _.uniq(aliases.filter(Boolean))
-		// this.aliases = Item.toTitles(aliases, { parts: 'edges', years: this.years })
-		// console.log(`setAliases '${this.slug}' aliases ->`, this.aliases)
 	}
 	// get filters() {
 	// 	return this.aliases.filter(v => {
@@ -293,8 +286,10 @@ export class Item {
 	async setCollisions() {
 		let queries = [...this.titles, this.collection.name]
 		queries = queries.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
-		queries = Item.toTitles(queries, { stops: true, bylength: true })
-		console.log('queries ->', queries)
+		queries = _.flatten(queries.map(v => utils.allSlugs(v)))
+		queries = queries.map(v => utils.stripStopWords(v))
+		queries = _.uniq(queries.map(v => v.trim()).filter(Boolean))
+		console.log('setCollisions queries ->', queries)
 		let titles = (await Promise.all([trakt.titles(queries), simkl.titles(queries)])).flat()
 		let collisions = _.flatten(
 			titles.map(v =>
@@ -303,10 +298,10 @@ export class Item {
 		)
 		_.remove(collisions, collision => {
 			if (this.aliases.find(v => utils.contains(v, collision))) return true
-			let equals = this.aliases.find(v => utils.contains(v, collision))
-			if (equals) console.warn(`equals '${collision}' ->`, equals)
+			// let equals = this.aliases.find(v => utils.contains(v, collision))
+			// if (equals) console.warn(`equals '${collision}' ->`, equals)
 		})
-		this.collisions = collisions
+		this.collisions = collisions.filter(v => v.includes(' '))
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
 	}
 
@@ -318,10 +313,8 @@ export class Item {
 		Memoize.clear(this)
 	}
 	get skips() {
-		let strings = this.titles.join(' ')
-		if (this.S.t) strings += ` ${this.S.t}`
-		if (this.E.t) strings += ` ${this.E.t}`
-		return dicts.SKIPS.filter(v => !` ${strings.toLowerCase()} `.includes(` ${v} `))
+		let dontskip = this.aliases.join(' ')
+		return dicts.SKIPS.filter(v => !` ${dontskip} `.includes(` ${v} `))
 	}
 	get titles() {
 		let titles = [
@@ -340,104 +333,65 @@ export class Item {
 		return _.uniq(years).sort()
 	}
 	get collection() {
-		let collection = { name: '', fulls: [] as tmdb.Movie[], titles: [] as string[] }
+		let collection = { name: '', titles: [] as string[], years: [] as number[] }
 		if (!_.has(this.tmdb, 'belongs_to_collection.name')) return collection
 		let name = this.tmdb.belongs_to_collection.name
 		collection.name = name.slice(0, name.lastIndexOf(' ')).trim()
-		collection.fulls = this.tmdb.belongs_to_collection.parts
 		collection.titles = this.tmdb.belongs_to_collection.parts.map(v => v.title)
+		collection.years = this.tmdb.belongs_to_collection.parts.map(v =>
+			dayjs(v.release_date || v.first_air_date).year(),
+		)
 		return collection
 	}
 	get slugs() {
-		let slugs = _.flatten(
-			this.titles.map(title => {
-				let squashes = utils.allSlugs(title)
-				if (squashes.length == 1) return squashes
-				squashes[0] = utils.unisolate(squashes)
-				let simple = utils.simplify(title)
-				if (!simple.includes(' ')) return squashes
-				if (!utils.stripStopWords(simple).includes(' ')) return squashes
-				return [utils.toSlug(simple)]
-			}),
-		)
-		if (this.isDaily) {
-			return [utils.byLength(_.uniq(slugs))[0]]
-		}
+		let slugs = [...this.titles, this.collection.name]
+		slugs = slugs.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
+		slugs = _.flatten(slugs.map(v => utils.allSlugs(v)))
+		slugs = slugs.map(v => utils.stripStopWords(v))
+		slugs = utils.byLength(_.uniq(slugs.map(v => v.trim()).filter(Boolean)))
 		if (this.movie) {
-			slugs = slugs.map(v => [v, _.last(utils.colons(v))]).flat()
 			slugs = slugs.map(v => [v, ...Item.toYears(v, this.years)]).flat()
-			this.collection.name && slugs.push(utils.toSlug(this.collection.name))
+			slugs = slugs.filter(v => v.includes(' '))
 		}
-		return _.uniq(slugs.filter(Boolean))
+		if (this.isDaily) return [_.first(slugs)]
+		return slugs
 	}
 	get queries() {
 		let queries = [] as string[]
 		if (this.movie) return queries
 		if (this.isDaily && this.E.a) queries.push(this.E.a)
-		this.E.n && queries.push(`s${this.S.z}e${this.E.z}`)
-		this.E.t && queries.push(utils.simplify(this.E.t))
-		this.S.t && queries.push(utils.simplify(this.S.t))
+		if (this.E.n) queries.push(`s${this.S.z}e${this.E.z}`)
+		if (this.E.t) queries.push(utils.simplify(this.E.t))
+		if (this.S.t) queries.push(utils.simplify(this.S.t))
 		let next = this.seasons.find(v => v.number == this.S.n + 1)
 		let eps = [this.S.a, this.S.e].filter(v => _.isFinite(v))
 		let packable = (next && next.episode_count > 0) || (eps.length == 2 && eps[0] == eps[1])
 		if (packable) {
-			this.S.n && queries.push(`s${this.S.z}`)
-			this.S.n && queries.push(`season ${this.S.n}`)
+			if (this.S.n) queries.push(`s${this.S.z}`)
+			if (this.S.n) queries.push(`season ${this.S.n}`)
 		}
-		return _.uniq(queries.filter(Boolean).map(v => utils.toSlug(v)))
+		return _.uniq(queries.map(v => utils.slugify(v)).filter(Boolean))
 	}
 
-	get s00e00() {
-		if (!this.episode) return []
-		let regexes = [
-			` s(\\d+)e(\\d+) `,
-			` s(\\d+) e(\\d+) `,
-			` s (\\d+) e (\\d+) `,
-			` se(\\d+)ep(\\d+) `,
-			` se(\\d+) ep(\\d+) `,
-			` se (\\d+) ep (\\d+) `,
-			` season(\\d+)episode(\\d+) `,
-			` season(\\d+) episode(\\d+) `,
-			` season (\\d+) episode (\\d+) `,
-			` (\\d+)x(\\d+) `,
-			` (\\d+) x (\\d+) `,
-			` (\\d+) (\\d+) `,
-			` series (\\d+) (\\d+)of`,
-			//
-		]
-		return _.uniq(regexes.filter(Boolean)).map(v => new RegExp(v, 'i'))
-	}
-	get e00() {
-		if (!this.episode) return []
-		let regexes = [
-			` (\\d+)of`,
-			` (\\d+) of`,
-			` ch(\\d+)`,
-			` ch (\\d+)`,
-			` chapter (\\d+)`,
-			//
-		]
-		return _.uniq(regexes.filter(Boolean)).map(v => new RegExp(v, 'i'))
-	}
-	get matches() {
-		if (!this.episode) return []
-		let matches = [
-			...(this.E.t ? utils.allSlugs(this.E.t).map(v => ` ${v} `) : []),
-			this.E.a && ` ${utils.toSlug(this.E.a)} `,
-			//
-		]
-		return _.uniq(matches.filter(Boolean))
-	}
-	get stragglers() {
-		if (!this.episode) return []
-		let stragglers = [
-			` ${this.S.n}${this.E.z} `,
-			` ${this.E.z} `,
-			` ${this.E.n} `,
-			//
-		]
-		return _.uniq(stragglers.filter(Boolean))
-	}
+	// get matches() {
+	// 	if (!this.episode) return []
+	// 	let matches = [
+	// 		...(this.E.t ? utils.allSlugs(this.E.t).map(v => ` ${v} `) : []),
+	// 		this.E.a && ` ${utils.slugify(this.E.a)} `,
+	// 		//
+	// 	]
+	// 	return _.uniq(matches.filter(Boolean))
+	// }
+	// get stragglers() {
+	// 	if (!this.episode) return []
+	// 	let stragglers = [
+	// 		` ${this.S.n}${this.E.z} `,
+	// 		` ${this.E.z} `,
+	// 		` ${this.E.n} `,
+	// 		//
+	// 	]
+	// 	return _.uniq(stragglers.filter(Boolean))
+	// }
 
 	get result() {
 		return JSON.parse(JSON.stringify(_.pick(this, TYPES))) as Partial<trakt.Result>

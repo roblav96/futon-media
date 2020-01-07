@@ -36,7 +36,7 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
-		if (v.boosts(item.S.e).bytes < utils.toBytes(`${item.gigs} GB`)) return false
+		if (v.boosts.bytes < utils.toBytes(`${item.gigs} GB`)) return false
 		return v.seeders * v.providers.length >= 3
 	})
 	console.log(
@@ -90,7 +90,7 @@ export async function getStream(
 			}
 
 			_.remove(files, ({ path }) => {
-				let slug = ` ${utils.toSlug(path)} `
+				let slug = ` ${utils.slugify(path)} `
 				return ['rarbg com mp4', 'extras', 'sample'].find(v => slug.includes(` ${v} `))
 			})
 
@@ -101,7 +101,7 @@ export async function getStream(
 			}
 
 			let file = files.find(v =>
-				filters.torrents({ name: utils.toSlug(v.name) } as any, item),
+				filters.torrents({ name: utils.slugify(v.name) } as any, item),
 			)
 			if (!file) {
 				console.warn(`!file ->`, torrent.short, files)

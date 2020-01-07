@@ -56,12 +56,17 @@ export function trim(value: string) {
 export function clean(value: string) {
 	return trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
 }
-export function squash(value: string) {
-	return trim(clean(value).replace(/[^a-z\d\s]/gi, ''))
+export function title(value: string) {
+	return trim(clean(value).replace(/[^a-z\d\s_.-]/gi, ''))
 }
 export function minify(value: string) {
-	value = clean(value).replace(/[^a-z\d]/gi, '')
-	return value.toLowerCase()
+	return trim(clean(value).replace(/[^a-z\d]/gi, '')).toLowerCase()
+}
+export function squash(value: string) {
+	return trim(clean(value).replace(/[^a-z\d\s]/gi, '')).toLowerCase()
+}
+export function slugify(value: string) {
+	return trim(clean(value).replace(/[^a-z\d\s]/gi, ' ')).toLowerCase()
 }
 
 export function isAscii(value: string) {
@@ -82,7 +87,12 @@ export function stripForeign(value: string) {
 export function simplify(value: string) {
 	let squashes = allSlugs(value)
 	if (squashes.length == 1) return value
-	return excludes(value, accuracies(squashes[0], squashes[1]))
+	let words = accuracies(squashes[0], squashes[1])
+	return _.filter(value.split(' '), v => !words.includes(squash(v))).join(' ') || value
+	// let accuracy = accuracies(squashes[0], squashes[1])
+	// console.log('accuracy ->', accuracy)
+	// return _.filter(value.split(' '), v => !accuracy.includes(squash(v))).join(' ')
+	// return excludes(value, accuracies(squashes[0], squashes[1]))
 }
 export function colons(value: string) {
 	let index = value.indexOf(': ')
@@ -95,11 +105,11 @@ export function colons(value: string) {
 // export function shrink(value: string) {
 // 	value = clean(value)
 // 	let simple = simplify(value)
-// 	let slug = simple.includes(' ') && toSlug(simple)
+// 	let slug = simple.includes(' ') && slugify(simple)
 // 	if (!slug) {
 // 		let squashes = allSlugs(value)
 // 		let isolates = unisolate(squashes)
-// 		slug = toSlug(value)
+// 		slug = slugify(value)
 // 		// let unisolate = unisolate(slug)
 // 		// if (unisolate.includes(' ')) slug = unisolate
 // 	}
@@ -125,37 +135,50 @@ export function endsWith(value: string, target: string) {
 export function uniq(values: string[]) {
 	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
 }
-export function dedupe(value: string) {
-	let words = value.split(/\s+/)
-	for (let i = words.length - 1; i >= 0; i--) {
-		if (words[i] == words[i - 1]) words.splice(i, 1)
-	}
-	return words.join(' ')
-}
 export function excludes(value: string, words: string[]) {
-	return _.filter(value.split(/\s+/), v => !words.includes(minify(v) || clean(v))).join(' ')
+	let split = value.split(' ')
+	return split.filter(v => !words.includes(squash(v))).join(' ')
+	// return trim(value.replace(new RegExp(`\\b(${words.join('|')})\\b`, 'gi'), ' '))
+	// for (let word of words) {
+	// 	// let regexp = new RegExp(`\\b${word}\\b`, 'gi')
+	// 	// if (regexp.test(value)) {
+	// 	value = value.replace(new RegExp(`\\b${word}\\b`, 'gi'), '')
+	// 	// }
+	// }
+	// return trim(value)
+	// return value.replace(/\s+/, '')
+	// words = words.map(v => squash(v)).filter(Boolean)
 }
 
 export function contains(value: string, target: string) {
-	return ` ${toSlug(value)} `.includes(` ${toSlug(target)} `)
+	return ` ${slugify(value)} `.includes(` ${slugify(target)} `)
 }
+
+// export function dedupe(value: string) {
+// 	let words = value.split(' ')
+// 	for (let i = words.length - 1; i >= 0; i--) {
+// 		if (words[i] == words[i - 1]) words.splice(i, 1)
+// 	}
+// 	return words.join(' ')
+// }
 
 /** accuracies.length == 0 when all of target is included in value */
 export function accuracies(value: string, target: string) {
-	let values = _.uniq(toSlug(value).split(' '))
-	let targets = _.uniq(toSlug(target).split(' '))
+	let values = _.uniq(slugify(value).split(' '))
+	let targets = _.uniq(slugify(target).split(' '))
 	return targets.filter(v => !values.includes(v))
 }
 export function accuracy(value: string, target: string) {
 	return accuracies(value, target).length == 0
 }
-export function unisolate([a, b]: string[]) {
-	return excludes(
-		a,
-		accuracies(b, a).filter(v => v.length == 1),
-	)
-	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
-}
+
+// export function unisolate([a, b]: string[]) {
+// 	return excludes(
+// 		a,
+// 		accuracies(b, a).filter(v => v.length == 1),
+// 	)
+// 	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
+// }
 
 /** levens == 0 when all of target is included in value */
 export function levens(value: string, target: string) {
@@ -169,38 +192,37 @@ export function leven(value: string, target: string) {
 export { levenshtein }
 
 export function allSlugs(value: string) {
-	let [a, b] = [toSlug(value), toSlug(value, { squash: true })]
+	let [a, b] = [slugify(value), squash(value)]
 	return a == b ? [a] : [a, b]
 }
 export function allParts(value: string) {
-	return value.split(/(: )|( - )/).filter(v => !!v && v != ': ' && v != ' - ')
+	let separators = [': ', ' - ']
+	let values = value.split(new RegExp(`(${separators.join(')|(')})`))
+	return values.filter(v => !!v && !separators.includes(v))
 }
 
-export function toTitle(value: string) {
-	return trim(clean(value).replace(/[^a-z\d\s_.-]/gi, ''))
-}
-export function toSlug(
-	value: string,
-	options = {} as Partial<{
-		lowercase: boolean
-		separator: string
-		squash: boolean
-		title: boolean
-	}>,
-) {
-	_.defaults(options, {
-		lowercase: options.title != true,
-		separator: ' ',
-		squash: options.title == true,
-	} as Parameters<typeof toSlug>[1])
-	value = clean(value)
-	if (options.squash) value = squash(value)
-	// value = options.squash ? squash(value) : clean(value)
-	let slug = trim(value.replace(/[^a-z\d\s]/gi, ' '))
-	if (options.lowercase) slug = slug.toLowerCase()
-	if (options.separator != ' ') slug = slug.replace(/\s+/g, options.separator)
-	return slug
-}
+// export function toSlug(
+// 	value: string,
+// 	options = {} as Partial<{
+// 		lowercase: boolean
+// 		separator: string
+// 		squash: boolean
+// 		title: boolean
+// 	}>,
+// ) {
+// 	_.defaults(options, {
+// 		lowercase: options.title != true,
+// 		separator: ' ',
+// 		squash: options.title == true,
+// 	} as Parameters<typeof toSlug>[1])
+// 	value = clean(value)
+// 	if (options.squash) value = squash(value)
+// 	// value = options.squash ? squash(value) : clean(value)
+// 	let slug = trim(value.replace(/[^a-z\d\s]/gi, ' '))
+// 	if (options.lowercase) slug = slug.toLowerCase()
+// 	if (options.separator != ' ') slug = slug.replace(/\s+/g, options.separator)
+// 	return slug
+// }
 
 export function stripStopWords(value: string) {
 	return excludes(value, STOP_WORDS)

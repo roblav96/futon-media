@@ -74,7 +74,7 @@ async function syncCollections() {
 	schemas.push(
 		...lists.map(list => {
 			return {
-				name: utils.toTitle(list.name),
+				name: utils.title(list.name),
 				url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
 			} as CollectionSchema
 		}),

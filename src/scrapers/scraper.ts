@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrids from '@/debrids/debrids'
+import * as execa from 'execa'
 import * as filters from '@/scrapers/filters'
 import * as http from '@/adapters/http'
 import * as Json from '@/shims/json'
@@ -39,15 +40,15 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
 		(await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		(await import('@/scrapers/providers/orion')).Orion,
+		// (await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		(await import('@/scrapers/providers/yts')).Yts,
 	]
@@ -66,7 +67,6 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	console.log(`item.slugs ->`, item.slugs)
 	console.log(`item.queries ->`, item.queries)
 	console.log(`item.aliases ->`, item.aliases)
-	// console.log(`item.filters ->`, item.filters)
 	console.log(`item.collisions ->`, item.collisions)
 	// // console.log(`item.s00e00 ->`, item.s00e00)
 	// // console.log(`item.e00 ->`, item.e00)
@@ -80,7 +80,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
 		let accuracies = utils.accuracies(to.name, from.name)
-		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
+		if (accuracies.length > 0) to.name = ` ${to.name} ${accuracies.join(' ')} `
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
@@ -101,7 +101,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll results ${torrents.length} ->`,
-			torrents.map(v => v.short),
+			torrents.map(v => v.json),
 		)
 	}
 
@@ -111,6 +111,12 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	// console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short))
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
+	// let parsed = execa.sync('/usr/local/bin/guessit', ['-j', ...torrents.map(v => v.filename)])
+	// console.log(`parsed ->`, parsed.stdout)
+	// let parseds = torrents.map(v => filenameParse(v.name, true))
+	// console.log('parseds ->', parseds)
+
+	// console.profile(`torrents.filter`)
 	console.time(`torrents.filter`)
 	torrents = torrents.filter(v => {
 		try {
@@ -118,6 +124,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		} catch {}
 	})
 	console.timeEnd(`torrents.filter`)
+	// console.profileEnd(`torrents.filter`)
 
 	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
@@ -127,34 +134,33 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
 		v.boost += v.providers.length * 0.05
-		let name = ` ${v.name} `
 		let sds = ['720p', '480p', '360p', '720', '480', '360', 'avi']
-		if (sds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
-		if (name.includes(' proper ')) v.boost *= 1.25
-		if (UPLOADERS.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
-		if (['rus', 'ita'].find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		if (sds.find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
+		if (v.name.includes(' proper ')) v.boost *= 1.25
+		if (UPLOADERS.find(vv => v.name.includes(` ${vv} `))) v.boost *= 1.25
+		if (['rus', 'ita'].find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
 		if (v.providers.includes('Rarbg')) v.boost *= 1.5
 		if (!isHD) {
 			let uhds = ['2160p', '2160', 'uhd', '4k']
-			if (uhds.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+			if (uhds.find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
 			if (v.providers.includes('Yts')) {
 				v.boost *= 2
 				let hds = ['1080p', '1080']
-				if (hds.find(vv => name.includes(` ${vv} `))) v.boost *= 2
+				if (hds.find(vv => v.name.includes(` ${vv} `))) v.boost *= 2
 			}
 			continue
 		}
 		let bits = ['8bit', '8 bit', '10bit', '10 bit']
-		if (bits.find(vv => name.includes(` ${vv} `))) v.boost *= 0.5
+		if (bits.find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
 		let remuxes = ['bdremux', 'remux']
-		if (remuxes.find(vv => name.includes(` ${vv} `))) v.boost *= 1.25
-		if (utils.equals(v.name, item.slug) && v.providers.length == 1) v.boost *= 0.5
+		if (remuxes.find(vv => v.name.includes(` ${vv} `))) v.boost *= 1.25
+		if (utils.equals(v.name, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
-		if (name.includes(' fgt ')) v.boost *= 1.5
+		if (v.name.includes(' fgt ')) v.boost *= 1.5
 	}
 
-	if (isHD) torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	else torrents.sort((a, b) => b.boosts(item.S.e).seeders - a.boosts(item.S.e).seeders)
+	if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
+	else torrents.sort((a, b) => b.boosts.seeders - a.boosts.seeders)
 
 	if (process.DEVELOPMENT) {
 		console.info(
@@ -203,7 +209,7 @@ export class Scraper {
 
 		let combos = [] as Parameters<typeof Scraper.prototype.getResults>[]
 		this.slugs().forEach((slug, i) => {
-			if (this.sorts.length == 0) return combos.push([slug] as any)
+			if (_.isEmpty(this.sorts)) return combos.push([slug] as any)
 			combos.push([slug, isHD ? _.first(this.sorts) : _.last(this.sorts)])
 		})
 		combos = combos.slice(0, this.max)
@@ -236,12 +242,13 @@ export class Scraper {
 		// console.info(Date.now() - t, ctor, combos.length, results.length, safeStringify(jsons))
 		console.info(Date.now() - t, ctor, combos.length, results.length)
 
-		return results.map(v => new torrent.Torrent(v))
+		return results.map(v => new torrent.Torrent(v, this.item))
 	}
 }
 
 export interface Result {
 	bytes: number
+	filename: string
 	magnet: string
 	name: string
 	providers: string[]

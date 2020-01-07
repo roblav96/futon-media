@@ -233,7 +233,7 @@ export const library = {
 
 	toPath(item: media.Item) {
 		let folder = library.getFolder(item.type)
-		let title = utils.toTitle(item.title)
+		let title = utils.title(item.title)
 		let file = `${title} (${item.year})`
 		if (item.ids.imdb) file += ` [imdbid=${item.ids.imdb}]`
 		if (item.ids.tmdb) file += ` [tmdbid=${item.ids.tmdb}]`

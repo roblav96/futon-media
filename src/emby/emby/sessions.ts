@@ -123,7 +123,7 @@ export class Session {
 	async Message(text: string | Error) {
 		let body = { Text: `${text}` }
 		if (_.isError(text)) body.Text = `⛔ [ERROR] ${text.message}`
-		Object.assign(body, { TimeoutMs: _.clamp(body.Text.length * 100, 5000, 30000) })
+		Object.assign(body, { TimeoutMs: _.clamp(body.Text.length * 100, 5000, 15000) })
 		try {
 			await emby.client.post(`/Sessions/${this.Id}/Message`, { body, silent: true })
 		} catch {}

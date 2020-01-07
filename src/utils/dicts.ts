@@ -2,7 +2,9 @@ import * as _ from 'lodash'
 import * as fs from 'fs-extra'
 
 let naughty = fs.readFileSync(require.resolve('no-naughty-words/data/words.txt')).toString()
-export const NAUGHTY_WORDS = _.uniq(naughty.split('\n').slice(611, -2)).filter(v => v.length >= 3)
+export const NAUGHTY_WORDS = _.uniq(
+	_.map(naughty.split('\n').slice(611, -2), v => v.toLowerCase()),
+).filter(v => v.length >= 3)
 
 export const SKIPS = [
 	...NAUGHTY_WORDS,
@@ -11,6 +13,7 @@ export const SKIPS = [
 	'cam',
 	'camhd',
 	'camrip',
+	'extras',
 	'hd ts',
 	'hdcam',
 	'hdts',
