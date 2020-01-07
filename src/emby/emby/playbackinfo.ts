@@ -15,7 +15,9 @@ const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
 
-	schedule.scheduleJob('* * * * *', () => PlaybackInfo.setUserNames())
+	if (!process.DEVELOPMENT) {
+		schedule.scheduleJob('* * * * *', () => PlaybackInfo.setUserNames())
+	}
 	emby.rxSocket.subscribe(({ MessageType }) => {
 		if (MessageType == 'OnOpen') PlaybackInfo.setUserNames()
 	})

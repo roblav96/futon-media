@@ -74,6 +74,7 @@ process.nextTick(() => {
 		client.post('/transfers/remove', { form: { transfer_ids } })
 	})
 
+	return
 	schedule.scheduleJob('0 * * * *', async () => {
 		let { transfers } = (await client.get('/transfers/list', { silent: true })) as Response
 		for (let transfer of transfers) {

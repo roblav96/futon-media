@@ -16,6 +16,7 @@ import { Readable } from 'stream'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	// if (process.DEVELOPMENT) await db.flush()
+	return
 	await refresh(true)
 	schedule.scheduleJob('0 * * * *', () =>
 		refresh().catch(error => console.error(`tvdb refresh -> %O`, error)),

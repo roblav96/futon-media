@@ -15,7 +15,7 @@ import { RealDebrid } from '@/debrids/realdebrid'
 
 export const debrids = {
 	premiumize: Premiumize,
-	// realdebrid: RealDebrid,
+	realdebrid: RealDebrid,
 	// offcloud: Offcloud,
 }
 
@@ -77,6 +77,7 @@ export async function getStream(
 		let next = false
 		for (let cached of torrent.cached) {
 			if (next) continue
+			if (cached == 'realdebrid') continue
 			console.info(`getStream '${cached}' torrent ->`, torrent.json)
 			let debrid = new debrids[cached]().use(torrent.magnet)
 

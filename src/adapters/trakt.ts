@@ -123,7 +123,11 @@ export async function titles(queries: string[]) {
 			queries.map((query, i) => async () => {
 				if (i > 0) await utils.pRandom(300)
 				return (await client.get(`/search/movie,show`, {
-					query: { query, fields: 'title,translations,aliases', limit: 100 },
+					query: {
+						query: `*${query}*`,
+						fields: 'title,translations,aliases',
+						limit: 100,
+					},
 					memoize: true,
 					silent: true,
 				})) as Result[]

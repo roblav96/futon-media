@@ -29,7 +29,6 @@ async function getDebridStream(Item: emby.Item) {
 	if (!Session) Session = _.first(Sessions.filter(v => !v.ItemPath))
 	let useragent = await emby.PlaybackInfo.useragent(Session.UserId, Item.Id)
 	let PlaybackInfo = await emby.PlaybackInfo.get(useragent, Session.UserId, Item.Id)
-	console.warn(`[${Session.short}] getDebridStream ->`, title, PlaybackInfo.json)
 
 	if (process.DEVELOPMENT) {
 		// throw new Error(`DEVELOPMENT`)
@@ -45,6 +44,7 @@ async function getDebridStream(Item: emby.Item) {
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
 	let stream = await db.get(skey)
 	if (stream) return stream
+	console.warn(`[${Session.short}] getDebridStream ->`, title, PlaybackInfo.json)
 
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')

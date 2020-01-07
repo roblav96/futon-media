@@ -122,7 +122,7 @@ export function startsWith(value: string, target: string) {
 export function endsWith(value: string, target: string) {
 	return minify(value).endsWith(minify(target))
 }
-export function unique(values: string[]) {
+export function uniq(values: string[]) {
 	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
 }
 export function dedupe(value: string) {
@@ -174,15 +174,6 @@ export function allSlugs(value: string) {
 }
 export function allParts(value: string) {
 	return value.split(/(: )|( - )/).filter(v => !!v && v != ': ' && v != ' - ')
-	// let parts = [value]
-	// 	.map(v => v.split(': '))
-	// 	.flat()
-	// 	.map(v => v.split(' - '))
-	// 	.flat()
-	// 	.map(v => v.trim())
-	// return parts
-	// return [': ', ' - '].map(v => value.split(v)).flat()
-	// return _.last(_.last(value.split(': ')).split(' - ')).trim()
 }
 
 export function toTitle(value: string) {

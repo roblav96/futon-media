@@ -9,7 +9,7 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
-	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) =>
@@ -35,9 +35,7 @@ process.nextTick(async () => {
 			return emby.library.addQueue(items, Session)
 		}
 
-		if (['Movie', 'Series', 'Season', 'Episode'].includes(Item.Type)) {
-			await emby.library.setTags(item, ItemId)
-		}
+		await emby.library.setTags(item, ItemId)
 
 		if (['Series', 'Season', 'Episode'].includes(Item.Type)) {
 			let CreatedPaths = await emby.library.addQueue([item])
@@ -46,17 +44,6 @@ process.nextTick(async () => {
 					`🔄 ${CreatedPaths.length} episodes added to '${item.title}', reload this page!`,
 				)
 			}
-
-			// let Series = (await emby.library.Items({ Fields: ['Status'], Ids: [ItemId] }))[0]
-			// console.log('Series ->', Series)
-			// if (Series.Status == 'Ended') return
-
-			// let Missings = await emby.library.Items({
-			// 	IsMissing: true,
-			// 	IncludeItemTypes: ['Episode'],
-			// })
-			// Missings = Missings.filter(v => v.SeriesId == ItemId)
-			// if (Missings.length == 0) return
 
 			let Seasons = await emby.library.Items({
 				IncludeItemTypes: ['Season'],
@@ -75,18 +62,29 @@ process.nextTick(async () => {
 				if (_.isEmpty(PremiereDate)) return true
 				if (new Date(PremiereDate).valueOf() > Date.now()) return true
 			})
-			if (_.isEmpty(Episodes)) return
+			if (!_.isEmpty(Episodes)) {
+				await emby.client.post(`/Items/${Season.Id}/Refresh`, {
+					query: {
+						ImageRefreshMode: 'FullRefresh',
+						MetadataRefreshMode: 'FullRefresh',
+						Recursive: 'true',
+						ReplaceAllImages: 'true',
+						ReplaceAllMetadata: 'true',
+					},
+					silent: true,
+				})
+			}
 
-			await emby.client.post(`/Items/${Season.Id}/Refresh`, {
-				query: {
-					ImageRefreshMode: 'FullRefresh',
-					MetadataRefreshMode: 'FullRefresh',
-					Recursive: 'true',
-					ReplaceAllImages: 'true',
-					ReplaceAllMetadata: 'true',
-				},
-				silent: true,
-			})
+			// let Series = (await emby.library.Items({ Fields: ['Status'], Ids: [ItemId] }))[0]
+			// console.log('Series ->', Series)
+			// if (Series.Status == 'Ended') return
+
+			// let Missings = await emby.library.Items({
+			// 	IsMissing: true,
+			// 	IncludeItemTypes: ['Episode'],
+			// })
+			// Missings = Missings.filter(v => v.SeriesId == ItemId)
+			// if (Missings.length == 0) return
 		}
 	})
 })

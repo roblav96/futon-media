@@ -226,13 +226,31 @@ export class Item {
 	static toYears(title: string, years: number[]) {
 		return years.filter(year => !title.endsWith(` ${year}`)).map(year => `${title} ${year}`)
 	}
-	static toTitles(titles: string[], years = [] as number[]) {
-		titles = titles.map(v => [v, _.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
-		// titles = titles.map(v => [v, ...utils.allParts(v)]).flat()
-		titles = titles.map(v => utils.allSlugs(v)).flat()
-		// titles = titles.map(v => [v, utils.stripStopWords(v)]).flat()
-		titles = titles.map(v => [v, ...Item.toYears(v, years)]).flat()
-		return _.uniq(titles.filter(Boolean))
+	static toTitles(
+		titles: string[],
+		options = {} as {
+			bylength?: boolean
+			parts?: 'all' | 'edges'
+			stops?: boolean
+			years?: number[]
+		},
+	) {
+		if (options.parts == 'all') {
+			titles = _.flatten(titles.map(v => [v, ...utils.allParts(v)]))
+		} else if (options.parts == 'edges') {
+			titles = _.flatten(
+				titles.map(v => [v, _.first(utils.allParts(v)), _.last(utils.allParts(v))]),
+			)
+		}
+		titles = _.flatten(titles.map(v => utils.allSlugs(v)))
+		if (options.stops) {
+			titles = titles.map(v => [v, utils.stripStopWords(v)]).flat()
+		}
+		if (!_.isEmpty(options.years)) {
+			titles = titles.map(v => [v, ...Item.toYears(v, options.years)]).flat()
+		}
+		titles = _.uniq(titles.filter(Boolean))
+		return options.bylength ? utils.byLength(titles) : titles
 	}
 
 	aliases: string[]
@@ -253,12 +271,13 @@ export class Item {
 				aliases.push(...this.titles.map(v => `${this.show.network.split(' ')[0]} ${v}`))
 			}
 		}
-		this.aliases = Item.toTitles(aliases, this.years)
+		this.aliases = Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years })
 		// aliases = aliases.map(v => [v, ...utils.allParts(v)]).flat()
 		// aliases = aliases.map(v => utils.allSlugs(v)).flat()
 		// aliases = aliases.map(v => [v, utils.stripStopWords(v)]).flat()
 		// aliases = aliases.map(v => [v, ...Item.toYears(v, this.years)]).flat()
 		// this.aliases = _.uniq(aliases.filter(Boolean))
+		// this.aliases = Item.toTitles(aliases, { parts: 'edges', years: this.years })
 		// console.log(`setAliases '${this.slug}' aliases ->`, this.aliases)
 	}
 	// get filters() {
@@ -274,15 +293,18 @@ export class Item {
 	async setCollisions() {
 		let queries = [...this.titles, this.collection.name]
 		queries = queries.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
-		queries = queries.map(v => utils.allSlugs(v)).flat()
-		queries = queries.map(v => utils.stripStopWords(v))
-		queries = utils.byLength(_.uniq(queries.filter(Boolean)))
-		// console.log('queries ->', queries)
+		queries = Item.toTitles(queries, { stops: true, bylength: true })
+		console.log('queries ->', queries)
 		let titles = (await Promise.all([trakt.titles(queries), simkl.titles(queries)])).flat()
-		let collisions = titles.map(v => Item.toTitles([v.title], [v.year])).flat()
+		let collisions = _.flatten(
+			titles.map(v =>
+				Item.toTitles([v.title], { parts: 'all', stops: true, years: [v.year] }),
+			),
+		)
 		_.remove(collisions, collision => {
-			if (this.aliases.find(v => utils.equals(v, collision))) return true
 			if (this.aliases.find(v => utils.contains(v, collision))) return true
+			let equals = this.aliases.find(v => utils.contains(v, collision))
+			if (equals) console.warn(`equals '${collision}' ->`, equals)
 		})
 		this.collisions = collisions
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
@@ -307,7 +329,7 @@ export class Item {
 			this.omdb && this.omdb.Title,
 			this.tmdb && (this.tmdb.name || this.tmdb.title),
 		].filter(Boolean)
-		return utils.byLength(utils.unique(titles))
+		return utils.byLength(utils.uniq(titles))
 	}
 	get years() {
 		let years = [

@@ -35,21 +35,21 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
-		// (await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/btsow')).Btsow,
-		// (await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/btdb')).Btdb,
+		(await import('@/scrapers/providers/btsow')).Btsow,
+		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
+		(await import('@/scrapers/providers/eztv')).Eztv,
 		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
-		// (await import('@/scrapers/providers/rarbg')).Rarbg,
-		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/rarbg')).Rarbg,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
-		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
-		// (await import('@/scrapers/providers/yts')).Yts,
+		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
+		(await import('@/scrapers/providers/yts')).Yts,
 	]
 })
 
@@ -61,13 +61,13 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
 	// // console.log(`item ->`, ((global as any).item = item))
-	// console.log(`item.titles ->`, item.titles)
-	// console.log(`item.years ->`, item.years)
-	// console.log(`item.slugs ->`, item.slugs)
-	// console.log(`item.queries ->`, item.queries)
-	// console.log(`item.aliases ->`, item.aliases)
-	// // console.log(`item.filters ->`, item.filters)
-	// console.log(`item.collisions ->`, item.collisions)
+	console.log(`item.titles ->`, item.titles)
+	console.log(`item.years ->`, item.years)
+	console.log(`item.slugs ->`, item.slugs)
+	console.log(`item.queries ->`, item.queries)
+	console.log(`item.aliases ->`, item.aliases)
+	// console.log(`item.filters ->`, item.filters)
+	console.log(`item.collisions ->`, item.collisions)
 	// // console.log(`item.s00e00 ->`, item.s00e00)
 	// // console.log(`item.e00 ->`, item.e00)
 	// // console.log(`item.matches ->`, item.matches)
