@@ -56,7 +56,6 @@ process.nextTick(async () => {
 
 export async function scrapeAll(item: media.Item, isHD: boolean) {
 	let t = Date.now()
-	if (process.DEVELOPMENT) isHD = true
 
 	await item.setAll()
 	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
@@ -97,13 +96,14 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 
 	if (isHD) torrents.sort((a, b) => b.bytes - a.bytes)
 	else torrents.sort((a, b) => b.seeders - a.seeders)
-	if (process.DEVELOPMENT) {
-		console.info(
-			Date.now() - t,
-			`scrapeAll results ${torrents.length} ->`,
-			torrents.map(v => v.short),
-		)
-	}
+
+	// if (process.DEVELOPMENT) {
+	// 	console.info(
+	// 		Date.now() - t,
+	// 		`scrapeAll results ${torrents.length} ->`,
+	// 		torrents.map(v => v.short),
+	// 	)
+	// }
 
 	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
@@ -133,30 +133,27 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
-		v.boost += v.providers.length * 0.05
-		let sds = ['720p', '480p', '360p', '720', '480', '360', 'avi']
-		if (sds.find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
-		if (v.name.includes(' proper ')) v.boost *= 1.25
-		if (UPLOADERS.find(vv => v.name.includes(` ${vv} `))) v.boost *= 1.25
-		if (['rus', 'ita'].find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
-		if (v.providers.includes('Rarbg')) v.boost *= 1.5
+		v.boost = 1 + v.providers.length * 0.05
+		v.booster(UPLOADERS, 1.25)
+		v.booster(['proper'], 1.25)
+		v.booster(['rus', 'ita'], 0.5)
+		v.booster(['720p', '480p', '360p', '720', '480', '360', 'avi'], 0.5)
+		if (v.providers.includes('Rarbg')) v.boost *= 1.25
 		if (!isHD) {
-			let uhds = ['2160p', '2160', 'uhd', '4k']
-			if (uhds.find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
+			v.booster(['bdrip', 'bluray'], 1.25)
+			v.booster(['2160p', '2160', 'uhd', '4k'], 0.5)
 			if (v.providers.includes('Yts')) {
 				v.boost *= 2
-				let hds = ['1080p', '1080']
-				if (hds.find(vv => v.name.includes(` ${vv} `))) v.boost *= 2
+				v.booster(['1080p', '1080'], 2)
 			}
 			continue
 		}
-		let bits = ['8bit', '8 bit', '10bit', '10 bit']
-		if (bits.find(vv => v.name.includes(` ${vv} `))) v.boost *= 0.5
-		let remuxes = ['bdremux', 'remux']
-		if (remuxes.find(vv => v.name.includes(` ${vv} `))) v.boost *= 1.25
+		v.booster(['fgt'], 1.25)
+		v.booster(['bdremux', 'remux'], 1.25)
+		v.booster(['atmos', 'dts', 'true hd', 'truehd'], 1.25)
+		v.booster(['8bit', '8 bit', '10bit', '10 bit'], 0.5)
 		if (utils.equals(v.name, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
-		if (v.name.includes(' fgt ')) v.boost *= 1.5
 	}
 
 	if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
@@ -166,6 +163,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
+			torrents.map(v => v.short),
 			torrents.map(v => v.json),
 			torrents.length,
 		)

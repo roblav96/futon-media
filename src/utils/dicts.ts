@@ -80,6 +80,7 @@ export const UPLOADERS = [
 	'esir',
 	'etrg',
 	'exkinoray',
+	'fgt',
 	'geckos',
 	'grym',
 	'inspirit',

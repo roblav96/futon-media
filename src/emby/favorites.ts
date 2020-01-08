@@ -33,6 +33,7 @@ process.nextTick(() => {
 			console.warn(`rxFavorite download '${item.strm}' ->`, gigs)
 
 			let isHD = PlaybackInfo ? PlaybackInfo.Quality != 'SD' : false
+			if (process.DEVELOPMENT) isHD = true
 			let torrents = await scraper.scrapeAll(item, isHD)
 
 			if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)

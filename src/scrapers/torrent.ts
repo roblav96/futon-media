@@ -159,6 +159,9 @@ export class Torrent {
 			seeders: _.ceil(this.seeders * this.boost * this.providers.length),
 		}
 	}
+	booster(words: string[], boost: number) {
+		if (words.find(v => this.name.includes(` ${v} `))) this.boost *= boost
+	}
 
 	get short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
@@ -176,14 +179,14 @@ export class Torrent {
 		)
 		return utils.compact({
 			age: this.age,
-			boost: this.boost,
+			boost: _.round(this.boost, 2),
 			cached: this.cached.join(', '),
 			episodes: this.episodes,
 			filename: this.filename,
 			// magnet: `magnet:?${minify}`, // this.magnet,
 			name: this.name,
 			packs: this.packs,
-			parsed: this.parsed,
+			parsed: _.omit(this.parsed, ['edition', 'revision']),
 			providers: this.providers.join(', '),
 			seasons: this.seasons,
 			seeders: this.seeders,

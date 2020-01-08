@@ -271,7 +271,9 @@ export class Item {
 				aliases.push(...this.titles.map(v => `${this.show.network.split(' ')[0]} ${v}`))
 			}
 		}
-		this.aliases = Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years })
+		this.aliases = _.sortBy(
+			Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years }),
+		)
 	}
 	// get filters() {
 	// 	return this.aliases.filter(v => {
@@ -284,7 +286,8 @@ export class Item {
 
 	collisions: string[]
 	async setCollisions() {
-		let queries = [...this.titles, this.collection.name]
+		let queries = [...this.titles]
+		if (this.collection.name) queries.push(this.collection.name)
 		queries = queries.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
 		queries = queries.map(v => utils.allSlugs(v)).flat()
 		queries = queries.map(v => utils.stripStopWords(v))
@@ -299,7 +302,7 @@ export class Item {
 		_.remove(collisions, collision => {
 			if (this.aliases.find(v => ` ${v} `.includes(` ${collision} `))) return true
 		})
-		this.collisions = collisions.filter(v => v.includes(' '))
+		this.collisions = _.sortBy(collisions.filter(v => v.includes(' ')))
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
 	}
 
@@ -343,15 +346,17 @@ export class Item {
 		return collection
 	}
 	get slugs() {
-		let slugs = [...this.titles, this.collection.name]
-		slugs = slugs.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
-		slugs = slugs.map(v => utils.allSlugs(v)).flat()
-		slugs = slugs.map(v => utils.stripStopWords(v))
-		slugs = utils.byLength(_.uniq(slugs.map(v => v.trim()).filter(Boolean)))
+		let slugs = [...this.titles]
 		if (this.movie) {
 			slugs = slugs.map(v => [v, ...Item.toYears(v, this.years)]).flat()
-			slugs = slugs.filter(v => v.includes(' '))
+			if (this.collection.name) slugs.push(this.collection.name)
 		}
+		slugs = slugs.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
+		slugs = slugs.map(v => utils.allSlugs(v)).flat()
+		slugs = slugs.map(v =>
+			utils.stripStopWords(v).includes(' ') ? utils.stripStopWords(v) : v,
+		)
+		slugs = utils.byLength(_.uniq(slugs.map(v => v.trim()).filter(Boolean)))
 		if (this.isDaily) return [_.first(slugs)]
 		return slugs
 	}

@@ -66,15 +66,15 @@ export class Http {
 	private async setJar(host: string) {
 		if (!this.jar) {
 			let jar = await db.get(`jar:${host}`)
-			console.log(`${host} jar:${host} ->`, jar)
+			// console.log(`${host} jar:${host} ->`, jar)
 			if (jar) this.jar = CookieJar.fromJSON(jar)
 			else this.jar = new CookieJar()
-			console.log(`${host} CookieJar ->`, this.jar.toJSON().cookies)
+			// console.log(`${host} CookieJar ->`, this.jar.toJSON().cookies)
 		}
 	}
 	private async refreshCloudflare() {
 		let host = _.join(new Url(this.config.baseUrl).host.split('.').slice(-2), '.')
-		console.log(`${host} refreshCloudflare ->`)
+		// console.log(`${host} refreshCloudflare ->`)
 		await this.setJar(host)
 
 		let scraper = (cloudscraper as any).defaults(
