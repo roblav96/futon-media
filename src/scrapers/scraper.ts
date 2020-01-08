@@ -41,8 +41,8 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		// (await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
@@ -101,7 +101,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll results ${torrents.length} ->`,
-			torrents.map(v => v.json),
+			torrents.map(v => v.short),
 		)
 	}
 
@@ -166,7 +166,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
-			torrents.map(v => v.short),
+			torrents.map(v => v.json),
 			torrents.length,
 		)
 	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)

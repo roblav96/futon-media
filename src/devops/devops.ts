@@ -9,7 +9,7 @@ import * as StackTracey from 'stacktracey'
 import * as util from 'util'
 
 _.merge(util.inspect.defaultOptions, {
-	depth: 2,
+	depth: 4,
 } as util.InspectOptions)
 
 let before = Date.now()

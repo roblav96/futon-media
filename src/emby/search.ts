@@ -79,6 +79,7 @@ process.nextTick(() => {
 				if (v.junk) return false
 				let title = utils.stripStopWords(v.title)
 				if (words == 1) return utils.contains(title, SearchTerm)
+				// if (words == 1) return ` ${utils.slugify(title)} `.includes(` ${SearchTerm} `)
 				return utils.includes(title, SearchTerm)
 			})
 

@@ -87,8 +87,8 @@ export function stripForeign(value: string) {
 export function simplify(value: string) {
 	let squashes = allSlugs(value)
 	if (squashes.length == 1) return value
-	let words = accuracies(squashes[0], squashes[1])
-	return _.filter(value.split(' '), v => !words.includes(squash(v))).join(' ') || value
+	return excludes(value, accuracies(squashes[0], squashes[1])) || value
+	// return _.filter(value.split(' '), v => !words.includes(squash(v))).join(' ') || value
 	// let accuracy = accuracies(squashes[0], squashes[1])
 	// console.log('accuracy ->', accuracy)
 	// return _.filter(value.split(' '), v => !accuracy.includes(squash(v))).join(' ')
@@ -135,9 +135,12 @@ export function endsWith(value: string, target: string) {
 export function uniq(values: string[]) {
 	return _.uniqWith(values, (a, b) => minify(a) == minify(b))
 }
+export function contains(value: string, target: string) {
+	return ` ${slugify(value)} `.includes(` ${slugify(target)} `)
+}
 export function excludes(value: string, words: string[]) {
 	let split = value.split(' ')
-	return split.filter(v => !words.includes(squash(v))).join(' ')
+	return split.filter(v => !words.includes(minify(v) || clean(v))).join(' ')
 	// return trim(value.replace(new RegExp(`\\b(${words.join('|')})\\b`, 'gi'), ' '))
 	// for (let word of words) {
 	// 	// let regexp = new RegExp(`\\b${word}\\b`, 'gi')
@@ -149,9 +152,8 @@ export function excludes(value: string, words: string[]) {
 	// return value.replace(/\s+/, '')
 	// words = words.map(v => squash(v)).filter(Boolean)
 }
-
-export function contains(value: string, target: string) {
-	return ` ${slugify(value)} `.includes(` ${slugify(target)} `)
+export function stripStopWords(value: string) {
+	return excludes(value, STOP_WORDS)
 }
 
 // export function dedupe(value: string) {
@@ -224,13 +226,6 @@ export function allParts(value: string) {
 // 	return slug
 // }
 
-export function stripStopWords(value: string) {
-	return excludes(value, STOP_WORDS)
-}
-export function stripNaughtyWords(value: string) {
-	return excludes(value, NAUGHTY_WORDS)
-}
-
 export function isVideo(file: string) {
 	return VIDEO_EXTENSIONS.includes(path.extname(file.toLowerCase()).slice(1))
 }
@@ -241,7 +236,7 @@ export function sortKeys<T>(value: T) {
 	) as any) as T
 }
 export function compact<T>(value: T) {
-	return _.pickBy(value as any, v => !!v) as T
+	return _.pickBy(value as any, v => _.isBoolean(v) || _.isFinite(v) || !!v) as T
 }
 export function orderBy<T, K extends keyof T>(values: T[], key: K, order?: 'asc' | 'desc') {
 	return _.orderBy(values, [key], [order || 'desc'])

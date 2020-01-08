@@ -22,6 +22,7 @@ export interface Config extends http.RequestOptions {
 	beforeRequest?: Hooks<(options: Config) => Promise<void>>
 	body?: any
 	cloudflare?: string
+	cookies?: boolean
 	debug?: boolean
 	form?: any
 	memoize?: boolean | number
@@ -62,18 +63,19 @@ export class Http {
 	} as Config
 
 	private jar: CookieJar & { store?: Store }
-	private async refreshCloudflare() {
-		let url = new Url(this.config.baseUrl)
-		let host = _.join(url.host.split('.').slice(-2), '.')
-		// console.log(`${host} refreshCloudflare ->`)
-
+	private async setJar(host: string) {
 		if (!this.jar) {
 			let jar = await db.get(`jar:${host}`)
-			// console.log(`${host} jar:${host} ->`, jar)
+			console.log(`${host} jar:${host} ->`, jar)
 			if (jar) this.jar = CookieJar.fromJSON(jar)
 			else this.jar = new CookieJar()
-			// console.log(`${host} CookieJar ->`, this.jar.toJSON().cookies)
+			console.log(`${host} CookieJar ->`, this.jar.toJSON().cookies)
 		}
+	}
+	private async refreshCloudflare() {
+		let host = _.join(new Url(this.config.baseUrl).host.split('.').slice(-2), '.')
+		console.log(`${host} refreshCloudflare ->`)
+		await this.setJar(host)
 
 		let scraper = (cloudscraper as any).defaults(
 			_.defaultsDeep(
@@ -106,6 +108,8 @@ export class Http {
 		if (this.config.cloudflare) {
 			this.config.retries.push(403, 503)
 			this.refreshCloudflare()
+		} else if (this.config.cookies) {
+			this.setJar(this.config.baseUrl)
 		}
 	}
 
@@ -166,15 +170,12 @@ export class Http {
 			options.body = utils.sortKeys(options.body)
 		}
 
-		if (options.cloudflare) {
+		if (options.cloudflare || options.cookies) {
 			let cookie = this.jar.getCookieStringSync(url)
 			if (options.headers['cookie']) options.headers['cookie'] += `; ${cookie}`
 			else options.headers['cookie'] = cookie
 		}
-
-		if (!!options.memoize && _.isPlainObject(options.headers)) {
-			options.headers = utils.sortKeys(options.headers)
-		}
+		options.headers = utils.compact(options.headers)
 
 		if (!options.silent) {
 			console.log(`[${options.method}]`, min.url, min.query, min.form, min.body)
@@ -248,6 +249,13 @@ export class Http {
 					_.isNumber(options.memoize) ? options.memoize : utils.duration(1, 'hour'),
 				)
 			}
+		}
+
+		if (options.cookies && this.config.baseUrl && !_.isEmpty(response.headers['set-cookie'])) {
+			for (let cookie of response.headers['set-cookie']) {
+				this.jar.setCookieSync(cookie, this.config.baseUrl)
+			}
+			await db.put(`jar:${this.config.baseUrl}`, this.jar.toJSON())
 		}
 
 		if (options.profile) {

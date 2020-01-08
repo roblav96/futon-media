@@ -27,39 +27,51 @@ export function results(result: scraper.Result, item: media.Item) {
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let collision = item.collisions.find(v => utils.contains(torrent.name, v))
+	let collision = item.collisions.find(v => torrent.name.includes(` ${v} `))
 	if (collision) {
 		return console.log(`⛔ collision '${collision}' ->`, torrent.short)
 	}
 
-	if (!item.aliases.find(v => utils.contains(torrent.name, v))) {
+	if (!item.aliases.find(v => torrent.name.includes(` ${v} `))) {
 		return console.log(`⛔ !aliases ->`, torrent.short)
 	}
 
 	if (item.movie) {
-		if (!item.collection.name && !torrent.packs) {
-			if (!item.years.find(v => torrent.years.includes(v))) {
-				return console.log(`⛔ movie !years ${item.years} ->`, torrent.short)
-			}
+		if (!item.collection.name && !item.years.find(v => torrent.years.includes(v))) {
+			return console.log(`⛔ movie !years '${torrent.years}' ->`, torrent.short)
 		}
+		return true
 	}
 
 	if (item.show) {
-		let matches = [...utils.allSlugs(item.E.t), item.E.a]
-		if (matches.find(v => utils.contains(torrent.name, v))) {
-			return true
+		if (item.isDaily && item.E.a) {
+			if (utils.allSlugs(item.E.a).find(v => torrent.name.includes(` ${v} `))) {
+				return true
+			}
 		}
+		if (!utils.includes(item.S.t, 'season')) {
+			if (utils.allSlugs(item.S.t).find(v => torrent.name.includes(` ${v} `))) {
+				return true
+			}
+		}
+		if (item.E.t) {
+			let epslugs = utils.allSlugs(this.E.t).filter(v => v.includes(' '))
+			if (epslugs.find(v => torrent.name.includes(` ${v} `))) {
+				return true
+			}
+		}
+
 		if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) {
 			return true
 		}
 		if (torrent.seasons.length > 0 && !torrent.seasons.includes(item.S.n)) {
-			return console.log(`⛔ show seasons ${torrent.seasons} ->`, torrent.short)
+			return console.log(`⛔ show seasons '${torrent.seasons}' ->`, torrent.short)
 		}
 		if (torrent.episodes.length > 0 && !torrent.episodes.includes(item.E.n)) {
-			return console.log(`⛔ show episodes ${torrent.episodes} ->`, torrent.short)
+			return console.log(`⛔ show episodes '${torrent.episodes}' ->`, torrent.short)
 		}
 		let stragglers = [`${item.S.n}${item.E.z}`, item.E.z, item.E.n]
-		if (stragglers.find(v => utils.contains(torrent.name, `${v}`))) {
+		if (stragglers.find(v => torrent.name.includes(` ${v} `))) {
 			return true
 		}
 	}

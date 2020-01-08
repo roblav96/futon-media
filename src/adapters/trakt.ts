@@ -61,7 +61,9 @@ process.nextTick(async () => {
 
 export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',
+	cookies: true,
 	headers: {
+		// 'content-type': 'application/json',
 		'trakt-api-key': process.env.TRAKT_CLIENT_ID,
 		'trakt-api-version': '2',
 	},

@@ -286,7 +286,7 @@ export class Item {
 	async setCollisions() {
 		let queries = [...this.titles, this.collection.name]
 		queries = queries.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
-		queries = _.flatten(queries.map(v => utils.allSlugs(v)))
+		queries = queries.map(v => utils.allSlugs(v)).flat()
 		queries = queries.map(v => utils.stripStopWords(v))
 		queries = _.uniq(queries.map(v => v.trim()).filter(Boolean))
 		console.log('setCollisions queries ->', queries)
@@ -297,9 +297,7 @@ export class Item {
 			),
 		)
 		_.remove(collisions, collision => {
-			if (this.aliases.find(v => utils.contains(v, collision))) return true
-			// let equals = this.aliases.find(v => utils.contains(v, collision))
-			// if (equals) console.warn(`equals '${collision}' ->`, equals)
+			if (this.aliases.find(v => ` ${v} `.includes(` ${collision} `))) return true
 		})
 		this.collisions = collisions.filter(v => v.includes(' '))
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
@@ -341,12 +339,13 @@ export class Item {
 		collection.years = this.tmdb.belongs_to_collection.parts.map(v =>
 			dayjs(v.release_date || v.first_air_date).year(),
 		)
+		collection.years.sort()
 		return collection
 	}
 	get slugs() {
 		let slugs = [...this.titles, this.collection.name]
 		slugs = slugs.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
-		slugs = _.flatten(slugs.map(v => utils.allSlugs(v)))
+		slugs = slugs.map(v => utils.allSlugs(v)).flat()
 		slugs = slugs.map(v => utils.stripStopWords(v))
 		slugs = utils.byLength(_.uniq(slugs.map(v => v.trim()).filter(Boolean)))
 		if (this.movie) {
@@ -361,8 +360,8 @@ export class Item {
 		if (this.movie) return queries
 		if (this.isDaily && this.E.a) queries.push(this.E.a)
 		if (this.E.n) queries.push(`s${this.S.z}e${this.E.z}`)
-		if (this.E.t) queries.push(utils.simplify(this.E.t))
-		if (this.S.t) queries.push(utils.simplify(this.S.t))
+		if (this.E.t) queries.push(this.E.t)
+		if (this.S.t) queries.push(this.S.t)
 		let next = this.seasons.find(v => v.number == this.S.n + 1)
 		let eps = [this.S.a, this.S.e].filter(v => _.isFinite(v))
 		let packable = (next && next.episode_count > 0) || (eps.length == 2 && eps[0] == eps[1])
@@ -372,6 +371,20 @@ export class Item {
 		}
 		return _.uniq(queries.map(v => utils.slugify(v)).filter(Boolean))
 	}
+
+	// get matches() {
+	// 	let matches = [] as string[]
+	// 	if (this.E.t) {
+	// 		matches.push(...utils.allSlugs(this.E.t).filter(v => v.includes(' ')))
+	// 	}
+	// 	if (this.isDaily && this.E.a) {
+	// 		matches.push(...utils.allSlugs(this.E.a))
+	// 	}
+	// 	if (!utils.includes(this.S.t, 'season')) {
+	// 		matches.push(...utils.allSlugs(this.S.t))
+	// 	}
+	// 	return _.uniq(matches.filter(Boolean))
+	// }
 
 	// get matches() {
 	// 	if (!this.episode) return []

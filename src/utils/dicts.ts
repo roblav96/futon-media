@@ -23,6 +23,34 @@ export const SKIPS = [
 	'trailer',
 ]
 
+export const STOP_WORDS = [
+	'&',
+	'a',
+	'an',
+	'and',
+	'in',
+	'of',
+	'the',
+	'to',
+	//
+]
+// export const STOPS = [
+// 	'a',
+// 	'an',
+// 	'and',
+// 	'as',
+// 	'but',
+// 	'for',
+// 	'if',
+// 	'in',
+// 	'nor',
+// 	'of',
+// 	'on',
+// 	'or',
+// 	'so',
+// 	//
+// ]
+
 export const VIDEO_EXTENSIONS = [
 	// 'asf',
 	'avi',
@@ -239,31 +267,3 @@ export const EXCLUDES = _.uniq(
 		['TRAILER'],
 	).flat(),
 ).sort()
-
-export const STOP_WORDS = [
-	'&',
-	'a',
-	'an',
-	'and',
-	'in',
-	'of',
-	'the',
-	'to',
-	//
-]
-// export const STOPS = [
-// 	'a',
-// 	'an',
-// 	'and',
-// 	'as',
-// 	'but',
-// 	'for',
-// 	'if',
-// 	'in',
-// 	'nor',
-// 	'of',
-// 	'on',
-// 	'or',
-// 	'so',
-// 	//
-// ]
