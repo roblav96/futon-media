@@ -11,7 +11,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 
-let pFavoriteQueue = new pQueue({ concurrency: 1 })
+let rxFavoriteQueue = new pQueue({ concurrency: 1 })
 process.nextTick(() => {
 	let rxFavorite = emby.rxItemId.pipe(
 		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
@@ -26,7 +26,7 @@ process.nextTick(() => {
 		if (!['Movie', 'Episode'].includes(Item.Type)) return
 		console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 
-		pFavoriteQueue.add(async () => {
+		rxFavoriteQueue.add(async () => {
 			let item = await emby.library.item(Item)
 
 			let gigs = utils.fromBytes(utils.toBytes(`${item.gigs} GB`))
@@ -34,7 +34,7 @@ process.nextTick(() => {
 
 			let isHD = PlaybackInfo ? PlaybackInfo.Quality != 'SD' : false
 			if (process.DEVELOPMENT) isHD = true
-			let torrents = await scraper.scrapeAll(item, isHD)
+			let torrents = await scraper.scrapeAllQueue(item, isHD)
 
 			if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 

@@ -210,9 +210,9 @@ export class Item {
 		})) as trakt.Season[]).filter(v => v.number > 0)
 		this.seasons = _.sortBy(seasons, 'number')
 	}
-	get maxSeason() {
-		return _.last(this.seasons).number
-	}
+	// get maxSeason() {
+	// 	return _.last(this.seasons).number
+	// }
 
 	// episodes: trakt.Episode[]
 	// async setEpisodes() {

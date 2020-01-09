@@ -8,8 +8,11 @@ import * as Json from '@/shims/json'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
+import * as qs from '@/shims/query-string'
 import * as torrent from '@/scrapers/torrent'
+import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
+import pQueue from 'p-queue'
 import safeStringify from 'safe-stable-stringify'
 import { UPLOADERS } from '@/utils/dicts'
 
@@ -41,20 +44,24 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
-		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
-		// (await import('@/scrapers/providers/orion')).Orion,
+		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
+		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
-		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		(await import('@/scrapers/providers/yts')).Yts,
 	]
 })
 
-export async function scrapeAll(item: media.Item, isHD: boolean) {
+let pScrapeAllQueue = new pQueue({ concurrency: 1 })
+export let scrapeAllQueue = function(...args) {
+	return pScrapeAllQueue.add(() => scrapeAll(...args))
+} as typeof scrapeAll
+async function scrapeAll(item: media.Item, isHD: boolean) {
 	let t = Date.now()
 
 	await item.setAll()
@@ -73,30 +80,27 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	// console.log(`item.matches ->`, item.matches)
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-	let torrents = (
+	let results = (
 		await pAll(providers.map(Scraper => () => new Scraper(item).scrape(isHD)))
 	).flat()
 
-	torrents = _.uniqWith(torrents, (from, to) => {
+	results = _.uniqWith(results, (from, to) => {
 		if (to.hash != from.hash) return false
-		let accuracies = utils.accuracies(to.name, from.name)
-		if (accuracies.length > 0) to.name = ` ${utils.trim(`${to.name} ${accuracies.join(' ')}`)} `
+		let accuracies = utils.accuracies(to.slug, from.slug)
+		if (accuracies.length > 0) to.slug = ` ${utils.trim(`${to.slug} ${accuracies.join(' ')}`)} `
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
 		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
-
-	torrents = torrents.filter(v => {
-		if (!(v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)) return
-		if (utils.toBytes(`${item.runtime} MB`) > v.bytes) return
-		if (item.released.valueOf() - utils.duration(1, 'day') > v.stamp) return
-		return true
+	_.remove(results, result => {
+		if (!(result && result.stamp > 0 && result.bytes > 0 && result.seeders >= 0)) return true
+		if (utils.toBytes(`${item.runtime} MB`) > result.bytes) return true
+		if (item.released.valueOf() - utils.duration(1, 'day') > result.stamp) return true
 	})
-
-	if (isHD) torrents.sort((a, b) => b.bytes - a.bytes)
-	else torrents.sort((a, b) => b.seeders - a.seeders)
+	results = _.sortBy(results, isHD ? 'bytes' : 'seeders')
+	let torrents = results.map(v => new torrent.Torrent(v, item))
 
 	if (process.DEVELOPMENT) {
 		console.log(
@@ -125,7 +129,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		try {
 			return filters.torrents(v, item)
 		} catch (error) {
-			console.error(`torrents.filter -> %O`, error)
+			console.error(`torrents.filter '${v.name}' -> %O`, error)
 		}
 		// try {
 		// 	return filters.torrents(v, item)
@@ -160,12 +164,13 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.booster(['bdremux', 'remux'], 1.25)
 		v.booster(['atmos', 'dts', 'true hd', 'truehd'], 1.25)
 		v.booster(['8bit', '8 bit', '10bit', '10 bit'], 0.5)
-		if (utils.equals(v.name, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
-		if (utils.equals(v.name, item.title) && v.providers.length == 1) v.boost *= 0.5
+		if (utils.equals(v.slug, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
+		if (utils.equals(v.slug, item.title) && v.providers.length == 1) v.boost *= 0.5
 	}
 
-	if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
-	else torrents.sort((a, b) => b.boosts.seeders - a.boosts.seeders)
+	torrents = _.sortBy(torrents, isHD ? 'boosts.bytes' : 'boosts.seeders')
+	// if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
+	// else torrents.sort((a, b) => b.boosts.seeders - a.boosts.seeders)
 
 	if (process.DEVELOPMENT) {
 		console.info(
@@ -240,9 +245,37 @@ export class Scraper {
 			)
 		).flat()
 
-		results = _.uniqWith(results, (a, b) => a.magnet == b.magnet).filter(v => {
-			return !!v && filters.results(v, this.item)
+		results = results.filter(result => {
+			if (!result) return
+			if (!result.magnet) return /** console.log(`⛔ !magnet ->`, result.name) */
+
+			result.magnet = utils.clean(result.magnet)
+			let magnet = (qs.parseUrl(result.magnet).query as any) as MagnetQuery
+			if (_.isEmpty(magnet.xt)) return /** console.log(`⛔ !magnet.xt ->`, result.name) */
+			if (magnet.xt.length != 41 && magnet.xt.length != 49) {
+				return /** console.log(`⛔ magnet.xt.length != (41 || 49) ->`, result.name) */
+			}
+
+			result.name = result.name || magnet.dn
+			if (_.isEmpty(result.name)) return /** console.log(`⛔ !result.name ->`, result.name) */
+			result.name = utils.stripForeign(result.name)
+			result.slug = ` ${utils.slugify(result.name)} `
+
+			let skipping = this.item.skips.find(v => ` ${result.slug} `.includes(` ${v} `))
+			if (skipping) return /** console.log(`⛔ skipping '${skipping}' ->`, result.name) */
+
+			magnet.xt = magnet.xt.toLowerCase()
+			magnet.dn = result.name
+			magnet.tr = trackers.TRACKERS
+			result.magnet = `magnet:?${qs.stringify(
+				{ xt: magnet.xt, dn: magnet.dn, tr: magnet.tr },
+				{ encode: false, sort: false },
+			)}`
+			result.hash = magnet.xt.split(':').pop()
+
+			return true
 		})
+		results = _.uniqBy(results, 'hash')
 
 		// let jsons = combos.map(v =>
 		// 	v.map(vv => (vv && vv.startsWith('{') ? Json.parse(vv).value : vv)),
@@ -250,17 +283,19 @@ export class Scraper {
 		// console.info(Date.now() - t, ctor, combos.length, results.length, safeStringify(jsons))
 		console.info(Date.now() - t, ctor, combos.length, results.length)
 
-		return results.map(v => new torrent.Torrent(v, this.item))
+		return results
+		// return results.map(v => new torrent.Torrent(v, this.item))
 	}
 }
 
 export interface Result {
 	bytes: number
-	filename: string
+	hash: string
 	magnet: string
 	name: string
 	providers: string[]
 	seeders: number
+	slug: string
 	stamp: number
 }
 

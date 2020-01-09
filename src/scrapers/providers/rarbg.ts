@@ -7,12 +7,9 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	// if (process.DEVELOPMENT) await db.flush()
-	// client.config.query['token'] = ((await db.get('token')) || '') as string
 })
 
 export const client = scraper.Scraper.http({
-	profile: true,
-	memoize: false,
 	baseUrl: 'https://torrentapi.org',
 	headers: { 'content-type': 'application/json' },
 	query: {

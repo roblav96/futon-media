@@ -47,7 +47,7 @@ async function getDebridStream(Item: emby.Item) {
 	console.warn(`[${Session.short}] getDebridStream ->`, title, PlaybackInfo.json)
 
 	let item = await emby.library.item(Item)
-	let torrents = await scraper.scrapeAll(item, PlaybackInfo.Quality != 'SD')
+	let torrents = await scraper.scrapeAllQueue(item, PlaybackInfo.Quality != 'SD')
 	let cacheds = torrents.filter(v => v.cached.length > 0)
 	console.log(
 		`strm cacheds '${title}' ->`,

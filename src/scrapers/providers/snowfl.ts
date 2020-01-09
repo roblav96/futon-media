@@ -8,7 +8,10 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush())
+process.nextTick(async () => {
+	// if (process.DEVELOPMENT) await db.flush()
+	await getToken()
+})
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
@@ -27,7 +30,6 @@ async function getToken() {
 	await db.put('token', token, utils.duration(1, 'day'))
 	return token
 }
-process.nextTick(() => getToken().catch(error => console.error(`getToken -> %O`, error)))
 
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'SEED']

@@ -7,32 +7,13 @@ import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
-export function results(result: scraper.Result, item: media.Item) {
-	result.magnet = utils.clean(result.magnet)
-	let magnet = (qs.parseUrl(result.magnet).query as any) as scraper.MagnetQuery
-	if (_.isEmpty(magnet.xt)) return // console.log(`⛔ !magnet.xt ->`, result.name)
-	if (magnet.xt.length != 41 && magnet.xt.length != 49) {
-		return // console.log(`⛔ magnet.xt.length != (41 || 49) ->`, result.name)
-	}
-
-	result.name = result.name || magnet.dn
-	if (_.isEmpty(result.name)) return // console.log(`⛔ !result.name ->`, result.name)
-	result.filename = utils.stripForeign(result.name)
-	result.name = utils.slugify(result.filename)
-
-	let skipping = item.skips.find(v => ` ${result.name} `.includes(` ${v} `))
-	if (skipping) return // console.log(`⛔ skipping '${skipping}' ->`, result.name)
-
-	return true
-}
-
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let collision = item.collisions.find(v => torrent.name.includes(` ${v} `))
+	let collision = item.collisions.find(v => torrent.slug.includes(` ${v} `))
 	if (collision) {
 		return console.log(`⛔ collision '${collision}' ->`, torrent.json)
 	}
 
-	if (!item.aliases.find(v => torrent.name.includes(` ${v} `))) {
+	if (!item.aliases.find(v => torrent.slug.includes(` ${v} `))) {
 		return console.log(`⛔ !aliases ->`, torrent.json)
 	}
 
@@ -51,18 +32,18 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 	if (item.show) {
 		if (item.isDaily && item.E.a) {
-			if (utils.allSlugs(item.E.a).find(v => torrent.name.includes(` ${v} `))) {
+			if (utils.allSlugs(item.E.a).find(v => torrent.slug.includes(` ${v} `))) {
 				return true
 			}
 		}
 		if (!utils.includes(item.S.t, 'season')) {
-			if (utils.allSlugs(item.S.t).find(v => torrent.name.includes(` ${v} `))) {
+			if (utils.allSlugs(item.S.t).find(v => torrent.slug.includes(` ${v} `))) {
 				return true
 			}
 		}
 		if (item.E.t) {
 			let epslugs = utils.allSlugs(item.E.t).filter(v => v.includes(' '))
-			if (epslugs.find(v => torrent.name.includes(` ${v} `))) {
+			if (epslugs.find(v => torrent.slug.includes(` ${v} `))) {
 				return true
 			}
 		}
@@ -79,7 +60,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			return console.log(`⛔ show episodes '${torrent.episodes}' ->`, torrent.json)
 		}
 		let stragglers = [`${item.S.n}${item.E.z}`, item.E.z, item.E.n]
-		if (stragglers.find(v => torrent.name.includes(` ${v} `))) {
+		if (stragglers.find(v => torrent.slug.includes(` ${v} `))) {
 			return true
 		}
 		return console.log(`⛔ show return false ->`, torrent.json)
