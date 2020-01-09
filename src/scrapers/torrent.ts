@@ -120,7 +120,7 @@ export class Torrent extends parser.Parser {
 		)
 	}
 
-	constructor(result: scraper.Result, public item: media.Item) {
+	constructor(public result: scraper.Result, public item: media.Item) {
 		super(result.name)
 		_.merge(this, result)
 	}

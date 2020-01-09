@@ -72,7 +72,7 @@ async function getDebridStream(Item: emby.Item) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
 		let error = new Error(
-			`Compatible stream not available for '${title}' with '${Session.DeviceName}', downloading now, try again in 1 hour`,
+			`Compatible stream not available for '${title}' on device '${Session.DeviceName}', downloading now, try again in 1 hour`,
 		)
 		await Session.Message(error)
 		throw error
@@ -103,7 +103,7 @@ fastify.get('/strm', async (request, reply) => {
 			try {
 				stream = await getDebridStream(Item)
 			} catch (error) {
-				console.error(`/strm '${title}' -> %O`, error)
+				console.error(`/strm '${title}' -> %O`, error.message)
 				stream = 'error'
 			}
 			await db.put(Item.Id, stream, utils.duration(1, 'minute'))

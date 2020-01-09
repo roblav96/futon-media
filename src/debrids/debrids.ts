@@ -6,17 +6,15 @@ import * as filters from '@/scrapers/filters'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
-import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
-// import { Offcloud } from '@/debrids/offcloud'
+import { Torrent } from '@/scrapers/torrent'
 
 export const debrids = {
 	premiumize: Premiumize,
 	realdebrid: RealDebrid,
-	// offcloud: Offcloud,
 }
 
 export async function cached(hashes: string[]) {
@@ -28,7 +26,7 @@ export async function cached(hashes: string[]) {
 }
 
 let pDownloadQueue = new pQueue({ concurrency: 1 })
-export async function download(torrents: torrent.Torrent[], item: media.Item) {
+export async function download(torrents: Torrent[], item: media.Item) {
 	if (!(await RealDebrid.hasActiveCount())) {
 		return console.warn(`download RealDebrid.hasActiveCount == false`)
 	}
@@ -67,7 +65,7 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 }
 
 export async function getStream(
-	torrents: torrent.Torrent[],
+	torrents: Torrent[],
 	item: media.Item,
 	AudioChannels: number,
 	AudioCodecs: string[],
@@ -101,7 +99,10 @@ export async function getStream(
 			}
 
 			let file = files.find(v =>
-				filters.torrents({ name: utils.slugify(v.name) } as any, item),
+				filters.torrents(
+					new Torrent(Object.assign({}, torrent.result, { name: v.path }), item),
+					item,
+				),
 			)
 			if (!file) {
 				console.warn(`!file ->`, torrent.short(), files)
