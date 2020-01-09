@@ -18,8 +18,8 @@ export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
 			combos.map(([query, type], i) => async () => {
-				if (i > 0) await utils.pRandom(300)
 				return (await client.get(`/search/${type}`, {
+					delay: i > 0 && 300,
 					query: { q: query, limit: 50 },
 					memoize: true,
 					silent: true,

@@ -11,6 +11,7 @@ process.nextTick(async () => {
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://torrentapi.org',
+	delay: 500,
 	headers: { 'content-type': 'application/json' },
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
@@ -23,6 +24,7 @@ export const client = scraper.Scraper.http({
 		append: [
 			async options => {
 				if (options.query['get_token']) {
+					_.unset(options, 'memoize')
 					options.query = _.pick(options.query, ['app_id', 'get_token'])
 					return
 				}
@@ -33,7 +35,6 @@ export const client = scraper.Scraper.http({
 					})
 					options.query['token'] = token
 					await db.put('token', token, utils.duration(10, 'minute'))
-					await utils.pTimeout(500)
 				}
 			},
 		],
@@ -55,7 +56,6 @@ export class Rarbg extends scraper.Scraper {
 	}
 
 	async getResults(slug: string, sort: string) {
-		await utils.pRandom(300)
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(slug)),
 		})) as Response

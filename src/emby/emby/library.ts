@@ -274,8 +274,8 @@ export const library = {
 		}
 		if (item.show) {
 			Updates.push(await library.toStrmFile(new media.Item({ show: item.result.show })))
-			await utils.pRandom(300)
 			let seasons = (await trakt.client.get(`/shows/${item.id}/seasons`, {
+				delay: 300,
 				memoize: true,
 				silent: true,
 			})) as trakt.Season[]
@@ -307,7 +307,6 @@ export const library = {
 		return library.pSetTagsQueue.add(() => library.setTags(item, ItemId))
 	},
 	async setTags(item: media.Item, ItemId: string) {
-		await utils.pRandom(300)
 		let tags = utils.sortKeys({
 			...(await omdb.toTags(item)),
 			'⭕ Trakt Rating': _.round(item.main.rating, 1).toFixed(1),

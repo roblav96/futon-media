@@ -1,11 +1,11 @@
 import * as _ from 'lodash'
 import * as mem from 'mem'
 
-const CACHE_KEY = '__memoize__'
+const MEMOIZE_KEY = '__memoize__'
 
 function getter(desc: PropertyDescriptor, prop: string, name: string) {
 	let get = desc.get
-	let dot = `${CACHE_KEY}${prop}${name}`
+	let dot = `${MEMOIZE_KEY}${prop}${name}`
 	Object.assign(desc, {
 		get() {
 			if (!this[dot]) Object.defineProperty(this, dot, { value: mem(get) })
@@ -31,6 +31,6 @@ export function Desc(prototype: any, prop: string, desc: PropertyDescriptor) {
 export function clear(prototype: any) {
 	let descs = Object.getOwnPropertyDescriptors(prototype)
 	Object.entries(descs).forEach(([prop, desc]) => {
-		if (prop.startsWith(CACHE_KEY)) mem.clear(desc.value)
+		if (prop.startsWith(MEMOIZE_KEY)) mem.clear(desc.value)
 	})
 }

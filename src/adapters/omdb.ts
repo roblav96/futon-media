@@ -27,6 +27,7 @@ export const client = new Http({
 export async function toTags(item: media.Item) {
 	if (!item.ids.imdb) return {} as never
 	let result = (await client.get('/', {
+		delay: 300,
 		query: { i: item.ids.imdb },
 		memoize: true,
 		silent: true,

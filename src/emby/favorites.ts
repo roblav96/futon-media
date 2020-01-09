@@ -15,7 +15,10 @@ let rxFavoriteQueue = new pQueue({ concurrency: 1 })
 process.nextTick(() => {
 	let rxFavorite = emby.rxItemId.pipe(
 		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
-		Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
+		Rx.op.distinctUntilChanged((a, b) => {
+			if (process.DEVELOPMENT) return false
+			return `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`
+		}),
 	)
 	rxFavorite.subscribe(async ({ ItemId, UserId, useragent }) => {
 		let [Item, Session, PlaybackInfo] = await Promise.all([

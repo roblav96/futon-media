@@ -97,8 +97,8 @@ export class Putio extends debrid.Debrid<Transfer> {
 	static async cached(magnets: string[]) {
 		return (await pAll(
 			magnets.map(magnet => async () => {
-				await utils.pRandom(300)
 				let { transfer } = (await client.post('/transfers/add', {
+					delay: 300,
 					form: { url: magnet },
 					silent: true,
 				})) as Response
@@ -114,7 +114,7 @@ export class Putio extends debrid.Debrid<Transfer> {
 				)
 				let status = await Promise.race([
 					rxStatus.toPromise(),
-					utils.pTimeout(utils.duration(5, 'second')),
+					utils.pTimeout(5000),
 				])
 				if (status) {
 					client.post('/transfers/remove', { form: { transfer_ids: transfer.id } })

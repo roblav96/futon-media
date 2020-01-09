@@ -110,6 +110,7 @@ function debloat(value) {
 export async function aliases(type: media.MainContentType, id: string) {
 	try {
 		let titles = (await client.get(`/${type}s/${id}/aliases`, {
+			delay: 300,
 			memoize: true,
 			silent: true,
 		})) as Alias[]
@@ -123,8 +124,8 @@ export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
 			queries.map((query, i) => async () => {
-				if (i > 0) await utils.pRandom(300)
 				return (await client.get(`/search/movie,show`, {
+					delay: i > 0 && 300,
 					query: { query, fields: 'title,overview,translations,aliases', limit: 100 },
 					memoize: true,
 					silent: true,
@@ -159,8 +160,8 @@ export async function resultsForPerson(person: Person) {
 	if (!person) return []
 	let results = [] as Result[]
 	for (let type of media.MAIN_TYPESS) {
-		await utils.pRandom(300)
 		let credits = (await client.get(`/people/${person.ids.slug}/${type}`, {
+			delay: 300,
 			timeout: 30000,
 			query: { limit: 100 },
 			memoize: true,

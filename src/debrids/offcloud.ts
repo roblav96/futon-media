@@ -20,9 +20,9 @@ export class Offcloud extends debrid.Debrid<Transfer> {
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
-				await utils.pRandom(300)
 				let { cachedItems } = (await client
 					.post(`/torrent/check`, {
+						delay: 300,
 						body: { hashes: chunk },
 						memoize: process.DEVELOPMENT,
 						silent: true,

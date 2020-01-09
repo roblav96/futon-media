@@ -36,10 +36,9 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		let cached = hashes.map(v => false)
 		await pAll(
 			chunks.map(chunk => async () => {
-				await utils.pRandom(300)
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client
-					.get(url, { memoize: process.DEVELOPMENT })
+					.get(url, { delay: 300, memoize: process.DEVELOPMENT })
 					.catch(error => {
 						console.error(`RealDebrid cache -> %O`, error)
 						return {}

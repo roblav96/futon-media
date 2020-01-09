@@ -99,7 +99,9 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (utils.toBytes(`${item.runtime} MB`) > result.bytes) return true
 		if (item.released.valueOf() - utils.duration(1, 'day') > result.stamp) return true
 	})
-	results = _.sortBy(results, isHD ? 'bytes' : 'seeders')
+	if (isHD) results.sort((a, b) => b.bytes - a.bytes)
+	else results.sort((a, b) => b.seeders - a.seeders)
+
 	let torrents = results.map(v => new torrent.Torrent(v, item))
 
 	if (process.DEVELOPMENT) {
@@ -194,6 +196,7 @@ export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
 			// debug: process.DEVELOPMENT,
+			delay: 300,
 			memoize: true,
 			// profile: process.DEVELOPMENT,
 			retries: [],
@@ -233,7 +236,6 @@ export class Scraper {
 		let results = (
 			await pAll(
 				combos.map(([slug, sort], index) => async () => {
-					if (index > 0) await utils.pRandom(300)
 					return (
 						await this.getResults(slug, sort).catch(error => {
 							console.error(`${ctor} getResults -> %O`, error)

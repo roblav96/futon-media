@@ -24,6 +24,7 @@ export interface Config extends http.RequestOptions {
 	cloudflare?: string
 	cookies?: boolean
 	debug?: boolean
+	delay?: number
 	form?: any
 	memoize?: boolean | number
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'HEAD' | 'DELETE'
@@ -203,6 +204,7 @@ export class Http {
 		}
 		if (!response) {
 			try {
+				if (_.isFinite(options.delay)) await utils.pRandom(options.delay)
 				response = await send(options.method, options.url, options)
 				// let res = await popsicle.fetch(options.url, {
 				// 	body: options.body,
@@ -242,6 +244,13 @@ export class Http {
 				return Promise.reject(error)
 			}
 
+			if (options.cookies && !_.isEmpty(response.headers['set-cookie'])) {
+				for (let cookie of response.headers['set-cookie']) {
+					this.jar.setCookieSync(cookie, this.config.baseUrl)
+				}
+				await db.put(`jar:${this.config.baseUrl}`, this.jar.toJSON())
+			}
+
 			if (!!options.memoize) {
 				await db.put(
 					mkey,
@@ -249,13 +258,6 @@ export class Http {
 					_.isNumber(options.memoize) ? options.memoize : utils.duration(1, 'hour'),
 				)
 			}
-		}
-
-		if (options.cookies && this.config.baseUrl && !_.isEmpty(response.headers['set-cookie'])) {
-			for (let cookie of response.headers['set-cookie']) {
-				this.jar.setCookieSync(cookie, this.config.baseUrl)
-			}
-			await db.put(`jar:${this.config.baseUrl}`, this.jar.toJSON())
 		}
 
 		if (options.profile) {

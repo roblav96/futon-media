@@ -47,7 +47,7 @@ export async function aliases(type: media.MainContentType, tmdbid: number) {
 	try {
 		let { titles } = (await client.get(
 			`/${type == 'show' ? 'tv' : type}/${tmdbid}/alternative_titles`,
-			{ memoize: true, silent: true },
+			{ delay: 300, memoize: true, silent: true },
 		)) as AlternativeTitles
 		return titles.filter(v => ['GB', 'NL', 'US'].includes(v.iso_3166_1)).map(v => v.title)
 	} catch {
@@ -57,6 +57,7 @@ export async function aliases(type: media.MainContentType, tmdbid: number) {
 
 export async function toTrakt({ id, media_type }: Full) {
 	let results = (await trakt.client.get(`/search/tmdb/${id}`, {
+		delay: 300,
 		query: { type: toType(media_type) },
 		memoize: true,
 		silent: !process.DEVELOPMENT,

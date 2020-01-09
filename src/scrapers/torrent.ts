@@ -79,11 +79,10 @@ export class Torrent extends parser.Parser {
 	}
 
 	get short() {
-		console.warn(`called get short ->`, this.slug)
 		let flags = { R: 'R🔵', P: 'P🔴' }
 		// let boost = `[${this.boost.toFixed(2)}${this.packs > 0 ? ` x ${this.packs}` : ''}]`
-		let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
-		return `${boost} [${this.size} x ${this.seeders}] ${
+		// let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
+		return `[${this.boost.toFixed(2)} x ${this.packs}] [${this.size} x ${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''
 		}${this.slug.trim()} [${this.age}] [${this.providers.length} x ${this.providers}]`
 	}
