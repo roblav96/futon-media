@@ -40,6 +40,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		if (!item.collection.name && !item.years.find(v => torrent.years.includes(v))) {
 			return console.log(`⛔ movie !years '${torrent.years}' ->`, torrent.short)
 		}
+
 		return true
 	}
 

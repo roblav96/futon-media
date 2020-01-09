@@ -29,7 +29,9 @@ export class Torrent {
 		let parseds = [filenameParse(this.filename, true), filenameParse(this.filename)]
 		if (this.item.movie) parseds.reverse()
 		let parsed = _.defaultsDeep(parseds[0], parseds[1]) as ParsedFilename
-		if (!parsed.episodeNumbers.includes(this.item.episode.number)) {
+		if (this.item.episode) {
+			parsed.episodeNumbers = parsed.episodeNumbers.filter(v => v == this.item.episode.number)
+		} else if (parsed.episodeNumbers.length > 5) {
 			parsed.episodeNumbers = []
 		}
 		return parsed
@@ -76,27 +78,17 @@ export class Torrent {
 
 	private matches(regexes: RegExp[], groups: string[]) {
 		let matches = regexes.map(v => Array.from(this.name.matchAll(v))).flat()
-		return groups.map(group =>
-			_.sortBy(
-				_.uniq(matches.map(v => _.parseInt(_.get(v, `groups.${group}`))).filter(Boolean)),
-			),
-		)
+		return groups.map(group => {
+			let ints = matches.map(v => _.parseInt(_.get(v, `groups.${group}`)))
+			return _.sortBy(_.uniq(ints.filter(v => _.inRange(v, 1, 100))))
+		})
 	}
 	get s00e00() {
 		let [season, episode] = this.matches(
 			[
-				/ s(?<season>\d{1,2})e(?<episode>\d{1,2}) /gi,
-				/ s(?<season>\d{1,2}) e(?<episode>\d{1,2}) /gi,
-				/ s (?<season>\d{1,2}) e (?<episode>\d{1,2}) /gi,
-				/ se(?<season>\d{1,2})ep(?<episode>\d{1,2}) /gi,
-				/ se(?<season>\d{1,2}) ep(?<episode>\d{1,2}) /gi,
-				/ se (?<season>\d{1,2}) ep (?<episode>\d{1,2}) /gi,
-				/ season(?<season>\d{1,2})episode(?<episode>\d{1,2}) /gi,
-				/ season(?<season>\d{1,2}) episode(?<episode>\d{1,2}) /gi,
-				/ season (?<season>\d{1,2}) episode (?<episode>\d{1,2}) /gi,
-				/ (?<season>\d{1,2})x(?<episode>\d{1,2}) /gi,
-				/ (?<season>\d{1,2}) x (?<episode>\d{1,2}) /gi,
-				/ series (?<season>\d{1,2}) (?<episode>\d{1,2})of/gi,
+				/\b(s|se|season)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
+				/\b(?<season>\d{1,2})\s?x\s?(?<episode>\d{1,2})\b/gi,
+				/\b(s|se|season|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 			],
 			['season', 'episode'],
 		)
@@ -105,11 +97,8 @@ export class Torrent {
 	get e00() {
 		let [episode] = this.matches(
 			[
-				/ (?<episode>\d{1,2})of/gi,
-				/ (?<episode>\d{1,2}) of/gi,
-				/ ch(?<episode>\d{1,2})/gi,
-				/ ch (?<episode>\d{1,2})/gi,
-				/ chapter (?<episode>\d{1,2})/gi,
+				/\b(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
+				/\b(?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 			],
 			['episode'],
 		)
@@ -118,10 +107,12 @@ export class Torrent {
 
 	get seasons() {
 		let seasons = [...this.parsed.seasons, ...this.s00e00.season]
-
 		{
 			// 3rd season
-			let [ints] = this.matches([/\b(?<season>\d{1,2})[a-z]{2} s(e(ason)?)?\b/gi], ['season'])
+			let [ints] = this.matches(
+				[/\b(?<season>\d{1,2})[a-z]{2} (s|se|season)\b/gi],
+				['season'],
+			)
 			seasons.push(...ints)
 		}
 		{
@@ -134,24 +125,21 @@ export class Torrent {
 			let numbers = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 			let matches = Array.from(
 				this.name.matchAll(
-					new RegExp(`\\bs(e(ason)?)? (?<season>${numbers.join('|')})\\b`, 'gi'),
+					new RegExp(`\\b(s|se|season) (?<season>${numbers.join('|')})\\b`, 'gi'),
 				),
 			)
 			let indexes = matches.map(v => numbers.indexOf(_.get(v, 'groups.season')) + 1)
 			seasons.push(...indexes.filter(v => v > 0))
 		}
 		{
+			// season 3 to 6
 			let name = utils.excludes(this.name, ['and', 'through', 'to'])
-			console.log('name ->', name)
 			let matches = Array.from(name.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2}\b)+/gi))
-			// let matches = Array.from(name.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2} )+/gi))
 			let ints = matches.map(v => v[0].split(' ').map(vv => utils.parseInt(vv))).flat()
-			ints = ints.filter(v => _.inRange(v, 1, this.item.maxSeason + 1))
-			console.log('ints ->', ints)
+			ints = ints.filter(v => _.inRange(v, 1, 100))
 			let [min, max] = [_.min(ints), _.max(ints)]
 			seasons.push(..._.range(min, max + 1))
 		}
-
 		return _.sortBy(_.uniq(seasons))
 	}
 	get episodes() {
