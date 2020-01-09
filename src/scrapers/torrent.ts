@@ -27,7 +27,13 @@ export class Torrent extends parser.Parser {
 
 	get packs() {
 		if (this.item.show) {
-			return !_.isEmpty(this.seasons) && _.isEmpty(this.episodes) ? this.seasons.length : 0
+			if (!_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
+				return this.seasons.length
+			}
+			if (_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
+				return _.last(this.item.seasons).number
+			}
+			return 0
 		}
 		if (this.slug.includes(' duology ')) return 2
 		if (this.slug.includes(' dilogy ')) return 2
@@ -78,7 +84,7 @@ export class Torrent extends parser.Parser {
 		if (words.find(v => this.slug.includes(` ${v} `))) this.boost *= boost
 	}
 
-	get short() {
+	short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
 		// let boost = `[${this.boost.toFixed(2)}${this.packs > 0 ? ` x ${this.packs}` : ''}]`
 		// let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
@@ -86,17 +92,17 @@ export class Torrent extends parser.Parser {
 			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''
 		}${this.slug.trim()} [${this.age}] [${this.providers.length} x ${this.providers}]`
 	}
-	get json() {
+	json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
 		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return utils.compact(
-			_.merge({}, super.json, {
+			_.merge({}, super.json(), {
 				age: this.age,
 				boost: _.round(this.boost, 2),
-				cached: this.cached.join(', '),
+				cached: `${this.cached}`,
 				// magnet: `magnet:?${minify}`, // this.magnet,
 				packs: this.packs,
-				providers: this.providers.join(', '),
+				providers: `${this.providers}`,
 				seeders: this.seeders,
 				size: this.size,
 			}),
@@ -104,7 +110,7 @@ export class Torrent extends parser.Parser {
 	}
 
 	constructor(result: scraper.Result, public item: media.Item) {
-		super(result.name, result.slug)
+		super(result.name)
 		_.merge(this, result)
 	}
 }

@@ -43,7 +43,7 @@ process.nextTick(() => {
 
 			console.log(
 				`rxFavorite torrents '${item.strm}' ->`,
-				torrents.map(v => v.short),
+				torrents.map(v => v.short()),
 				torrents.length,
 			)
 

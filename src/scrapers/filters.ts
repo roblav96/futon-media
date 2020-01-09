@@ -2,68 +2,165 @@ import * as _ from 'lodash'
 import * as dicts from '@/utils/dicts'
 import * as execa from 'execa'
 import * as media from '@/media/media'
+import * as parser from '@/scrapers/parser'
 import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
-import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
-export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let collision = item.collisions.find(v => torrent.slug.includes(` ${v} `))
-	if (collision) {
-		return console.log(`⛔ collision '${collision}' ->`, torrent.json)
+export function torrents(parsed: parser.Parser, item: media.Item) {
+	let skipping = item.skips.find(v => ` ${parsed.slug} `.includes(` ${v} `))
+	if (skipping) {
+		console.log(`⛔ skipping '${skipping}' ->`, parsed.slug, parsed.json())
+		return false
 	}
 
-	if (!item.aliases.find(v => torrent.slug.includes(` ${v} `))) {
-		return console.log(`⛔ !aliases ->`, torrent.json)
+	let collision = item.collisions.find(v => parsed.slug.includes(` ${v} `))
+	if (collision) {
+		console.log(`⛔ collision '${collision}' ->`, parsed.slug, parsed.json())
+		return false
+	}
+
+	if (!item.aliases.find(v => parsed.slug.includes(` ${v} `))) {
+		console.log(`⛔ !aliases ->`, parsed.slug, parsed.json())
+		return false
 	}
 
 	if (item.movie) {
-		if (!item.collection.name && !item.years.find(v => torrent.years.includes(v))) {
-			return console.log(`⛔ movie !years '${torrent.years}' ->`, torrent.json)
+		if (!item.collection.name && !item.years.find(v => parsed.years.includes(v))) {
+			console.log(`⛔ movie !years '${parsed.years}' ->`, parsed.slug, parsed.json())
+			return false
 		}
-		if (!_.isEmpty(torrent.seasons)) {
-			return console.log(`⛔ movie seasons '${torrent.seasons}' ->`, torrent.json)
+		if (!_.isEmpty(parsed.seasons)) {
+			console.log(`⛔ movie seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+			return false
 		}
-		if (!_.isEmpty(torrent.episodes)) {
-			return console.log(`⛔ movie episodes '${torrent.episodes}' ->`, torrent.json)
+		if (!_.isEmpty(parsed.episodes)) {
+			console.log(`⛔ movie episodes '${parsed.episodes}' ->`, parsed.slug, parsed.json())
+			return false
 		}
+		console.info(`✅ movie return true ->`, parsed.slug, parsed.json())
 		return true
 	}
 
 	if (item.show) {
 		if (item.isDaily && item.E.a) {
-			if (utils.allSlugs(item.E.a).find(v => torrent.slug.includes(` ${v} `))) {
+			let aired = utils.allSlugs(item.E.a).find(v => parsed.slug.includes(` ${v} `))
+			if (aired) {
+				console.info(`✅ show aired '${aired}' ->`, parsed.slug, parsed.json())
 				return true
 			}
 		}
 		if (!utils.includes(item.S.t, 'season')) {
-			if (utils.allSlugs(item.S.t).find(v => torrent.slug.includes(` ${v} `))) {
+			let title = utils.allSlugs(item.S.t).find(v => parsed.slug.includes(` ${v} `))
+			if (title) {
+				console.info(`✅ show season title '${title}' ->`, parsed.slug, parsed.json())
 				return true
 			}
 		}
 		if (item.E.t) {
-			let epslugs = utils.allSlugs(item.E.t).filter(v => v.includes(' '))
-			if (epslugs.find(v => torrent.slug.includes(` ${v} `))) {
+			let slugs = utils.allSlugs(item.E.t).filter(v => v.includes(' '))
+			let title = slugs.find(v => parsed.slug.includes(` ${v} `))
+			if (title) {
+				console.info(`✅ show episode title '${title}' ->`, parsed.slug, parsed.json())
 				return true
 			}
 		}
 
 		if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) {
+			console.info(`✅ show seasons.length == 1 ->`, parsed.slug, parsed.json())
 			return true
 		}
-		if (torrent.seasons.length > 0) {
-			if (torrent.seasons.includes(item.S.n)) return true
-			return console.log(`⛔ show seasons '${torrent.seasons}' ->`, torrent.json)
+
+		if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+			if (parsed.seasons.includes(item.S.n) && parsed.episodes.includes(item.E.n)) {
+				console.info(
+					`✅ show seasons '${parsed.seasons}' episodes '${parsed.episodes}' ->`,
+					parsed.slug,
+					parsed.json(),
+				)
+				return true
+			}
+			// console.log(
+			// 	`⛔ show seasons '${parsed.seasons}' episodes '${parsed.episodes}' ->`,
+			// 	parsed.slug,
+			// 	parsed.json(),
+			// )
+			// return false
 		}
-		if (torrent.episodes.length > 0) {
-			if (torrent.episodes.includes(item.E.n)) return true
-			return console.log(`⛔ show episodes '${torrent.episodes}' ->`, torrent.json)
+		if (!_.isEmpty(parsed.seasons) && _.isEmpty(parsed.episodes)) {
+			if (parsed.seasons.includes(item.S.n)) {
+				console.info(`✅ show seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+				return true
+			}
+			// console.log(`⛔ show seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+			// return false
 		}
-		let stragglers = [`${item.S.n}${item.E.z}`, item.E.z, item.E.n]
-		if (stragglers.find(v => torrent.slug.includes(` ${v} `))) {
-			return true
+
+		if (parsed.parsed.seasons.includes(item.S.n) && parsed.parsed.episodes.includes(item.E.n)) {
+			console.warn(
+				`✋ show parsed seasons '${parsed.parsed.seasons}' parsed episodes '${parsed.parsed.episodes}' ->`,
+				parsed.slug,
+				parsed.json(),
+			)
+			return false
 		}
-		return console.log(`⛔ show return false ->`, torrent.json)
+		if (parsed.parsed.seasons.includes(item.S.n) && _.isEmpty(parsed.parsed.episodes)) {
+			console.warn(
+				`✋ show parsed seasons '${parsed.parsed.seasons}' ->`,
+				parsed.slug,
+				parsed.json(),
+			)
+			return false
+		}
+
+		if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+			console.log(
+				`⛔ show seasons '${parsed.seasons}' episodes '${parsed.episodes}' ->`,
+				parsed.slug,
+				parsed.json(),
+			)
+			return false
+		}
+		if (!_.isEmpty(parsed.seasons) && _.isEmpty(parsed.episodes)) {
+			console.log(`⛔ show seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+			return false
+		}
+
+		// if (parsed.seasons.includes(item.S.n)) {
+		// 	if (!parsed.episodes.includes(item.E.n)) {
+		// 		console.log(`⛔ show episodes '${parsed.episodes}' ->`, parsed.slug, parsed.json())
+		// 		return false
+		// 	}
+		// 	console.info(`✅ show seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+		// 	return true
+		// }
+
+		// if (parsed.episodes.length > 0) {
+		// 	if (parsed.episodes.includes(item.E.n)) {
+		// 		console.info(`✅ show episodes '${parsed.episodes}' ->`, parsed.slug, parsed.json())
+		// 		return true
+		// 	}
+		// 	console.log(`⛔ show episodes '${parsed.episodes}' ->`, parsed.slug, parsed.json())
+		// 	return false
+		// }
+		// if (parsed.seasons.length > 0) {
+		// 	if (parsed.seasons.includes(item.S.n)) {
+		// 		console.info(`✅ show seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+		// 		return true
+		// 	}
+		// 	console.log(`⛔ show seasons '${parsed.seasons}' ->`, parsed.slug, parsed.json())
+		// 	return false
+		// }
+
+		// let stragglers = [`${item.S.n}${item.E.z}`, item.E.z, item.E.n]
+		// let straggler = stragglers.find(v => parsed.slug.includes(` ${v} `))
+		// if (straggler) {
+		// 	console.warn(`straggler '${straggler}' ->`, parsed.slug, parsed.json())
+		// 	return true
+		// }
+
+		console.log(`⛔ show return false ->`, parsed.slug, parsed.json())
+		return false
 	}
 
 	// if (item.movie && torrent.packs) return true

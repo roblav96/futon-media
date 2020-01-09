@@ -7,17 +7,17 @@ import { filenameParse, ParsedFilename } from '@ctrl/video-filename-parser'
 export class Parser {
 	get parsed() {
 		let parsed = _.defaultsDeep(
-			filenameParse(this.name, true),
-			filenameParse(this.name),
+			utils.compact(filenameParse(this.slug, true)),
+			utils.compact(filenameParse(this.slug)),
 		) as ParsedFilename
 		return {
 			episodes: parsed.episodeNumbers.length > 5 ? [] : parsed.episodeNumbers,
 			seasons: parsed.seasons,
-			year: _.parseInt(parsed.year),
+			years: parsed.year ? [_.parseInt(parsed.year)] : [],
 		}
 	}
 	get years() {
-		let years = [this.parsed.year, ...this.slug.split(' ').map(v => _.parseInt(v))]
+		let years = [/** ...this.parsed.years, */ ...this.slug.split(' ').map(v => _.parseInt(v))]
 		return _.sortBy(_.uniq(years.filter(v => _.inRange(v, 1921, new Date().getFullYear() + 1))))
 	}
 
@@ -34,7 +34,7 @@ export class Parser {
 				/\b(s|se|season)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
 				/\b(s|se|season|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 				/\b(?<season>\d{1,2})\s?x\s?(?<episode>\d{1,2})\b/gi,
-				/\b(?<season>\d{1})\s?(?<episode>\d{2})\b/gi,
+				/\b(?<season>\d{1})(?<episode>\d{2})\b/gi,
 			],
 			['season', 'episode'],
 		)
@@ -52,19 +52,19 @@ export class Parser {
 	}
 
 	get seasons() {
-		let seasons = [...this.parsed.seasons, ...this.s00e00.season]
+		let seasons = [/** ...this.parsed.seasons, */ ...this.s00e00.season]
 		{
 			// 3rd season
-			let [ints] = this.matches(
+			let [season] = this.matches(
 				[/\b(?<season>\d{1,2})[a-z]{2} (s|se|season)\b/gi],
 				['season'],
 			)
-			seasons.push(...ints)
+			seasons.push(...season)
 		}
 		{
 			// 3 seasons
-			let [ints] = this.matches([/\b(?<season>\d{1,2}) seasons\b/gi], ['season'])
-			seasons.push(...ints.map(v => _.range(1, v + 1)).flat())
+			let [season] = this.matches([/\b(?<season>\d{1,2}) seasons\b/gi], ['season'])
+			seasons.push(...season.map(v => _.range(1, v + 1)).flat())
 		}
 		{
 			// season three
@@ -89,22 +89,25 @@ export class Parser {
 		return _.sortBy(_.uniq(seasons))
 	}
 	get episodes() {
-		let episodes = [...this.parsed.episodes, ...this.s00e00.episode, ...this.e00]
+		let episodes = [/** ...this.parsed.episodes, */ ...this.s00e00.episode, ...this.e00]
 		return _.sortBy(_.uniq(episodes))
 	}
 
-	get json() {
+	json() {
 		return utils.compact({
-			episodes: this.episodes,
-			name: this.name,
-			parsed: utils.compact(this.parsed),
-			seasons: this.seasons,
-			slug: this.slug.trim(),
-			years: this.years,
+			episodes: `${this.episodes}`,
+			// name: this.name,
+			parsed: utils.compact(_.mapValues(this.parsed, v => `${v}`)),
+			seasons: `${this.seasons}`,
+			// slug: this.slug.trim(),
+			years: `${this.years}`,
 		})
 	}
 
-	constructor(public name: string, public slug: string) {}
+	get slug() {
+		return ` ${utils.slugify(this.name)} `
+	}
+	constructor(public name: string) {}
 }
 
 if (process.DEVELOPMENT) {

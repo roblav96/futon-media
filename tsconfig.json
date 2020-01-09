@@ -6,6 +6,7 @@
 		"lib": ["esnext"],
 		"module": "commonjs",
 		"noEmitHelpers": true,
+		"noImplicitThis": true,
 		"outDir": "dist",
 		"paths": { "@/*": ["src/*"] },
 		"preserveWatchOutput": true,

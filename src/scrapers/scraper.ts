@@ -86,8 +86,9 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 
 	results = _.uniqWith(results, (from, to) => {
 		if (to.hash != from.hash) return false
-		let accuracies = utils.accuracies(to.slug, from.slug)
-		if (accuracies.length > 0) to.slug = ` ${utils.trim(`${to.slug} ${accuracies.join(' ')}`)} `
+		let accuracies = utils.accuracies(to.name, from.name)
+		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
+		// if (accuracies.length > 0) to.slug = ` ${utils.trim(`${to.slug} ${accuracies.join(' ')}`)} `
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
@@ -108,8 +109,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.log(
 			Date.now() - t,
 			`scrapeAll results ->`,
-			torrents.map(v => v.short),
-			// torrents.map(v => v.json),
+			torrents.map(v => v.short()),
+			// torrents.map(v => v.json()),
 			torrents.length,
 		)
 	}
@@ -117,7 +118,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
 	// // torrents.forEach((v, i) => (v.cached = cachedz[i] || []))
-	// console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short))
+	// console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short()))
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	// let parsed = execa.sync('/usr/local/bin/guessit', ['-j', ...torrents.map(v => v.filename)])
@@ -170,16 +171,15 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (utils.equals(v.slug, item.title) && v.providers.length == 1) v.boost *= 0.5
 	}
 
-	torrents = _.sortBy(torrents, isHD ? 'boosts.bytes' : 'boosts.seeders')
-	// if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
-	// else torrents.sort((a, b) => b.boosts.seeders - a.boosts.seeders)
+	if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
+	else torrents.sort((a, b) => b.boosts.seeders - a.boosts.seeders)
 
 	if (process.DEVELOPMENT) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
-			torrents.map(v => v.short),
-			// torrents.map(v => v.json),
+			torrents.map(v => v.short()),
+			// torrents.map(v => v.json()),
 			torrents.length,
 		)
 	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
@@ -261,10 +261,6 @@ export class Scraper {
 			result.name = result.name || magnet.dn
 			if (_.isEmpty(result.name)) return /** console.log(`⛔ !result.name ->`, result.name) */
 			result.name = utils.stripForeign(result.name)
-			result.slug = ` ${utils.slugify(result.name)} `
-
-			let skipping = this.item.skips.find(v => ` ${result.slug} `.includes(` ${v} `))
-			if (skipping) return /** console.log(`⛔ skipping '${skipping}' ->`, result.name) */
 
 			magnet.xt = magnet.xt.toLowerCase()
 			magnet.dn = result.name
@@ -297,7 +293,6 @@ export interface Result {
 	name: string
 	providers: string[]
 	seeders: number
-	slug: string
 	stamp: number
 }
 

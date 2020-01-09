@@ -51,7 +51,7 @@ async function getDebridStream(Item: emby.Item) {
 	let cacheds = torrents.filter(v => v.cached.length > 0)
 	console.log(
 		`strm cacheds '${title}' ->`,
-		cacheds.map(v => v.short),
+		cacheds.map(v => v.short()),
 		cacheds.length,
 	)
 

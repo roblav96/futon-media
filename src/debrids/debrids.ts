@@ -35,13 +35,13 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
-		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short)
+		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short())
 		if (v.boosts.bytes < utils.toBytes(`${item.gigs} GB`)) return false
 		return v.seeders * v.providers.length >= 3
 	})
 	console.log(
 		`download torrents '${item.strm}' ->`,
-		torrents.map(v => v.json),
+		torrents.map(v => v.json()),
 		torrents.length,
 	)
 
@@ -51,13 +51,13 @@ export async function download(torrents: torrent.Torrent[], item: media.Item) {
 
 	return pDownloadQueue.add(async () => {
 		for (let torrent of torrents) {
-			console.log(`download torrent ->`, torrent.short)
+			console.log(`download torrent ->`, torrent.short())
 			let success = torrent.cached.length > 0
 			try {
 				if (!success) success = await RealDebrid.download(torrent.magnet)
-				if (success) return console.log(`👍 download torrent success ->`, torrent.short)
+				if (success) return console.log(`👍 download torrent success ->`, torrent.short())
 			} catch (error) {
-				console.error(`download RealDebrid '${torrent.short}' -> %O`, error.message)
+				console.error(`download RealDebrid '${torrent.short()}' -> %O`, error.message)
 				if (!torrent.cached.includes('premiumize')) {
 					// await Premiumize.download(torrent.magnet)
 				}
@@ -78,14 +78,14 @@ export async function getStream(
 		for (let cached of torrent.cached) {
 			if (next) continue
 			if (cached == 'realdebrid') continue
-			console.info(`getStream '${cached}' torrent ->`, torrent.json)
+			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached]().use(torrent.magnet)
 
 			let files = (await debrid.getFiles().catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
 			if (!files) {
-				console.warn(`!files ->`, torrent.short)
+				console.warn(`!files ->`, torrent.short())
 				continue
 			}
 
@@ -95,7 +95,7 @@ export async function getStream(
 			})
 
 			if (files.length == 0) {
-				console.warn(`files.length == 0 ->`, torrent.short)
+				console.warn(`files.length == 0 ->`, torrent.short())
 				next = true
 				continue
 			}
@@ -104,7 +104,7 @@ export async function getStream(
 				filters.torrents({ name: utils.slugify(v.name) } as any, item),
 			)
 			if (!file) {
-				console.warn(`!file ->`, torrent.short, files)
+				console.warn(`!file ->`, torrent.short(), files)
 				continue
 			}
 			console.log(`file ->`, file)
@@ -113,11 +113,11 @@ export async function getStream(
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) {
-				console.warn(`!stream ->`, torrent.short)
+				console.warn(`!stream ->`, torrent.short())
 				continue
 			}
 			if (!utils.isVideo(stream)) {
-				console.warn(`!isVideo stream ->`, torrent.short)
+				console.warn(`!isVideo stream ->`, torrent.short())
 				continue
 			}
 			if (stream.startsWith('http:')) stream = stream.replace('http:', 'https:')
@@ -143,7 +143,7 @@ export async function getStream(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (videos.length == 0) {
-				console.warn(`probe videos.length == 0 ->`, torrent.short)
+				console.warn(`probe videos.length == 0 ->`, torrent.short())
 				next = true
 				continue
 			}
@@ -153,7 +153,7 @@ export async function getStream(
 				videos.map(v => _.pick(v, vkeys)),
 			)
 			if (_.size(VideoCodecs) > 0 && !VideoCodecs.includes(videos[0].codec_name)) {
-				console.warn(`probe !VideoCodecs ->`, torrent.short, videos[0].codec_name)
+				console.warn(`probe !VideoCodecs ->`, torrent.short(), videos[0].codec_name)
 				next = true
 				continue
 			}
@@ -166,7 +166,7 @@ export async function getStream(
 				return tags.language.startsWith('en') || tags.language.startsWith('un')
 			})
 			if (audios.length == 0) {
-				console.warn(`probe audios.length == 0 ->`, torrent.short)
+				console.warn(`probe audios.length == 0 ->`, torrent.short())
 				next = true
 				continue
 			}
@@ -178,7 +178,7 @@ export async function getStream(
 			if (!audios.find(v => v.channels <= AudioChannels)) {
 				console.warn(
 					`probe !AudioChannels ->`,
-					torrent.short,
+					torrent.short(),
 					audios.map(v => v.channels),
 				)
 				next = true
@@ -187,7 +187,7 @@ export async function getStream(
 			if (_.size(AudioCodecs) > 0 && !audios.find(v => AudioCodecs.includes(v.codec_name))) {
 				console.warn(
 					`probe !AudioCodecs ->`,
-					torrent.short,
+					torrent.short(),
 					audios.map(v => v.codec_name),
 				)
 				next = true

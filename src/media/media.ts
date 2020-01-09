@@ -43,24 +43,26 @@ export class Item {
 	get year() {
 		return this.main.year
 	}
-	get slug() {
-		return this.ids.slug
-	}
 	get id() {
 		if (isNaN(this.ids.slug as any)) return this.ids.slug
 		return this.ids.imdb || this.ids.trakt.toString()
 	}
+	get message() {
+		return `[${this.type[0].toUpperCase()}] ${this.title} (${this.year})${
+			this.show ? ` [${this.show.aired_episodes} eps] ` : ' '
+		}`
+	}
 	get short() {
 		// let short = `[${this.type[0].toUpperCase()}] ${this.slug}${
-		let short = `[${this.type[0].toUpperCase()}] ${this.title} (${this.year}) [${this.slug}]${
-			this.show ? ` [${this.show.aired_episodes} eps] ` : ' '
-		}[${this.main.votes}]`
+		let short = `[${this.type[0].toUpperCase()}] ${this.title} (${this.year}) [${
+			this.ids.slug
+		}]${this.show ? ` [${this.show.aired_episodes} eps] ` : ' '}[${this.main.votes}]`
 		if (this.invalid) return `${short} [INVALID]`
 		if (this.junk) return `${short} [JUNK]`
 		return short
 	}
 	get strm() {
-		let strm = this.slug
+		let strm = this.ids.slug
 		if (this.S.z) strm += ` S${this.S.z}`
 		if (this.E.z) strm += `E${this.E.z}`
 		return strm

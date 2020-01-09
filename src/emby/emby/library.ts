@@ -349,7 +349,7 @@ export const library = {
 		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
 		if (Session && !_.isEmpty(created)) {
 			await Session.Message(
-				`🍿 Adding to library 🔶 ${created.map(v => v.title).join(` 🔶 `)}`,
+				`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`,
 			)
 		}
 
