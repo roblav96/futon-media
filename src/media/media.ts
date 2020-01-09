@@ -252,10 +252,10 @@ export class Item {
 		if (options.stops) {
 			titles = titles.map(v => [v, utils.stripStopWords(v)]).flat()
 		}
-		titles = _.uniq(titles.map(v => v.trim()).filter(Boolean))
 		if (!_.isEmpty(options.years)) {
 			titles = titles.map(v => [v, ...Item.toYears(v, options.years)]).flat()
 		}
+		titles = _.uniq(titles.map(v => v.trim()).filter(Boolean))
 		return options.bylength ? utils.byLength(titles) : titles
 	}
 
@@ -277,9 +277,9 @@ export class Item {
 				aliases.push(...this.titles.map(v => `${this.show.network.split(' ')[0]} ${v}`))
 			}
 		}
-		this.aliases = _.sortBy(
-			Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years }),
-		)
+		aliases = Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years })
+		// if (this.movie) aliases = aliases.filter(v => v.includes(' '))
+		this.aliases = _.sortBy(aliases)
 	}
 	// get filters() {
 	// 	return this.aliases.filter(v => {
@@ -305,6 +305,16 @@ export class Item {
 				Item.toTitles([v.title], { parts: 'all', stops: true, years: [v.year] }),
 			),
 		)
+		if (this.collection.name) {
+			collisions.push(
+				..._.flatten(
+					this.collection.titles.map((v, i) =>
+						Item.toTitles([v], { parts: 'edges', years: [this.collection.years[i]] }),
+					),
+				),
+			)
+		}
+		collisions = _.uniq(collisions.map(v => v.trim()).filter(Boolean))
 		_.remove(collisions, collision => {
 			if (this.aliases.find(v => ` ${v} `.includes(` ${collision} `))) return true
 		})

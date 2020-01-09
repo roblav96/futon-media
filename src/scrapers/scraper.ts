@@ -14,7 +14,7 @@ import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 import safeStringify from 'safe-stable-stringify'
-import { UPLOADERS } from '@/utils/dicts'
+import { LANGS, UPLOADERS } from '@/utils/dicts'
 
 let providers = [] as typeof Scraper[]
 process.nextTick(async () => {
@@ -40,9 +40,9 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
 		(await import('@/scrapers/providers/btdb')).Btdb,
-		(await import('@/scrapers/providers/btsow')).Btsow,
-		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
-		(await import('@/scrapers/providers/eztv')).Eztv,
+		// (await import('@/scrapers/providers/btsow')).Btsow,
+		// (await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
@@ -50,7 +50,7 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
-		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
+		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		(await import('@/scrapers/providers/yts')).Yts,
@@ -70,6 +70,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	if (process.DEVELOPMENT) (global as any).item = item
 	console.log(`item.titles ->`, item.titles)
 	console.log(`item.years ->`, item.years)
+	console.log(`item.collection ->`, item.collection)
 	console.log(`item.slugs ->`, item.slugs)
 	console.log(`item.queries ->`, item.queries)
 	console.log(`item.aliases ->`, item.aliases)
@@ -105,15 +106,15 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 
 	let torrents = results.map(v => new torrent.Torrent(v, item))
 
-	if (process.DEVELOPMENT) {
-		console.log(
-			Date.now() - t,
-			`scrapeAll results ->`,
-			torrents.map(v => v.short()),
-			// torrents.map(v => v.json()),
-			torrents.length,
-		)
-	}
+	// if (process.DEVELOPMENT) {
+	// 	console.log(
+	// 		Date.now() - t,
+	// 		`scrapeAll results ->`,
+	// 		torrents.map(v => v.short()),
+	// 		// torrents.map(v => v.json()),
+	// 		torrents.length,
+	// 	)
+	// }
 
 	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
@@ -128,18 +129,26 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 
 	// console.profile(`torrents.filter`)
 	console.time(`torrents.filter`)
-	torrents = torrents.filter(v => {
+	let removed = _.remove(torrents, torrent => {
 		try {
-			return filters.torrents(v, item)
+			return !filters.torrents(torrent, item)
 		} catch (error) {
-			console.error(`torrents.filter '${v.name}' -> %O`, error)
+			console.error(`torrents.filter '${torrent.name}' -> %O`, error)
 		}
-		// try {
-		// 	return filters.torrents(v, item)
-		// } catch {}
 	})
 	console.timeEnd(`torrents.filter`)
 	// console.profileEnd(`torrents.filter`)
+
+	if (process.DEVELOPMENT) {
+		console.log(
+			Date.now() - t,
+			`scrapeAll removed ->`,
+			// removed.map(v => v.short()),
+			removed.filter(v => v.filter).map(v => [v.short(), v.filter]),
+			// removed.map(v => v.json()),
+			removed.length,
+		)
+	}
 
 	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
@@ -152,7 +161,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (v.providers.includes('Rarbg')) v.boost *= 1.25
 		v.booster(UPLOADERS, 1.25)
 		v.booster(['proper'], 1.25)
-		v.booster(['french', 'hindi', 'ita', 'rus'], 0.5)
+		v.booster(LANGS, 0.5)
 		v.booster(['720p', '480p', '360p', '720', '480', '360', 'avi'], 0.5)
 		if (!isHD) {
 			v.booster(['bdrip', 'bluray'], 1.25)
@@ -179,10 +188,21 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			Date.now() - t,
 			`scrapeAll torrents ->`,
 			torrents.map(v => v.short()),
+			// torrents.filter(v => v.filter).map(v => [v.short(), v.filter]),
 			// torrents.map(v => v.json()),
 			torrents.length,
 		)
 	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
+
+	// if (process.DEVELOPMENT) {
+	// 	console.info(
+	// 		Date.now() - t,
+	// 		`scrapeAll cacheds ->`,
+	// 		torrents.filter(v => v.cached.length > 0).map(v => v.short()),
+	// 		// torrents.filter(v => v.cached.length > 0).map(v => v.json()),
+	// 		torrents.length,
+	// 	)
+	// }
 
 	if (process.DEVELOPMENT) (global as any).torrents = torrents
 

@@ -11,7 +11,7 @@ process.nextTick(async () => {
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://torrentapi.org',
-	delay: 500,
+	delay: 1000,
 	headers: { 'content-type': 'application/json' },
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,

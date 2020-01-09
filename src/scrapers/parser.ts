@@ -7,8 +7,8 @@ import { filenameParse, ParsedFilename } from '@ctrl/video-filename-parser'
 export class Parser {
 	get parsed() {
 		let parsed = _.defaultsDeep(
-			utils.compact(filenameParse(this.slug, true)),
-			utils.compact(filenameParse(this.slug)),
+			utils.compact(filenameParse(this.name, true)),
+			utils.compact(filenameParse(this.name)),
 		) as ParsedFilename
 		return {
 			episodes: parsed.episodeNumbers.length > 5 ? [] : parsed.episodeNumbers,
@@ -21,8 +21,8 @@ export class Parser {
 		return _.sortBy(_.uniq(years.filter(v => _.inRange(v, 1921, new Date().getFullYear() + 1))))
 	}
 
-	private matches(regexes: RegExp[], groups: string[]) {
-		let matches = regexes.map(v => Array.from(this.slug.matchAll(v))).flat()
+	private matches(regexes: RegExp[], groups: string[], slug = this.slug) {
+		let matches = regexes.map(v => Array.from(slug.matchAll(v))).flat()
 		return groups.map(group => {
 			let ints = matches.map(v => _.parseInt(_.get(v, `groups.${group}`)))
 			return _.sortBy(_.uniq(ints.filter(v => _.inRange(v, 1, 100))))
@@ -34,10 +34,17 @@ export class Parser {
 				/\b(s|se|season)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
 				/\b(s|se|season|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 				/\b(?<season>\d{1,2})\s?x\s?(?<episode>\d{1,2})\b/gi,
-				/\b(?<season>\d{1})(?<episode>\d{2})\b/gi,
 			],
 			['season', 'episode'],
 		)
+		// if (_.isEmpty(season) && _.isEmpty(episode)) {
+		// 	let [season, episode] = this.matches(
+		// 		[/\b(?<season>\d{1})(?<episode>\d{2})\b/gi],
+		// 		['season', 'episode'],
+		// 		utils.excludes(this.slug, '264 265 480 720'.split(' ')),
+		// 	)
+		// 	return { season, episode }
+		// }
 		return { season, episode }
 	}
 	get e00() {
@@ -95,11 +102,11 @@ export class Parser {
 
 	json() {
 		return utils.compact({
+			// e00: `${this.e00}`,
 			episodes: `${this.episodes}`,
-			// name: this.name,
 			parsed: utils.compact(_.mapValues(this.parsed, v => `${v}`)),
+			// s00e00: utils.compact(_.mapValues(this.s00e00, v => `${v}`)),
 			seasons: `${this.seasons}`,
-			// slug: this.slug.trim(),
 			years: `${this.years}`,
 		})
 	}

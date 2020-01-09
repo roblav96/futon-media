@@ -70,6 +70,19 @@ export const VIDEO_EXTENSIONS = [
 	//
 ]
 
+export const LANGS = [
+	'espanol',
+	'fre',
+	'french',
+	'hindi',
+	'ita',
+	'italian',
+	'rus',
+	'spa',
+	'spanish',
+	//
+]
+
 export const UPLOADERS = [
 	'amiable',
 	'caffeine',

@@ -25,6 +25,13 @@ export class Torrent extends parser.Parser {
 		return utils.fromBytes(this.bytes)
 	}
 
+	// get seasons() {
+	// 	return super.seasons.filter(v => _.inRange(v, 1, _.last(this.item.seasons).number + 1))
+	// }
+	// get episodes() {
+	// 	return super.episodes.filter(v => _.inRange(v, 1, this.item.S.e + 1))
+	// }
+
 	get packs() {
 		if (this.item.show) {
 			if (!_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
@@ -33,35 +40,37 @@ export class Torrent extends parser.Parser {
 			if (_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
 				return _.last(this.item.seasons).number
 			}
-			return 0
 		}
-		if (this.slug.includes(' duology ')) return 2
-		if (this.slug.includes(' dilogy ')) return 2
-		if (this.slug.includes(' trilogy ')) return 3
-		if (this.slug.includes(' triology ')) return 3
-		if (this.slug.includes(' quadrilogy ')) return 4
-		if (this.slug.includes(' quadriology ')) return 4
-		if (this.slug.includes(' tetralogy ')) return 4
-		if (this.slug.includes(' pentalogy ')) return 5
-		if (this.slug.includes(' hexalogie ')) return 6
-		if (this.slug.includes(' hexalogy ')) return 6
-		if (this.slug.includes(' heptalogy ')) return 7
-		if (this.slug.includes(' octalogy ')) return 8
-		if (this.slug.includes(' ennealogy ')) return 9
-		if (this.slug.includes(' decalogy ')) return 10
-		if (
-			this.years.length >= 2 ||
-			'boxset collection complete saga'.split(' ').find(v => this.slug.includes(` ${v} `))
-		) {
-			if (this.item.collection.years.length > 0) {
+		if (this.item.movie) {
+			if (this.slug.includes(' dilogy ')) return 2
+			if (this.slug.includes(' duology ')) return 2
+			if (this.slug.includes(' trilogia ')) return 3
+			if (this.slug.includes(' trilogy ')) return 3
+			if (this.slug.includes(' triology ')) return 3
+			if (this.slug.includes(' quadrilogy ')) return 4
+			if (this.slug.includes(' quadriology ')) return 4
+			if (this.slug.includes(' tetralogy ')) return 4
+			if (this.slug.includes(' pentalogy ')) return 5
+			if (this.slug.includes(' hexalogie ')) return 6
+			if (this.slug.includes(' hexalogy ')) return 6
+			if (this.slug.includes(' heptalogy ')) return 7
+			if (this.slug.includes(' octalogy ')) return 8
+			if (this.slug.includes(' ennealogy ')) return 9
+			if (this.slug.includes(' decalogy ')) return 10
+			if (this.item.collection.name) {
 				if (this.years.length >= 2) {
 					return this.item.collection.years.filter(v =>
 						_.inRange(v, _.first(this.years), _.last(this.years) + 1),
 					).length
 				}
-				return this.item.collection.years.length
+				let alls = 'antology anthology boxset collection complete saga'.split(' ')
+				if (this.years.length == 0 && alls.find(v => this.slug.includes(` ${v} `))) {
+					return this.item.collection.years.length
+				}
 			}
-			return this.years.length
+			if (this.years.length >= 2) {
+				return this.years.length
+			}
 		}
 		return 0
 	}
@@ -84,13 +93,15 @@ export class Torrent extends parser.Parser {
 		if (words.find(v => this.slug.includes(` ${v} `))) this.boost *= boost
 	}
 
+	filter = ''
 	short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
-		// let boost = `[${this.boost.toFixed(2)}${this.packs > 0 ? ` x ${this.packs}` : ''}]`
-		// let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
-		return `[${this.boost.toFixed(2)} x ${this.packs}] [${this.size} x ${this.seeders}] ${
+		let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
+		let providers = `[${this.providers.length} x ${this.providers.map(v => v.slice(0, 3))}]`
+		return `${boost} [${this.size} x ${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''
-		}${this.slug.trim()} [${this.age}] [${this.providers.length} x ${this.providers}]`
+		}${this.slug.trim()} [${this.age}] ${providers}`
+		// }${this.slug.trim()} [${this.age}] ${providers}${this.filter ? ` ${this.filter}` : ''}`
 	}
 	json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
