@@ -54,7 +54,8 @@ export function trim(value: string) {
 	return value.replace(/\s+/g, ' ').trim()
 }
 export function clean(value: string) {
-	return trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+	value = trim(stripBom(stripAnsi(_.unescape(_.deburr(value)))))
+	return value.replace(/ & /g, ' and ')
 }
 export function title(value: string) {
 	return trim(clean(value).replace(/[^a-z\d\s_.-]/gi, ''))

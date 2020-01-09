@@ -204,10 +204,11 @@ export class Item {
 	seasons: trakt.Season[]
 	async setSeasons() {
 		if (!this.show) return
-		this.seasons = ((await trakt.client.get(`/shows/${this.id}/seasons`, {
+		let seasons = ((await trakt.client.get(`/shows/${this.id}/seasons`, {
 			memoize: true,
 			silent: true,
 		})) as trakt.Season[]).filter(v => v.number > 0)
+		this.seasons = _.sortBy(seasons, 'number')
 	}
 
 	// episodes: trakt.Episode[]
@@ -331,7 +332,7 @@ export class Item {
 			this.omdb && _.parseInt(this.omdb.Year),
 			this.tmdb && dayjs(this.tmdb.release_date || this.tmdb.first_air_date).year(),
 		].filter(Boolean)
-		return _.uniq(years).sort()
+		return _.sortBy(_.uniq(years))
 	}
 	get collection() {
 		let collection = { name: '', titles: [] as string[], years: [] as number[] }
@@ -342,7 +343,7 @@ export class Item {
 		collection.years = this.tmdb.belongs_to_collection.parts.map(v =>
 			dayjs(v.release_date || v.first_air_date).year(),
 		)
-		collection.years.sort()
+		collection.years = _.sortBy(collection.years)
 		return collection
 	}
 	get slugs() {
