@@ -68,9 +68,9 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
 	if (process.DEVELOPMENT) (global as any).item = item
+	if (item.collection.name) console.log(`item.collection ->`, item.collection)
 	console.log(`item.titles ->`, item.titles)
 	console.log(`item.years ->`, item.years)
-	console.log(`item.collection ->`, item.collection)
 	console.log(`item.slugs ->`, item.slugs)
 	console.log(`item.queries ->`, item.queries)
 	console.log(`item.aliases ->`, item.aliases)
@@ -175,7 +175,9 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.booster(['fgt'], 1.25)
 		v.booster(['bdremux', 'remux'], 1.25)
 		v.booster(['atmos', 'dts', 'true hd', 'truehd'], 1.25)
-		v.booster(['8bit', '8 bit', '10bit', '10 bit'], 0.5)
+		if (!v.slug.includes(' hdr ')) {
+			v.booster(['8bit', '8 bit', '10bit', '10 bit'], 0.75)
+		}
 		if (utils.equals(v.slug, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
 		if (utils.equals(v.slug, item.title) && v.providers.length == 1) v.boost *= 0.5
 	}
@@ -187,7 +189,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
-			torrents.map(v => v.short()),
+			// torrents.map(v => v.short()),
+			torrents.map(v => [v.short(), v.filter]),
 			// torrents.filter(v => v.filter).map(v => [v.short(), v.filter]),
 			// torrents.map(v => v.json()),
 			torrents.length,

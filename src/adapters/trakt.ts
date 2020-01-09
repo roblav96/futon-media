@@ -126,7 +126,7 @@ export async function titles(queries: string[]) {
 			queries.map((query, i) => async () => {
 				return (await client.get(`/search/movie,show`, {
 					delay: i > 0 && 300,
-					query: { query, fields: 'title,overview,translations,aliases', limit: 100 },
+					query: { query, fields: 'title,tagline,translations,aliases', limit: 100 },
 					memoize: true,
 					silent: true,
 				})) as Result[]
@@ -136,7 +136,7 @@ export async function titles(queries: string[]) {
 	).flat()
 	let fulls = results.filter(Boolean).map(v => toFull(v))
 	fulls = _.uniqBy(fulls, 'ids.trakt').filter(v => !!v.title && !!v.year)
-	return fulls.map(v => ({ title: v.title, year: v.year }))
+	return fulls.map(v => ({ slug: v.ids.slug, title: v.title, year: v.year }))
 }
 
 // export function person(results: Result[], name: string) {

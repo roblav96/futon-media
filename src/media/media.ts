@@ -262,6 +262,7 @@ export class Item {
 	aliases: string[]
 	async setAliases() {
 		let aliases = [
+			this.ids.slug,
 			...this.titles,
 			...(await trakt.aliases(this.type, this.id)),
 			...(await tmdb.aliases(this.type, this.ids.tmdb)),
@@ -278,7 +279,7 @@ export class Item {
 			}
 		}
 		aliases = Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years })
-		// if (this.movie) aliases = aliases.filter(v => v.includes(' '))
+		// aliases = aliases.filter(v => v.includes(' '))
 		this.aliases = _.sortBy(aliases)
 	}
 	// get filters() {

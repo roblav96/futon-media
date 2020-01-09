@@ -58,6 +58,10 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 				torrent.filter = `⛔ collection years == 1 && !item years`
 				return false
 			}
+			if (torrent.packs == 0 && torrent.years.length == 0) {
+				torrent.filter = `⛔ collection years == 0`
+				return false
+			}
 			if (
 				torrent.years.length > 0 &&
 				!torrent.years.find(v => item.collection.years.includes(v))
@@ -68,10 +72,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			let slugs = utils.allSlugs(item.collection.name)
 			if (torrent.packs >= 2 && !slugs.find(v => torrent.slug.includes(` ${v} `))) {
 				torrent.filter = `⛔ collection !name`
-				return false
-			}
-			if (torrent.years.length == 0) {
-				torrent.filter = `⛔ collection years == 0`
 				return false
 			}
 		}
@@ -103,9 +103,9 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			}
 		}
 
-		if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) {
-			torrent.filter = `✅ seasons.length == 1`
-			return true
+		if (torrent.years.length >= 1 && !item.years.find(v => torrent.years.includes(v))) {
+			torrent.filter = `⛔ years >= 1 '${torrent.years}'`
+			return false
 		}
 
 		if (!_.isEmpty(torrent.seasons) && !_.isEmpty(torrent.episodes)) {
@@ -113,38 +113,47 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 				torrent.filter = `✅ seasons '${torrent.seasons}' episodes '${torrent.episodes}' ->`
 				return true
 			}
-			// torrent.filter = `⛔ seasons '${torrent.seasons}' episodes '${torrent.episodes}'`
-			// return false
+			torrent.filter = `⛔ seasons '${torrent.seasons}' episodes '${torrent.episodes}'`
+			return false
 		}
 		if (!_.isEmpty(torrent.seasons) && _.isEmpty(torrent.episodes)) {
 			if (torrent.seasons.includes(item.S.n)) {
 				torrent.filter = `✅ seasons '${torrent.seasons}'`
 				return true
 			}
-			// torrent.filter = `⛔ seasons '${torrent.seasons}'`
-			// return false
-		}
-
-		if (
-			torrent.parsed.seasons.includes(item.S.n) &&
-			torrent.parsed.episodes.includes(item.E.n)
-		) {
-			torrent.filter = `✋ parsed seasons '${torrent.parsed.seasons}' parsed episodes '${torrent.parsed.episodes}'`
-			return false
-		}
-		if (torrent.parsed.seasons.includes(item.S.n) && _.isEmpty(torrent.parsed.episodes)) {
-			torrent.filter = `✋ parsed seasons '${torrent.parsed.seasons}'`
-			return false
-		}
-
-		if (!_.isEmpty(torrent.seasons) && !_.isEmpty(torrent.episodes)) {
-			torrent.filter = `⛔ seasons '${torrent.seasons}' episodes '${torrent.episodes}'`
-			return false
-		}
-		if (!_.isEmpty(torrent.seasons) && _.isEmpty(torrent.episodes)) {
 			torrent.filter = `⛔ seasons '${torrent.seasons}'`
 			return false
 		}
+
+		if (
+			item.seasons.filter(v => v.aired_episodes > 0).length == 1 &&
+			_.isEmpty(torrent.seasons) &&
+			_.isEmpty(torrent.episodes)
+		) {
+			torrent.filter = `✅ seasons.length == 1`
+			return true
+		}
+
+		// if (
+		// 	torrent.parsed.seasons.includes(item.S.n) &&
+		// 	torrent.parsed.episodes.includes(item.E.n)
+		// ) {
+		// 	torrent.filter = `✋ parsed seasons '${torrent.parsed.seasons}' parsed episodes '${torrent.parsed.episodes}'`
+		// 	return false
+		// }
+		// if (torrent.parsed.seasons.includes(item.S.n) && _.isEmpty(torrent.parsed.episodes)) {
+		// 	torrent.filter = `✋ parsed seasons '${torrent.parsed.seasons}'`
+		// 	return false
+		// }
+
+		// if (!_.isEmpty(torrent.seasons) && !_.isEmpty(torrent.episodes)) {
+		// 	torrent.filter = `⛔ seasons '${torrent.seasons}' episodes '${torrent.episodes}'`
+		// 	return false
+		// }
+		// if (!_.isEmpty(torrent.seasons) && _.isEmpty(torrent.episodes)) {
+		// 	torrent.filter = `⛔ seasons '${torrent.seasons}'`
+		// 	return false
+		// }
 
 		// if (torrent.seasons.includes(item.S.n)) {
 		// 	if (!torrent.episodes.includes(item.E.n)) {

@@ -79,6 +79,7 @@ export const LANGS = [
 	'italian',
 	'rus',
 	'spa',
+	'temporada',
 	'spanish',
 	//
 ]
@@ -103,6 +104,7 @@ export const UPLOADERS = [
 	'monkee',
 	'mvgroup',
 	'ntb',
+	'oldfart',
 	'publichd',
 	'rartv',
 	'rovers',
