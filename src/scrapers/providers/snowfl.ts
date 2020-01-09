@@ -16,7 +16,7 @@ export const client = scraper.Scraper.http({
 })
 
 async function getToken() {
-	let token = (await db.get('snowfl:token')) as string
+	let token = (await db.get('token')) as string
 	if (token) return token
 	let html = (await client.get('/b.min.js', {
 		query: { v: utils.nonce() } as Partial<Query>,
@@ -24,7 +24,7 @@ async function getToken() {
 	Object.assign(global, { html })
 	token = _.first(html.match(/\b(\w{33,47})\b/))
 	if (!token) throw new Error('snowfl token not found')
-	await db.put('snowfl:token', token, utils.duration(1, 'day'))
+	await db.put('token', token, utils.duration(1, 'day'))
 	return token
 }
 process.nextTick(() => getToken().catch(error => console.error(`getToken -> %O`, error)))

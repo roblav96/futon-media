@@ -29,18 +29,23 @@ export function results(result: scraper.Result, item: media.Item) {
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
 	let collision = item.collisions.find(v => torrent.name.includes(` ${v} `))
 	if (collision) {
-		return console.log(`⛔ collision '${collision}' ->`, torrent.short)
+		return console.log(`⛔ collision '${collision}' ->`, torrent.json)
 	}
 
 	if (!item.aliases.find(v => torrent.name.includes(` ${v} `))) {
-		return console.log(`⛔ !aliases ->`, torrent.short)
+		return console.log(`⛔ !aliases ->`, torrent.json)
 	}
 
 	if (item.movie) {
 		if (!item.collection.name && !item.years.find(v => torrent.years.includes(v))) {
-			return console.log(`⛔ movie !years '${torrent.years}' ->`, torrent.short)
+			return console.log(`⛔ movie !years '${torrent.years}' ->`, torrent.json)
 		}
-
+		if (!_.isEmpty(torrent.seasons)) {
+			return console.log(`⛔ movie seasons '${torrent.seasons}' ->`, torrent.json)
+		}
+		if (!_.isEmpty(torrent.episodes)) {
+			return console.log(`⛔ movie episodes '${torrent.episodes}' ->`, torrent.json)
+		}
 		return true
 	}
 
@@ -56,7 +61,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			}
 		}
 		if (item.E.t) {
-			let epslugs = utils.allSlugs(this.E.t).filter(v => v.includes(' '))
+			let epslugs = utils.allSlugs(item.E.t).filter(v => v.includes(' '))
 			if (epslugs.find(v => torrent.name.includes(` ${v} `))) {
 				return true
 			}
@@ -65,16 +70,19 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		if (item.seasons.filter(v => v.aired_episodes > 0).length == 1) {
 			return true
 		}
-		if (torrent.seasons.length > 0 && !torrent.seasons.includes(item.S.n)) {
-			return console.log(`⛔ show seasons '${torrent.seasons}' ->`, torrent.short)
+		if (torrent.seasons.length > 0) {
+			if (torrent.seasons.includes(item.S.n)) return true
+			return console.log(`⛔ show seasons '${torrent.seasons}' ->`, torrent.json)
 		}
-		if (torrent.episodes.length > 0 && !torrent.episodes.includes(item.E.n)) {
-			return console.log(`⛔ show episodes '${torrent.episodes}' ->`, torrent.short)
+		if (torrent.episodes.length > 0) {
+			if (torrent.episodes.includes(item.E.n)) return true
+			return console.log(`⛔ show episodes '${torrent.episodes}' ->`, torrent.json)
 		}
 		let stragglers = [`${item.S.n}${item.E.z}`, item.E.z, item.E.n]
 		if (stragglers.find(v => torrent.name.includes(` ${v} `))) {
 			return true
 		}
+		return console.log(`⛔ show return false ->`, torrent.json)
 	}
 
 	// if (item.movie && torrent.packs) return true

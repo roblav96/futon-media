@@ -26,7 +26,7 @@ export class Torrent {
 	}
 
 	get parsed() {
-		let parseds = [filenameParse(this.filename, true), filenameParse(this.filename)]
+		let parseds = [filenameParse(this.name, true), filenameParse(this.name)]
 		if (this.item.movie) parseds.reverse()
 		let parsed = _.defaultsDeep(parseds[0], parseds[1]) as ParsedFilename
 		if (this.item.episode) {

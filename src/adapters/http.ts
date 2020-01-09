@@ -118,6 +118,7 @@ export class Http {
 	}
 
 	async request(config: Config): Promise<HttpieResponse> {
+		let t = Date.now()
 		let options = Http.merge(this.config, config)
 
 		if (options.url.startsWith('http')) options.baseUrl = ''
@@ -185,7 +186,6 @@ export class Http {
 			console.log(`[DEBUG] -> [${options.method}]`, options.url, options)
 		}
 
-		let t = Date.now()
 		let response: HttpieResponse
 		let mkey: string
 		if (!!options.memoize) {

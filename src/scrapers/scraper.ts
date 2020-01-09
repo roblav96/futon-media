@@ -124,7 +124,12 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	torrents = torrents.filter(v => {
 		try {
 			return filters.torrents(v, item)
-		} catch {}
+		} catch (error) {
+			console.error(`torrents.filter -> %O`, error)
+		}
+		// try {
+		// 	return filters.torrents(v, item)
+		// } catch {}
 	})
 	console.timeEnd(`torrents.filter`)
 	// console.profileEnd(`torrents.filter`)

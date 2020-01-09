@@ -1,43 +1,47 @@
 import * as _ from 'lodash'
-import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
+import * as utils from '@/utils/utils'
+import { Db } from '@/adapters/db'
+
+const db = new Db(__filename)
+process.nextTick(async () => {
+	// if (process.DEVELOPMENT) await db.flush()
+	// client.config.query['token'] = ((await db.get('token')) || '') as string
+})
 
 export const client = scraper.Scraper.http({
+	profile: true,
+	memoize: false,
 	baseUrl: 'https://torrentapi.org',
 	headers: { 'content-type': 'application/json' },
 	query: {
 		app_id: `${process.platform}_${process.arch}_${process.version}`,
+		format: 'json_extended',
+		limit: 100,
+		mode: 'search',
+		ranked: 0,
 	} as Partial<Query>,
 	beforeRequest: {
 		append: [
 			async options => {
 				if (options.query['get_token']) {
+					options.query = _.pick(options.query, ['app_id', 'get_token'])
 					return
 				}
+				options.query['token'] = await db.get<string>('token')
 				if (!options.query['token']) {
-					let token = await syncToken()
+					let { token } = await client.get('/pubapi_v2.php', {
+						query: { get_token: 'get_token' },
+					})
 					options.query['token'] = token
+					await db.put('token', token, utils.duration(10, 'minute'))
+					await utils.pTimeout(500)
 				}
-				_.defaults(options.query, {
-					mode: 'search',
-					format: 'json_extended',
-					limit: 100,
-					ranked: 0,
-				})
 			},
 		],
 	},
 })
-
-async function syncToken() {
-	let { token } = await client.get('/pubapi_v2.php', {
-		query: { get_token: 'get_token' },
-	})
-	client.config.query['token'] = token
-	await utils.pTimeout(500)
-	return token
-}
 
 export class Rarbg extends scraper.Scraper {
 	sorts = ['last']
