@@ -26,9 +26,13 @@ export class Torrent {
 	}
 
 	get parsed() {
-		let parsed = [filenameParse(this.filename, true), filenameParse(this.filename)]
-		if (this.item.movie) parsed.reverse()
-		return _.defaultsDeep(parsed[0], parsed[1]) as ParsedFilename
+		let parseds = [filenameParse(this.filename, true), filenameParse(this.filename)]
+		if (this.item.movie) parseds.reverse()
+		let parsed = _.defaultsDeep(parseds[0], parseds[1]) as ParsedFilename
+		if (!parsed.episodeNumbers.includes(this.item.episode.number)) {
+			parsed.episodeNumbers = []
+		}
+		return parsed
 	}
 	get years() {
 		let years = [_.parseInt(this.parsed.year), ...this.name.split(' ').map(v => _.parseInt(v))]
@@ -36,6 +40,9 @@ export class Torrent {
 	}
 
 	get packs() {
+		if (this.item.show) {
+			return !_.isEmpty(this.seasons) && _.isEmpty(this.episodes) ? this.seasons.length : 0
+		}
 		if (this.name.includes(' duology ')) return 2
 		if (this.name.includes(' dilogy ')) return 2
 		if (this.name.includes(' trilogy ')) return 3
@@ -64,7 +71,7 @@ export class Torrent {
 			}
 			return this.years.length
 		}
-		return 1
+		return 0
 	}
 
 	private matches(regexes: RegExp[], groups: string[]) {
@@ -112,69 +119,54 @@ export class Torrent {
 	get seasons() {
 		let seasons = [...this.parsed.seasons, ...this.s00e00.season]
 
-		// if ('boxset collection complete'.split(' ').find(v => this.name.includes(` ${v} `))) {
-		// 	seasons.push(..._.range(1, _.last(this.item.seasons).number + 1))
-		// }
-
 		{
-			let [season] = this.matches([/ (?<season>\d{1,2})[a-z]{2} season /gi], ['season'])
-			seasons.push(...season)
+			// 3rd season
+			let [ints] = this.matches([/\b(?<season>\d{1,2})[a-z]{2} s(e(ason)?)?\b/gi], ['season'])
+			seasons.push(...ints)
 		}
 		{
-			let [season] = this.matches([/ (?<season>\d{1,2}) seasons /gi], ['season'])
-			seasons.push(...season.map(v => _.range(1, v + 1)).flat())
+			// 3 seasons
+			let [ints] = this.matches([/\b(?<season>\d{1,2}) seasons\b/gi], ['season'])
+			seasons.push(...ints.map(v => _.range(1, v + 1)).flat())
 		}
 		{
+			// season three
 			let numbers = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 			let matches = Array.from(
-				this.name.matchAll(new RegExp(` s(eason)? (?<season>${numbers.join('|')}) `, 'gi')),
+				this.name.matchAll(
+					new RegExp(`\\bs(e(ason)?)? (?<season>${numbers.join('|')})\\b`, 'gi'),
+				),
 			)
 			let indexes = matches.map(v => numbers.indexOf(_.get(v, 'groups.season')) + 1)
 			seasons.push(...indexes.filter(v => v > 0))
 		}
 		{
 			let name = utils.excludes(this.name, ['and', 'through', 'to'])
-			let matches = Array.from(name.matchAll(/\bs((eason(s)?)?\s?\d{1,2} )+/gi))
-			// let matches = Array.from(name.matchAll(/s((eason(s)?)?\s?\d{1,2} )+/gi))
-			// let matches = Array.from(name.matchAll(/ s((eason(s)?)?\s?\d{1,2} )+/gi))
+			console.log('name ->', name)
+			let matches = Array.from(name.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2}\b)+/gi))
+			// let matches = Array.from(name.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2} )+/gi))
 			let ints = matches.map(v => v[0].split(' ').map(vv => utils.parseInt(vv))).flat()
-			ints = ints.filter(v => _.inRange(v, 1, 100))
+			ints = ints.filter(v => _.inRange(v, 1, this.item.maxSeason + 1))
+			console.log('ints ->', ints)
 			let [min, max] = [_.min(ints), _.max(ints)]
 			seasons.push(..._.range(min, max + 1))
-
-			// let regexes = [
-			// 	/ s(eason)?\s?(?<season>\d{1,2}) /gi,
-			// 	/ (s?(eason(s)?)?\s?(\d{1,2}) )+/gi,
-			// 	// / s(eason(s)?)?\s?\d{1,2} s?(eason(s)?)?\s?((\d{1,2}) )+/gi,
-			// 	// / s(eason(s)?)?\s?\d{1,2} s?(eason)?\s?((\d{1,2}) )+/gi,
-			// 	// / s(eason(s)?)?\s?\d{1,2}\s?s?(eason)?(\s?(?<season>\d{1,2}) )+/gi,
-			// ]
-			// let matches = name.match(/ (s?(eason(s)?)?\s?\d{1,2} )+/gi) || []
-			// let matches = regexes.map(v => Array.from(name.matchAll(v))).flat()
-			// let ints = matches.map(v => _.parseInt(_.get(v, 'groups.season')))
-			// ints = ints.filter(v => _.inRange(v, 1, 100))
-			// let [min, max] = [_.min(ints), _.max(ints)]
-			// seasons.push(..._.range(min, max + 1))
 		}
 
 		return _.sortBy(_.uniq(seasons))
 	}
 	get episodes() {
-		let episodes = [...this.s00e00.episode, ...this.e00]
-		if (_.inRange(this.parsed.episodeNumbers.length, 1, 5)) {
-			episodes.push(...this.parsed.episodeNumbers)
-		}
+		let episodes = [...this.parsed.episodeNumbers, ...this.s00e00.episode, ...this.e00]
 		return _.sortBy(_.uniq(episodes))
 	}
 
 	boost = 1
 	get boosts() {
 		let bytes = this.bytes
-		if (this.item.movie && this.packs > 1) {
+		if (this.item.movie && this.packs > 0) {
 			bytes = this.bytes / this.packs
 		}
-		if (this.item.show && this.seasons.length > 0) {
-			bytes = this.bytes / (this.item.S.e * this.seasons.length)
+		if (this.item.show && this.packs > 0) {
+			bytes = this.bytes / (this.item.S.e * this.packs)
 		}
 		return {
 			bytes: _.ceil(bytes * this.boost),
@@ -187,11 +179,10 @@ export class Torrent {
 
 	get short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
-		let size = this.item.movie ? this.packs : this.seasons.length
-		let boost = `[${this.boost.toFixed(2)} x${size > 0 ? ` ${size}` : ''}]`
+		let boost = `[${this.boost.toFixed(2)}${this.packs > 0 ? ` x ${this.packs}` : ''}]`
 		return `${boost} [${this.size}] [${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''
-		}${this.name.trim()} [${this.age}] [${this.providers.length + ' x ' + this.providers}]`
+		}${this.name.trim()} [${this.age}] [${this.providers.length} x ${this.providers}]`
 	}
 	get json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
