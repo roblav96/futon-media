@@ -236,7 +236,7 @@ export class Item {
 		titles: string[],
 		options = {} as {
 			bylength?: boolean
-			parts?: 'all' | 'edges'
+			parts?: 'all' | 'edges' | 'first' | 'last'
 			stops?: boolean
 			years?: number[]
 		},
@@ -247,6 +247,10 @@ export class Item {
 			titles = _.flatten(
 				titles.map(v => [v, _.first(utils.allParts(v)), _.last(utils.allParts(v))]),
 			)
+		} else if (options.parts == 'first') {
+			titles = _.flatten(titles.map(v => [v, _.first(utils.allParts(v))]))
+		} else if (options.parts == 'last') {
+			titles = _.flatten(titles.map(v => [v, _.last(utils.allParts(v))]))
 		}
 		titles = _.flatten(titles.map(v => utils.allSlugs(v)))
 		if (options.stops) {
@@ -262,7 +266,6 @@ export class Item {
 	aliases: string[]
 	async setAliases() {
 		let aliases = [
-			this.ids.slug,
 			...this.titles,
 			...(await trakt.aliases(this.type, this.id)),
 			...(await tmdb.aliases(this.type, this.ids.tmdb)),
@@ -278,7 +281,7 @@ export class Item {
 				aliases.push(...this.titles.map(v => `${this.show.network.split(' ')[0]} ${v}`))
 			}
 		}
-		aliases = Item.toTitles(aliases, { parts: 'all', stops: true, years: this.years })
+		aliases = Item.toTitles(aliases, { parts: 'last', stops: true, years: this.years })
 		// aliases = aliases.filter(v => v.includes(' '))
 		this.aliases = _.sortBy(aliases)
 	}
