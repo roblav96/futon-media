@@ -433,6 +433,10 @@ export class Item {
 	}
 }
 
+if (process.DEVELOPMENT) {
+	process.nextTick(async () => _.defaults(global, await import('@/media/media')))
+}
+
 export type ContentType = 'movie' | 'show' | 'season' | 'episode' | 'person'
 export type MainContentType = 'movie' | 'show'
 export type ContentTypes = 'movies' | 'shows' | 'seasons' | 'episodes' | 'people'

@@ -80,7 +80,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 	torrents = _.uniqWith(torrents, (from, to) => {
 		if (to.hash != from.hash) return false
 		let accuracies = utils.accuracies(to.name, from.name)
-		if (accuracies.length > 0) to.name = ` ${to.name} ${accuracies.join(' ')} `
+		if (accuracies.length > 0) to.name = ` ${utils.trim(`${to.name} ${accuracies.join(' ')}`)} `
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
@@ -103,7 +103,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 			Date.now() - t,
 			`scrapeAll results ->`,
 			torrents.map(v => v.short),
-			torrents.map(v => v.json),
+			// torrents.map(v => v.json),
 			torrents.length,
 		)
 	}
@@ -137,11 +137,11 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 		let v = torrents[i]
 		v.cached = cacheds[i] || []
 		v.boost = 1 + v.providers.length * 0.05
+		if (v.providers.includes('Rarbg')) v.boost *= 1.25
 		v.booster(UPLOADERS, 1.25)
 		v.booster(['proper'], 1.25)
-		v.booster(['rus', 'ita'], 0.5)
+		v.booster(['french', 'hindi', 'ita', 'rus'], 0.5)
 		v.booster(['720p', '480p', '360p', '720', '480', '360', 'avi'], 0.5)
-		if (v.providers.includes('Rarbg')) v.boost *= 1.25
 		if (!isHD) {
 			v.booster(['bdrip', 'bluray'], 1.25)
 			v.booster(['2160p', '2160', 'uhd', '4k'], 0.5)
@@ -167,7 +167,7 @@ export async function scrapeAll(item: media.Item, isHD: boolean) {
 			Date.now() - t,
 			`scrapeAll torrents ->`,
 			torrents.map(v => v.short),
-			torrents.map(v => v.json),
+			// torrents.map(v => v.json),
 			torrents.length,
 		)
 	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)

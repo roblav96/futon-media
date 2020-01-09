@@ -85,6 +85,7 @@ export const UPLOADERS = [
 	'grym',
 	'inspirit',
 	'kralimarko',
+	'lostfilm',
 	'memento',
 	'monkee',
 	'mvgroup',
