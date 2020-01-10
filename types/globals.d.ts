@@ -6,9 +6,9 @@ type PartialDeep<T> = { [P in keyof T]?: PartialDeep<T[P]> }
 type Overwrite<T1, T2> = Pick<T1, Exclude<keyof T1, keyof T2>> & T2
 type Constructor<T> = { new (...args: any[]): T }
 
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((
-	k: infer I,
-) => void)
+type UnionToIntersection<U> = (U extends any
+	? (k: U) => void
+	: never) extends (k: infer I) => void
 	? I
 	: never
 type Unpacked<T> = T extends (infer U)[]
@@ -27,8 +27,4 @@ type PartialDeeper<T> = {
 		: T[P] extends ReadonlyArray<infer U>
 		? ReadonlyArray<PartialDeeper<U>>
 		: PartialDeeper<T[P]>
-}
-
-interface NodeModule {
-	path: string
 }

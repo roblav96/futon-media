@@ -8,7 +8,7 @@ import * as scraper from '@/scrapers/scraper'
 import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
-export function torrents(torrent: torrent.Torrent, item: media.Item) {
+export function torrents(torrent: parser.Parser, item: media.Item) {
 	let skipping = item.skips.find(v => ` ${torrent.slug} `.includes(` ${v} `))
 	if (skipping) {
 		torrent.filter = `⛔ skipping '${skipping}'`
@@ -134,6 +134,9 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			return true
 		}
 
+		torrent.filter = `⛔ return false`
+		return false
+
 		// if (
 		// 	torrent.parsed.seasons.includes(item.S.n) &&
 		// 	torrent.parsed.episodes.includes(item.E.n)
@@ -187,9 +190,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		// 	console.warn(`straggler '${straggler}' ->`, torrent.slug, torrent.json())
 		// 	return true
 		// }
-
-		torrent.filter = `⛔ return false`
-		return false
 	}
 
 	// if (item.movie && torrent.packs) return true

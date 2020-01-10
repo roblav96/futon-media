@@ -111,6 +111,10 @@ export class Parser {
 		})
 	}
 
+	filter = ''
+	get packs() {
+		return 0
+	}
 	get slug() {
 		return ` ${utils.slugify(this.name)} `
 	}

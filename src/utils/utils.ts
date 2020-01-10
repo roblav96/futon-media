@@ -228,7 +228,8 @@ export function allParts(value: string) {
 // }
 
 export function isVideo(file: string) {
-	return VIDEO_EXTENSIONS.includes(path.extname(file.toLowerCase()).slice(1))
+	let extname = path.extname(file.toLowerCase()).slice(1)
+	return VIDEO_EXTENSIONS.includes(extname)
 }
 
 export function sortKeys<T>(value: T) {

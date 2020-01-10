@@ -182,8 +182,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (utils.equals(v.slug, item.title) && v.providers.length == 1) v.boost *= 0.5
 	}
 
-	if (isHD) torrents.sort((a, b) => b.boosts.bytes - a.boosts.bytes)
-	else torrents.sort((a, b) => b.boosts.seeders - a.boosts.seeders)
+	if (isHD) torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
+	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
 
 	if (process.DEVELOPMENT) {
 		console.info(

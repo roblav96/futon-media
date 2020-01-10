@@ -76,7 +76,7 @@ export class Torrent extends parser.Parser {
 	}
 
 	boost = 1
-	get boosts() {
+	boosts() {
 		let bytes = this.bytes
 		if (this.item.movie && this.packs > 0) {
 			bytes = this.bytes / this.packs
@@ -86,14 +86,13 @@ export class Torrent extends parser.Parser {
 		}
 		return {
 			bytes: _.ceil(bytes * this.boost),
-			seeders: _.ceil(this.seeders * this.boost * this.providers.length),
+			seeders: _.ceil(this.seeders * this.boost),
 		}
 	}
 	booster(words: string[], boost: number) {
 		if (words.find(v => this.slug.includes(` ${v} `))) this.boost *= boost
 	}
 
-	filter = ''
 	short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
 		let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
@@ -111,11 +110,13 @@ export class Torrent extends parser.Parser {
 				age: this.age,
 				boost: _.round(this.boost, 2),
 				cached: `${this.cached}`,
-				// magnet: `magnet:?${minify}`, // this.magnet,
+				filter: this.filter,
+				magnet: `magnet:?${minify}`, // this.magnet,
 				packs: this.packs,
 				providers: `${this.providers}`,
 				seeders: this.seeders,
 				size: this.size,
+				slug: this.slug,
 			}),
 		)
 	}

@@ -5,11 +5,12 @@ import * as path from 'path'
 import safeStringify from 'safe-stable-stringify'
 
 export class Db {
-	static redis = new IORedis(6379, '127.0.0.1')
+	static redis = new IORedis({ dropBufferSupport: true })
 
 	constructor(public prefix: string) {
 		if (fs.pathExistsSync(prefix)) {
-			this.prefix = path.relative(process.mainModule.path, prefix).replace(/\//g, ':')
+			let dirname = path.dirname(process.mainModule.filename)
+			this.prefix = path.relative(dirname, prefix).replace(/\//g, ':')
 			this.prefix = this.prefix.slice(0, this.prefix.lastIndexOf('.')).trim()
 		}
 	}

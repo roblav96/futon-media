@@ -34,7 +34,7 @@ export async function download(torrents: Torrent[], item: media.Item) {
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
 		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short())
-		if (v.boosts.bytes < utils.toBytes(`${item.gigs} GB`)) return false
+		if (v.boosts().bytes < utils.toBytes(`${item.gigs} GB`)) return false
 		return v.seeders * v.providers.length >= 3
 	})
 	console.log(
@@ -125,7 +125,7 @@ export async function getStream(
 
 			console.log(`probe stream ->`, stream)
 			let probe = (await ffprobe
-				.probe(stream, { format: true, streams: true })
+				.probe(stream)
 				.catch(error => console.error(`ffprobe '${stream}' -> %O`, error))) as ffprobe.Probe
 			if (!probe) {
 				next = true
