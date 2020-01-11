@@ -3,8 +3,8 @@ import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
 import * as ffprobe from '@/adapters/ffprobe'
 import * as filters from '@/scrapers/filters'
+import * as guessit from '@/adapters/guessit'
 import * as media from '@/media/media'
-import * as pAll from 'p-all'
 import * as parser from '@/scrapers/parser'
 import * as path from 'path'
 import * as utils from '@/utils/utils'
@@ -101,6 +101,7 @@ export async function getStream(
 				continue
 			}
 			files = _.orderBy(files, ['leven', 'bytes'], ['desc', 'desc'])
+
 			console.log(
 				'files ->',
 				files.map(v => ({ ...v, parsed: v.parsed.json() })),
@@ -111,7 +112,8 @@ export async function getStream(
 				let episode = files.find(({ parsed }) => {
 					if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
 						return (
-							parsed.seasons.includes(item.se.n) && parsed.episodes.includes(item.ep.n)
+							parsed.seasons.includes(item.se.n) &&
+							parsed.episodes.includes(item.ep.n)
 						)
 					}
 					if (_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {

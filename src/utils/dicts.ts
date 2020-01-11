@@ -20,8 +20,9 @@ export const SKIPS = [
 	'preview',
 	'rarbg com mp4',
 	'sample',
-	'trailer',
 	'soundtrack',
+	'special',
+	'trailer',
 	...NAUGHTY_WORDS,
 ]
 

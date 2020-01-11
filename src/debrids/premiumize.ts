@@ -30,10 +30,10 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 		let chunks = utils.chunks(hashes, 40)
 		let cached = hashes.map(v => false)
 		await pAll(
-			chunks.map(chunk => async () => {
+			chunks.map((chunk, i) => async () => {
 				let response = (await client
 					.post(`/cache/check`, {
-						delay: 300,
+						delay: i > 0 && 300,
 						query: { items: chunk },
 						memoize: process.DEVELOPMENT,
 					})

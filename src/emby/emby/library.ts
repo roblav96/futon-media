@@ -28,7 +28,7 @@ process.nextTick(async () => {
 
 export const library = {
 	async refresh() {
-		await library.unrefresh()
+		// await library.unrefresh()
 		await emby.client.post('/Library/Refresh', { silent: true })
 	},
 	async unrefresh() {
@@ -221,14 +221,10 @@ export const library = {
 		) as Record<string, string>
 	},
 	pathNumbers(Path: string) {
-		let [season, episode] = [] as number[]
-		let match = Path.match(/\sS(?<season>\d+)E(?<episode>\d+)\.strm/)
-		if (!match) match = Path.match(/\/Season\s(?<season>\d+)/)
-		if (match && match.groups) {
-			season = _.parseInt(match.groups.season)
-			episode = _.parseInt(match.groups.episode)
-		}
-		return { season, episode }
+		let match = Path.match(/\bS(?<season>\d+)E(?<episode>\d+)\b/)
+		if (!match) match = Path.match(/\bSeason (?<season>\d+)\b/)
+		let groups = _.get(match, 'groups', {}) as Record<string, string>
+		return { episode: _.parseInt(groups.episode), season: _.parseInt(groups.season) }
 	},
 
 	toPath(item: media.Item) {
@@ -345,7 +341,8 @@ export const library = {
 		console.log(`library addAll Updates ->`, Updates.length)
 		if (_.isEmpty(Updates)) return []
 
-		let CreatedPaths = Updates.filter(v => v.UpdateType == 'Created').map(v => v.Path)
+		let Creations = Updates.filter(v => v.UpdateType == 'Created')
+		let CreatedPaths = Creations.map(v => v.Path)
 		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
 		if (Session && !_.isEmpty(created)) {
 			await Session.Message(
@@ -366,9 +363,33 @@ export const library = {
 				}),
 				Rx.op.take(1),
 			)
-			await Promise.all([rxFFProbe.toPromise(), library.refresh()])
-			await utils.pTimeout(1000)
 
+			await emby.client.post('/Library/Media/Updated', {
+				body: { Updates: Creations },
+				silent: true,
+			})
+
+			// for (let type of media.MAIN_TYPESS) {
+			// 	let folder = library.folders[type]
+			// 	if (CreatedStrmPaths.find(v => v.startsWith(folder.Location))) {
+			// 		await emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
+			// 			query: {
+			// 				ImageRefreshMode: 'Default',
+			// 				MetadataRefreshMode: 'Default',
+			// 				Recursive: 'true',
+			// 				ReplaceAllImages: 'false',
+			// 				ReplaceAllMetadata: 'false',
+			// 			},
+			// 			// silent: true,
+			// 		})
+			// 	}
+			// }
+
+			// await library.unrefresh()
+			// await library.refresh()
+
+			await rxFFProbe.toPromise()
+			await utils.pTimeout(1000)
 			let Items = await library.Items({
 				Fields: [],
 				IncludeItemTypes: ['Movie', 'Series'],

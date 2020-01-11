@@ -26,30 +26,22 @@ export class Torrent extends parser.Parser {
 	}
 
 	get packs() {
-		if (this.item.show) {
-			if (!_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
-				return this.seasons.length
-			}
-			if (_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
-				return _.last(this.item.seasons).number
-			}
-		}
+		if (this.slug.includes(' dilogy ')) return 2
+		if (this.slug.includes(' duology ')) return 2
+		if (this.slug.includes(' trilogia ')) return 3
+		if (this.slug.includes(' trilogy ')) return 3
+		if (this.slug.includes(' triology ')) return 3
+		if (this.slug.includes(' quadrilogy ')) return 4
+		if (this.slug.includes(' quadriology ')) return 4
+		if (this.slug.includes(' tetralogy ')) return 4
+		if (this.slug.includes(' pentalogy ')) return 5
+		if (this.slug.includes(' hexalogie ')) return 6
+		if (this.slug.includes(' hexalogy ')) return 6
+		if (this.slug.includes(' heptalogy ')) return 7
+		if (this.slug.includes(' octalogy ')) return 8
+		if (this.slug.includes(' ennealogy ')) return 9
+		if (this.slug.includes(' decalogy ')) return 10
 		if (this.item.movie) {
-			if (this.slug.includes(' dilogy ')) return 2
-			if (this.slug.includes(' duology ')) return 2
-			if (this.slug.includes(' trilogia ')) return 3
-			if (this.slug.includes(' trilogy ')) return 3
-			if (this.slug.includes(' triology ')) return 3
-			if (this.slug.includes(' quadrilogy ')) return 4
-			if (this.slug.includes(' quadriology ')) return 4
-			if (this.slug.includes(' tetralogy ')) return 4
-			if (this.slug.includes(' pentalogy ')) return 5
-			if (this.slug.includes(' hexalogie ')) return 6
-			if (this.slug.includes(' hexalogy ')) return 6
-			if (this.slug.includes(' heptalogy ')) return 7
-			if (this.slug.includes(' octalogy ')) return 8
-			if (this.slug.includes(' ennealogy ')) return 9
-			if (this.slug.includes(' decalogy ')) return 10
 			if (this.item.collection.name) {
 				if (this.years.length >= 2) {
 					return this.item.collection.years.filter(v =>
@@ -65,6 +57,20 @@ export class Torrent extends parser.Parser {
 				return this.years.length
 			}
 		}
+		if (this.item.show) {
+			if (!_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
+				return this.seasons.length
+			}
+			if (_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
+				if (this.item.single) {
+					return 1
+				}
+				let years = [...this.item.years, this.item.se.y, this.item.ep.y].filter(Boolean)
+				if (!_.isEmpty(this.years) && this.years.find(v => years.includes(v))) {
+					return _.last(this.item.seasons).number
+				}
+			}
+		}
 		return 0
 	}
 
@@ -76,6 +82,8 @@ export class Torrent extends parser.Parser {
 		}
 		if (this.item.show && this.packs > 0) {
 			bytes = this.bytes / (this.item.se.e * this.packs)
+		} else if (this.item.show && this.episodes.length > 1) {
+			bytes = this.bytes / this.episodes.length
 		}
 		return {
 			bytes: _.ceil(bytes * this.boost),
@@ -89,10 +97,13 @@ export class Torrent extends parser.Parser {
 	short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
 		let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
-		let providers = `[${this.providers.length} x ${this.providers.map(v => v.slice(0, 3))}]`
+		let providers = this.providers.map(provider => {
+			let uncamels = utils.uncamel(provider).split(' ')
+			return uncamels.map(v => v.slice(0, 3)).join('')
+		})
 		return `${boost} [${this.size} x ${this.seeders}] ${
 			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''
-		}${this.slug.trim()} [${this.age}] ${providers}`
+		}${this.name.trim()} [${this.age}] [${this.providers.length} x ${providers}]`
 		// }${this.slug.trim()} [${this.age}] ${providers}${this.filter ? ` ${this.filter}` : ''}`
 	}
 	json() {

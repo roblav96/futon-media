@@ -10,12 +10,6 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
 export function torrents(parsed: parser.Parser, item: media.Item) {
-	let skipping = item.skips.find(v => parsed.slug.includes(` ${v} `))
-	if (skipping) {
-		parsed.filter = `⛔ skipping '${skipping}'`
-		return false
-	}
-
 	let collision = item.collisions.find(v => parsed.slug.includes(` ${v} `))
 	if (collision) {
 		parsed.filter = `⛔ collision '${collision}'`
@@ -29,11 +23,11 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 
 	if (item.movie) {
 		if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
-			// parsed.filter = `⛔ seasons '${parsed.seasons}' episodes '${parsed.episodes}'`
+			parsed.filter = `⛔ seasons '${parsed.seasons}' episodes '${parsed.episodes}'`
 			return false
 		}
 		if (!_.isEmpty(parsed.seasons) && _.isEmpty(parsed.episodes)) {
-			// parsed.filter = `⛔ seasons '${parsed.seasons}'`
+			parsed.filter = `⛔ seasons '${parsed.seasons}'`
 			return false
 		}
 		if (!item.collection.name) {
@@ -90,7 +84,9 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 		if (item.se.t) {
 			let titles = utils.allTitles([item.se.t], { parts: 'all', uncamel: true })
-			titles = titles.filter(v => v.includes(' '))
+			if (item.se.t.includes(' ')) {
+				titles = titles.filter(v => v.includes(' '))
+			}
 			let title = titles.find(v => parsed.slug.includes(` ${v} `))
 			if (title) {
 				parsed.filter = `✅ season title '${title}'`
@@ -99,24 +95,14 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 		if (item.ep.t) {
 			let titles = utils.allTitles([item.ep.t], { parts: 'all', uncamel: true })
-			titles = titles.filter(v => v.includes(' '))
+			if (item.ep.t.includes(' ')) {
+				titles = titles.filter(v => v.includes(' '))
+			}
 			let title = titles.find(v => parsed.slug.includes(` ${v} `))
 			if (title) {
 				parsed.filter = `✅ episode title '${title}'`
 				return true
 			}
-		}
-
-		let years = [...item.years]
-		if (item.ep.a) years.push(dayjs(item.ep.a).year())
-		if (parsed.years.length > 0) {
-			let year = years.find(v => parsed.years.includes(v))
-			if (year) {
-				parsed.filter = `✅ year '${year}'`
-				return true
-			}
-			parsed.filter = `⛔ years >= 1 '${parsed.years}'`
-			return false
 		}
 
 		if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
@@ -135,12 +121,27 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 			parsed.filter = `⛔ seasons '${parsed.seasons}'`
 			return false
 		}
+		if (item.single && _.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+			if (parsed.episodes.includes(item.ep.n)) {
+				parsed.filter = `✅ episodes '${parsed.episodes}'`
+				return true
+			}
+			parsed.filter = `⛔ episodes '${parsed.episodes}'`
+			return false
+		}
 
-		if (
-			item.seasons.filter(v => v.aired_episodes > 0).length == 1 &&
-			_.isEmpty(parsed.seasons) &&
-			_.isEmpty(parsed.episodes)
-		) {
+		if (parsed.years.length > 0) {
+			let years = [...item.years, item.se.y, item.ep.y]
+			let year = years.filter(Boolean).find(v => parsed.years.includes(v))
+			if (year) {
+				parsed.filter = `✅ year '${year}'`
+				return true
+			}
+			parsed.filter = `⛔ years >= 1 '${parsed.years}'`
+			return false
+		}
+
+		if (item.single && _.isEmpty(parsed.seasons) && _.isEmpty(parsed.episodes)) {
 			parsed.filter = `✅ seasons.length == 1`
 			return true
 		}

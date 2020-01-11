@@ -76,9 +76,6 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	console.log(`item.aliases ->`, item.aliases)
 	console.log(`item.collisions ->`, item.collisions)
 	// console.log(`item.seasons ->`, item.seasons)
-	// console.log(`item.s00e00 ->`, item.s00e00)
-	// console.log(`item.e00 ->`, item.e00)
-	// console.log(`item.matches ->`, item.matches)
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	let results = (
@@ -89,32 +86,48 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (to.hash != from.hash) return false
 		let accuracies = utils.accuracies(to.name, from.name)
 		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
-		// if (accuracies.length > 0) to.slug = ` ${utils.trim(`${to.slug} ${accuracies.join(' ')}`)} `
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
 		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
 		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
-	_.remove(results, result => {
-		if (!(result && result.stamp > 0 && result.bytes > 0 && result.seeders >= 0)) return true
-		if (utils.toBytes(`${item.runtime} MB`) > result.bytes) return true
-		if (item.released.valueOf() - utils.duration(1, 'day') > result.stamp) return true
-	})
-	if (isHD) results.sort((a, b) => b.bytes - a.bytes)
-	else results.sort((a, b) => b.seeders - a.seeders)
+	results = results.filter(v => v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
 
 	let torrents = results.map(v => new torrent.Torrent(v, item))
 
-	// if (process.DEVELOPMENT) {
-	// 	console.log(
-	// 		Date.now() - t,
-	// 		`scrapeAll results ->`,
-	// 		torrents.map(v => v.short()),
-	// 		// torrents.map(v => v.json()),
-	// 		torrents.length,
-	// 	)
-	// }
+	let junk = _.remove(torrents, torrent => {
+		let skips = item.skips.find(v => torrent.slug.includes(` ${v} `))
+		if (skips) {
+			torrent.filter = `⛔ skips '${skips}'`
+			return false
+		}
+		let released = item.released.valueOf() - utils.duration(1, 'day')
+		if (torrent.stamp < released) {
+			let date = dayjs(released).format('MMM DD YYYY')
+			torrent.filter = `⛔ released ${torrent.date} < ${date}`
+			return true
+		}
+		let bytes = utils.toBytes(`${item.runtime * 2} MB`)
+		if (torrent.boosts().bytes < bytes) {
+			let size = utils.fromBytes(torrent.boosts().bytes)
+			torrent.filter = `⛔ runtime ${size} < ${utils.fromBytes(bytes)}`
+			return true
+		}
+	})
+	if (isHD) torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
+	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
+
+	if (process.DEVELOPMENT) {
+		console.log(
+			Date.now() - t,
+			`scrapeAll junk ->`,
+			// junk.map(v => v.short()),
+			junk.map(v => [v.short(), v.filter]),
+			// junk.map(v => v.json()),
+			junk.length,
+		)
+	}
 
 	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
 	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
@@ -140,11 +153,12 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	// console.profileEnd(`torrents.filter`)
 
 	if (process.DEVELOPMENT) {
-		(global as any).removed = removed
+		;(global as any).removed = removed
 		console.log(
 			Date.now() - t,
 			`scrapeAll removed ->`,
 			// removed.map(v => v.short()),
+			// removed.map(v => [v.short(), v.filter]),
 			removed.filter(v => v.filter).map(v => [v.short(), v.filter]),
 			// removed.map(v => v.json()),
 			removed.length,
@@ -153,11 +167,11 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 
 	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
 	console.timeEnd(`torrents.cached`)
 
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
-		v.cached = cacheds[i] || []
 		v.boost = 1 + v.providers.length * 0.05
 		if (v.providers.includes('Rarbg')) v.boost *= 1.25
 		v.booster(UPLOADERS, 1.25)
@@ -187,7 +201,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
 
 	if (process.DEVELOPMENT) {
-		(global as any).torrents = torrents
+		;(global as any).torrents = torrents
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,

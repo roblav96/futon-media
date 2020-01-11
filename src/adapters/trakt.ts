@@ -134,22 +134,30 @@ export async function titles(queries: string[]) {
 			{ concurrency: 1 },
 		)
 	).flat()
-	let titles = [] as { title: string; year: number }[]
-	for (let result of results.filter(Boolean)) {
-		let { movie, show, episode } = result
-		if (movie) titles.push({ title: movie.title, year: movie.year })
-		if (show) titles.push({ title: show.title, year: show.year })
-		if (episode) {
-			titles.push({
-				title: episode.title,
-				year: episode.first_aired && dayjs(episode.first_aired).year(),
-			})
-		}
-	}
-	return titles
+	return _.flatten(
+		results.filter(Boolean).map(result =>
+			media.TYPES.map(type => {
+				let full = result[type] as Full
+				return { title: full.title, year: full.year || dayjs(full.first_aired).year() }
+			}),
+		),
+	)
+	// let titles = [] as { title: string; year: number }[]
+	// for (let result of results.filter(Boolean)) {
+	// 	let { movie, show, episode } = result
+	// 	if (movie) titles.push({ title: movie.title, year: movie.year })
+	// 	if (show) titles.push({ title: show.title, year: show.year })
+	// 	if (episode) {
+	// 		titles.push({
+	// 			title: episode.title,
+	// 			year: episode.first_aired && dayjs(episode.first_aired).year(),
+	// 		})
+	// 	}
+	// }
+	// console.log(`titles ->`, titles)
+	// return titles
 	// let fulls = results.filter(Boolean).map(v => toFull(v))
-	// fulls = _.uniqBy(fulls, 'ids.trakt').filter(v => !!v.title && !!v.year)
-	// return fulls.map(v => ({ slug: v.ids.slug, title: v.title, year: v.year }))
+	// return _.uniqBy(fulls, 'ids.trakt').map(v => ({ title: v.title, year: v.year }))
 }
 
 // export function person(results: Result[], name: string) {

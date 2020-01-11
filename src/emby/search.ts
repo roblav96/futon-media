@@ -134,12 +134,12 @@ process.nextTick(() => {
 		}),
 	)
 	rxSearch.subscribe(async ({ SearchTerm, Session, items }) => {
-		if (_.isEmpty(items)) return
 		console.info(
 			`rxSearch '${SearchTerm}' library addAll items ->`,
 			items.map(v => v.short),
 			items.length,
 		)
+		if (_.isEmpty(items)) return
 		await emby.library.addQueue(items, Session)
 	})
 })

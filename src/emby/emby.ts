@@ -13,9 +13,8 @@ process.nextTick(async () => {
 		silent: true,
 	})) as emby.SystemConfiguration
 	let body = {} as emby.SystemConfiguration
-	let delay = utils.duration(1, 'month') / 1000
-	if (SystemConfiguration.LibraryMonitorDelay != delay) {
-		body.LibraryMonitorDelay = delay
+	if (SystemConfiguration.LibraryMonitorDelay != 1) {
+		body.LibraryMonitorDelay = 1
 	}
 	if (SystemConfiguration.EnableDebugLevelLogging != true) {
 		body.EnableDebugLevelLogging = true

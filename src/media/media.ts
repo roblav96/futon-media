@@ -74,12 +74,13 @@ export class Item {
 	get released() {
 		if (this.movie && this.movie.released) return new Date(this.movie.released)
 		if (this.episode && this.episode.first_aired) return new Date(this.episode.first_aired)
+		if (this.season && this.season.first_aired) return new Date(this.season.first_aired)
 		if (this.show && this.show.first_aired) return new Date(this.show.first_aired)
 		return new Date(new Date().setFullYear(this.year + 1))
 	}
 	get runtime() {
 		if (this.movie && this.movie.runtime) return this.movie.runtime
-		if (this.episode && this.episode.runtime) return this.episode.runtime
+		// if (this.episode && this.episode.runtime) return this.episode.runtime
 		if (this.show && this.show.runtime) return this.show.runtime
 	}
 
@@ -139,12 +140,14 @@ export class Item {
 	/** season */
 	get se() {
 		let se = {
+			/** season `aired year` */ y: NaN,
 			/** season `aired episodes` */ a: NaN,
 			/** season `episode count` */ e: NaN,
 			/** season `title` */ t: '',
 			/** season `number` */ n: NaN,
 			/** season `0 number` */ z: '',
 		}
+		if (_.has(this.season, 'first_aired')) se.y = dayjs(this.season.first_aired).year()
 		if (_.has(this.season, 'aired_episodes')) se.a = this.season.aired_episodes
 		if (_.has(this.season, 'episode_count')) se.e = this.season.episode_count
 		if (_.has(this.season, 'number')) se.n = this.season.number
@@ -159,16 +162,18 @@ export class Item {
 	/** episode */
 	get ep() {
 		let ep = {
+			/** episode `aired year` */ y: NaN,
 			/** episode `aired date` */ a: '',
 			/** episode `title` */ t: '',
 			/** episode `number` */ n: NaN,
 			/** episode `0 number` */ z: '',
 		}
 		if (_.has(this.episode, 'first_aired')) {
+			ep.y = dayjs(this.episode.first_aired).year()
 			ep.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
 		}
 		if (_.has(this.episode, 'title') && !/^episode /i.test(this.episode.title)) {
-			ep.t = this.episode.title.replace(/ \((\d{1})\)$/, ': Part $1')
+			ep.t = this.episode.title.replace(/ \((\d{1})\)$/, ' Part $1')
 		}
 		if (_.has(this.episode, 'number')) {
 			ep.n = this.episode.number
@@ -211,6 +216,9 @@ export class Item {
 			silent: true,
 		})) as trakt.Season[]).filter(v => v.number > 0)
 		this.seasons = _.sortBy(seasons, 'number')
+	}
+	get single() {
+		return this.seasons.filter(v => v.aired_episodes > 0).length == 1
 	}
 	// get maxSeason() {
 	// 	return _.last(this.seasons).number

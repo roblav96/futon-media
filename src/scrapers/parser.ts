@@ -11,7 +11,7 @@ export class Parser {
 			utils.compact(filenameParse(this.name)),
 		) as ParsedFilename
 		return {
-			episodes: parsed.episodeNumbers.length > 5 ? [] : parsed.episodeNumbers,
+			episodes: parsed.episodeNumbers.length > 3 ? [] : parsed.episodeNumbers,
 			seasons: parsed.seasons,
 			years: parsed.year ? [_.parseInt(parsed.year)] : [],
 		}
@@ -25,7 +25,7 @@ export class Parser {
 		let matches = regexes.map(v => Array.from((slug || this.slug).matchAll(v))).flat()
 		return groups.map(group => {
 			let ints = matches.map(v => _.parseInt(_.get(v, `groups.${group}`)))
-			return _.sortBy(_.uniq(ints.filter(v => _.inRange(v, 1, 100))))
+			return _.sortBy(_.uniq(ints.filter(v => _.inRange(v, 0, 100))))
 		})
 	}
 
@@ -52,7 +52,7 @@ export class Parser {
 			seasons.push(...season)
 			episodes.push(...episode)
 		}
-		return { seasons, episodes }
+		return { episodes, seasons }
 	}
 
 	get seasons() {
@@ -87,7 +87,7 @@ export class Parser {
 			let slug = utils.excludes(this.slug, ['and', 'through', 'to'])
 			let matches = Array.from(slug.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2}\b)+/gi))
 			let ints = matches.map(v => v[0].split(' ').map(vv => utils.parseInt(vv))).flat()
-			ints = ints.filter(v => _.inRange(v, 1, 100))
+			ints = ints.filter(v => _.inRange(v, 0, 100))
 			let [min, max] = [_.min(ints), _.max(ints)]
 			seasons.push(..._.range(min, max + 1))
 		}
@@ -136,6 +136,7 @@ export class Parser {
 	filter = ''
 	get slug() {
 		return ` ${utils.slugify(this.name)} `
+		// return ` ${utils.slugify(this.name).replace(' 5 1 ', ' ')} `
 	}
 	constructor(public name: string, public file = false) {}
 }
