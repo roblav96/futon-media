@@ -140,6 +140,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	// console.profileEnd(`torrents.filter`)
 
 	if (process.DEVELOPMENT) {
+		(global as any).removed = removed
 		console.log(
 			Date.now() - t,
 			`scrapeAll removed ->`,
@@ -186,6 +187,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
 
 	if (process.DEVELOPMENT) {
+		(global as any).torrents = torrents
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
@@ -196,18 +198,6 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			torrents.length,
 		)
 	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
-
-	// if (process.DEVELOPMENT) {
-	// 	console.info(
-	// 		Date.now() - t,
-	// 		`scrapeAll cacheds ->`,
-	// 		torrents.filter(v => v.cached.length > 0).map(v => v.short()),
-	// 		// torrents.filter(v => v.cached.length > 0).map(v => v.json()),
-	// 		torrents.length,
-	// 	)
-	// }
-
-	if (process.DEVELOPMENT) (global as any).torrents = torrents
 
 	return torrents
 }

@@ -5,6 +5,7 @@ import * as ffprobe from '@/adapters/ffprobe'
 import * as filters from '@/scrapers/filters'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
+import * as parser from '@/scrapers/parser'
 import * as path from 'path'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
@@ -82,33 +83,44 @@ export async function getStream(
 			let files = (await debrid.getFiles().catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
-			if (!files) {
+			if (_.isEmpty(files)) {
 				console.warn(`!files ->`, torrent.short())
 				continue
 			}
 
-			_.remove(files, ({ path }) => {
-				let slug = ` ${utils.slugify(path)} `
-				return ['rarbg com mp4', 'extras', 'sample'].find(v => slug.includes(` ${v} `))
+			_.remove(files, file => {
+				if (!utils.isVideo(file.path)) return true
+				file.parsed = new parser.Parser(file.path, true)
+				if (item.skips.find(v => file.parsed.slug.includes(` ${v} `))) return true
+				file.leven = utils.levenshtein(file.parsed.slug, item.aliases.join(' '))
+				// file.leven = utils.levens(file.parsed.slug, item.aliases.join(' '))
 			})
-
-			if (files.length == 0) {
+			if (_.isEmpty(files)) {
 				console.warn(`files.length == 0 ->`, torrent.short())
 				next = true
 				continue
 			}
-
-			let file = files.find(v =>
-				filters.torrents(
-					new Torrent(Object.assign({}, torrent.result, { name: v.path }), item),
-					item,
-				),
+			files = _.orderBy(files, ['leven', 'bytes'], ['desc', 'desc'])
+			console.log(
+				'files ->',
+				files.map(v => ({ ...v, parsed: v.parsed.json() })),
 			)
-			if (!file) {
-				console.warn(`!file ->`, torrent.short(), files)
-				continue
+
+			let file = _.first(files)
+			if (item.show) {
+				let episode = files.find(({ parsed }) => {
+					if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+						return (
+							parsed.seasons.includes(item.S.n) && parsed.episodes.includes(item.E.n)
+						)
+					}
+					if (_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+						return parsed.episodes.includes(item.E.n)
+					}
+				})
+				if (episode) file = episode
 			}
-			console.log(`file ->`, file)
+			console.log(`file ->`, { ...file, parsed: file.parsed.json() })
 
 			let stream = (await debrid.streamUrl(file).catch(error => {
 				console.error(`debrid.streamUrl -> %O`, error)
@@ -124,9 +136,9 @@ export async function getStream(
 			if (stream.startsWith('http:')) stream = stream.replace('http:', 'https:')
 
 			console.log(`probe stream ->`, stream)
-			let probe = (await ffprobe
-				.probe(stream)
-				.catch(error => console.error(`ffprobe '${stream}' -> %O`, error))) as ffprobe.Probe
+			let probe = (await ffprobe.probe(stream).catch(error => {
+				console.error(`ffprobe '${stream}' -> %O`, error)
+			})) as ffprobe.Probe
 			if (!probe) {
 				next = true
 				continue

@@ -96,11 +96,12 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 				path: `/${file.path}`,
 			} as debrid.File
 		})
-		_.remove(this.files, file => {
-			if (file.path.toLowerCase().includes('rarbg.com.mp4')) return true
-			return !utils.isVideo(file.path)
-		})
-		this.files.sort((a, b) => utils.parseInt(a.path) - utils.parseInt(b.path))
+		_.remove(this.files, file => !utils.isVideo(file.path))
+		// _.remove(this.files, file => {
+		// 	if (file.path.toLowerCase().includes('rarbg.com.mp4')) return true
+		// 	return !utils.isVideo(file.path)
+		// })
+		// this.files.sort((a, b) => utils.parseInt(a.path) - utils.parseInt(b.path))
 		return this.files
 	}
 

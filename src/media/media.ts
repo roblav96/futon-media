@@ -114,7 +114,7 @@ export class Item {
 			if (!this.movie.certification) return true
 		}
 		if (this.show) {
-			if (!this.ids.imdb && !this.ids.tmdb) return true
+			if (!this.ids.imdb /** && !this.ids.tmdb */) return true
 			if (!this.show.network) return true
 			if (!this.show.first_aired) return true
 			if (!this.show.aired_episodes) return true
@@ -150,7 +150,7 @@ export class Item {
 		if (_.has(this.season, 'number')) S.n = this.season.number
 		else if (_.has(this.episode, 'season')) S.n = this.episode.season
 		if (_.isFinite(S.n)) S.z = utils.zeroSlug(S.n)
-		if (_.has(this.season, 'title') && !this.season.title.startsWith('Season')) {
+		if (_.has(this.season, 'title') && !/^season /i.test(this.season.title)) {
 			S.t = this.season.title
 		}
 		return S
@@ -167,8 +167,8 @@ export class Item {
 		if (_.has(this.episode, 'first_aired')) {
 			E.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
 		}
-		if (_.has(this.episode, 'title') && !this.episode.title.startsWith('Episode')) {
-			E.t = this.episode.title.split(',')[0]
+		if (_.has(this.episode, 'title') && !/^episode /i.test(this.episode.title)) {
+			E.t = this.episode.title.replace(/ \((\d{1})\)$/, ': Part $1')
 		}
 		if (_.has(this.episode, 'number')) {
 			E.n = this.episode.number
@@ -229,40 +229,6 @@ export class Item {
 	// 	)).filter(Boolean)
 	// }
 
-	static toYears(title: string, years: number[]) {
-		return years.filter(year => !title.endsWith(` ${year}`)).map(year => `${title} ${year}`)
-	}
-	static toTitles(
-		titles: string[],
-		options = {} as {
-			bylength?: boolean
-			parts?: 'all' | 'edges' | 'first' | 'last'
-			stops?: boolean
-			years?: number[]
-		},
-	) {
-		if (options.parts == 'all') {
-			titles = _.flatten(titles.map(v => [v, ...utils.allParts(v)]))
-		} else if (options.parts == 'edges') {
-			titles = _.flatten(
-				titles.map(v => [v, _.first(utils.allParts(v)), _.last(utils.allParts(v))]),
-			)
-		} else if (options.parts == 'first') {
-			titles = _.flatten(titles.map(v => [v, _.first(utils.allParts(v))]))
-		} else if (options.parts == 'last') {
-			titles = _.flatten(titles.map(v => [v, _.last(utils.allParts(v))]))
-		}
-		titles = _.flatten(titles.map(v => utils.allSlugs(v)))
-		if (options.stops) {
-			titles = titles.map(v => [v, utils.stripStopWords(v)]).flat()
-		}
-		if (!_.isEmpty(options.years)) {
-			titles = titles.map(v => [v, ...Item.toYears(v, options.years)]).flat()
-		}
-		titles = _.uniq(titles.map(v => v.trim()).filter(Boolean))
-		return options.bylength ? utils.byLength(titles) : titles
-	}
-
 	aliases: string[]
 	async setAliases() {
 		let aliases = [
@@ -274,14 +240,16 @@ export class Item {
 			if (this.collection.name) aliases.push(this.collection.name)
 		}
 		if (this.show) {
+			if (this.S.t) aliases.push(this.S.t)
 			if (this.E.t) aliases.push(this.E.t)
-			if (this.E.a && this.isDaily) aliases.push(this.E.a)
-			if (!utils.includes(this.S.t, 'season')) aliases.push(this.S.t)
+			if (this.isDaily && this.E.a) aliases.push(this.E.a)
 			if (this.show.network) {
-				aliases.push(...this.titles.map(v => `${this.show.network.split(' ')[0]} ${v}`))
+				aliases.push(
+					...this.titles.map(v => `${_.first(utils.allParts(this.show.network))} ${v}`),
+				)
 			}
 		}
-		aliases = Item.toTitles(aliases, { parts: 'last', stops: true, years: this.years })
+		aliases = utils.allTitles(aliases, { parts: 'all', stops: true, years: this.years })
 		// aliases = aliases.filter(v => v.includes(' '))
 		this.aliases = _.sortBy(aliases)
 	}
@@ -306,23 +274,31 @@ export class Item {
 		let titles = (await Promise.all([trakt.titles(queries), simkl.titles(queries)])).flat()
 		let collisions = _.flatten(
 			titles.map(v =>
-				Item.toTitles([v.title], { parts: 'all', stops: true, years: [v.year] }),
+				utils.allTitles([v.title], {
+					parts: 'all',
+					stops: true,
+					years: v.year && [v.year],
+				}),
 			),
 		)
 		if (this.collection.name) {
 			collisions.push(
 				..._.flatten(
 					this.collection.titles.map((v, i) =>
-						Item.toTitles([v], { parts: 'edges', years: [this.collection.years[i]] }),
+						utils.allTitles([v], { parts: 'edges', years: [this.collection.years[i]] }),
 					),
 				),
 			)
 		}
 		collisions = _.uniq(collisions.map(v => v.trim()).filter(Boolean))
-		_.remove(collisions, collision => {
-			if (this.aliases.find(v => ` ${v} `.includes(` ${collision} `))) return true
-		})
-		this.collisions = _.sortBy(collisions.filter(v => v.includes(' ')))
+		_.remove(collisions, collision =>
+			this.aliases.find(v => ` ${v} `.includes(` ${collision} `)),
+		)
+		// collisions = collisions.filter(v => v.includes(' '))
+		this.collisions = _.sortBy(collisions)
+		if (this.titles.find(v => v.includes(' '))) {
+			this.aliases = this.aliases.filter(v => v.includes(' '))
+		}
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
 	}
 
@@ -368,7 +344,7 @@ export class Item {
 	get slugs() {
 		let slugs = [...this.titles]
 		if (this.movie) {
-			slugs = slugs.map(v => [v, ...Item.toYears(v, this.years)]).flat()
+			slugs = slugs.map(v => [v, ...utils.allYears(v, this.years)]).flat()
 			if (this.collection.name) slugs.push(this.collection.name)
 		}
 		slugs = slugs.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
@@ -385,15 +361,9 @@ export class Item {
 		if (this.movie) return queries
 		if (this.isDaily && this.E.a) queries.push(this.E.a)
 		if (this.E.n) queries.push(`s${this.S.z}e${this.E.z}`)
-		if (this.E.t) queries.push(this.E.t)
+		if (this.E.t) queries.push(utils.stripStopWords(_.first(utils.allParts(this.E.t))))
 		if (this.S.t) queries.push(this.S.t)
-		let next = this.seasons.find(v => v.number == this.S.n + 1)
-		let eps = [this.S.a, this.S.e].filter(v => _.isFinite(v))
-		let packable = (next && next.episode_count > 0) || (eps.length == 2 && eps[0] == eps[1])
-		if (packable) {
-			if (this.S.n) queries.push(`s${this.S.z}`)
-			if (this.S.n) queries.push(`season ${this.S.n}`)
-		}
+		if (this.S.n) queries.push(`s${this.S.z}`, `season ${this.S.n}`)
 		return _.uniq(queries.map(v => utils.slugify(v)).filter(Boolean))
 	}
 

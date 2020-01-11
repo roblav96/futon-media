@@ -17,19 +17,19 @@ export async function titles(queries: string[]) {
 	let combos = queries.map(v => ['movie', 'tv'].map(vv => [v, vv])).flat()
 	let results = (
 		await pAll(
-			combos.map(([query, type], i) => async () => {
-				return (await client.get(`/search/${type}`, {
+			combos.map(([query, type], i) => async () =>
+				(await client.get(`/search/${type}`, {
 					delay: i > 0 && 300,
 					query: { q: query, limit: 50 },
 					memoize: true,
 					silent: true,
-				})) as Result[]
-			}),
+				})) as Result[],
+			),
 			{ concurrency: 2 },
 		)
 	).flat()
 	results = _.uniqBy(results, 'ids.simkl_id').filter(v => !!v.title && !!v.year)
-	return results.map(v => ({ slug: v.ids.slug, title: v.title, year: v.year }))
+	return results.map(v => ({ title: v.title, year: v.year }))
 }
 
 // if (process.DEVELOPMENT) {

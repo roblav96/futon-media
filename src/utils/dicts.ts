@@ -7,7 +7,6 @@ export const NAUGHTY_WORDS = _.uniq(
 ).filter(v => v.length >= 3)
 
 export const SKIPS = [
-	...NAUGHTY_WORDS,
 	'3d',
 	'bonus',
 	'cam',
@@ -19,8 +18,11 @@ export const SKIPS = [
 	'hdts',
 	'hsbs',
 	'preview',
+	'rarbg com mp4',
 	'sample',
 	'trailer',
+	'soundtrack',
+	...NAUGHTY_WORDS,
 ]
 
 export const STOP_WORDS = [

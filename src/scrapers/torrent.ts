@@ -110,7 +110,6 @@ export class Torrent extends parser.Parser {
 				age: this.age,
 				boost: _.round(this.boost, 2),
 				cached: `${this.cached}`,
-				filter: this.filter,
 				magnet: `magnet:?${minify}`, // this.magnet,
 				packs: this.packs,
 				providers: `${this.providers}`,

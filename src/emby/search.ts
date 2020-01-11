@@ -55,7 +55,12 @@ process.nextTick(() => {
 				await pAll(
 					[SearchTerm, `${SearchTerm}*`].map(query => async () =>
 						(await trakt.client.get('/search/movie,show', {
-							query: { query, fields: 'title,translations', limit: 100 },
+							delay: 300,
+							query: {
+								query,
+								fields: 'title,tagline,aliases',
+								limit: 100,
+							},
 							memoize: true,
 							silent: true,
 						})) as trakt.Result[],

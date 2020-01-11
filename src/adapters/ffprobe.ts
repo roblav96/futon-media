@@ -9,7 +9,6 @@ export async function probe(url: string) {
 	let flags = ['-loglevel', 'quiet', '-print_format', 'json', '-show_format', '-show_streams']
 	let { stdout } = await execa(ffpath, flags.concat(url))
 	let value = JSON.parse(stdout) as Probe
-	global.dts(value, `FFProbe`)
 	if (value.format && value.format.tags) {
 		value.format.tags = _.mapKeys(value.format.tags, (v, k) => k.toLowerCase()) as any
 	}
@@ -104,6 +103,20 @@ export interface Stream {
 	color_space: string
 	color_transfer: string
 	display_aspect_ratio: string
+	disposition: {
+		attached_pic: number
+		clean_effects: number
+		comment: number
+		default: number
+		dub: number
+		forced: number
+		hearing_impaired: number
+		karaoke: number
+		lyrics: number
+		original: number
+		timed_thumbnails: number
+		visual_impaired: number
+	}
 	dmix_mode: string
 	duration: string
 	duration_ts: number
@@ -128,27 +141,13 @@ export interface Stream {
 	sample_rate: string
 	start_pts: number
 	start_time: string
-	time_base: string
-	width: number
-	disposition: {
-		attached_pic: number
-		clean_effects: number
-		comment: number
-		default: number
-		dub: number
-		forced: number
-		hearing_impaired: number
-		karaoke: number
-		lyrics: number
-		original: number
-		timed_thumbnails: number
-		visual_impaired: number
-	}
 	tags: {
 		handler_name: string
 		language: string
 		title: string
 	}
+	time_base: string
+	width: number
 }
 
 export interface Probe {

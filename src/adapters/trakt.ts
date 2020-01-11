@@ -123,20 +123,33 @@ export async function aliases(type: media.MainContentType, id: string) {
 export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
-			queries.map((query, i) => async () => {
-				return (await client.get(`/search/movie,show`, {
+			queries.map((query, i) => async () =>
+				(await client.get(`/search/movie,show,episode`, {
 					delay: i > 0 && 300,
-					query: { query, fields: 'title,tagline,translations,aliases', limit: 100 },
+					query: { query, fields: 'title,aliases', limit: 100 },
 					memoize: true,
 					silent: true,
-				})) as Result[]
-			}),
+				})) as Result[],
+			),
 			{ concurrency: 1 },
 		)
 	).flat()
-	let fulls = results.filter(Boolean).map(v => toFull(v))
-	fulls = _.uniqBy(fulls, 'ids.trakt').filter(v => !!v.title && !!v.year)
-	return fulls.map(v => ({ slug: v.ids.slug, title: v.title, year: v.year }))
+	let titles = [] as { title: string; year: number }[]
+	for (let result of results.filter(Boolean)) {
+		let { movie, show, episode } = result
+		if (movie) titles.push({ title: movie.title, year: movie.year })
+		if (show) titles.push({ title: show.title, year: show.year })
+		if (episode) {
+			titles.push({
+				title: episode.title,
+				year: episode.first_aired && dayjs(episode.first_aired).year(),
+			})
+		}
+	}
+	return titles
+	// let fulls = results.filter(Boolean).map(v => toFull(v))
+	// fulls = _.uniqBy(fulls, 'ids.trakt').filter(v => !!v.title && !!v.year)
+	// return fulls.map(v => ({ slug: v.ids.slug, title: v.title, year: v.year }))
 }
 
 // export function person(results: Result[], name: string) {

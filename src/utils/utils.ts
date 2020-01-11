@@ -85,42 +85,6 @@ export function stripForeign(value: string) {
 	return trim(clean(value).replace(/[^\x01-\xFF]/gi, ' '))
 }
 
-export function simplify(value: string) {
-	let squashes = allSlugs(value)
-	if (squashes.length == 1) return value
-	return excludes(value, accuracies(squashes[0], squashes[1])) || value
-	// return _.filter(value.split(' '), v => !words.includes(squash(v))).join(' ') || value
-	// let accuracy = accuracies(squashes[0], squashes[1])
-	// console.log('accuracy ->', accuracy)
-	// return _.filter(value.split(' '), v => !accuracy.includes(squash(v))).join(' ')
-	// return excludes(value, accuracies(squashes[0], squashes[1]))
-}
-export function colons(value: string) {
-	let index = value.indexOf(': ')
-	return index == -1 ? [value] : [value, value.slice(0, index), value.slice(index + 2)]
-}
-// export function uncolons(value: string) {
-// 	let index = value.indexOf(': ')
-// 	return index == -1 ? [value] : [value, value.slice(0, index)]
-// }
-// export function shrink(value: string) {
-// 	value = clean(value)
-// 	let simple = simplify(value)
-// 	let slug = simple.includes(' ') && slugify(simple)
-// 	if (!slug) {
-// 		let squashes = allSlugs(value)
-// 		let isolates = unisolate(squashes)
-// 		slug = slugify(value)
-// 		// let unisolate = unisolate(slug)
-// 		// if (unisolate.includes(' ')) slug = unisolate
-// 	}
-// 	let stop = stops(slug)
-// 	if (!stop.includes(' ')) return slug
-// 	let common = commons(stop)
-// 	if (!common.includes(' ')) return stop
-// 	return common
-// }
-
 export function equals(value: string, target: string) {
 	return minify(value) == minify(target)
 }
@@ -142,28 +106,10 @@ export function contains(value: string, target: string) {
 export function excludes(value: string, words: string[]) {
 	let split = value.split(' ')
 	return split.filter(v => !words.includes(minify(v) || clean(v))).join(' ')
-	// return trim(value.replace(new RegExp(`\\b(${words.join('|')})\\b`, 'gi'), ' '))
-	// for (let word of words) {
-	// 	// let regexp = new RegExp(`\\b${word}\\b`, 'gi')
-	// 	// if (regexp.test(value)) {
-	// 	value = value.replace(new RegExp(`\\b${word}\\b`, 'gi'), '')
-	// 	// }
-	// }
-	// return trim(value)
-	// return value.replace(/\s+/, '')
-	// words = words.map(v => squash(v)).filter(Boolean)
 }
 export function stripStopWords(value: string) {
 	return excludes(value, STOP_WORDS)
 }
-
-// export function dedupe(value: string) {
-// 	let words = value.split(' ')
-// 	for (let i = words.length - 1; i >= 0; i--) {
-// 		if (words[i] == words[i - 1]) words.splice(i, 1)
-// 	}
-// 	return words.join(' ')
-// }
 
 /** accuracies.length == 0 when all of target is included in value */
 export function accuracies(value: string, target: string) {
@@ -174,14 +120,6 @@ export function accuracies(value: string, target: string) {
 export function accuracy(value: string, target: string) {
 	return accuracies(value, target).length == 0
 }
-
-// export function unisolate([a, b]: string[]) {
-// 	return excludes(
-// 		a,
-// 		accuracies(b, a).filter(v => v.length == 1),
-// 	)
-// 	// return _.filter(value.split(/\s+/), v => v.length > 1 || !isNaN(v as any)).join(' ')
-// }
 
 /** levens == 0 when all of target is included in value */
 export function levens(value: string, target: string) {
@@ -194,14 +132,65 @@ export function leven(value: string, target: string) {
 }
 export { levenshtein }
 
+export function uncamel(value: string) {
+	return value.replace(/([a-z])([A-Z])([a-z])/g, '$1 $2$3')
+}
 export function allSlugs(value: string) {
 	let [a, b] = [slugify(value), squash(value)]
 	return a == b ? [a] : [a, b]
 }
 export function allParts(value: string) {
-	let separators = [': ', ' - ']
+	let separators = [' - ', ' / ', ', ', ': ', '; ']
 	let values = value.split(new RegExp(`(${separators.join(')|(')})`))
 	return values.filter(v => !!v && !separators.includes(v))
+}
+export function allYears(value: string, years: number[]) {
+	return years.filter(year => !value.endsWith(` ${year}`)).map(year => `${value} ${year}`)
+}
+export function allTitles(
+	titles: string[],
+	options = {} as {
+		bylength?: boolean
+		parts?: 'all' | 'edges' | 'first' | 'last'
+		stops?: boolean
+		uncamel?: boolean
+		years?: number[]
+	},
+) {
+	if (options.parts == 'all') {
+		titles = titles.map(v => [v, ...allParts(v)]).flat()
+	} else if (options.parts == 'edges') {
+		titles = titles.map(v => [v, _.first(allParts(v)), _.last(allParts(v))]).flat()
+	} else if (options.parts == 'first') {
+		titles = titles.map(v => [v, _.first(allParts(v))]).flat()
+	} else if (options.parts == 'last') {
+		titles = titles.map(v => [v, _.last(allParts(v))]).flat()
+	}
+	if (options.uncamel) {
+		titles = titles.map(v => [v, uncamel(v)]).flat()
+	}
+	titles = titles.map(v => allSlugs(v)).flat()
+	if (options.stops) {
+		titles = titles.map(v => [v, stripStopWords(v)]).flat()
+	}
+	if (!_.isEmpty(options.years)) {
+		titles = titles.map(v => [v, ...allYears(v, options.years)]).flat()
+	}
+	titles = _.uniq(titles.map(v => v.trim()).filter(Boolean))
+	return options.bylength ? byLength(titles) : titles
+}
+
+export function simplify(value: string) {
+	let squashes = allSlugs(value)
+	if (squashes.length == 1) return value
+	return excludes(value, accuracies(squashes[0], squashes[1])) || value
+}
+export function unduplicate(value: string) {
+	let words = value.split(' ')
+	for (let i = words.length - 1; i >= 0; i--) {
+		if (words[i] == words[i - 1]) words.splice(i, 1)
+	}
+	return words.join(' ')
 }
 
 // export function toSlug(
