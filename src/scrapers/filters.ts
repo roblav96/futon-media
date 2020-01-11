@@ -45,8 +45,8 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 			}
 		}
 		if (item.collection.name) {
-			if (parsed.packs > item.collection.years.length) {
-				parsed.filter = `⛔ collection packs > ${item.collection.years.length}`
+			if (parsed.packs > item.collection.parts.length) {
+				parsed.filter = `⛔ collection packs > ${item.collection.parts.length}`
 				return false
 			}
 			if (parsed.years.length == 1 && !item.years.includes(_.first(parsed.years))) {
@@ -59,7 +59,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 			}
 			if (
 				parsed.years.length > 0 &&
-				!item.collection.years.find(v => parsed.years.includes(v))
+				!item.collection.parts.find(v => parsed.years.includes(v.year))
 			) {
 				parsed.filter = `⛔ collection !years '${parsed.years}'`
 				return false

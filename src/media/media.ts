@@ -4,7 +4,6 @@ import * as dicts from '@/utils/dicts'
 import * as http from '@/adapters/http'
 import * as Memoize from '@/utils/memoize'
 import * as omdb from '@/adapters/omdb'
-import * as pAll from 'p-all'
 import * as simkl from '@/adapters/simkl'
 import * as tmdb from '@/adapters/tmdb'
 import * as trakt from '@/adapters/trakt'
@@ -279,21 +278,24 @@ export class Item {
 		queries = queries.map(v => utils.stripStopWords(v))
 		queries = _.uniq(queries.map(v => v.trim()).filter(Boolean))
 		console.log('setCollisions queries ->', queries)
-		let titles = (await Promise.all([trakt.titles(queries), simkl.titles(queries)])).flat()
+		let titles = (
+			await Promise.all([
+				omdb.titles(queries),
+				simkl.titles(queries),
+				tmdb.titles(queries),
+				trakt.titles(queries),
+			])
+		).flat()
 		let collisions = _.flatten(
 			titles.map(v =>
-				utils.allTitles([v.title], {
-					parts: 'all',
-					stops: true,
-					years: v.year && [v.year],
-				}),
+				utils.allTitles([v.title], { parts: 'all', stops: true, years: [v.year] }),
 			),
 		)
 		if (this.collection.name) {
 			collisions.push(
 				..._.flatten(
-					this.collection.titles.map((v, i) =>
-						utils.allTitles([v], { parts: 'edges', years: [this.collection.years[i]] }),
+					this.collection.parts.map(v =>
+						utils.allTitles([v.title], { parts: 'edges', years: [v.year] }),
 					),
 				),
 			)
@@ -338,15 +340,15 @@ export class Item {
 		return _.sortBy(_.uniq(years))
 	}
 	get collection() {
-		let collection = { name: '', titles: [] as string[], years: [] as number[] }
+		let collection = { name: '', parts: [] as { title: string; year: number }[] }
 		if (!_.has(this.tmdb, 'belongs_to_collection.name')) return collection
 		let name = this.tmdb.belongs_to_collection.name
 		collection.name = name.slice(0, name.lastIndexOf(' ')).trim()
-		collection.titles = this.tmdb.belongs_to_collection.parts.map(v => v.title)
-		collection.years = this.tmdb.belongs_to_collection.parts.map(v =>
-			dayjs(v.release_date || v.first_air_date).year(),
-		)
-		collection.years = _.sortBy(collection.years)
+		collection.parts = this.tmdb.belongs_to_collection.parts.map(v => ({
+			title: v.title || v.name || v.original_title,
+			year: dayjs(v.release_date || v.first_air_date).year(),
+		}))
+		collection.parts = _.sortBy(collection.parts, 'year')
 		return collection
 	}
 	get slugs() {

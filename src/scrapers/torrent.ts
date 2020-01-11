@@ -44,13 +44,13 @@ export class Torrent extends parser.Parser {
 		if (this.item.movie) {
 			if (this.item.collection.name) {
 				if (this.years.length >= 2) {
-					return this.item.collection.years.filter(v =>
-						_.inRange(v, _.first(this.years), _.last(this.years) + 1),
+					return this.item.collection.parts.filter(part =>
+						_.inRange(part.year, _.first(this.years), _.last(this.years) + 1),
 					).length
 				}
 				let alls = 'antology anthology boxset collection complete saga'.split(' ')
 				if (this.years.length == 0 && alls.find(v => this.slug.includes(` ${v} `))) {
-					return this.item.collection.years.length
+					return this.item.collection.parts.length
 				}
 			}
 			if (this.years.length >= 2) {

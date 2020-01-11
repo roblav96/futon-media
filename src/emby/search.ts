@@ -72,13 +72,13 @@ process.nextTick(() => {
 			let items = results.map(v => new media.Item(v)).filter(v => !v.invalid)
 			items.sort((a, b) => b.main.votes - a.main.votes)
 
-			if (process.DEVELOPMENT) {
-				console.log(
-					`rxSearch '${SearchTerm}' results ->`,
-					items.map(v => v.short),
-					items.length,
-				)
-			}
+			// if (process.DEVELOPMENT) {
+			// 	console.log(
+			// 		`rxSearch '${SearchTerm}' results ->`,
+			// 		items.map(v => v.short),
+			// 		items.length,
+			// 	)
+			// }
 
 			items = items.filter(v => {
 				if (v.junk) return false

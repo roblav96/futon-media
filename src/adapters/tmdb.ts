@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as dayjs from 'dayjs'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as trakt from '@/adapters/trakt'
@@ -53,6 +54,27 @@ export async function aliases(type: media.MainContentType, tmdbid: number) {
 	} catch {
 		return []
 	}
+}
+
+export async function titles(queries: string[]) {
+	let results = (
+		await pAll(
+			queries.map((query, i) => async () =>
+				((await client.get('/search/multi', {
+					delay: i > 0 && 300,
+					query: { query },
+					memoize: true,
+					silent: true,
+				})) as Paginated<Full>).results || [],
+			),
+			{ concurrency: 1 },
+		)
+	).flat()
+	results = _.uniqBy(results, 'id').filter(v => v.original_language == 'en')
+	return results.map(v => ({
+		title: v.title || v.name || v.original_title,
+		year: dayjs(v.release_date || v.first_air_date).year(),
+	}))
 }
 
 export async function toTrakt({ id, media_type }: Full) {

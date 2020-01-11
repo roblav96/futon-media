@@ -28,8 +28,7 @@ export async function titles(queries: string[]) {
 			{ concurrency: 2 },
 		)
 	).flat()
-	results = _.uniqBy(results, 'ids.simkl_id').filter(v => !!v.title && !!v.year)
-	return results.map(v => ({ title: v.title, year: v.year }))
+	return _.uniqBy(results, 'ids.simkl_id').map(v => ({ title: v.title, year: v.year }))
 }
 
 // if (process.DEVELOPMENT) {

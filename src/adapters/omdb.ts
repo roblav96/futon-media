@@ -24,6 +24,26 @@ export const client = new Http({
 	},
 })
 
+export async function titles(queries: string[]) {
+	let results = (
+		await pAll(
+			queries.map((query, i) => async () =>
+				((await client.get('/', {
+					delay: i > 0 && 300,
+					query: { s: query },
+					memoize: true,
+					silent: true,
+				})) as SearchResponse).Search || [],
+			),
+			{ concurrency: 1 },
+		)
+	).flat()
+	return _.uniqBy(results, 'imdbID').map(v => ({
+		title: v.Title,
+		year: _.parseInt(_.first(utils.slugify(v.Year).split(' '))),
+	}))
+}
+
 export async function toTags(item: media.Item) {
 	if (!item.ids.imdb) return {} as never
 	let result = (await client.get('/', {
@@ -109,4 +129,10 @@ export interface Result {
 	Website: string
 	Writer: string
 	Year: string
+}
+
+export interface SearchResponse {
+	Response: string
+	Search: Result[]
+	totalResults: string
 }

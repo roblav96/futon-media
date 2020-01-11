@@ -124,7 +124,7 @@ export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
 			queries.map((query, i) => async () =>
-				(await client.get(`/search/movie,show,episode`, {
+				(await client.get('/search/movie,show,episode', {
 					delay: i > 0 && 300,
 					query: { query, fields: 'title,aliases', limit: 100 },
 					memoize: true,
@@ -138,8 +138,11 @@ export async function titles(queries: string[]) {
 		results.filter(Boolean).map(result =>
 			media.TYPES.map(type => {
 				let full = result[type] as Full
-				return { title: full.title, year: full.year || dayjs(full.first_aired).year() }
-			}),
+				if (full) {
+					let year = full.first_aired ? dayjs(full.first_aired).year() : full.year
+					return { title: full.title, year }
+				}
+			}).filter(Boolean),
 		),
 	)
 	// let titles = [] as { title: string; year: number }[]
