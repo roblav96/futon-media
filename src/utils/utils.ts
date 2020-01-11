@@ -117,17 +117,17 @@ export function accuracies(value: string, target: string) {
 	let targets = _.uniq(slugify(target).split(' '))
 	return targets.filter(v => !values.includes(v))
 }
-export function accuracy(value: string, target: string) {
-	return accuracies(value, target).length == 0
-}
+// export function accuracy(value: string, target: string) {
+// 	return accuracies(value, target).length == 0
+// }
 
 /** returns `0` when all of target is included in value */
 export function levens(value: string, target: string) {
 	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
-export function leven(value: string, target: string) {
-	return levens(value, target) == 0
-}
+// export function leven(value: string, target: string) {
+// 	return levens(value, target) == 0
+// }
 export { levenshtein }
 
 export function simplify(value: string) {

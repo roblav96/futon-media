@@ -286,6 +286,8 @@ export class Item {
 				trakt.titles(queries),
 			])
 		).flat()
+		// titles.push(...this.collection.parts.map(v => ({ title: v.title, year: v.year })))
+		// console.log(`titles ->`, titles)
 		let collisions = _.flatten(
 			titles.map(v =>
 				utils.allTitles([v.title], { parts: 'all', stops: true, years: [v.year] }),

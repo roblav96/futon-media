@@ -88,19 +88,21 @@ export async function getStream(
 				continue
 			}
 
+			// let levens = [item.titles]
 			_.remove(files, file => {
 				if (!utils.isVideo(file.path)) return true
 				file.parsed = new parser.Parser(file.path, true)
 				if (item.skips.find(v => file.parsed.slug.includes(` ${v} `))) return true
-				file.leven = utils.levenshtein(file.parsed.slug, item.aliases.join(' '))
+				file.leven = utils.levens(file.parsed.slug, item.aliases.join(' '))
 				// file.leven = utils.levens(file.parsed.slug, item.aliases.join(' '))
 			})
+			files = _.sortBy(files, 'leven')
+			// files = _.orderBy(files, ['leven', 'bytes'], ['desc', 'desc'])
 			if (_.isEmpty(files)) {
 				console.warn(`files.length == 0 ->`, torrent.short())
 				next = true
 				continue
 			}
-			files = _.orderBy(files, ['leven', 'bytes'], ['desc', 'desc'])
 
 			console.log(
 				'files ->',

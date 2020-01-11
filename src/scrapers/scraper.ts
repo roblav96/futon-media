@@ -123,7 +123,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			Date.now() - t,
 			`scrapeAll junk ->`,
 			// junk.map(v => v.short()),
-			junk.map(v => [v.short(), v.filter]),
+			junk.map(v => [v.short(), v.filter, v.json()]),
 			// junk.map(v => v.json()),
 			junk.length,
 		)

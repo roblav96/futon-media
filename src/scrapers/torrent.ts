@@ -25,6 +25,19 @@ export class Torrent extends parser.Parser {
 		return utils.fromBytes(this.bytes)
 	}
 
+	get seasons() {
+		if (this.item.show && _.isEmpty(super.seasons) && _.isEmpty(this.episodes)) {
+			if (!_.isEmpty(this.years)) {
+				let [min, max] = [_.min(this.years), _.max(this.years)]
+				return this.item.seasons.filter(v => dayjs(v.first_aired).year()).map(v => v.number)
+			}
+			// let years = [...this.item.years, this.item.se.y, this.item.ep.y].filter(Boolean)
+			// if (_.isEmpty(this.years) || this.years.find(v => years.includes(v))) {
+			return _.range(1, _.last(this.item.seasons).number + 1)
+		}
+		return super.seasons
+	}
+
 	get packs() {
 		if (this.slug.includes(' dilogy ')) return 2
 		if (this.slug.includes(' duology ')) return 2
@@ -60,15 +73,6 @@ export class Torrent extends parser.Parser {
 		if (this.item.show) {
 			if (!_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
 				return this.seasons.length
-			}
-			if (_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
-				if (this.item.single) {
-					return 1
-				}
-				let years = [...this.item.years, this.item.se.y, this.item.ep.y].filter(Boolean)
-				if (!_.isEmpty(this.years) && this.years.find(v => years.includes(v))) {
-					return _.last(this.item.seasons).number
-				}
 			}
 		}
 		return 0
@@ -117,6 +121,7 @@ export class Torrent extends parser.Parser {
 				// magnet: `magnet:?${minify}`, // this.magnet,
 				packs: this.packs,
 				providers: `${this.providers}`,
+				seasons: `${this.seasons}`,
 				seeders: this.seeders,
 				size: this.size,
 			}),

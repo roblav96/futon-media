@@ -34,8 +34,8 @@ export class Parser {
 		{
 			let [season, episode] = this.matches(
 				[
-					/\b(s|se|season)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
-					/\b(s|se|season|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
+					/\b(s|se|season|vol|volume)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
+					/\b(s|se|season|vol|volume|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 					/\b(?<season>\d{1,2})\s?x\s?(?<episode>\d{1,2})\b/gi,
 				],
 				['season', 'episode'],
@@ -61,7 +61,7 @@ export class Parser {
 		{
 			// 3rd season
 			let [season] = this.matches(
-				[/\b(?<season>\d{1,2})[a-z]{2} (s|se|season)\b/gi],
+				[/\b(?<season>\d{1,2})[a-z]{2} (s|se|season|vol|volume)\b/gi],
 				['season'],
 			)
 			seasons.push(...season)
@@ -71,7 +71,10 @@ export class Parser {
 			let numbers = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 			let matches = Array.from(
 				this.slug.matchAll(
-					new RegExp(`\\b(s|se|season) (?<season>${numbers.join('|')})\\b`, 'gi'),
+					new RegExp(
+						`\\b(s|se|season|vol|volume) (?<season>${numbers.join('|')})\\b`,
+						'gi',
+					),
 				),
 			)
 			let indexes = matches.map(v => numbers.indexOf(_.get(v, 'groups.season')) + 1)
@@ -79,17 +82,21 @@ export class Parser {
 		}
 		if (!this.file) {
 			// 3 seasons
-			let [season] = this.matches([/\b(?<season>\d{1,2}) seasons\b/gi], ['season'])
+			let [season] = this.matches([/\b(?<season>\d{1,2}) (seasons|volumes)\b/gi], ['season'])
 			seasons.push(...season.map(v => _.range(1, v + 1)).flat())
 		}
 		if (!this.file) {
 			// season 3 to 6
 			let slug = utils.excludes(this.slug, ['and', 'through', 'to'])
-			let matches = Array.from(slug.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2}\b)+/gi))
+			let regexes = [
+				/\bs((e|eason|easons)?\s?\d{1,2}\b)+/gi,
+				/\bvol((ume|umes)?\s?\d{1,2}\b)+/gi,
+			]
+			let matches = regexes.map(v => Array.from(slug.matchAll(v))).flat()
+			// let matches = Array.from(slug.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2}\b)+/gi))
 			let ints = matches.map(v => v[0].split(' ').map(vv => utils.parseInt(vv))).flat()
 			ints = ints.filter(v => _.inRange(v, 0, 100))
-			let [min, max] = [_.min(ints), _.max(ints)]
-			seasons.push(..._.range(min, max + 1))
+			seasons.push(..._.range(_.min(ints), _.max(ints) + 1))
 		}
 		return _.sortBy(_.uniq(seasons))
 	}
@@ -111,11 +118,12 @@ export class Parser {
 			let ints = this.matches(
 				[
 					/\b(ch|chapter|e|ep|episode)\s?(?<min>\d{1,2})\s?(and|through|to)\s?(?<max>\d{1,2})\b/gi,
+					/\b\d{1,2}\s?x\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
+					/\b(s|se|season|vol|volume)?\s?\d{1,2}\s?(ch|chapter|e|ep|episode)\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
 				],
 				['min', 'max'],
 			).flat()
-			let [min, max] = [_.min(ints), _.max(ints)]
-			episodes.push(..._.range(min, max + 1))
+			episodes.push(..._.range(_.min(ints), _.max(ints) + 1))
 		}
 		return _.sortBy(_.uniq(episodes))
 	}
