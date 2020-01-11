@@ -81,15 +81,15 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 	}
 
 	if (item.show) {
-		if (item.isDaily && item.E.a) {
-			let aired = utils.allSlugs(item.E.a).find(v => parsed.slug.includes(` ${v} `))
+		if (item.isDaily && item.ep.a) {
+			let aired = utils.allSlugs(item.ep.a).find(v => parsed.slug.includes(` ${v} `))
 			if (aired) {
 				parsed.filter = `✅ aired '${aired}'`
 				return true
 			}
 		}
-		if (item.S.t) {
-			let titles = utils.allTitles([item.S.t], { parts: 'all', uncamel: true })
+		if (item.se.t) {
+			let titles = utils.allTitles([item.se.t], { parts: 'all', uncamel: true })
 			titles = titles.filter(v => v.includes(' '))
 			let title = titles.find(v => parsed.slug.includes(` ${v} `))
 			if (title) {
@@ -97,8 +97,8 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 				return true
 			}
 		}
-		if (item.E.t) {
-			let titles = utils.allTitles([item.E.t], { parts: 'all', uncamel: true })
+		if (item.ep.t) {
+			let titles = utils.allTitles([item.ep.t], { parts: 'all', uncamel: true })
 			titles = titles.filter(v => v.includes(' '))
 			let title = titles.find(v => parsed.slug.includes(` ${v} `))
 			if (title) {
@@ -108,7 +108,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 
 		let years = [...item.years]
-		if (item.E.a) years.push(dayjs(item.E.a).year())
+		if (item.ep.a) years.push(dayjs(item.ep.a).year())
 		if (parsed.years.length > 0) {
 			let year = years.find(v => parsed.years.includes(v))
 			if (year) {
@@ -120,7 +120,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 
 		if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
-			if (parsed.seasons.includes(item.S.n) && parsed.episodes.includes(item.E.n)) {
+			if (parsed.seasons.includes(item.se.n) && parsed.episodes.includes(item.ep.n)) {
 				parsed.filter = `✅ seasons '${parsed.seasons}' episodes '${parsed.episodes}'`
 				return true
 			}
@@ -128,7 +128,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 			return false
 		}
 		if (!_.isEmpty(parsed.seasons) && _.isEmpty(parsed.episodes)) {
-			if (parsed.seasons.includes(item.S.n)) {
+			if (parsed.seasons.includes(item.se.n)) {
 				parsed.filter = `✅ seasons '${parsed.seasons}'`
 				return true
 			}

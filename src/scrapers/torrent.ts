@@ -25,13 +25,6 @@ export class Torrent extends parser.Parser {
 		return utils.fromBytes(this.bytes)
 	}
 
-	// get seasons() {
-	// 	return super.seasons.filter(v => _.inRange(v, 1, _.last(this.item.seasons).number + 1))
-	// }
-	// get episodes() {
-	// 	return super.episodes.filter(v => _.inRange(v, 1, this.item.S.e + 1))
-	// }
-
 	get packs() {
 		if (this.item.show) {
 			if (!_.isEmpty(this.seasons) && _.isEmpty(this.episodes)) {
@@ -82,7 +75,7 @@ export class Torrent extends parser.Parser {
 			bytes = this.bytes / this.packs
 		}
 		if (this.item.show && this.packs > 0) {
-			bytes = this.bytes / (this.item.S.e * this.packs)
+			bytes = this.bytes / (this.item.se.e * this.packs)
 		}
 		return {
 			bytes: _.ceil(bytes * this.boost),
@@ -110,12 +103,11 @@ export class Torrent extends parser.Parser {
 				age: this.age,
 				boost: _.round(this.boost, 2),
 				cached: `${this.cached}`,
-				magnet: `magnet:?${minify}`, // this.magnet,
+				// magnet: `magnet:?${minify}`, // this.magnet,
 				packs: this.packs,
 				providers: `${this.providers}`,
 				seeders: this.seeders,
 				size: this.size,
-				slug: this.slug,
 			}),
 		)
 	}

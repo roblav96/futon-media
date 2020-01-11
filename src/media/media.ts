@@ -63,8 +63,8 @@ export class Item {
 	}
 	get strm() {
 		let strm = this.ids.slug
-		if (this.S.z) strm += ` S${this.S.z}`
-		if (this.E.z) strm += `E${this.E.z}`
+		if (this.se.z) strm += ` S${this.se.z}`
+		if (this.ep.z) strm += `E${this.ep.z}`
 		return strm
 	}
 	get gigs() {
@@ -137,44 +137,44 @@ export class Item {
 	}
 
 	/** season */
-	get S() {
-		let S = {
+	get se() {
+		let se = {
 			/** season `aired episodes` */ a: NaN,
 			/** season `episode count` */ e: NaN,
 			/** season `title` */ t: '',
 			/** season `number` */ n: NaN,
 			/** season `0 number` */ z: '',
 		}
-		if (_.has(this.season, 'aired_episodes')) S.a = this.season.aired_episodes
-		if (_.has(this.season, 'episode_count')) S.e = this.season.episode_count
-		if (_.has(this.season, 'number')) S.n = this.season.number
-		else if (_.has(this.episode, 'season')) S.n = this.episode.season
-		if (_.isFinite(S.n)) S.z = utils.zeroSlug(S.n)
+		if (_.has(this.season, 'aired_episodes')) se.a = this.season.aired_episodes
+		if (_.has(this.season, 'episode_count')) se.e = this.season.episode_count
+		if (_.has(this.season, 'number')) se.n = this.season.number
+		else if (_.has(this.episode, 'season')) se.n = this.episode.season
+		if (_.isFinite(se.n)) se.z = utils.zeroSlug(se.n)
 		if (_.has(this.season, 'title') && !/^season /i.test(this.season.title)) {
-			S.t = this.season.title
+			se.t = this.season.title
 		}
-		return S
+		return se
 	}
 
 	/** episode */
-	get E() {
-		let E = {
+	get ep() {
+		let ep = {
 			/** episode `aired date` */ a: '',
 			/** episode `title` */ t: '',
 			/** episode `number` */ n: NaN,
 			/** episode `0 number` */ z: '',
 		}
 		if (_.has(this.episode, 'first_aired')) {
-			E.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
+			ep.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
 		}
 		if (_.has(this.episode, 'title') && !/^episode /i.test(this.episode.title)) {
-			E.t = this.episode.title.replace(/ \((\d{1})\)$/, ': Part $1')
+			ep.t = this.episode.title.replace(/ \((\d{1})\)$/, ': Part $1')
 		}
 		if (_.has(this.episode, 'number')) {
-			E.n = this.episode.number
-			E.z = utils.zeroSlug(E.n)
+			ep.n = this.episode.number
+			ep.z = utils.zeroSlug(ep.n)
 		}
-		return E
+		return ep
 	}
 
 	omdb: omdb.Result
@@ -240,9 +240,9 @@ export class Item {
 			if (this.collection.name) aliases.push(this.collection.name)
 		}
 		if (this.show) {
-			if (this.S.t) aliases.push(this.S.t)
-			if (this.E.t) aliases.push(this.E.t)
-			if (this.isDaily && this.E.a) aliases.push(this.E.a)
+			if (this.se.t) aliases.push(this.se.t)
+			if (this.ep.t) aliases.push(this.ep.t)
+			if (this.isDaily && this.ep.a) aliases.push(this.ep.a)
 			if (this.show.network) {
 				aliases.push(
 					...this.titles.map(v => `${_.first(utils.allParts(this.show.network))} ${v}`),
@@ -359,11 +359,11 @@ export class Item {
 	get queries() {
 		let queries = [] as string[]
 		if (this.movie) return queries
-		if (this.isDaily && this.E.a) queries.push(this.E.a)
-		if (this.E.n) queries.push(`s${this.S.z}e${this.E.z}`)
-		if (this.E.t) queries.push(utils.stripStopWords(_.first(utils.allParts(this.E.t))))
-		if (this.S.t) queries.push(this.S.t)
-		if (this.S.n) queries.push(`s${this.S.z}`, `season ${this.S.n}`)
+		if (this.isDaily && this.ep.a) queries.push(this.ep.a)
+		if (this.ep.n) queries.push(`s${this.se.z}e${this.ep.z}`)
+		if (this.ep.t) queries.push(utils.stripStopWords(_.first(utils.allParts(this.ep.t))))
+		if (this.se.t) queries.push(this.se.t)
+		if (this.se.n) queries.push(`s${this.se.z}`, `season ${this.se.n}`)
 		return _.uniq(queries.map(v => utils.slugify(v)).filter(Boolean))
 	}
 

@@ -111,11 +111,11 @@ export async function getStream(
 				let episode = files.find(({ parsed }) => {
 					if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
 						return (
-							parsed.seasons.includes(item.S.n) && parsed.episodes.includes(item.E.n)
+							parsed.seasons.includes(item.se.n) && parsed.episodes.includes(item.ep.n)
 						)
 					}
 					if (_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
-						return parsed.episodes.includes(item.E.n)
+						return parsed.episodes.includes(item.ep.n)
 					}
 				})
 				if (episode) file = episode
