@@ -8,7 +8,6 @@ import * as qs from '@/shims/query-string'
 import * as scraper from '@/scrapers/scraper'
 import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
-import { filenameParse, ParsedFilename } from '@ctrl/video-filename-parser'
 
 export interface Torrent extends scraper.Result {}
 @Memoize.Class
@@ -78,19 +77,23 @@ export class Torrent extends parser.Parser {
 		return 0
 	}
 
-	boost = 1
-	boosts() {
-		let bytes = this.bytes
+	get runbytes() {
 		if (this.item.movie && this.packs > 0) {
-			bytes = this.bytes / this.packs
+			return this.bytes / this.packs
 		}
 		if (this.item.show && this.packs > 0) {
-			bytes = this.bytes / (this.item.se.e * this.packs)
-		} else if (this.item.show && this.episodes.length > 1) {
-			bytes = this.bytes / this.episodes.length
+			return this.bytes / (this.item.se.e * this.packs)
 		}
+		if (this.item.show && this.episodes.length > 1) {
+			return this.bytes / this.episodes.length
+		}
+		return this.bytes
+	}
+
+	boost = 1
+	boosts() {
 		return {
-			bytes: _.ceil(bytes * this.boost),
+			bytes: _.ceil(this.runbytes * this.boost),
 			seeders: _.ceil(this.seeders * this.boost),
 		}
 	}
@@ -129,7 +132,7 @@ export class Torrent extends parser.Parser {
 	}
 
 	constructor(public result: scraper.Result, public item: media.Item) {
-		super(result.name)
+		super(result.name, result.bytes)
 		_.merge(this, result)
 	}
 }

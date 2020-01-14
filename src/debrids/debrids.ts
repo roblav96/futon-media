@@ -83,50 +83,70 @@ export async function getStream(
 			let files = (await debrid.getFiles().catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
+			files = files.filter(file => {
+				if (!utils.isVideo(file.path)) return false
+				let parsed = new parser.Parser(file.path, file.bytes, true)
+				let filtered = filters.torrents(parsed, item)
+				console.log(filtered, `${file.path} ->`, { ...file, parsed: parsed.json() })
+				return !filtered
+			})
 			if (_.isEmpty(files)) {
 				console.warn(`!files ->`, torrent.short())
 				continue
 			}
 
 			// let levens = [item.titles]
-			_.remove(files, file => {
-				if (!utils.isVideo(file.path)) return true
-				file.parsed = new parser.Parser(file.path, true)
-				if (item.skips.find(v => file.parsed.slug.includes(` ${v} `))) return true
-				file.leven = utils.levens(file.parsed.slug, item.aliases.join(' '))
-				// file.leven = utils.levens(file.parsed.slug, item.aliases.join(' '))
-			})
-			files = _.sortBy(files, 'leven')
+			// let aliases = _.uniq(item.aliases.map(v => v.split(' ')).flat()).join(' ')
+			// let aliases = item.aliases.join(' ')
+			// console.log('aliases ->', aliases)
+			// _.remove(files, file => {
+			// 	if (!utils.isVideo(file.path)) return true
+			// 	file.parsed = new parser.Parser(file.path, true)
+			// 	// if (item.skips.find(v => file.parsed.slug.includes(` ${v} `))) return true
+			// 	// file.leven = utils.levens(file.parsed.slug, aliases)
+			// })
+			// files = _.sortBy(files, 'leven')
 			// files = _.orderBy(files, ['leven', 'bytes'], ['desc', 'desc'])
-			if (_.isEmpty(files)) {
-				console.warn(`files.length == 0 ->`, torrent.short())
-				next = true
-				continue
-			}
 
-			console.log(
-				'files ->',
-				files.map(v => ({ ...v, parsed: v.parsed.json() })),
-			)
+			// files = files.filter(file => {
+			// 	if (!utils.isVideo(file.path)) return true
+			// 	file.parsed = new parser.Parser(file.path, true)
+			// })
 
-			let file = _.first(files)
-			if (item.show) {
-				let episode = files.find(({ parsed }) => {
-					if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
-						return (
-							parsed.seasons.includes(item.se.n) &&
-							parsed.episodes.includes(item.ep.n)
-						)
-					}
-					if (_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
-						return parsed.episodes.includes(item.ep.n)
-					}
-				})
-				if (episode) file = episode
-			}
-			console.log(`file ->`, { ...file, parsed: file.parsed.json() })
+			// let file = _.first(files)
 
-			let stream = (await debrid.streamUrl(file).catch(error => {
+			// let removed = _.remove(files, ({ parsed }) => {
+			// 	if (item.skips.find(v => parsed.slug.includes(` ${v} `))) return true
+			// 	// if (!item.aliases.find(v => parsed.slug.includes(` ${v} `))) return true
+			// 	// if (item.collisions.find(v => parsed.slug.includes(` ${v} `))) return true
+			// })
+			// console.log(
+			// 	'removed ->',
+			// 	removed.map(v => ({ ...v, parsed: v.parsed.json() })),
+			// )
+			// if (_.isEmpty(files)) {
+			// 	console.warn(`files.length == 0 ->`, torrent.short())
+			// 	next = true
+			// 	continue
+			// }
+			// if (item.show) {
+			// 	if (item.skips.find(v => file.parsed.slug.includes(` ${v} `))) return true
+			// 	let episode = files.find(({ parsed }) => {
+			// 		if (!_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+			// 			return (
+			// 				parsed.seasons.includes(item.se.n) &&
+			// 				parsed.episodes.includes(item.ep.n)
+			// 			)
+			// 		}
+			// 		if (_.isEmpty(parsed.seasons) && !_.isEmpty(parsed.episodes)) {
+			// 			return parsed.episodes.includes(item.ep.n)
+			// 		}
+			// 	})
+			// 	if (episode) file = episode
+			// }
+
+			console.log(`file ->`, files[0])
+			let stream = (await debrid.streamUrl(files[0]).catch(error => {
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) {

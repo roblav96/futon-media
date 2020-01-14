@@ -252,10 +252,11 @@ export class Http {
 			}
 
 			if (!!options.memoize) {
+				let duration = utils.duration(1, process.DEVELOPMENT ? 'day' : 'hour')
 				await db.put(
 					mkey,
 					_.omit(response, ['client', 'connection', 'req', 'socket', '_readableState']),
-					_.isNumber(options.memoize) ? options.memoize : utils.duration(1, 'hour'),
+					_.isNumber(options.memoize) ? options.memoize : duration,
 				)
 			}
 		}

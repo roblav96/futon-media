@@ -79,7 +79,7 @@ export class Item {
 	}
 	get runtime() {
 		if (this.movie && this.movie.runtime) return this.movie.runtime
-		// if (this.episode && this.episode.runtime) return this.episode.runtime
+		if (this.episode && this.episode.runtime) return this.episode.runtime
 		if (this.show && this.show.runtime) return this.show.runtime
 	}
 
@@ -172,7 +172,7 @@ export class Item {
 			ep.a = dayjs(this.episode.first_aired).format('YYYY-MM-DD')
 		}
 		if (_.has(this.episode, 'title') && !/^episode /i.test(this.episode.title)) {
-			ep.t = this.episode.title.replace(/ \((\d{1})\)$/, ' Part $1')
+			ep.t = this.episode.title.replace(/ \((\d{1})\)$/, ': Part $1')
 		}
 		if (_.has(this.episode, 'number')) {
 			ep.n = this.episode.number
@@ -308,9 +308,9 @@ export class Item {
 		)
 		// collisions = collisions.filter(v => v.includes(' '))
 		this.collisions = _.sortBy(collisions)
-		if (this.titles.find(v => v.includes(' '))) {
-			this.aliases = this.aliases.filter(v => v.includes(' '))
-		}
+		// if (this.titles.find(v => v.includes(' '))) {
+		// 	this.aliases = this.aliases.filter(v => v.includes(' '))
+		// }
 		// console.log(`setCollisions '${this.slug}' collisions ->`, this.collisions)
 	}
 

@@ -21,9 +21,7 @@ export abstract class Debrid<Transfer = any> {
 export interface File {
 	bytes: number
 	id: number
-	leven: number
 	link: string
 	name: string
-	parsed: parser.Parser
 	path: string
 }

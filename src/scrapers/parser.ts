@@ -34,7 +34,7 @@ export class Parser {
 		{
 			let [season, episode] = this.matches(
 				[
-					/\b(s|se|season|vol|volume)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
+					/\b(s|se|season|vol|volume)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode|part)\s?(?<episode>\d{1,2})\b/gi,
 					/\b(s|se|season|vol|volume|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 					/\b(?<season>\d{1,2})\s?x\s?(?<episode>\d{1,2})\b/gi,
 				],
@@ -107,7 +107,7 @@ export class Parser {
 		{
 			let [episode] = this.matches(
 				[
-					/\b(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
+					/\b(ch|chapter|e|ep|episode|part)\s?(?<episode>\d{1,2})\b/gi,
 					/\b(?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 				],
 				['episode'],
@@ -117,9 +117,9 @@ export class Parser {
 		{
 			let ints = this.matches(
 				[
-					/\b(ch|chapter|e|ep|episode)\s?(?<min>\d{1,2})\s?(and|through|to)\s?(?<max>\d{1,2})\b/gi,
+					/\b(ch|chapter|e|ep|episode|part)\s?(?<min>\d{1,2})\s?(and|through|to)\s?(?<max>\d{1,2})\b/gi,
 					/\b\d{1,2}\s?x\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
-					/\b(s|se|season|vol|volume)?\s?\d{1,2}\s?(ch|chapter|e|ep|episode)\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
+					/\b(s|se|season|vol|volume)?\s?\d{1,2}\s?(ch|chapter|e|ep|episode|part)\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
 				],
 				['min', 'max'],
 			).flat()
@@ -140,13 +140,21 @@ export class Parser {
 		})
 	}
 
-	packs: number
+	get runbytes() {
+		if (this.episodes.length > 1) {
+			return this.bytes / this.episodes.length
+		}
+		return this.bytes
+	}
+
 	filter = ''
+	get packs() {
+		return 0
+	}
 	get slug() {
 		return ` ${utils.slugify(this.name)} `
-		// return ` ${utils.slugify(this.name).replace(' 5 1 ', ' ')} `
 	}
-	constructor(public name: string, public file = false) {}
+	constructor(public name: string, public bytes: number, public file = false) {}
 }
 
 if (process.DEVELOPMENT) {

@@ -10,14 +10,25 @@ import * as torrent from '@/scrapers/torrent'
 import * as utils from '@/utils/utils'
 
 export function torrents(parsed: parser.Parser, item: media.Item) {
-	let collision = item.collisions.find(v => parsed.slug.includes(` ${v} `))
-	if (collision) {
-		parsed.filter = `⛔ collision '${collision}'`
+	let bytes = utils.toBytes(`${item.runtime * 2} MB`)
+	if (parsed.runbytes < bytes) {
+		let size = utils.fromBytes(parsed.runbytes)
+		parsed.filter = `⛔ runtime '${size}' < '${utils.fromBytes(bytes)}'`
 		return false
 	}
 
+	// let aliases = item.aliases
+	// if (item.titles.find(v => v.includes(' '))) {
+	// 	aliases = aliases.filter(v => v.includes(' '))
+	// }
 	if (!item.aliases.find(v => parsed.slug.includes(` ${v} `))) {
 		parsed.filter = `⛔ !aliases`
+		return false
+	}
+
+	let collision = item.collisions.find(v => parsed.slug.includes(` ${v} `))
+	if (collision) {
+		parsed.filter = `⛔ collision '${collision}'`
 		return false
 	}
 
@@ -46,7 +57,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 		if (item.collection.name) {
 			if (parsed.packs > item.collection.parts.length) {
-				parsed.filter = `⛔ collection packs > ${item.collection.parts.length}`
+				parsed.filter = `⛔ collection packs > '${item.collection.parts.length}'`
 				return false
 			}
 			if (parsed.years.length == 1 && !item.years.includes(_.first(parsed.years))) {
@@ -84,9 +95,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 		if (item.se.t) {
 			let titles = utils.allTitles([item.se.t], { parts: 'all', uncamel: true })
-			if (item.se.t.includes(' ')) {
-				titles = titles.filter(v => v.includes(' '))
-			}
+			if (item.se.t.includes(' ')) titles = titles.filter(v => v.includes(' '))
 			let title = titles.find(v => parsed.slug.includes(` ${v} `))
 			if (title) {
 				parsed.filter = `✅ season title '${title}'`
@@ -95,9 +104,7 @@ export function torrents(parsed: parser.Parser, item: media.Item) {
 		}
 		if (item.ep.t) {
 			let titles = utils.allTitles([item.ep.t], { parts: 'all', uncamel: true })
-			if (item.ep.t.includes(' ')) {
-				titles = titles.filter(v => v.includes(' '))
-			}
+			if (item.ep.t.includes(' ')) titles = titles.filter(v => v.includes(' '))
 			let title = titles.find(v => parsed.slug.includes(` ${v} `))
 			if (title) {
 				parsed.filter = `✅ episode title '${title}'`
