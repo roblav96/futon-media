@@ -233,6 +233,7 @@ export class Http {
 						if (Http.timeouts.includes(timeout)) {
 							Object.assign(config, { timeout })
 							console.warn(`[RETRY]`, error.statusCode, min.url, config.timeout)
+							await utils.pTimeout(1000)
 							return this.request(config)
 						}
 					}

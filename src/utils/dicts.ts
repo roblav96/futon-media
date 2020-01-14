@@ -85,6 +85,8 @@ export const LANGS = [
 	'rus',
 	'spa',
 	'spanish',
+	'swe',
+	'swedish',
 	'temporada',
 	//
 ]

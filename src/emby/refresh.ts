@@ -93,7 +93,7 @@ process.nextTick(async () => {
 
 // if (Item.Type == 'Studio') {
 // 	let results = (await trakt.client.get('/search/movie,show', {
-// 		query: { query: '', limit: 100, networks: Item.Name },
+// 		query: { query: '', limit: 90, networks: Item.Name },
 // 		silent: true,
 // 	})) as trakt.Result[]
 // 	results = trakt.uniqWith(results.filter(Boolean))

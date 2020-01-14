@@ -44,7 +44,7 @@ export class Parser {
 		}
 		{
 			let regexes = [
-				/\b(s|se|season|vol|volume)\s?\d{1,2}(\s?(ch|chapter|e|ep|episode|part)\s?\d{1,2})+\b/gi,
+				/\b(s|se|season|vol|volume)\s?\d{1,2}(\s?(ch|chapter|e|ep|episode)\s?\d{1,2})+\b/gi,
 			]
 			let matches = regexes.map(v => Array.from(this.slug.matchAll(v))).flat()
 			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
@@ -93,7 +93,7 @@ export class Parser {
 		}
 		if (!this.file) {
 			// 3 seasons
-			let [season] = this.matches([/\b(?<season>\d{1,2}) (seasons|volumes)\b/gi], ['season'])
+			let [season] = this.matches([/\b(?<season>\d{1,2}) (season|seasons|volume|volumes)\b/gi], ['season'])
 			seasons.push(...season.map(v => _.range(1, v + 1)).flat())
 		}
 		if (!this.file) {
@@ -119,7 +119,7 @@ export class Parser {
 		{
 			let [episode] = this.matches(
 				[
-					/\b(ch|chapter|e|ep|episode|part)\s?(?<episode>\d{1,2})\b/gi,
+					/\b(ch|chapter|e|ep|episode)\s?(?<episode>\d{1,2})\b/gi,
 					/\b(?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 				],
 				['episode'],
@@ -129,9 +129,9 @@ export class Parser {
 		{
 			let ints = this.matches(
 				[
-					/\b(ch|chapter|e|ep|episode|part)\s?(?<min>\d{1,2})\s?(and|through|to)\s?(?<max>\d{1,2})\b/gi,
+					/\b(ch|chapter|e|ep|episode)\s?(?<min>\d{1,2})\s?(and|through|to)\s?(?<max>\d{1,2})\b/gi,
 					/\b\d{1,2}\s?x\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
-					/\b(s|se|season|vol|volume)?\s?\d{1,2}\s?(ch|chapter|e|ep|episode|part)\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
+					/\b(s|se|season|vol|volume)?\s?\d{1,2}\s?(ch|chapter|e|ep|episode)\s?(?<min>\d{1,2}) (?<max>\d{1,2})\b/gi,
 				],
 				['min', 'max'],
 			).flat()
@@ -153,13 +153,6 @@ export class Parser {
 			years: `${this.years}`,
 		})
 	}
-
-	// get runbytes() {
-	// 	if (this.episodes.length > 1) {
-	// 		return this.bytes / this.episodes.length
-	// 	}
-	// 	return this.bytes
-	// }
 
 	filter = ''
 	get slug() {

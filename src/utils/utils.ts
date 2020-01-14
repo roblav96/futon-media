@@ -123,6 +123,8 @@ export function accuracies(value: string, target: string) {
 
 /** returns `0` when all of target is included in value */
 export function levens(value: string, target: string) {
+	value = minify(value)
+	target = minify(target)
 	return Math.abs(value.length - target.length - levenshtein(value, target))
 }
 // export function leven(value: string, target: string) {

@@ -59,9 +59,9 @@ process.nextTick(async () => {
 
 export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',
-	// cookies: true,
+	cookies: true,
 	headers: {
-		// 'content-type': 'application/json',
+		'content-type': 'application/json',
 		'trakt-api-key': process.env.TRAKT_CLIENT_ID,
 		'trakt-api-version': '2',
 	},
@@ -99,7 +99,7 @@ function debloat(value) {
 
 // export async function search(query: string, type = 'movie,show' as media.MainContentType) {
 // 	let results = (await client.get(`/search/${type}`, {
-// 		query: { query, fields: 'title,aliases', limit: 100 },
+// 		query: { query, fields: 'title,aliases', limit: 90 },
 // 	})) as Result[]
 // 	let items = results.map(v => new media.Item(v))
 // 	return items.filter(v => !v.isJunk())
@@ -124,7 +124,7 @@ export async function titles(queries: string[]) {
 			queries.map((query, i) => async () =>
 				(await client.get('/search/movie,show,episode', {
 					delay: i > 0 && 300,
-					query: { query, fields: 'title,aliases', limit: 100 },
+					query: { query, fields: 'title,aliases', limit: 90 },
 					memoize: true,
 					silent: true,
 				})) as Result[],
@@ -185,7 +185,7 @@ export async function resultsForPerson(person: Person) {
 		let credits = (await client.get(`/people/${person.ids.slug}/${type}`, {
 			delay: 300,
 			timeout: 30000,
-			query: { limit: 100 },
+			query: { limit: 90 },
 			memoize: true,
 			// profile: true,
 			silent: true,

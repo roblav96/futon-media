@@ -63,7 +63,7 @@ process.nextTick(() => {
 							query: {
 								query,
 								fields: 'title,tagline,aliases',
-								limit: 100,
+								limit: 90,
 							},
 							memoize: true,
 							silent: true,

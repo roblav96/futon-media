@@ -9,6 +9,7 @@ import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
 import * as qs from '@/shims/query-string'
+import * as ss from 'simple-statistics'
 import * as torrent from '@/scrapers/torrent'
 import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
@@ -48,7 +49,7 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		// (await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
@@ -88,8 +89,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		if (accuracies.length > 0) to.name += ` ${accuracies.join(' ')}`
 		to.providers = _.uniq(to.providers.concat(from.providers))
 		to.bytes = _.ceil(_.mean([to.bytes, from.bytes].filter(_.isFinite)))
-		to.seeders = _.ceil(_.mean([to.seeders, from.seeders].filter(_.isFinite)))
-		to.stamp = _.ceil(_.mean([to.stamp, from.stamp].filter(_.isFinite)))
+		to.seeders = _.ceil(ss.harmonicMean([to.seeders || 1, from.seeders || 1]))
+		to.stamp = _.ceil(_.min([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
 	results = results.filter(v => !!v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
@@ -105,6 +106,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			return !filters.torrents(torrent, item)
 		} catch (error) {
 			console.error(`torrents.filter '${torrent.name}' -> %O`, error)
+			return true
 		}
 	})
 	console.timeEnd(`torrents.filter`)
@@ -135,13 +137,13 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.booster(UPLOADERS, 1.25)
 		v.booster(['proper'], 1.25)
 		v.booster(LANGS, 0.5)
-		v.booster(['720p', '480p', '360p', '720', '480', '360', 'avi'], 0.75)
+		v.booster(['360', '360p', '480', '480p', '720', '720p', 'avi'], 0.75)
 		if (!isHD) {
 			v.booster(['bdrip', 'bluray'], 1.25)
-			v.booster(['2160p', '2160', 'uhd', '4k'], 0.75)
+			v.booster(['2160', '2160p', '4k', 'uhd'], 0.75)
 			if (v.providers.includes('Yts')) {
 				v.boost *= 2
-				v.booster(['1080p', '1080'], 2)
+				v.booster(['1080', '1080p'], 2)
 			}
 			continue
 		}
@@ -150,7 +152,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.booster(['atmos', 'dts', 'true hd', 'truehd'], 1.25)
 		if (item.movie) {
 			if (!v.slug.includes(' hdr ')) {
-				v.booster(['8bit', '8 bit', '10bit', '10 bit'], 0.75)
+				v.booster(['10 bit', '10bit', '8 bit', '8bit'], 0.75)
 			}
 			if (utils.equals(v.slug, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
 			if (utils.equals(v.slug, item.title) && v.providers.length == 1) v.boost *= 0.5

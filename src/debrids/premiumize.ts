@@ -86,14 +86,16 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 				query: { src: this.magnet },
 			})
 		).content as Download[]
+		downloads = (downloads || []).filter(v => !!v.link && !!v.path && !!v.size)
+		downloads = _.uniqBy(downloads, 'path')
 
-		this.files = (downloads || []).map(file => {
-			let name = path.basename(`/${file.path}`)
+		this.files = downloads.map(download => {
+			let name = path.basename(`/${download.path}`)
 			return {
-				bytes: _.parseInt(file.size),
-				link: file.link,
+				bytes: _.parseInt(download.size),
+				link: download.link,
 				name: name.slice(0, name.lastIndexOf('.')),
-				path: `/${file.path}`,
+				path: `/${download.path}`,
 			} as debrid.File
 		})
 		_.remove(this.files, file => !utils.isVideo(file.path))

@@ -45,7 +45,7 @@ async function syncCollections() {
 		for (let type of media.MAIN_TYPES) {
 			schemas.push({
 				all: !!SCHEMA.all,
-				limit: type == 'movie' ? 100 : 50,
+				limit: type == 'movie' ? 90 : 50,
 				name: `${_.capitalize(type)}s ${SCHEMA.name}`,
 				type: type,
 				url: _.template(SCHEMA.url)({ type: `${type}s` }),
@@ -55,8 +55,8 @@ async function syncCollections() {
 
 	let lists = [] as trakt.List[]
 	for (let { url, limit } of [
-		{ url: '/lists/popular', limit: 100 },
-		{ url: '/lists/trending', limit: 100 },
+		{ url: '/lists/popular', limit: 90 },
+		{ url: '/lists/trending', limit: 90 },
 		{ url: '/users/likes/lists', limit: 999 },
 	]) {
 		let response = (await trakt.client.get(url, {

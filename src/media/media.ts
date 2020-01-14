@@ -144,6 +144,7 @@ export class Item {
 			/** season `aired episodes` */ a: NaN,
 			/** season `episode count` */ e: NaN,
 			/** season `title` */ t: '',
+			/** season `titles` */ ts: [] as string[],
 			/** season `number` */ n: NaN,
 			/** season `0 number` */ z: '',
 		}
@@ -155,6 +156,8 @@ export class Item {
 		if (_.isFinite(se.n)) se.z = utils.zeroSlug(se.n)
 		if (_.has(this.season, 'title') && !/^season /i.test(this.season.title)) {
 			se.t = this.season.title
+			se.ts = utils.allTitles([se.t], { parts: 'all', uncamel: true })
+			if (se.t.includes(' ')) se.ts = se.ts.filter(v => v.includes(' '))
 		}
 		return se
 	}
@@ -165,6 +168,7 @@ export class Item {
 			/** episode `aired year` */ y: NaN,
 			/** episode `aired date` */ a: '',
 			/** episode `title` */ t: '',
+			/** episode `titles` */ ts: [] as string[],
 			/** episode `number` */ n: NaN,
 			/** episode `0 number` */ z: '',
 		}
@@ -174,6 +178,8 @@ export class Item {
 		}
 		if (_.has(this.episode, 'title') && !/^episode /i.test(this.episode.title)) {
 			ep.t = this.episode.title.replace(/ \((\d{1})\)$/, ': Part $1')
+			ep.ts = utils.allTitles([ep.t], { parts: 'all', uncamel: true })
+			if (ep.t.includes(' ')) ep.ts = ep.ts.filter(v => v.includes(' '))
 		}
 		if (_.has(this.episode, 'number')) {
 			ep.n = this.episode.number

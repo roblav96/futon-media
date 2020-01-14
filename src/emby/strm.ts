@@ -78,7 +78,7 @@ async function getDebridStream(Item: emby.Item) {
 		throw error
 	}
 
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
 	await Session.Message(`👍 Successfully found stream for '${title}'`)
@@ -91,7 +91,8 @@ fastify.get('/strm', async (request, reply) => {
 
 	// console.warn(`reply.redirect`)
 	// return reply.redirect(
-	// 	`https://tealstoneward-sto.energycdn.com/dl/CQCk4z67jAqvUbLqzRHg4w/1578715724/675000842/5e0ced5357ca93.06370112/Rogue.One.A.Star.Wars.Story.%282016%29.%284K%2010bit%20H265%29.%28Fantascienza%29.%28%29.mkv`,
+	// 	'https://flyingspagetthimonster-sto.energycdn.com/dl/6Cw0dVlagZ0XsudlflMZOA/1579628677/675000842/5a45f3291adae2.06406138/Star.Wars.The.Clone.Wars.BluRay.1080p.x264.5.1.Judas.mp4',
+	// 	// 'https://cuddlysnappywerewolf-sto.energycdn.com/dl/FTb4zDyoo8sn_UBy9uImCw/1579628672/675000842/5ce96f011dba82.75355021/Star.Wars.The.Clone.Wars.2008.1080p.BluRay.H264.AAC-RARBG.mp4',
 	// )
 
 	let { file, type } = request.query as emby.StrmQuery
