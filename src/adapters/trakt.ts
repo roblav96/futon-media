@@ -24,7 +24,6 @@ process.nextTick(async () => {
 				redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
 				refresh_token: dbtoken.refresh_token,
 			} as OauthRequest,
-			retries: [500, 503],
 			silent: true,
 		})
 	} catch (error) {
@@ -33,7 +32,6 @@ process.nextTick(async () => {
 			body: {
 				client_id: process.env.TRAKT_CLIENT_ID,
 			} as OauthRequest,
-			retries: [500, 503],
 			silent: true,
 		})) as OauthCode
 		let expired = Date.now() + utils.duration(code.expires_in, 'second')
@@ -61,14 +59,14 @@ process.nextTick(async () => {
 
 export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',
-	cookies: true,
+	// cookies: true,
 	headers: {
 		// 'content-type': 'application/json',
 		'trakt-api-key': process.env.TRAKT_CLIENT_ID,
 		'trakt-api-version': '2',
 	},
 	query: { extended: 'full' },
-	retries: [408, 502, 504],
+	retries: [408, 500, 502, 503, 504],
 	afterResponse: {
 		append: [
 			async (options, response) => {

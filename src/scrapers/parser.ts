@@ -34,7 +34,6 @@ export class Parser {
 		{
 			let [season, episode] = this.matches(
 				[
-					/\b(s|se|season|vol|volume)\s?(?<season>\d{1,2})\s?(ch|chapter|e|ep|episode|part)\s?(?<episode>\d{1,2})\b/gi,
 					/\b(s|se|season|vol|volume|series)\s?(?<season>\d{1,2}) (?<episode>\d{1,2})\s?of\s?\d{1,2}\b/gi,
 					/\b(?<season>\d{1,2})\s?x\s?(?<episode>\d{1,2})\b/gi,
 				],
@@ -42,6 +41,18 @@ export class Parser {
 			)
 			seasons.push(...season)
 			episodes.push(...episode)
+		}
+		{
+			let regexes = [
+				/\b(s|se|season|vol|volume)\s?\d{1,2}(\s?(ch|chapter|e|ep|episode|part)\s?\d{1,2})+\b/gi,
+			]
+			let matches = regexes.map(v => Array.from(this.slug.matchAll(v))).flat()
+			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
+			ints = ints.filter(v => _.inRange(v, 0, 100))
+			if (ints.length > 0) {
+				seasons.push(ints.shift())
+				episodes.push(..._.range(_.min(ints), _.max(ints) + 1))
+			}
 		}
 		if (this.file && _.isEmpty(seasons) && _.isEmpty(episodes)) {
 			let [season, episode] = this.matches(
@@ -93,10 +104,11 @@ export class Parser {
 				/\bvol((ume|umes)?\s?\d{1,2}\b)+/gi,
 			]
 			let matches = regexes.map(v => Array.from(slug.matchAll(v))).flat()
-			// let matches = Array.from(slug.matchAll(/\bs((e(ason(s)?)?)?\s?\d{1,2}\b)+/gi))
-			let ints = matches.map(v => v[0].split(' ').map(vv => utils.parseInt(vv))).flat()
+			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
 			ints = ints.filter(v => _.inRange(v, 0, 100))
-			seasons.push(..._.range(_.min(ints), _.max(ints) + 1))
+			if (ints.length > 0) {
+				seasons.push(..._.range(_.min(ints), _.max(ints) + 1))
+			}
 		}
 		return _.sortBy(_.uniq(seasons))
 	}
@@ -123,7 +135,9 @@ export class Parser {
 				],
 				['min', 'max'],
 			).flat()
-			episodes.push(..._.range(_.min(ints), _.max(ints) + 1))
+			if (ints.length > 0) {
+				episodes.push(..._.range(_.min(ints), _.max(ints) + 1))
+			}
 		}
 		return _.sortBy(_.uniq(episodes))
 	}

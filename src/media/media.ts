@@ -43,6 +43,7 @@ export class Item {
 		return this.main.year
 	}
 	get id() {
+		// if (this.ids.imdb) return this.ids.imdb
 		if (isNaN(this.ids.slug as any)) return this.ids.slug
 		return this.ids.imdb || this.ids.trakt.toString()
 	}

@@ -18,7 +18,11 @@ process.nextTick(() => {
 		})),
 		Rx.op.filter(({ SearchTerm }) => utils.stripStopWords(SearchTerm).length >= 2),
 		Rx.op.debounceTime(100),
-		Rx.op.distinctUntilKeyChanged('SearchTerm'),
+		Rx.op.distinctUntilChanged((a, b) => {
+			if (process.DEVELOPMENT) return false
+			return a.SearchTerm == b.SearchTerm
+		}),
+		// Rx.op.distinctUntilKeyChanged('SearchTerm'),
 		Rx.op.concatMap(async ({ SearchTerm, UserId }) => {
 			let Session = await emby.Session.byUserId(UserId)
 			console.warn(`[${Session.short}] rxSearch ->`, `'${SearchTerm}'`)

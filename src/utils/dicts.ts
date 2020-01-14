@@ -77,13 +77,15 @@ export const LANGS = [
 	'espanol',
 	'fre',
 	'french',
+	'ger',
+	'german',
 	'hindi',
 	'ita',
 	'italian',
 	'rus',
 	'spa',
-	'temporada',
 	'spanish',
+	'temporada',
 	//
 ]
 

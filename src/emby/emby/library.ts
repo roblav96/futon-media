@@ -156,7 +156,6 @@ export const library = {
 		return ((
 			await emby.client.get('/Items', {
 				query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
-				timeout: utils.duration(1, 'minute'),
 				// profile: process.DEVELOPMENT,
 				silent: true,
 			})
@@ -308,18 +307,15 @@ export const library = {
 			'⭕ Trakt Rating': _.round(item.main.rating, 1).toFixed(1),
 			'⭕ Trakt Votes': item.main.votes.toLocaleString(),
 		})
-		let Tags = _.map(tags, (v, k) => `${k.split(' ')[0]} ${v} - ${k.slice(2).trim()}`)
-		// console.log(`setTags ->`, item.short, Tags)
 		await emby.client.post(`/Items/${ItemId}`, {
 			body: _.merge(
 				await library.Item(ItemId),
 				utils.compact({
 					CommunityRating: Number.parseFloat(tags['🍿 IMDb Rating']),
 					CriticRating: Number.parseFloat(tags['🍎 Rotten Tomatoes']),
-					Tags,
+					Tags: _.map(tags, (v, k) => `${k.split(' ')[0]} ${v} - ${k.slice(2).trim()}`),
 				} as Item),
 			),
-			// debug: true,
 			silent: true,
 		})
 	},
@@ -389,20 +385,27 @@ export const library = {
 			// await library.refresh()
 
 			await rxFFProbe.toPromise()
-			await utils.pTimeout(1000)
-			let Items = await library.Items({
-				Fields: [],
-				IncludeItemTypes: ['Movie', 'Series'],
-				MinDateLastSaved,
-			})
-			for (let item of created) {
-				let Item = Items.find(v => v.Path == library.toPath(item))
-				if (Item) library.setTagsQueue(item, Item.Id)
-				else console.error(`library addAll tagging !Item -> %O`, item.short)
+
+			for (let i = 0; i < 5; i++) {
+				if (_.isEmpty(created)) break
+				let Items = await library.Items({
+					Fields: [],
+					IncludeItemTypes: ['Movie', 'Series'],
+					MinDateLastSaved,
+				})
+				_.remove(created, item => {
+					let Item = Items.find(v => v.Path == library.toPath(item))
+					if (Item) {
+						library.setTagsQueue(item, Item.Id)
+						return true
+					}
+				})
+				if (!_.isEmpty(created)) await utils.pTimeout(1000)
 			}
+			created.forEach(v => console.error(`library addAll created !Item -> %O`, v.short))
 		}
 
-		console.log(Date.now() - t, `library addAll '${Updates.length}' ->`, 'DONE')
+		console.info(Date.now() - t, `library addAll '${Updates.length}' ->`, 'DONE')
 		return CreatedPaths
 	},
 }

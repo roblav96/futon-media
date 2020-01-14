@@ -35,7 +35,7 @@ process.nextTick(async () => {
 			return emby.library.addQueue(items, Session)
 		}
 
-		await emby.library.setTags(item, ItemId)
+		await emby.library.setTagsQueue(item, ItemId)
 
 		if (['Series', 'Season', 'Episode'].includes(Item.Type)) {
 			let CreatedPaths = await emby.library.addQueue([item])
