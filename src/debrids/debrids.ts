@@ -85,7 +85,7 @@ export async function getStream(
 			})) as debrid.File[]
 			files = files.filter(file => {
 				if (!utils.isVideo(file.path)) return false
-				let parsed = new parser.Parser(file.path, file.bytes, true)
+				let parsed = new parser.Parser(file.path, true)
 				let filtered = filters.torrents(parsed, item)
 				console.log(filtered, `${file.path} ->`, { ...file, parsed: parsed.json() })
 				return !filtered

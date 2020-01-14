@@ -140,21 +140,18 @@ export class Parser {
 		})
 	}
 
-	get runbytes() {
-		if (this.episodes.length > 1) {
-			return this.bytes / this.episodes.length
-		}
-		return this.bytes
-	}
+	// get runbytes() {
+	// 	if (this.episodes.length > 1) {
+	// 		return this.bytes / this.episodes.length
+	// 	}
+	// 	return this.bytes
+	// }
 
 	filter = ''
-	get packs() {
-		return 0
-	}
 	get slug() {
 		return ` ${utils.slugify(this.name)} `
 	}
-	constructor(public name: string, public bytes: number, public file = false) {}
+	constructor(public name: string, public file = false) {}
 }
 
 if (process.DEVELOPMENT) {

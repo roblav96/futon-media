@@ -77,23 +77,18 @@ export class Torrent extends parser.Parser {
 		return 0
 	}
 
-	get runbytes() {
-		if (this.item.movie && this.packs > 0) {
-			return this.bytes / this.packs
-		}
-		if (this.item.show && this.packs > 0) {
-			return this.bytes / (this.item.se.e * this.packs)
-		}
-		if (this.item.show && this.episodes.length > 1) {
-			return this.bytes / this.episodes.length
-		}
-		return this.bytes
-	}
-
 	boost = 1
 	boosts() {
+		let bytes = this.bytes
+		if (this.item.movie && this.packs > 0) {
+			bytes = this.bytes / this.packs
+		} else if (this.item.show && this.packs > 0) {
+			bytes = this.bytes / (this.item.se.e * this.packs)
+		} else if (this.item.show && this.episodes.length > 1) {
+			bytes = this.bytes / this.episodes.length
+		}
 		return {
-			bytes: _.ceil(this.runbytes * this.boost),
+			bytes: _.ceil(bytes * this.boost),
 			seeders: _.ceil(this.seeders * this.boost),
 		}
 	}
@@ -132,7 +127,7 @@ export class Torrent extends parser.Parser {
 	}
 
 	constructor(public result: scraper.Result, public item: media.Item) {
-		super(result.name, result.bytes)
+		super(result.name)
 		_.merge(this, result)
 	}
 }

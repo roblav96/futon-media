@@ -95,44 +95,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	results = results.filter(v => !!v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
 
 	let torrents = results.map(v => new torrent.Torrent(v, item))
-
-	let junk = _.remove(torrents, torrent => {
-		let skips = item.skips.find(v => torrent.slug.includes(` ${v} `))
-		if (skips) {
-			torrent.filter = `⛔ skips '${skips}'`
-			return true
-		}
-		let released = item.released.valueOf() - utils.duration(1, 'day')
-		if (torrent.stamp < released) {
-			let date = dayjs(released).format('MMM DD YYYY')
-			torrent.filter = `⛔ released '${torrent.date}' < '${date}'`
-			return true
-		}
-	})
 	if (isHD) torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
 	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
-
-	if (process.DEVELOPMENT) {
-		console.log(
-			Date.now() - t,
-			`scrapeAll junk ->`,
-			// junk.map(v => v.short()),
-			junk.map(v => [v.short(), v.filter, v.json()]),
-			// junk.map(v => v.json()),
-			junk.length,
-		)
-	}
-
-	// torrents.sort((a, b) => b.boosts(item.S.e).bytes - a.boosts(item.S.e).bytes)
-	// // let cachedz = await debrids.cached(torrents.map(v => v.hash))
-	// // torrents.forEach((v, i) => (v.cached = cachedz[i] || []))
-	// console.info(Date.now() - t, `scrapeAll ${torrents.length} ->`, torrents.map(v => v.short()))
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
-
-	// let parsed = execa.sync('/usr/local/bin/guessit', ['-j', ...torrents.map(v => v.filename)])
-	// console.log(`parsed ->`, parsed.stdout)
-	// let parseds = torrents.map(v => filenameParse(v.name, true))
-	// console.log('parseds ->', parseds)
 
 	// console.profile(`torrents.filter`)
 	console.time(`torrents.filter`)
