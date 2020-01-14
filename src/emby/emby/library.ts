@@ -53,6 +53,14 @@ export const library = {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
+		for (let Folder of Folders) {
+			if (Folder.LibraryOptions.EnablePhotos) {
+				Folder.LibraryOptions.EnablePhotos = false
+				await emby.client.post('/Library/VirtualFolders/LibraryOptions', {
+					body: { Id: Folder.ItemId, LibraryOptions: Folder.LibraryOptions },
+				})
+			}
+		}
 		let movies = Folders.find(v => v.CollectionType == 'movies')
 		library.folders.movies = { Location: movies.Locations[0], ItemId: movies.ItemId }
 		let shows = Folders.find(v => v.CollectionType == 'tvshows')
@@ -162,10 +170,10 @@ export const library = {
 		).Items || []) as emby.Item[]
 	},
 	async byItemId(ItemId: string) {
-		return (await emby.library.Items({ Ids: [ItemId] }))[0]
+		return (await library.Items({ Ids: [ItemId] }))[0]
 	},
 	async byPath(Path: string) {
-		return (await emby.library.Items({ Path }))[0]
+		return (await library.Items({ Path }))[0]
 	},
 	async byProviderIds(ids: Partial<trakt.IDs & emby.ProviderIds>) {
 		let AnyProviderIdEquals = Object.entries(ids).map(([k, v]) => `${k.toLowerCase()}.${v}`)
@@ -225,6 +233,19 @@ export const library = {
 		let groups = _.get(match, 'groups', {}) as Record<string, string>
 		return { episode: _.parseInt(groups.episode), season: _.parseInt(groups.season) }
 	},
+	async reset(item: media.Item, ItemId: string) {
+		await library.toStrmFile(item, true)
+		await emby.client.post(`/Items/${ItemId}/Refresh`, {
+			query: {
+				ImageRefreshMode: 'Default',
+				MetadataRefreshMode: 'Default',
+				Recursive: 'true',
+				ReplaceAllImages: 'false',
+				ReplaceAllMetadata: 'false',
+			},
+			// silent: true,
+		})
+	},
 
 	toPath(item: media.Item) {
 		let folder = library.getFolder(item.type)
@@ -248,10 +269,10 @@ export const library = {
 		}
 		return `${folder}/${file}`
 	},
-	async toStrmFile(item: media.Item) {
+	async toStrmFile(item: media.Item, force = false) {
 		let Path = library.toPath(item)
 		let Updated = { Path, UpdateType: 'Modified' } as emby.MediaUpdated
-		if (await fs.pathExists(Path)) return Updated
+		if (force == false && (await fs.pathExists(Path))) return Updated
 		Updated.UpdateType = 'Created'
 		if (Path.endsWith('.strm')) {
 			let query = qs.stringify({
@@ -360,26 +381,26 @@ export const library = {
 				Rx.op.take(1),
 			)
 
-			await emby.client.post('/Library/Media/Updated', {
-				body: { Updates: Creations },
-				silent: true,
-			})
+			// await emby.client.post('/Library/Media/Updated', {
+			// 	body: { Updates: Creations },
+			// 	silent: true,
+			// })
 
-			// for (let type of media.MAIN_TYPESS) {
-			// 	let folder = library.folders[type]
-			// 	if (CreatedStrmPaths.find(v => v.startsWith(folder.Location))) {
-			// 		await emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
-			// 			query: {
-			// 				ImageRefreshMode: 'Default',
-			// 				MetadataRefreshMode: 'Default',
-			// 				Recursive: 'true',
-			// 				ReplaceAllImages: 'false',
-			// 				ReplaceAllMetadata: 'false',
-			// 			},
-			// 			// silent: true,
-			// 		})
-			// 	}
-			// }
+			for (let type of media.MAIN_TYPESS) {
+				let folder = library.folders[type]
+				if (CreatedStrmPaths.find(v => v.startsWith(folder.Location))) {
+					await emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
+						query: {
+							ImageRefreshMode: 'Default',
+							MetadataRefreshMode: 'Default',
+							Recursive: 'true',
+							ReplaceAllImages: 'false',
+							ReplaceAllMetadata: 'false',
+						},
+						// silent: true,
+					})
+				}
+			}
 
 			// await library.unrefresh()
 			// await library.refresh()
@@ -388,6 +409,7 @@ export const library = {
 
 			for (let i = 0; i < 5; i++) {
 				if (_.isEmpty(created)) break
+				await utils.pTimeout(1000)
 				let Items = await library.Items({
 					Fields: [],
 					IncludeItemTypes: ['Movie', 'Series'],
@@ -400,7 +422,13 @@ export const library = {
 						return true
 					}
 				})
-				if (!_.isEmpty(created)) await utils.pTimeout(1000)
+				// if (!_.isEmpty(created)) {
+				// 	console.warn(
+				// 		`library addAll !isEmpty ->`,
+				// 		created.map(v => v.short),
+				// 		created.length,
+				// 	)
+				// }
 			}
 			created.forEach(v => console.error(`library addAll created !Item -> %O`, v.short))
 		}

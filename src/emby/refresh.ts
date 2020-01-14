@@ -15,9 +15,10 @@ process.nextTick(async () => {
 		Rx.op.filter(({ Item }) =>
 			['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type),
 		),
-		Rx.op.distinctUntilChanged(
-			(a, b) => `${a.Item.SeriesId || a.Item.Id}` == `${b.Item.SeriesId || b.Item.Id}`,
-		),
+		Rx.op.distinctUntilChanged((a, b) => {
+			// if (process.DEVELOPMENT) return false
+			return `${a.Item.SeriesId || a.Item.Id}` == `${b.Item.SeriesId || b.Item.Id}`
+		}),
 	)
 	rxRefresh.subscribe(async ({ Item, Session }) => {
 		let ItemId = Item.SeriesId || Item.Id
