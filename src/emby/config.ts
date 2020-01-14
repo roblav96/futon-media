@@ -42,7 +42,7 @@ export async function config() {
 	process.env.EMBY_LAN_ADDRESS = normalize(process.env.EMBY_LAN_ADDRESS)
 	process.env.EMBY_WAN_ADDRESS = normalize(process.env.EMBY_WAN_ADDRESS)
 
-	if (process.DEVELOPMENT) return
+	if (process.DEVELOPMENT || process.args.scripts) return
 	console.info(
 		`emby config ->`,
 		Object.fromEntries(

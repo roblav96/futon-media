@@ -6,11 +6,11 @@ import '@/devops/devops'
 
 process.nextTick(async () => {
 	try {
+		await (await import('@/emby/config')).config()
 		if (process.DEVELOPMENT) await import('@/mocks/mocks')
 		if (process.args.scripts) {
 			return await import(`@/scripts/${process.args.scripts}`)
 		}
-		await (await import('@/emby/config')).config()
 		await import('@/emby/collections')
 		await import('@/emby/favorites')
 		await import('@/emby/search')
