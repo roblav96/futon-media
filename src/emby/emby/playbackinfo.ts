@@ -161,6 +161,7 @@ export class PlaybackInfo {
 				AudioCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
 			}
 		}
+		if (AudioCodecs.includes('ac3')) AudioCodecs.push('eac3')
 		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean).map(v => v.replace(/^[^\w]/, ''))))
 	}
 	get VideoCodecs() {
