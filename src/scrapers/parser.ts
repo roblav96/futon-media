@@ -91,12 +91,12 @@ export class Parser {
 			let indexes = matches.map(v => numbers.indexOf(_.get(v, 'groups.season')) + 1)
 			seasons.push(...indexes.filter(v => v > 0))
 		}
-		if (!this.file) {
+		{
 			// 3 seasons
 			let [season] = this.matches([/\b(?<season>\d{1,2}) (season|seasons|volume|volumes)\b/gi], ['season'])
 			seasons.push(...season.map(v => _.range(1, v + 1)).flat())
 		}
-		if (!this.file) {
+		{
 			// season 3 to 6
 			let slug = utils.excludes(this.slug, ['and', 'through', 'to'])
 			let regexes = [

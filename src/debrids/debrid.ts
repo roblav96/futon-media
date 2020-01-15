@@ -2,7 +2,7 @@ import * as magnetlink from '@/shims/magnet-link'
 import * as parser from '@/scrapers/parser'
 
 export abstract class Debrid<Transfer = any> {
-	abstract getFiles(): Promise<File[]>
+	abstract getFiles(isHD: boolean): Promise<File[]>
 	abstract streamUrl(file: File): Promise<string>
 
 	files = [] as File[]

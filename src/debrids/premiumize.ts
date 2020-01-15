@@ -80,20 +80,26 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 		return false
 	}
 
-	async getFiles() {
+	async getFiles(isHD: boolean) {
 		let downloads = (
 			await client.post(`/transfer/directdl`, {
 				query: { src: this.magnet },
 			})
 		).content as Download[]
 		downloads = (downloads || []).filter(v => !!v.link && !!v.path && !!v.size)
-		downloads = _.uniqBy(downloads, 'path')
+		// downloads = _.sortBy(downloads, 'size')
+		downloads = _.uniqWith(downloads, (from, to) => {
+			if (to.path != from.path) return false
+			_.merge(to, utils.compact(from))
+			return true
+		})
+		// downloads = _.uniqBy(downloads, 'path')
 
 		this.files = downloads.map(download => {
 			let name = path.basename(`/${download.path}`)
 			return {
 				bytes: _.parseInt(download.size),
-				link: download.link,
+				link: !isHD && download.stream_link || download.link,
 				name: name.slice(0, name.lastIndexOf('.')),
 				path: `/${download.path}`,
 			} as debrid.File

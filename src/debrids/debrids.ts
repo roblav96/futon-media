@@ -71,6 +71,7 @@ export async function getStream(
 	AudioChannels: number,
 	AudioCodecs: string[],
 	VideoCodecs: string[],
+	isHD: boolean,
 ) {
 	for (let torrent of torrents) {
 		let next = false
@@ -80,7 +81,7 @@ export async function getStream(
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached]().use(torrent.magnet)
 
-			let files = (await debrid.getFiles().catch(error => {
+			let files = (await debrid.getFiles(isHD).catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
 			files.forEach(file => {
@@ -106,9 +107,9 @@ export async function getStream(
 				// if (filters.aliases(file.parsed, item.aliases) == false) {
 				// 	return true
 				// }
-				if (filters.collisions(file.parsed, item.collisions) == false) {
-					return true
-				}
+				// if (filters.collisions(file.parsed, item.collisions) == false) {
+				// 	return true
+				// }
 
 				if (item.movie) {
 					file.parsed.filter = `✅ return`
@@ -123,31 +124,35 @@ export async function getStream(
 						return false
 					}
 					if (!_.isEmpty(file.parsed.seasons) && !_.isEmpty(file.parsed.episodes)) {
-						return !filters.s00e00(file.parsed, item.se.n, item.ep.n)
+						return filters.s00e00(file.parsed, item.se.n, item.ep.n) == false
 					}
 					if (!_.isEmpty(torrent.episodes)) {
-						return !filters.e00(file.parsed, item.ep.n)
+						return filters.e00(file.parsed, item.ep.n) == false
+					}
+					if (!_.isEmpty(torrent.seasons)) {
+						return filters.s00(file.parsed, item.se.n) == false
 					}
 					file.parsed.filter = `⛔ return`
 					return true
 				}
 			})
-			if (_.isEmpty(files)) {
-				console.warn(`!files ->`, torrent.short())
-				continue
-			}
 
 			if (process.DEVELOPMENT) {
-				console.log(
-					`removed ->`,
-					removed.map(v => ({ ...v, parsed: v.parsed.json() })),
-					removed.length,
-				)
+				// console.log(
+				// 	`removed ->`,
+				// 	removed.map(v => ({ ...v, parsed: v.parsed.json() })),
+				// 	removed.length,
+				// )
 				console.log(
 					`files ->`,
 					files.map(v => ({ ...v, parsed: v.parsed.json() })),
 					files.length,
 				)
+			}
+
+			if (_.isEmpty(files)) {
+				console.warn(`!files ->`, torrent.short())
+				continue
 			}
 
 			console.log(`file ->`, { ...files[0], parsed: files[0].parsed.json() })

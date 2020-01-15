@@ -109,10 +109,12 @@ export class Item {
 		if (!this.isPopular(100)) {
 			if (!this.runtime || this.runtime < 10) return true
 			if (_.isEmpty(this.main.genres)) return true
+			if (this.movie) {
+				if (!this.movie.certification) return true
+			}
 		}
 		if (this.movie) {
 			if (!this.movie.trailer) return true
-			if (!this.movie.certification) return true
 		}
 		if (this.show) {
 			if (!this.ids.imdb /** && !this.ids.tmdb */) return true
@@ -220,11 +222,11 @@ export class Item {
 		let seasons = ((await trakt.client.get(`/shows/${this.id}/seasons`, {
 			memoize: true,
 			silent: true,
-		})) as trakt.Season[]).filter(v => v.number > 0)
+		})) as trakt.Season[]).filter(v => v.number > 0 && v.aired_episodes > 0)
 		this.seasons = _.sortBy(seasons, 'number')
 	}
 	get single() {
-		return this.seasons.filter(v => v.aired_episodes > 0).length == 1
+		return this.seasons.length == 1
 	}
 	// get maxSeason() {
 	// 	return _.last(this.seasons).number
@@ -310,9 +312,10 @@ export class Item {
 			)
 		}
 		collisions = _.uniq(collisions.map(v => v.trim()).filter(Boolean))
-		_.remove(collisions, collision =>
-			this.aliases.find(v => ` ${v} `.includes(` ${collision} `)),
-		)
+		_.remove(collisions, collision => {
+			if (this.aliases.find(v => ` ${v} `.includes(` ${collision} `))) return true
+			if (this.aliases.find(v => utils.levens(v, collision) == 0)) return true
+		})
 		// collisions = collisions.filter(v => v.includes(' '))
 		this.collisions = _.sortBy(collisions)
 		// if (this.titles.find(v => v.includes(' '))) {
@@ -366,13 +369,13 @@ export class Item {
 			slugs = slugs.map(v => [v, ...utils.allYears(v, this.years)]).flat()
 			if (this.collection.name) slugs.push(this.collection.name)
 		}
-		slugs = slugs.map(v => [_.first(utils.allParts(v)), _.last(utils.allParts(v))]).flat()
+		slugs = slugs.map(v => [_.last(utils.allParts(v)), _.first(utils.allParts(v))]).flat()
 		slugs = slugs.map(v => utils.allSlugs(v)).flat()
 		slugs = slugs.map(v =>
 			utils.stripStopWords(v).includes(' ') ? utils.stripStopWords(v) : v,
 		)
-		slugs = utils.byLength(_.uniq(slugs.map(v => v.trim()).filter(Boolean)))
-		if (this.isDaily) return [_.first(slugs)]
+		slugs = _.uniq(slugs.map(v => v.trim()).filter(Boolean))
+		if (this.isDaily) return [_.first(utils.byLength(slugs))]
 		return slugs
 	}
 	get queries() {

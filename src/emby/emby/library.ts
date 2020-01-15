@@ -397,7 +397,7 @@ export const library = {
 							ReplaceAllImages: 'false',
 							ReplaceAllMetadata: 'false',
 						},
-						// silent: true,
+						silent: true,
 					})
 				}
 			}

@@ -40,6 +40,7 @@ async function getDebridStream(Item: emby.Item) {
 		// return 'https://phantasmagoricfairytale-sto.energycdn.com/dl/uat0AxAx0BEAddz2zeRVyg/1572129772/675000842/5da6353eb18ad8.55901578/The.Lion.King.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1-FGT.mkv'
 	}
 
+	let isHD = PlaybackInfo.Quality != 'SD'
 	let { Quality, AudioChannels, AudioCodecs, VideoCodecs } = PlaybackInfo
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
 	let stream = await db.get(skey)
@@ -47,10 +48,10 @@ async function getDebridStream(Item: emby.Item) {
 	console.warn(`[${Session.short}] getDebridStream ->`, title, PlaybackInfo.json)
 
 	let item = await emby.library.item(Item)
-	let torrents = await scraper.scrapeAllQueue(item, PlaybackInfo.Quality != 'SD')
+	let torrents = await scraper.scrapeAllQueue(item, isHD)
 	let cacheds = torrents.filter(v => v.cached.length > 0)
 	console.log(
-		`strm cacheds '${title}' ->`,
+		`strm cached torrents '${title}' ->`,
 		cacheds.map(v => v.short()),
 		cacheds.length,
 	)
@@ -67,7 +68,7 @@ async function getDebridStream(Item: emby.Item) {
 		throw error
 	}
 
-	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs)
+	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs, isHD)
 	if (!stream) {
 		debrids.download(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
@@ -93,7 +94,8 @@ fastify.get('/strm', async (request, reply) => {
 
 	// console.warn(`reply.redirect`)
 	// return reply.redirect(
-	// 	'https://flyingspagetthimonster-sto.energycdn.com/dl/6Cw0dVlagZ0XsudlflMZOA/1579628677/675000842/5a45f3291adae2.06406138/Star.Wars.The.Clone.Wars.BluRay.1080p.x264.5.1.Judas.mp4',
+	// 	'https://quinn.pm2.link/dl/vxgp18gP7yJR2NCHiH2aJA/1579659301/675000842/5dce4cc6253213.07477639/Star%20Wars%20The%20Clone%20Wars%2003x05%20Corruption.mkv',
+	// 	// 'https://flyingspagetthimonster-sto.energycdn.com/dl/6Cw0dVlagZ0XsudlflMZOA/1579628677/675000842/5a45f3291adae2.06406138/Star.Wars.The.Clone.Wars.BluRay.1080p.x264.5.1.Judas.mp4',
 	// 	// 'https://cuddlysnappywerewolf-sto.energycdn.com/dl/FTb4zDyoo8sn_UBy9uImCw/1579628672/675000842/5ce96f011dba82.75355021/Star.Wars.The.Clone.Wars.2008.1080p.BluRay.H264.AAC-RARBG.mp4',
 	// )
 

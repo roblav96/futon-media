@@ -33,7 +33,6 @@ export function collisions(parsed: parser.Parser, collisions: string[]) {
 }
 
 export function aired(parsed: parser.Parser, aired: string) {
-	if (!aired) return false
 	aired = utils.allSlugs(aired).find(v => parsed.slug.includes(` ${v} `))
 	if (aired) {
 		parsed.filter = `✅ aired '${aired}'`
@@ -106,9 +105,11 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		return false
 	}
 
+	// if (item.movie || utils.levens(torrent.slug, _.first(item.titles)) > 0) {
 	if (collisions(torrent, item.collisions) == false) {
 		return false
 	}
+	// }
 
 	if (item.movie) {
 		if (!_.isEmpty(torrent.seasons) || !_.isEmpty(torrent.episodes)) {
@@ -170,10 +171,21 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			return true
 		}
 
+		// trilogy in torrent name
+		if (torrent.packs > item.seasons.length) {
+			torrent.filter = `⛔ packs '${torrent.packs}' > '${item.seasons.length}' seasons`
+			return false
+		}
+
 		if (!_.isEmpty(torrent.seasons) && !_.isEmpty(torrent.episodes)) {
 			return s00e00(torrent, item.se.n, item.ep.n)
 		}
 		if (!_.isEmpty(torrent.seasons) && _.isEmpty(torrent.episodes)) {
+			let levens = utils.levens(torrent.slug, _.last(utils.allParts(_.last(item.titles))))
+			if (levens > 0 && !item.single && item.seasons.length == torrent.seasons.length) {
+				torrent.filter = `⛔ levens '${levens}'`
+				return false
+			}
 			return s00(torrent, item.se.n)
 		}
 		if (item.single && _.isEmpty(torrent.seasons) && !_.isEmpty(torrent.episodes)) {

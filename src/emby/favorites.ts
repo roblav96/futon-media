@@ -39,13 +39,13 @@ process.nextTick(() => {
 			if (process.DEVELOPMENT) isHD = true
 			let torrents = await scraper.scrapeAllQueue(item, isHD)
 
-			if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
-
 			console.log(
-				`rxFavorite torrents '${item.strm}' ->`,
-				torrents.map(v => v.short()),
+				`rxFavorite cached torrents '${item.strm}' ->`,
+				torrents.filter(v => v.cached.length > 0).map(v => v.short()),
 				torrents.length,
 			)
+
+			if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 			// let index = torrents.findIndex(({ cached }) => cached.length > 0)
 			// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
