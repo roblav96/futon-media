@@ -8,7 +8,6 @@ interface Env {
 	EMBY_PROXY_PORT: string
 	EMBY_SERVER_ID: string
 	EMBY_WAN_ADDRESS: string
-	FFPROBE_PATH: string
 	MAILBOXLAYER_API_KEY: string
 	NODE_ENV: string
 	OFFCLOUD_KEY: string
