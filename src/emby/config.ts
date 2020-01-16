@@ -3,6 +3,7 @@ import * as http from '@/adapters/http'
 import * as internalIp from 'internal-ip'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
+import validator from 'validator'
 
 export async function config() {
 	if (!process.env.EMBY_API_KEY) {
@@ -24,9 +25,11 @@ export async function config() {
 	}
 	if (!Info) throw new Error(`!SystemInfo -> Could not find emby server on any ports '${ports}'`)
 
-	let [ip] = _.compact(await Promise.all([internalIp.v4(), internalIp.v6()]))
-	if (!Info.WanAddress.includes(ip)) {
-		throw new Error(`Info.WanAddress -> '${Info.WanAddress}' != '${ip}'`)
+	if (validator.isIP(Info.WanAddress)) {
+		let [ip] = _.compact(await Promise.all([internalIp.v4(), internalIp.v6()]))
+		if (!Info.WanAddress.includes(ip)) {
+			throw new Error(`Info.WanAddress -> '${Info.WanAddress}' != '${ip}'`)
+		}
 	}
 
 	_.defaults(process.env, {
