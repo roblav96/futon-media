@@ -60,7 +60,11 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 	static async stalled(id: string) {
 		let transfers = await Premiumize.transfers()
 		let transfer = transfers.find(v => v.id == id)
-		if (transfer && transfer.message.toLowerCase().includes('loading')) {
+		if (!transfer) return
+		if (
+			!['seeding', 'success'].includes(transfer.status) &&
+			utils.includes(transfer.message, 'loading')
+		) {
 			await client.post('/transfer/delete', { query: { id } })
 		}
 	}
@@ -78,7 +82,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 			query: { src: magnet },
 		})) as TransferCreateResponse
 		console.log(`Premiumize download status ->`, status)
-		if (status != 'success') {
+		if (!['seeding', 'success'].includes(status)) {
 			console.warn(`Premiumize download transfer create status ->`, status)
 			return false
 		}

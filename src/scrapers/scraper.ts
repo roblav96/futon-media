@@ -150,6 +150,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.booster(['fgt'], 1.25)
 		v.booster(['bdremux', 'remux'], 1.25)
 		v.booster(['atmos', 'dts', 'true hd', 'truehd'], 1.25)
+		v.booster(['2160', '2160p', '4k', 'uhd'], 1.25)
 		if (item.movie) {
 			if (!v.slug.includes(' hdr ')) {
 				v.booster(['10 bit', '10bit', '8 bit', '8bit'], 0.75)
