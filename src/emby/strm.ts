@@ -3,6 +3,7 @@ import * as debrids from '@/debrids/debrids'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
+import * as path from 'path'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as scraper from '@/scrapers/scraper'
@@ -45,7 +46,7 @@ async function getDebridStream(Item: emby.Item) {
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
 	let stream = await db.get(skey)
 	if (stream) return stream
-	console.warn(`[${Session.short}] getDebridStream ->`, title, PlaybackInfo.json)
+	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAllQueue(item, isHD)
@@ -84,8 +85,8 @@ async function getDebridStream(Item: emby.Item) {
 	setTimeout(emby.library.reset, utils.duration(1, 'minute'), item, Item.Id)
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
-	await Session.Message(`👍 Successfully found stream for '${title}'`)
-	console.log(Date.now() - t, `👍 ->`, title, stream)
+	await Session.Message(`👍 Successfully found stream for '${title}' 🔶 ${path.basename(stream)}`)
+	console.log(Date.now() - t, `👍 stream '${title}' ->`, stream)
 	return stream
 }
 
