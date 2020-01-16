@@ -48,7 +48,7 @@ export class Parser {
 			]
 			let matches = regexes.map(v => Array.from(this.slug.matchAll(v))).flat()
 			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
-			ints = ints.filter(v => _.inRange(v, 0, 100))
+			ints = _.uniq(ints.filter(v => _.inRange(v, 0, 100)))
 			if (ints.length > 0) {
 				seasons.push(ints.shift())
 				episodes.push(..._.range(_.min(ints), _.max(ints) + 1))
@@ -105,7 +105,7 @@ export class Parser {
 			]
 			let matches = regexes.map(v => Array.from(slug.matchAll(v))).flat()
 			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
-			ints = ints.filter(v => _.inRange(v, 0, 100))
+			ints = _.uniq(ints.filter(v => _.inRange(v, 0, 100)))
 			if (ints.length > 0) {
 				seasons.push(..._.range(_.min(ints), _.max(ints) + 1))
 			}
