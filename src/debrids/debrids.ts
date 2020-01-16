@@ -27,42 +27,45 @@ export async function cached(hashes: string[]) {
 }
 
 let pDownloadQueue = new pQueue({ concurrency: 1 })
-export async function download(torrents: Torrent[], item: media.Item) {
+export let downloadQueue = function(...args) {
+	return pDownloadQueue.add(() => download(...args))
+} as typeof download
+async function download(torrents: Torrent[], item: media.Item) {
 	if (!(await RealDebrid.hasActiveCount())) {
 		return console.warn(`download RealDebrid.hasActiveCount == false`)
 	}
 
-	torrents = torrents.filter(v => {
-		if (v.cached.length > 0) return true
-		// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short())
-		if (v.boosts().bytes < utils.toBytes(`${item.gigs} GB`)) return false
-		return v.seeders * v.providers.length >= 3
-	})
+	// torrents = torrents.filter(v => {
+	// 	if (v.cached.length > 0) return true
+	// 	// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short())
+	// 	if (v.boosts().bytes < utils.toBytes(`${item.gigs} GB`)) return false
+	// 	return v.seeders * v.providers.length >= 3
+	// })
 	console.log(
 		`download torrents '${item.strm}' ->`,
 		torrents.map(v => v.json()),
 		torrents.length,
 	)
 
-	if (torrents.length == 0) return console.warn(`download torrents ->`, 'torrents.length == 0')
+	// if (_.isEmpty(torrents)) {
+	// 	return console.warn(`download torrents ->`, 'isEmpty')
+	// }
 
-	if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-	return pDownloadQueue.add(async () => {
-		for (let torrent of torrents) {
-			console.log(`download torrent ->`, torrent.short())
-			let success = torrent.cached.length > 0
-			try {
-				if (!success) success = await RealDebrid.download(torrent.magnet)
-				if (success) return console.log(`👍 download torrent success ->`, torrent.short())
-			} catch (error) {
-				console.error(`download RealDebrid '${torrent.short()}' -> %O`, error.message)
-				if (!torrent.cached.includes('premiumize')) {
-					// await Premiumize.download(torrent.magnet)
-				}
+	for (let torrent of torrents) {
+		console.log(`download torrent ->`, torrent.short())
+		if (torrent.cached.length > 0) return
+		try {
+			await RealDebrid.download(torrent.magnet)
+			return console.log(`👍 download torrent success ->`, torrent.short())
+		} catch (error) {
+			console.error(`download RealDebrid '${torrent.short()}' -> %O`, error.message)
+			if (!torrent.cached.includes('premiumize')) {
+				// await Premiumize.download(torrent.magnet)
 			}
 		}
-	})
+	}
 }
 
 export async function getStream(

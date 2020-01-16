@@ -38,6 +38,7 @@ const SCHEMAS = [
 ] as CollectionSchema[]
 
 async function syncCollections() {
+	let authorization = await trakt.authorization()
 	let t = Date.now()
 
 	let schemas = [] as CollectionSchema[]
@@ -60,6 +61,7 @@ async function syncCollections() {
 		{ url: '/users/likes/lists', limit: 999 },
 	]) {
 		let response = (await trakt.client.get(url, {
+			headers: { authorization },
 			query: { limit, extended: '' },
 			memoize: process.DEVELOPMENT,
 			silent: true,
@@ -103,7 +105,7 @@ async function syncCollections() {
 		// 	// 'Worlds of DC',
 		// ]
 		// schemas = schemas.filter(v => lists.includes(v.name))
-		schemas = schemas.filter(v => utils.endsWith(v.name, 'watchlist'))
+		// schemas = schemas.filter(v => utils.endsWith(v.name, 'watchlist'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
@@ -120,6 +122,7 @@ async function syncCollections() {
 		let results = [] as trakt.Result[]
 		try {
 			results = await trakt.client.get(schema.url, {
+				headers: { authorization },
 				query: schema.limit ? { limit: schema.limit } : {},
 				silent: true,
 			})

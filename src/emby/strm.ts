@@ -59,7 +59,7 @@ async function getDebridStream(Item: emby.Item) {
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	if (cacheds.length == 0) {
-		debrids.download(torrents, item)
+		debrids.downloadQueue(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
 		let error = new Error(
 			`Instant cached stream not available for '${title}', downloading now, try again in 1 hour`,
@@ -70,7 +70,7 @@ async function getDebridStream(Item: emby.Item) {
 
 	stream = await debrids.getStream(cacheds, item, AudioChannels, AudioCodecs, VideoCodecs, isHD)
 	if (!stream) {
-		debrids.download(torrents, item)
+		debrids.downloadQueue(torrents, item)
 		await db.put(skey, 'error', utils.duration(1, 'hour'))
 		let error = new Error(
 			`Compatible stream not available for '${title}' on device '${Session.DeviceName}', downloading now, try again in 1 hour`,

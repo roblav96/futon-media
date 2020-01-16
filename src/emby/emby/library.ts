@@ -243,7 +243,7 @@ export const library = {
 				ReplaceAllImages: 'false',
 				ReplaceAllMetadata: 'false',
 			},
-			// silent: true,
+			silent: true,
 		})
 	},
 
@@ -279,7 +279,9 @@ export const library = {
 				file: Path.replace(library.getFolder(item.type), ''),
 				type: item.type,
 			} as StrmQuery)
-			await fs.outputFile(Path, `${process.env.EMBY_WAN_ADDRESS}/strm?${query}`)
+			let wan = process.env.EMBY_WAN_ADDRESS
+			if (process.DEVELOPMENT) wan = 'http://localhost:8096'
+			await fs.outputFile(Path, `${wan}/strm?${query}`)
 		}
 		return Updated
 	},

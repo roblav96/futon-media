@@ -11,7 +11,6 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 
-let rxFavoriteQueue = new pQueue({ concurrency: 1 })
 process.nextTick(() => {
 	let rxFavorite = emby.rxItemId.pipe(
 		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
@@ -29,30 +28,25 @@ process.nextTick(() => {
 		if (!['Movie', 'Episode'].includes(Item.Type)) return
 		console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 
-		rxFavoriteQueue.add(async () => {
-			let item = await emby.library.item(Item)
+		let item = await emby.library.item(Item)
 
-			let gigs = utils.fromBytes(utils.toBytes(`${item.gigs} GB`))
-			console.warn(`rxFavorite download '${item.strm}' ->`, gigs)
+		let isHD = PlaybackInfo ? PlaybackInfo.Quality != 'SD' : false
+		if (process.DEVELOPMENT) isHD = true
+		let torrents = await scraper.scrapeAllQueue(item, isHD)
 
-			let isHD = PlaybackInfo ? PlaybackInfo.Quality != 'SD' : false
-			if (process.DEVELOPMENT) isHD = true
-			let torrents = await scraper.scrapeAllQueue(item, isHD)
+		console.log(
+			`rxFavorite cached torrents '${item.strm}' ->`,
+			torrents.filter(v => v.cached.length > 0).map(v => v.short()),
+			torrents.length,
+		)
 
-			console.log(
-				`rxFavorite cached torrents '${item.strm}' ->`,
-				torrents.filter(v => v.cached.length > 0).map(v => v.short()),
-				torrents.length,
-			)
+		if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-			if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+		// let index = torrents.findIndex(({ cached }) => cached.length > 0)
+		// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
+		// else console.log(`download best cached ->`, torrents[index].short)
 
-			// let index = torrents.findIndex(({ cached }) => cached.length > 0)
-			// if (index == -1) console.warn(`download best cached ->`, 'index == -1')
-			// else console.log(`download best cached ->`, torrents[index].short)
-
-			await debrids.download(torrents, item)
-			console.info(`rxFavorite '${item.strm}' ->`, 'DONE')
-		})
+		await debrids.downloadQueue(torrents, item)
+		console.info(`rxFavorite '${item.strm}' ->`, 'DONE')
 	})
 })

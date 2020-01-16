@@ -7,55 +7,7 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
-	let dbtoken = ((await db.get('token')) || {}) as OauthToken
-	if (dbtoken.access_token) {
-		client.config.headers['authorization'] = `Bearer ${dbtoken.access_token}`
-	}
-	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
-	let token: OauthToken
-	try {
-		token = await http.client.post('https://api.trakt.tv/oauth/token', {
-			body: {
-				client_id: process.env.TRAKT_CLIENT_ID,
-				client_secret: process.env.TRAKT_CLIENT_SECRET,
-				grant_type: 'refresh_token',
-				redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
-				refresh_token: dbtoken.refresh_token,
-			} as OauthRequest,
-			silent: true,
-		})
-	} catch (error) {
-		console.error(`trakt oauth refresh token -> %O`, error.message)
-		let code = (await http.client.post('https://api.trakt.tv/oauth/device/code', {
-			body: {
-				client_id: process.env.TRAKT_CLIENT_ID,
-			} as OauthRequest,
-			silent: true,
-		})) as OauthCode
-		let expired = Date.now() + utils.duration(code.expires_in, 'second')
-		while (!token && Date.now() < expired) {
-			console.warn(`trakt oauth verify -> ${code.verification_url} -> ${code.user_code}`)
-			await utils.pTimeout(utils.duration(code.interval, 'second'))
-			try {
-				token = await http.client.post('https://api.trakt.tv/oauth/device/token', {
-					body: {
-						client_id: process.env.TRAKT_CLIENT_ID,
-						client_secret: process.env.TRAKT_CLIENT_SECRET,
-						code: code.device_code,
-					} as OauthRequest,
-					silent: true,
-				})
-				let expires = dayjs(token.created_at * 1000 + token.expires_in * 1000)
-				console.info(`token expires ->`, expires.fromNow())
-			} catch {}
-		}
-	}
-	if (!token) throw new Error(`trakt oauth !token`)
-	await db.put('token', token)
-	client.config.headers['authorization'] = `Bearer ${token.access_token}`
-})
+// process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',
@@ -86,6 +38,51 @@ export const client = new http.Http({
 function debloat(value) {
 	let keys = ['available_translations', 'images']
 	keys.forEach(key => _.unset(value, key))
+}
+
+export async function authorization() {
+	let dbtoken = ((await db.get('token')) || {}) as OauthToken
+	let token: OauthToken
+	try {
+		token = await client.post('https://api.trakt.tv/oauth/token', {
+			body: {
+				client_id: process.env.TRAKT_CLIENT_ID,
+				client_secret: process.env.TRAKT_CLIENT_SECRET,
+				grant_type: 'refresh_token',
+				redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
+				refresh_token: dbtoken.refresh_token,
+			} as OauthRequest,
+			silent: true,
+		})
+	} catch (error) {
+		console.error(`trakt oauth refresh token -> %O`, error.message)
+		let code = (await client.post('https://api.trakt.tv/oauth/device/code', {
+			body: {
+				client_id: process.env.TRAKT_CLIENT_ID,
+			} as OauthRequest,
+			silent: true,
+		})) as OauthCode
+		let expired = Date.now() + utils.duration(code.expires_in, 'second')
+		while (!token && Date.now() < expired) {
+			console.warn(`trakt oauth verify -> ${code.verification_url} -> ${code.user_code}`)
+			await utils.pTimeout(utils.duration(code.interval, 'second'))
+			try {
+				token = await client.post('https://api.trakt.tv/oauth/device/token', {
+					body: {
+						client_id: process.env.TRAKT_CLIENT_ID,
+						client_secret: process.env.TRAKT_CLIENT_SECRET,
+						code: code.device_code,
+					} as OauthRequest,
+					silent: true,
+				})
+				let expires = dayjs(token.created_at * 1000 + token.expires_in * 1000)
+				console.info(`token expires ->`, expires.fromNow())
+			} catch {}
+		}
+	}
+	if (!token) throw new Error(`trakt oauth !token`)
+	await db.put('token', token)
+	return `Bearer ${token.access_token}`
 }
 
 // export const RESULT_EXTRAS = {
