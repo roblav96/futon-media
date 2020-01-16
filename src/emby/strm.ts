@@ -83,7 +83,7 @@ async function getDebridStream(Item: emby.Item) {
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
-	await Session.Message(`👍 Successfully found stream for '${title}' 🔶 ${path.basename(stream)}`)
+	await Session.Message(`👍 Success 🔶 ${decodeURIComponent(path.basename(stream))}`)
 	console.log(Date.now() - t, `👍 stream '${title}' ->`, stream)
 	return stream
 }
