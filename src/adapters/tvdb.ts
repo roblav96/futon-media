@@ -16,29 +16,44 @@ import { Readable } from 'stream'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	// if (process.DEVELOPMENT) await db.flush()
-	return
-	await refresh(true)
-	schedule.scheduleJob('0 * * * *', () =>
-		refresh().catch(error => console.error(`tvdb refresh -> %O`, error)),
-	)
+	// await authorization()
+	// schedule.scheduleJob('0 * * * *', authorization)
 })
-
-async function refresh(first = false) {
-	let token = (await db.get('token')) as string
-	if (token && first == true) return
-	let response = (await client.post('https://api.thetvdb.com/login', {
-		body: { apikey: process.env.TVDB_KEY },
-		retries: [500, 503],
-		silent: true,
-	})) as { token: string }
-	await db.put('token', response.token)
-	client.config.headers['authorization'] = `Bearer ${response.token}`
-}
 
 export const client = new Http({
 	baseUrl: 'https://api.thetvdb.com',
-	headers: { 'accept-language': 'en' },
+	headers: {
+		'accept-language': 'en',
+		'authorization': `Bearer ${process.env.TVDB_TOKEN}`,
+	},
+	retries: [408, 500, 502, 503, 504],
 })
+
+async function authorization() {
+	let token = await db.get<string>('token')
+	if (token) {
+		client.config.headers['authorization'] = `Bearer ${token}`
+		try {
+			let response = (await client.get('/refresh_token', {
+				headers: { authorization: `Bearer ${token}` },
+				// body: { apikey: process.env.TVDB_KEY },
+				silent: true,
+			})) as { token: string }
+			token = response.token
+		} catch {
+			token = null
+		}
+	}
+	if (!token) {
+		let response = (await client.post('/login', {
+			body: { apikey: process.env.TVDB_KEY },
+			silent: true,
+		})) as { token: string }
+		token = response.token
+	}
+	await db.put('token', token)
+	client.config.headers['authorization'] = `Bearer ${token}`
+}
 
 export async function getAll(tvdbid: string) {
 	let t = Date.now()

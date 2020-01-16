@@ -58,12 +58,13 @@ async function download(torrents: Torrent[], item: media.Item) {
 		if (torrent.cached.length > 0) return
 		try {
 			await RealDebrid.download(torrent.magnet)
+			await Premiumize.download(torrent.magnet)
 			return console.log(`👍 download torrent success ->`, torrent.short())
 		} catch (error) {
-			console.error(`download RealDebrid '${torrent.short()}' -> %O`, error.message)
-			if (!torrent.cached.includes('premiumize')) {
-				// await Premiumize.download(torrent.magnet)
-			}
+			console.error(`download '${torrent.short()}' -> %O`, error.message)
+			// if (!torrent.cached.includes('premiumize')) {
+			// 	// await Premiumize.download(torrent.magnet)
+			// }
 		}
 	}
 }

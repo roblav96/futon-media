@@ -13,16 +13,16 @@ export const client = new http.Http({
 	silent: true,
 })
 
-process.nextTick(async () => {
-	if (!process.DEVELOPMENT) return
-	if (process.DEVELOPMENT) return
-	let { transfers } = (await client.post('/transfer/list')) as { transfers: Transfer[] }
-	for (let transfer of transfers) {
-		if (utils.includes(transfer.message, 'loading')) {
-			await client.post('/transfer/delete', { query: { id: transfer.id } })
-		}
-	}
-})
+// process.nextTick(async () => {
+// 	if (!process.DEVELOPMENT) return
+// 	if (process.DEVELOPMENT) return
+// 	let transfers = await Premiumize.transfers()
+// 	for (let transfer of transfers) {
+// 		if (utils.includes(transfer.message, 'loading')) {
+// 			await client.post('/transfer/delete', { query: { id: transfer.id } })
+// 		}
+// 	}
+// })
 
 export class Premiumize extends debrid.Debrid<Transfer> {
 	static async cached(hashes: string[]) {
@@ -52,8 +52,13 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 		return cached
 	}
 
+	static async transfers() {
+		let transfers = await client.post('/transfer/list')
+		return _.get(transfers, 'transfers', []) as Transfer[]
+	}
+
 	static async stalled(id: string) {
-		let { transfers } = (await client.post('/transfer/list')) as { transfers: Transfer[] }
+		let transfers = await Premiumize.transfers()
 		let transfer = transfers.find(v => v.id == id)
 		if (transfer && transfer.message.includes('loading')) {
 			await client.post('/transfer/delete', { query: { id } })
@@ -63,9 +68,9 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 	static async download(magnet: string) {
 		let { dn } = magnetlink.decode(magnet)
 
-		let { transfers } = (await client.post('/transfer/list')) as { transfers: Transfer[] }
+		let transfers = await Premiumize.transfers()
 		if (transfers.find(v => utils.equals(v.name, dn))) {
-			console.warn(`Premiumize download transfer exists ->`, dn)
+			console.log(`Premiumize download transfer exists ->`, dn)
 			return true
 		}
 
@@ -73,11 +78,12 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 			query: { src: magnet },
 		})) as TransferCreateResponse
 		console.log(`Premiumize download status ->`, status)
-		if (status == 'success') {
-			setTimeout(Premiumize.stalled, utils.duration(1, 'minute'), id)
-			return true
+		if (status != 'success') {
+			console.warn(`Premiumize download transfer create status ->`, status)
+			return false
 		}
-		return false
+		setTimeout(Premiumize.stalled, utils.duration(1, 'minute'), id)
+		return true
 	}
 
 	async getFiles(isHD: boolean) {
@@ -99,7 +105,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 			let name = path.basename(`/${download.path}`)
 			return {
 				bytes: _.parseInt(download.size),
-				link: !isHD && download.stream_link || download.link,
+				link: (!isHD && download.stream_link) || download.link,
 				name: name.slice(0, name.lastIndexOf('.')),
 				path: `/${download.path}`,
 			} as debrid.File

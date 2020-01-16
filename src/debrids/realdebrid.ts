@@ -65,7 +65,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		let transfers = (await client.get('/torrents')) as Transfer[]
 		let transfer = transfers.find(v => v.hash.toLowerCase() == infoHash)
 		if (transfer) {
-			console.warn(`RealDebrid download transfer exists ->`, dn)
+			console.log(`RealDebrid download transfer exists ->`, dn)
 			return true
 		}
 
