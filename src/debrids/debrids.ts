@@ -35,36 +35,26 @@ async function download(torrents: Torrent[], item: media.Item) {
 		return console.warn(`download RealDebrid.hasActiveCount == false`)
 	}
 
-	// torrents = torrents.filter(v => {
-	// 	if (v.cached.length > 0) return true
-	// 	// console.log(`boosts '${utils.fromBytes(v.boosts(item.S.e).bytes)}' ->`, v.short())
-	// 	if (v.boosts().bytes < utils.toBytes(`${item.gigs} GB`)) return false
-	// 	return v.seeders * v.providers.length >= 3
-	// })
+	torrents = torrents.filter(v => {
+		if (v.cached.length > 0) return true
+		if (v.providers.length < 3) return false
+		return v.providers.length * v.boosts().seeders >= 5
+	})
 	console.log(
 		`download torrents '${item.strm}' ->`,
-		torrents.map(v => v.json()),
+		torrents.map(v => v.short()),
 		torrents.length,
 	)
 
-	// if (_.isEmpty(torrents)) {
-	// 	return console.warn(`download torrents ->`, 'isEmpty')
-	// }
-
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
-
 	for (let torrent of torrents) {
-		console.log(`download torrent ->`, torrent.short())
-		if (torrent.cached.length > 0) return
-		try {
-			await RealDebrid.download(torrent.magnet)
-			await Premiumize.download(torrent.magnet)
-			return console.log(`👍 download torrent success ->`, torrent.short())
-		} catch (error) {
-			console.error(`download '${torrent.short()}' -> %O`, error.message)
-			// if (!torrent.cached.includes('premiumize')) {
-			// 	// await Premiumize.download(torrent.magnet)
-			// }
+		console.log(`download torrents ->`, torrent.short())
+		if (torrent.cached.includes('realdebrid') || (await RealDebrid.download(torrent.magnet))) {
+			if (
+				torrent.cached.includes('premiumize') ||
+				(await Premiumize.download(torrent.magnet))
+			) {
+				return console.log(`👍 download torrents success ->`, torrent.short())
+			}
 		}
 	}
 }

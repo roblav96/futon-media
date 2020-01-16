@@ -183,7 +183,7 @@ export const library = {
 	async Item(ItemId: string) {
 		return (await emby.client.get(`/Users/${process.env.EMBY_SERVER_ID}/Items/${ItemId}`, {
 			silent: true,
-		})) as Item
+		})) as emby.Item
 	},
 
 	async item(Item: emby.Item, main = false) {
@@ -234,9 +234,10 @@ export const library = {
 		let groups = _.get(match, 'groups', {}) as Record<string, string>
 		return { episode: _.parseInt(groups.episode), season: _.parseInt(groups.season) }
 	},
-	async reset(item: media.Item, ItemId: string) {
-		await library.toStrmFile(item, true)
-		await emby.client.post(`/Items/${ItemId}/Refresh`, {
+
+	async reset(Item: emby.Item) {
+		await library.toStrmFile(await library.item(Item), true)
+		await emby.client.post(`/Items/${Item.Id}/Refresh`, {
 			query: {
 				ImageRefreshMode: 'Default',
 				MetadataRefreshMode: 'Default',
@@ -338,7 +339,7 @@ export const library = {
 					CommunityRating: Number.parseFloat(tags['🍿 IMDb Rating']),
 					CriticRating: Number.parseFloat(tags['🍎 Rotten Tomatoes']),
 					Tags: _.map(tags, (v, k) => `${k.split(' ')[0]} ${v} - ${k.slice(2).trim()}`),
-				} as Item),
+				} as emby.Item),
 			),
 			silent: true,
 		})

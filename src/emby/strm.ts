@@ -82,8 +82,6 @@ async function getDebridStream(Item: emby.Item) {
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
-	setTimeout(emby.library.reset, utils.duration(1, 'minute'), item, Item.Id)
-
 	await db.put(skey, stream, utils.duration(1, 'day'))
 	await Session.Message(`👍 Successfully found stream for '${title}' 🔶 ${path.basename(stream)}`)
 	console.log(Date.now() - t, `👍 stream '${title}' ->`, stream)
@@ -114,6 +112,7 @@ fastify.get('/strm', async (request, reply) => {
 				console.error(`/strm '${title}' -> %O`, error)
 				stream = 'error'
 			}
+			setTimeout(emby.library.reset, utils.duration(1, 'minute'), Item)
 			await db.put(Item.Id, stream, utils.duration(1, 'minute'))
 			emitter.emit(Item.Id, stream)
 		} else {

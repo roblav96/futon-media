@@ -83,6 +83,7 @@ export const LANGS = [
 	'ita',
 	'italian',
 	'rus',
+	'sezon',
 	'spa',
 	'spanish',
 	'swe',

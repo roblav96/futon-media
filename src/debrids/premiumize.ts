@@ -60,7 +60,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 	static async stalled(id: string) {
 		let transfers = await Premiumize.transfers()
 		let transfer = transfers.find(v => v.id == id)
-		if (transfer && transfer.message.includes('loading')) {
+		if (transfer && transfer.message.toLowerCase().includes('loading')) {
 			await client.post('/transfer/delete', { query: { id } })
 		}
 	}
@@ -70,7 +70,7 @@ export class Premiumize extends debrid.Debrid<Transfer> {
 
 		let transfers = await Premiumize.transfers()
 		if (transfers.find(v => utils.equals(v.name, dn))) {
-			console.log(`Premiumize download transfer exists ->`, dn)
+			// console.log(`Premiumize download transfer exists ->`, dn)
 			return true
 		}
 

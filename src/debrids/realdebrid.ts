@@ -65,7 +65,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		let transfers = (await client.get('/torrents')) as Transfer[]
 		let transfer = transfers.find(v => v.hash.toLowerCase() == infoHash)
 		if (transfer) {
-			console.log(`RealDebrid download transfer exists ->`, dn)
+			// console.log(`RealDebrid download transfer exists ->`, dn)
 			return true
 		}
 
@@ -76,8 +76,10 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
 
 		if (transfer.files.length == 0) {
+			console.warn(`RealDebrid transfer files == 0 ->`, dn)
 			client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
-			throw new Error(`RealDebrid transfer files == 0`)
+			return false
+			// throw new Error(`RealDebrid transfer files == 0`)
 		}
 
 		let files = transfer.files.filter(v => {
@@ -90,15 +92,16 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 			return false
 		}
 
-		await client
-			.post(`/torrents/selectFiles/${transfer.id}`, {
+		try {
+			await client.post(`/torrents/selectFiles/${transfer.id}`, {
 				form: { files: files.map(v => v.id).join() },
 			})
-			.catch(error => {
-				client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
-				return Promise.reject(error)
-			})
-		return true
+			return true
+		} catch (error) {
+			console.warn(`RealDebrid selectFiles catch ->`, error.message)
+			client.delete(`/torrents/delete/${transfer.id}`).catch(_.noop)
+			return false
+		}
 	}
 
 	async getFiles() {
