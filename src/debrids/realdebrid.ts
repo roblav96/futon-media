@@ -72,7 +72,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		let download = (await client.post('/torrents/addMagnet', {
 			form: { magnet: magnet },
 		})) as Download
-		await utils.pTimeout(1000)
+		await utils.pTimeout(3000)
 		transfer = (await client.get(`/torrents/info/${download.id}`)) as Transfer
 
 		if (transfer.files.length == 0) {

@@ -95,11 +95,15 @@ export const library = {
 
 	toTitle(Item: emby.Item) {
 		let name = Item.Name
-		if (['Movie', 'Series'].includes(Item.Type)) name += ` (${Item.ProductionYear})`
-		if (Item.Type == 'Season') name = `${Item.SeriesName} ${Item.Name}`
+		if (['Movie', 'Series'].includes(Item.Type)) {
+			name += ` (${Item.ProductionYear})`
+		}
+		if (Item.Type == 'Season') {
+			name = `${Item.SeriesName} (${Item.ProductionYear}) ${Item.Name}`
+		}
 		if (Item.Type == 'Episode') {
 			let base = path.basename(Item.Path).slice(0, -5)
-			name = `${Item.SeriesName} ${base.split(' ').pop()}`
+			name = `${Item.SeriesName} (${Item.ProductionYear}) ${base.split(' ').pop()}`
 		}
 		return `[${Item.Type[0]}] ${name}`
 	},
@@ -366,9 +370,7 @@ export const library = {
 		let CreatedPaths = Creations.map(v => v.Path)
 		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
 		if (Session && !_.isEmpty(created)) {
-			Session.Message(
-				`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`,
-			)
+			Session.Message(`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`)
 		}
 
 		let CreatedStrmPaths = CreatedPaths.filter(v => v.endsWith('.strm'))
