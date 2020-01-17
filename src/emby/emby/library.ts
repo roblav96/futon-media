@@ -429,13 +429,6 @@ export const library = {
 						return true
 					}
 				})
-				// if (!_.isEmpty(created)) {
-				// 	console.warn(
-				// 		`library addAll !isEmpty ->`,
-				// 		created.map(v => v.short),
-				// 		created.length,
-				// 	)
-				// }
 			}
 			created.forEach(v => console.error(`library addAll created !Item -> %O`, v.short))
 		}
