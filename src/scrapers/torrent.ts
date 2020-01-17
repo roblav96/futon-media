@@ -108,6 +108,13 @@ export class Torrent extends parser.Parser {
 		}${this.name.trim()} [${this.age}] [${this.providers.length} x ${providers}]`
 		// }${this.slug.trim()} [${this.age}] ${providers}${this.filter ? ` ${this.filter}` : ''}`
 	}
+	get minimagnet() {
+		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		return `magnet:?${qs.stringify(
+			{ xt: magnet.xt, dn: magnet.dn },
+			{ encode: false, sort: false },
+		)}`
+	}
 	json() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
 		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
@@ -116,7 +123,8 @@ export class Torrent extends parser.Parser {
 				age: this.age,
 				boost: _.round(this.boost, 2),
 				cached: `${this.cached}`,
-				magnet: `magnet:?${minify}`, // this.magnet,
+				// magnet: this.magnet,
+				// minimagnet: this.minimagnet,
 				packs: this.packs,
 				providers: `${this.providers}`,
 				seasons: `${this.seasons}`,

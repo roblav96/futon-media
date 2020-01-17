@@ -199,6 +199,7 @@ export class Scraper {
 	sorts = [] as string[]
 	max = Infinity
 	concurrency = 3
+	enabled = true
 
 	slugs() {
 		if (this.item.movie) return this.item.slugs
@@ -210,6 +211,7 @@ export class Scraper {
 	constructor(public item: media.Item) {}
 
 	async scrape(isHD: boolean) {
+		if (!this.enabled) return []
 		let t = Date.now()
 		let ctor = this.constructor.name
 

@@ -55,8 +55,8 @@ export const library = {
 			silent: true,
 		})) as VirtualFolder[]
 		for (let Folder of Folders) {
-			if (Folder.LibraryOptions.EnablePhotos) {
-				Folder.LibraryOptions.EnablePhotos = false
+			if (!Folder.LibraryOptions.EnablePhotos) {
+				Folder.LibraryOptions.EnablePhotos = true
 				await emby.client.post('/Library/VirtualFolders/LibraryOptions', {
 					body: { Id: Folder.ItemId, LibraryOptions: Folder.LibraryOptions },
 				})

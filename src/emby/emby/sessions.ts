@@ -90,7 +90,8 @@ export class Session {
 		let body = { Text: `${text}` }
 		if (_.isError(text)) body.Text = `⛔ [ERROR] ${text.message}`
 		Object.assign(body, { TimeoutMs: _.clamp(body.Text.length * 100, 5000, 15000) })
-		emby.client.post(`/Sessions/${this.Id}/Message`, { body, silent: true }).catch(_.noop)
+		let url = `/Sessions/${this.Id}/Message`
+		emby.client.post(url, { body, retries: [], silent: true }).catch(_.noop)
 	}
 
 	// async GoToSearch(String: string) {

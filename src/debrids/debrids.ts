@@ -37,12 +37,13 @@ async function download(torrents: Torrent[], item: media.Item) {
 
 	torrents = torrents.filter(v => {
 		if (v.cached.length > 0) return true
-		if (v.providers.length < 3) return false
-		return v.providers.length * v.boosts().seeders >= 5
+		if (v.providers.length == 1) return false
+		return v.providers.length * v.seeders >= 3
+		// return v.providers.length * v.boosts().seeders >= 3
 	})
 	console.log(
 		`download torrents '${item.strm}' ->`,
-		torrents.map(v => v.short()),
+		torrents.map(v => [v.short(), process.DEVELOPMENT ? v.magnet : v.minimagnet]),
 		torrents.length,
 	)
 
