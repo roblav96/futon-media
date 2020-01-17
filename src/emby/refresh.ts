@@ -41,7 +41,7 @@ process.nextTick(async () => {
 		if (['Series', 'Season', 'Episode'].includes(Item.Type)) {
 			let CreatedPaths = await emby.library.addQueue([item])
 			if (!_.isEmpty(CreatedPaths)) {
-				await Session.Message(
+				Session.Message(
 					`🔄 ${CreatedPaths.length} episodes added to '${item.title}', reload this page!`,
 				)
 			}

@@ -191,7 +191,7 @@ export class Scraper {
 			// profile: process.DEVELOPMENT,
 			retries: [],
 			silent: true,
-			timeout: process.DEVELOPMENT ? 10000 : 5000,
+			timeout: 10000,
 		} as http.Config)
 		return new http.Http(config)
 	}

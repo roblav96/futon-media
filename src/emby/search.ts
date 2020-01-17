@@ -34,7 +34,7 @@ process.nextTick(() => {
 					silent: true,
 				})) as trakt.Result[]
 				if (_.isEmpty(results)) {
-					await Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
+					Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
 				}
 				return { SearchTerm, Session, items: results.map(v => new media.Item(v)) }
 			}

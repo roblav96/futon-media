@@ -29,6 +29,7 @@ process.nextTick(async () => {
 	)
 	rxUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
 		// console.time(`rxUserAgent`)
+		await db.put(`useragent:${UserId}`, useragent)
 		await db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'day'))
 		// console.timeEnd(`rxUserAgent`)
 	})
@@ -84,8 +85,10 @@ export class PlaybackInfo {
 		for (let i = 0; i < 5; i++) {
 			let useragent = (await db.get(`useragent:${UserId}:${ItemId}`)) as string
 			if (useragent) return useragent
-			await utils.pTimeout(300)
+			await utils.pTimeout(500)
 		}
+		let useragent = (await db.get(`useragent:${UserId}`)) as string
+		if (useragent) return useragent
 		console.error(`PlaybackInfo !useragent -> %O`, UserId, ItemId)
 	}
 
@@ -98,8 +101,10 @@ export class PlaybackInfo {
 				value = await db.get(`PlaybackInfo:${useragent}:${UserId}`)
 			}
 			if (value) return new PlaybackInfo(value)
-			await utils.pTimeout(300)
+			await utils.pTimeout(500)
 		}
+		let value = await db.get(`PlaybackInfo:${useragent}:${UserId}`)
+		if (value) return new PlaybackInfo(value)
 		console.error(`PlaybackInfo !value -> %O`, useragent, UserId, ItemId)
 	}
 

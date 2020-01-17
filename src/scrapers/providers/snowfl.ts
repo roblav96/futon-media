@@ -34,7 +34,7 @@ async function getToken() {
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'SEED']
 	concurrency = 1
-	max = 2
+	max = 1
 
 	async getResults(slug: string, sort: string) {
 		let token = await getToken()

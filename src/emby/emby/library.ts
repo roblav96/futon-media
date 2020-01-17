@@ -39,7 +39,7 @@ export const library = {
 		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
 		if (State != 'Idle') {
 			await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
-			await utils.pTimeout(300)
+			await utils.pTimeout(500)
 		}
 	},
 
@@ -366,7 +366,7 @@ export const library = {
 		let CreatedPaths = Creations.map(v => v.Path)
 		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
 		if (Session && !_.isEmpty(created)) {
-			await Session.Message(
+			Session.Message(
 				`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`,
 			)
 		}

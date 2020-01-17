@@ -65,7 +65,7 @@ async function getDebridStream(Item: emby.Item) {
 		let error = new Error(
 			`Instant cached stream not available for '${title}', downloading now, try again in 1 hour`,
 		)
-		await Session.Message(error)
+		Session.Message(error)
 		throw error
 	}
 
@@ -76,14 +76,14 @@ async function getDebridStream(Item: emby.Item) {
 		let error = new Error(
 			`Compatible stream not available for '${title}' on device '${Session.DeviceName}', downloading now, try again in 1 hour`,
 		)
-		await Session.Message(error)
+		Session.Message(error)
 		throw error
 	}
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
-	await Session.Message(`👍 Success 🔶 ${decodeURIComponent(path.basename(stream))}`)
+	Session.Message(`👍 Success 🔶 ${decodeURIComponent(path.basename(stream))}`)
 	console.log(Date.now() - t, `👍 stream '${title}' ->`, stream)
 	return stream
 }

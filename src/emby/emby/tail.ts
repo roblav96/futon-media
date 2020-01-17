@@ -113,12 +113,12 @@ export const rxHttp = rxLine.pipe(
 	Rx.op.filter(({ match }) => _.isArray(match)),
 	Rx.op.map(({ match }) => ({
 		...qs.parseUrl(match.groups.url),
-		method: match.groups.method.toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'OPTIONS',
+		method: match.groups.method.toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE',
 		useragent: match.groups.useragent,
 	})),
 	Rx.op.filter(({ url, method }) => {
 		url = url.toLowerCase()
-		if (!['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'].includes(method)) return false
+		if (!['GET', 'POST', 'PUT', 'DELETE'].includes(method)) return false
 		if (!url.includes('/emby/')) return false
 		if (url.includes('/images/') || url.includes('/web/')) return false
 		return new Url(url).host != new Url(process.env.EMBY_LAN_ADDRESS).host

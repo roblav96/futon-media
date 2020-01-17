@@ -3,7 +3,6 @@ import * as dayjs from 'dayjs'
 import * as emby from '@/emby/emby'
 import * as media from '@/media/media'
 import * as ms from 'pretty-ms'
-import * as pAll from 'p-all'
 import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as trakt from '@/adapters/trakt'
@@ -26,13 +25,6 @@ export class Session {
 		return (await Session.get()).find(v => v.UserId == UserId)
 	}
 
-	static async broadcast(text: string) {
-		await pAll(
-			(await Session.get()).map(v => () => v.Message(text)),
-			{ concurrency: 1 },
-		)
-	}
-
 	get Stamp() {
 		return new Date(this.LastActivityDate).valueOf()
 	}
@@ -43,24 +35,8 @@ export class Session {
 		return [this.Client, this.DeviceName].join(' ')
 	}
 
-	get AudioStreamIndex() {
-		return _.get(this, 'PlayState.AudioStreamIndex') as number
-	}
-	get MediaSourceId() {
-		return _.get(this, 'PlayState.MediaSourceId') as string
-	}
-	get PlayMethod() {
-		return _.get(this, 'PlayState.PlayMethod') as string
-	}
-	get PositionTicks() {
-		return _.get(this, 'PlayState.PositionTicks') as number
-	}
-	get IsPlayState() {
-		let finite = _.isFinite(this.AudioStreamIndex) && _.isFinite(this.PositionTicks)
-		return finite && !!this.MediaSourceId && !!this.PlayMethod
-	}
-	get Container() {
-		return _.get(this, 'NowPlayingItem.Container') as string
+	get ItemId() {
+		return _.get(this, 'NowPlayingItem.Id') as string
 	}
 	get ItemName() {
 		return _.get(this, 'NowPlayingItem.Name') as string
@@ -68,19 +44,10 @@ export class Session {
 	get ItemPath() {
 		return _.get(this, 'NowPlayingItem.Path') as string
 	}
-	get ItemId() {
-		return _.get(this, 'NowPlayingItem.Id') as string
-	}
-	get IsNowPlaying() {
-		return !!this.Container && !!this.ItemName && !!this.ItemPath && !!this.ItemId
-	}
-	get IsStreaming() {
-		return !!this.IsPlayState && !!this.IsNowPlaying
-	}
 
 	get short() {
 		let parts = [this.UserName, this.Client, this.DeviceName].map(v => v.replace(/\s+/g, ''))
-		return `${parts[0]}@${parts[1]}.${parts[2]}|${this.Age}ms`
+		return `${parts[0]}@${parts[1]}.${parts[2]}|${ms(this.Age)}`
 	}
 	get json() {
 		return utils.compact({
@@ -93,9 +60,8 @@ export class Session {
 			// DeviceId: this.DeviceId,
 			DeviceName: this.DeviceName,
 			Id: this.Id,
-			IsPlayState: this.IsPlayState,
-			IsStreaming: this.IsStreaming,
 			ItemId: this.ItemId,
+			ItemName: this.ItemName,
 			ItemPath: this.ItemPath,
 			// Quality: this.Quality,
 			// RemoteEndPoint: this.RemoteEndPoint,
@@ -110,35 +76,33 @@ export class Session {
 		_.merge(this, Session)
 	}
 
-	async getUser() {
+	async User() {
 		return await emby.User.byUserId(this.UserId)
 	}
-	async getDevice() {
+	async Device() {
 		return (await emby.client.get(`/Devices/Info`, {
 			query: { Id: this.DeviceId },
 			silent: true,
 		})) as Device
 	}
 
-	async Message(text: string | Error) {
+	Message(text: string | Error) {
 		let body = { Text: `${text}` }
 		if (_.isError(text)) body.Text = `⛔ [ERROR] ${text.message}`
 		Object.assign(body, { TimeoutMs: _.clamp(body.Text.length * 100, 5000, 15000) })
-		try {
-			await emby.client.post(`/Sessions/${this.Id}/Message`, { body, silent: true })
-		} catch {}
+		emby.client.post(`/Sessions/${this.Id}/Message`, { body, silent: true }).catch(_.noop)
 	}
 
-	async GoToSearch(String: string) {
-		await emby.client.post(`/Sessions/${this.Id}/Command/GoToSearch`, {
-			// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
-		})
-		await emby.client.post(`/Sessions/${this.Id}/Command/SendString`, {
-			body: { Arguments: { String } },
-			// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
-			debug: true,
-		})
-	}
+	// async GoToSearch(String: string) {
+	// 	await emby.client.post(`/Sessions/${this.Id}/Command/GoToSearch`, {
+	// 		// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
+	// 	})
+	// 	await emby.client.post(`/Sessions/${this.Id}/Command/SendString`, {
+	// 		body: { Arguments: { String } },
+	// 		// query: { api_key: process.env.EMBY_ADMIN_TOKEN },
+	// 		debug: true,
+	// 	})
+	// }
 }
 
 export interface Session {
