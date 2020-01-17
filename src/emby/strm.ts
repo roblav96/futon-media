@@ -46,7 +46,7 @@ async function getDebridStream(Item: emby.Item) {
 	let skey = `${Item.Id}:${utils.hash([Quality, AudioChannels, AudioCodecs, VideoCodecs])}`
 	let stream = await db.get(skey)
 	if (stream) return stream
-	console.warn(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
+	console.log(`[${Session.short}] getDebridStream '${title}' ->`, PlaybackInfo.json)
 
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAllQueue(item, isHD)

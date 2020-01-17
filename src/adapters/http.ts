@@ -114,13 +114,9 @@ export class Http {
 		}
 	}
 
-	extend(config: Config) {
-		return new Http(Http.merge(this.config, config))
-	}
-
 	async request(config: Config): Promise<HttpieResponse> {
 		let t = Date.now()
-		let options = Http.merge(this.config, config)
+		let options = _.merge({}, this.config, config)
 
 		if (options.url.startsWith('http')) options.baseUrl = ''
 		let { url, query } = qs.parseUrl(
@@ -290,12 +286,6 @@ export class Http {
 	}
 	delete(url: string, config = {} as Config) {
 		return this.request({ ...config, method: 'DELETE', url }).then(({ data }) => data)
-	}
-
-	private static merge(...configs: Config[]) {
-		return _.mergeWith({}, ...configs, (a, b) => {
-			if (_.isArray(a) && _.isArray(b)) return a.concat(b)
-		}) as Config
 	}
 }
 
