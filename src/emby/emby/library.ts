@@ -44,6 +44,7 @@ export const library = {
 	},
 
 	folders: {
+		boxsets: { Location: '', ItemId: '' },
 		movies: { Location: '', ItemId: '' },
 		shows: { Location: '', ItemId: '' },
 	},
@@ -54,18 +55,18 @@ export const library = {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
-		for (let Folder of Folders) {
-			if (!Folder.LibraryOptions.EnablePhotos) {
-				Folder.LibraryOptions.EnablePhotos = true
-				await emby.client.post('/Library/VirtualFolders/LibraryOptions', {
-					body: { Id: Folder.ItemId, LibraryOptions: Folder.LibraryOptions },
-				})
-			}
+		let boxsets = Folders.find(v => v.CollectionType == 'boxsets')
+		if (boxsets) {
+			library.folders.boxsets = { Location: boxsets.Locations[0], ItemId: boxsets.ItemId }
 		}
 		let movies = Folders.find(v => v.CollectionType == 'movies')
-		library.folders.movies = { Location: movies.Locations[0], ItemId: movies.ItemId }
+		if (movies) {
+			library.folders.movies = { Location: movies.Locations[0], ItemId: movies.ItemId }
+		}
 		let shows = Folders.find(v => v.CollectionType == 'tvshows')
-		library.folders.shows = { Location: shows.Locations[0], ItemId: shows.ItemId }
+		if (shows) {
+			library.folders.shows = { Location: shows.Locations[0], ItemId: shows.ItemId }
+		}
 	},
 
 	// async setCollections() {

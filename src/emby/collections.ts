@@ -105,7 +105,7 @@ async function syncCollections() {
 		// 	// 'Worlds of DC',
 		// ]
 		// schemas = schemas.filter(v => lists.includes(v.name))
-		// schemas = schemas.filter(v => utils.endsWith(v.name, 'watchlist'))
+		schemas = schemas.filter(v => utils.endsWith(v.name, 'watchlist'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
@@ -114,9 +114,6 @@ async function syncCollections() {
 	else console.log(`syncCollections schemas ->`, schemas.map(v => v.name).sort())
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
-
-	let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-	console.log('Collections ->', Collections)
 
 	for (let schema of schemas) {
 		let results = [] as trakt.Result[]
@@ -145,6 +142,7 @@ async function syncCollections() {
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
 		let Ids = items.map(item => Items.find(v => v.Path == emby.library.toPath(item)).Id)
 
+		let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 		let Collection = Collections.find(v => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
@@ -157,6 +155,21 @@ async function syncCollections() {
 				silent: true,
 			})
 		}
+	}
+
+	let Collections = await emby.library.Items({
+		Fields: ['DisplayOrder'],
+		IncludeItemTypes: ['BoxSet'],
+	})
+	for (let Collection of Collections) {
+		if (Collection.DisplayOrder == 'SortName') continue
+		await emby.client.post(`/Items/${Collection.Id}`, {
+			body: _.merge(
+				await emby.library.Item(Collection.Id),
+				{ DisplayOrder: 'SortName' } as emby.Item,
+			),
+			silent: true,
+		})
 	}
 
 	await emby.library.refresh()

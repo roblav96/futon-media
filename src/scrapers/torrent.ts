@@ -116,8 +116,6 @@ export class Torrent extends parser.Parser {
 		)}`
 	}
 	json() {
-		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
-		let minify = qs.stringify({ xt: magnet.xt, dn: magnet.dn }, { encode: false, sort: false })
 		return utils.compact(
 			_.merge({}, super.json(), {
 				age: this.age,
