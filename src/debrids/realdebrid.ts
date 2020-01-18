@@ -12,6 +12,7 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.DEVELOPMENT) await db.flush()
+	if (!process.DEVELOPMENT) return
 
 	let html = await http.client.get('https://real-debrid.com/ajax/torrent_files.php', {
 		headers: {
