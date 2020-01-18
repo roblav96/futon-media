@@ -159,8 +159,12 @@ export class PlaybackInfo {
 				AudioCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
 			}
 		}
-		if (AudioCodecs.includes('ac3')) AudioCodecs.push('eac3')
-		if (AudioCodecs.includes('eac3')) AudioCodecs.push('ac3')
+		if (['ac3', 'eac3'].find(v => AudioCodecs.includes(v))) {
+			AudioCodecs.push('ac3', 'eac3')
+		}
+		if (['dca', 'dts', 'dtshd'].find(v => AudioCodecs.includes(v))) {
+			AudioCodecs.push('dca', 'dts')
+		}
 		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean).map(v => v.replace(/^[^\w]/, ''))))
 	}
 	get VideoCodecs() {
