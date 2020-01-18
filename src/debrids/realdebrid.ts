@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as cheerio from 'cheerio'
 import * as debrid from '@/debrids/debrid'
 import * as http from '@/adapters/http'
 import * as magnetlink from '@/shims/magnet-link'
@@ -6,6 +7,23 @@ import * as pAll from 'p-all'
 import * as path from 'path'
 import * as trackers from '@/scrapers/trackers'
 import * as utils from '@/utils/utils'
+import { Db } from '@/adapters/db'
+
+const db = new Db(__filename)
+process.nextTick(async () => {
+	if (process.DEVELOPMENT) await db.flush()
+
+	let html = await http.client.get('https://real-debrid.com/ajax/torrent_files.php', {
+		headers: {
+			cookie: `https=1; cookie_accept=y; auth=${process.env.REALDEBRID_COOKIE}; lang=en; apay-session-set=true`,
+		},
+		query: { id: 'CEN4M7GGVELBS' },
+	})
+	let $ = cheerio.load(html)
+	let unwanted = ''
+	$('.torrent_file_checkbox').each((i, el) => {})
+	console.log(`unwanted ->`, unwanted)
+})
 
 export const client = new http.Http({
 	baseUrl: 'https://api.real-debrid.com/rest/1.0',
@@ -29,7 +47,7 @@ process.nextTick(async () => {
 	)
 })
 
-export class RealDebrid extends debrid.Debrid<Transfer> {
+export class RealDebrid extends debrid.Debrid {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
@@ -58,6 +76,8 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		let actives = (await client.get('/torrents/activeCount')) as ActiveCount
 		return actives.list.length < _.ceil(actives.limit * 0.8)
 	}
+
+	static selectFiles(id: string) {}
 
 	static async download(magnet: string) {
 		let { dn, infoHash } = magnetlink.decode(magnet)
@@ -144,6 +164,7 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 			let download = (await client.post('/torrents/addMagnet', {
 				form: { magnet: this.magnet },
 			})) as Download
+			await utils.pTimeout(1000)
 			await client.post(`/torrents/selectFiles/${download.id}`, {
 				form: { files: this.files.map(v => v.id).join() },
 			})
@@ -168,7 +189,9 @@ export class RealDebrid extends debrid.Debrid<Transfer> {
 		}
 
 		// throw new Error(`RealDebrid streamUrl -> disabled`)
-		let { download } = (await client.post(`/unrestrict/link`, { form: { link } })) as Unrestrict
+		let { download } = (await client.post(`/unrestrict/link`, {
+			form: { link, remote: '1' },
+		})) as Unrestrict
 		return download
 	}
 }

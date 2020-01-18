@@ -15,7 +15,7 @@ export class GaiaPopcornTime extends scraper.Scraper {
 
 	async getResults(slug: string) {
 		let response = (await client.get(`/${this.item.type}/${slug}`)) as Response
-		global.dts(response, `response`)
+		console.dts(response)
 		return []
 	}
 }

@@ -17,7 +17,7 @@ process.nextTick(() => {
 			})
 		)[0]
 		if (Item.MediaStreams.find(v => v.Type == 'Subtitle')) return
-		// console.warn(`[${Session.short}] rxSubtitles ->`, emby.library.toTitle(Item))
+		// console.log(`[${Session.short}] rxSubtitles ->`, emby.library.toTitle(Item))
 
 		for (let query of [
 			{ IsPerfectMatch: 'false', IsForced: 'true' },

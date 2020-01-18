@@ -26,7 +26,7 @@ process.nextTick(() => {
 			emby.PlaybackInfo.get(useragent, UserId),
 		])
 		if (!['Movie', 'Episode'].includes(Item.Type)) return
-		console.warn(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
+		console.log(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 
 		let item = await emby.library.item(Item)
 

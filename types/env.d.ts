@@ -17,6 +17,7 @@ interface Env {
 	PREMIUMIZE_ID: string
 	PREMIUMIZE_PIN: string
 	PUTIO_TOKEN: string
+	REALDEBRID_COOKIE: string
 	REALDEBRID_ID: string
 	REALDEBRID_SECRET: string
 	SIMKL_ID: string

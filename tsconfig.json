@@ -2,15 +2,15 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"experimentalDecorators": true,
-		"importHelpers": true,
+		"inlineSourceMap": true,
 		"lib": ["esnext"],
 		"module": "commonjs",
-		"noEmitHelpers": true,
+		"moduleResolution": "node",
+		"noErrorTruncation": true,
 		"noImplicitThis": true,
 		"outDir": "dist",
 		"paths": { "@/*": ["src/*"] },
 		"preserveWatchOutput": true,
-		"sourceMap": true,
 		"target": "es2015"
 	},
 	"exclude": ["dist", "node_modules"],

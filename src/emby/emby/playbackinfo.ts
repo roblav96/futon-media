@@ -28,51 +28,44 @@ process.nextTick(async () => {
 		}),
 	)
 	rxUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
-		// console.time(`rxUserAgent`)
-		await db.put(`useragent:${UserId}`, useragent)
-		await db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'day'))
-		// console.timeEnd(`rxUserAgent`)
+		await Promise.all([
+			db.put(`useragent:${UserId}`, useragent),
+			db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'day')),
+		])
 	})
 
 	let rxPlaybackInfo = Rx.merge(
 		emby.rxHttp.pipe(
 			Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('playbackinfo')),
-			// Rx.op.map(({ useragent }) => useragent),
+			Rx.op.map(({ query, useragent }) => ({ ItemId: query.ItemId, useragent })),
+			Rx.op.debounceTime(100),
 		),
 		emby.rxLine.pipe(
 			Rx.op.filter(({ level, message }) => {
 				return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo ')
 			}),
-			// Rx.op.map(({ message }) => message),
+			Rx.op.map(({ message }) => ({ message })),
+			Rx.op.debounceTime(100),
 		),
 	).pipe(Rx.op.bufferCount(2))
-	rxPlaybackInfo.subscribe(async (buffers: any[]) => {
-		// console.time(`rxPlaybackInfo`)
-		// console.log('rxPlaybackInfo buffers ->', buffers)
+	rxPlaybackInfo.subscribe(async buffers => {
+		let buffer = _.merge({}, ...buffers) as UnionToIntersection<UnArray<typeof buffers>>
+		// console.log('rxPlaybackInfo buffers ->', buffer)
 
-		let useragent = _.get(
-			buffers.find(({ useragent }) => _.isString(useragent)),
-			'useragent',
-		) as string
-		if (!useragent) return console.error(`rxPlaybackInfo !useragent buffers -> %O`, buffers)
+		let value = JSON.parse(buffer.message.slice(buffer.message.indexOf('{'))) as PlaybackInfo
+		if (value.Id != buffer.ItemId) {
+			console.warn(`rxPlaybackInfo buffer ->`, buffer)
+			throw new Error(`rxPlaybackInfo value.Id != buffer.ItemId`)
+		}
 
-		let message = _.get(
-			buffers.find(({ message }) => _.isString(message)),
-			'message',
-		) as string
-		if (!message) return console.error(`rxPlaybackInfo !message buffers -> %O`, buffers)
-
-		let value = JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo
 		await Promise.all([
-			db.put(`PlaybackInfo:${useragent}:${value.UserId}`, value),
+			db.put(`PlaybackInfo:${buffer.useragent}:${value.UserId}`, value),
 			db.put(
-				`PlaybackInfo:${useragent}:${value.UserId}:${value.Id}`,
+				`PlaybackInfo:${buffer.useragent}:${value.UserId}:${value.Id}`,
 				value,
 				utils.duration(1, 'day'),
 			),
 		])
-
-		// console.timeEnd(`rxPlaybackInfo`)
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)

@@ -1,3 +1,4 @@
+import * as _ from 'lodash'
 import { magnetDecode, magnetEncode, MagnetData } from '@ctrl/magnet-link'
 
 export interface Magnet extends MagnetData {
@@ -14,4 +15,8 @@ export function decode(magnet: string) {
 
 export function encode(magnet: Magnet) {
 	return magnetEncode(magnet)
+}
+
+if (process.DEVELOPMENT) {
+	process.nextTick(async () => _.defaults(global, await import('@/shims/magnet-link')))
 }

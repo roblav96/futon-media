@@ -24,7 +24,7 @@ export const client = new http.Http({
 // 	}
 // })
 
-export class Premiumize extends debrid.Debrid<Transfer> {
+export class Premiumize extends debrid.Debrid {
 	static async cached(hashes: string[]) {
 		hashes = hashes.map(v => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)

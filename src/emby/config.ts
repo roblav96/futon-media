@@ -5,7 +5,7 @@ import * as normalize from 'normalize-url'
 import * as path from 'path'
 import validator from 'validator'
 
-export async function config() {
+export async function config(silent: boolean) {
 	if (!process.env.EMBY_API_KEY) {
 		throw new Error(
 			`Undefined EMBY_API_KEY -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`,
@@ -45,15 +45,16 @@ export async function config() {
 	process.env.EMBY_LAN_ADDRESS = normalize(process.env.EMBY_LAN_ADDRESS)
 	process.env.EMBY_WAN_ADDRESS = normalize(process.env.EMBY_WAN_ADDRESS)
 
-	if (process.DEVELOPMENT || process.args.scripts) return
-	console.info(
-		`emby config ->`,
-		Object.fromEntries(
-			Object.entries(process.env).filter(
-				([k]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY'),
+	if (!silent) {
+		console.info(
+			`emby config ->`,
+			Object.fromEntries(
+				Object.entries(process.env).filter(
+					([k]) => k.startsWith('EMBY_') && !k.includes('ADMIN') && !k.includes('KEY'),
+				),
 			),
-		),
-	)
+		)
+	}
 }
 
 export interface SystemInfo {

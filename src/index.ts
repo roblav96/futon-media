@@ -1,15 +1,19 @@
-setInterval(Function, 1 << 30)
+// require('source-map-support').install({ handleUncaughtExceptions: false })
+import 'source-map-support/register'
 import 'module-alias/register'
 import 'dotenv/config'
 import 'node-env-dev'
 import '@/devops/devops'
+import * as mri from 'mri'
+import exithook = require('exit-hook')
 
 process.nextTick(async () => {
 	try {
-		await (await import('@/emby/config')).config()
+		let argvs = mri(process.argv.slice(2))
+		await (await import('@/emby/config')).config(process.DEVELOPMENT || argvs.scripts)
 		if (process.DEVELOPMENT) await import('@/mocks/mocks')
-		if (process.args.scripts) {
-			return await import(`@/scripts/${process.args.scripts}`)
+		if (argvs.scripts) {
+			return await import(`@/scripts/${argvs.scripts}`)
 		}
 		await import('@/emby/collections')
 		await import('@/emby/favorites')
@@ -22,4 +26,6 @@ process.nextTick(async () => {
 	} catch (error) {
 		console.error(`process.nextTick -> %O`, error)
 	}
+	let timeout = setInterval(Function, 1 << 30)
+	exithook(() => clearTimeout(timeout))
 })

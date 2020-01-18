@@ -43,12 +43,16 @@ async function download(torrents: Torrent[], item: media.Item) {
 	})
 	console.log(
 		`download torrents '${item.strm}' ->`,
-		torrents.map(v => [v.short(), process.DEVELOPMENT ? v.magnet : v.minimagnet]),
+		torrents.map(v => v.short()),
 		torrents.length,
 	)
 
 	for (let torrent of torrents) {
-		console.log(`download torrents ->`, torrent.short())
+		console.log(
+			`download torrents ->`,
+			torrent.short(),
+			process.DEVELOPMENT ? torrent.magnet : torrent.minimagnet,
+		)
 		if (torrent.cached.includes('realdebrid') || (await RealDebrid.download(torrent.magnet))) {
 			if (
 				torrent.cached.includes('premiumize') ||
@@ -72,9 +76,9 @@ export async function getStream(
 		let next = false
 		for (let cached of torrent.cached) {
 			if (next) continue
-			if (cached == 'realdebrid') continue
+			// if (cached == 'realdebrid') continue
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
-			let debrid = new debrids[cached]().use(torrent.magnet)
+			let debrid = new debrids[cached](torrent.magnet)
 
 			let files = (await debrid.getFiles(isHD).catch(error => {
 				console.error(`getFiles -> %O`, error)
