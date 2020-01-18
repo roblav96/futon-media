@@ -80,7 +80,8 @@ export async function getStream(
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached](torrent.magnet)
 
-			let files = (await debrid.getFiles(isHD).catch(error => {
+			let mkv = isHD && !!AudioCodecs.find(v => ['dts', 'truehd'].includes(v))
+			let files = (await debrid.getFiles(mkv).catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
 			files.forEach(file => {

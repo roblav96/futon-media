@@ -44,7 +44,7 @@ process.nextTick(async () => {
 		// (await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
 		(await import('@/scrapers/providers/eztv')).Eztv,
-		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
@@ -68,16 +68,18 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	await item.setAll()
 	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
-	if (process.DEVELOPMENT) (global as any).item = item
-	if (item.collection.name) console.log(`item.collection ->`, item.collection)
-	console.log(`item.titles ->`, item.titles)
-	console.log(`item.years ->`, item.years)
-	console.log(`item.slugs ->`, item.slugs)
-	console.log(`item.queries ->`, item.queries)
-	console.log(`item.aliases ->`, item.aliases)
-	console.log(`item.collisions ->`, item.collisions)
-	// console.log(`item.seasons ->`, item.seasons)
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	if (process.DEVELOPMENT) {
+		;(global as any).item = item
+		console.log(`item.titles ->`, item.titles)
+		console.log(`item.years ->`, item.years)
+		console.log(`item.slugs ->`, item.slugs)
+		console.log(`item.queries ->`, item.queries)
+		console.log(`item.aliases ->`, item.aliases)
+		console.log(`item.collisions ->`, item.collisions)
+		if (item.collection.name) console.log(`item.collection ->`, item.collection)
+		// console.log(`item.seasons ->`, item.seasons)
+		// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	}
 
 	let results = (
 		await pAll(providers.map(Scraper => () => new Scraper(item).scrape(isHD)))
