@@ -22,50 +22,46 @@ process.nextTick(async () => {
 		if (MessageType == 'OnOpen') PlaybackInfo.setUserNames()
 	})
 
-	let rxUserAgent = emby.rxItemId.pipe(
+	let rxUserIdUserAgent = emby.rxItemId.pipe(
 		Rx.op.distinctUntilChanged((a, b) => {
 			return `${a.ItemId}${a.UserId}${a.useragent}` == `${b.ItemId}${b.UserId}${b.useragent}`
 		}),
 	)
-	rxUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
+	rxUserIdUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
 		await Promise.all([
 			db.put(`useragent:${UserId}`, useragent),
-			db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'day')),
+			db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'week')),
 		])
 	})
 
-	let rxPlaybackInfo = Rx.merge(
+	let rxPlaybackInfo = Rx.combineLatest(
 		emby.rxHttp.pipe(
 			Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('playbackinfo')),
 			Rx.op.map(({ query, useragent }) => ({ ItemId: query.ItemId, useragent })),
-			Rx.op.debounceTime(100),
 		),
 		emby.rxLine.pipe(
 			Rx.op.filter(({ level, message }) => {
 				return level == 'Debug' && message.startsWith('GetPostedPlaybackInfo ')
 			}),
-			Rx.op.map(({ message }) => ({ message })),
-			Rx.op.debounceTime(100),
+			Rx.op.map(({ message }) => ({
+				value: JSON.parse(message.slice(message.indexOf('{'))) as PlaybackInfo,
+			})),
 		),
-	).pipe(Rx.op.bufferCount(2))
+	)
 	rxPlaybackInfo.subscribe(async buffers => {
 		let buffer = _.merge({}, ...buffers) as UnionToIntersection<UnArray<typeof buffers>>
-		// console.log('rxPlaybackInfo buffers ->', buffer)
-
-		let value = JSON.parse(buffer.message.slice(buffer.message.indexOf('{'))) as PlaybackInfo
-		if (value.Id != buffer.ItemId) {
-			console.warn(`rxPlaybackInfo buffer ->`, buffer)
-			throw new Error(`rxPlaybackInfo value.Id != buffer.ItemId`)
+		// console.log('rxPlaybackInfo buffers ->', buffers)
+		if (_.size(buffer) == 3 && buffer.value.Id == buffer.ItemId) {
+			// console.info('rxPlaybackInfo buffer ->', buffer)
+			await Promise.all([
+				db.put(`PlaybackInfo:${buffer.useragent}:${buffer.value.UserId}`, buffer.value),
+				db.put(
+					`PlaybackInfo:${buffer.useragent}:${buffer.value.UserId}:${buffer.value.Id}`,
+					buffer.value,
+					utils.duration(1, 'week'),
+				),
+			])
 		}
-
-		await Promise.all([
-			db.put(`PlaybackInfo:${buffer.useragent}:${value.UserId}`, value),
-			db.put(
-				`PlaybackInfo:${buffer.useragent}:${value.UserId}:${value.Id}`,
-				value,
-				utils.duration(1, 'day'),
-			),
-		])
 	})
 
 	// console.log(`PLAYBACK_INFO ->`, mocks.PLAYBACK_INFO)

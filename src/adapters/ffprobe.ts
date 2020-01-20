@@ -6,7 +6,7 @@ import * as ms from 'pretty-ms'
 import * as utils from '@/utils/utils'
 
 export async function probe(url: string) {
-	let flags = ['-loglevel', 'quiet', '-print_format', 'json', '-show_format', '-show_streams']
+	let flags = ['-loglevel', 'quiet', '-print_format', 'json', '-show_streams']
 	let { stdout } = await execa(ffpath, flags.concat(url))
 	let value = JSON.parse(stdout) as Probe
 	if (value.format && value.format.tags) {
@@ -29,25 +29,25 @@ export async function probe(url: string) {
 	return value
 }
 
-export function json(format: Format) {
-	let fkeys = ['bit_rate', 'duration', 'format_long_name', 'format_name', 'size']
-	format = _.pick(format, fkeys) as any
-	try {
-		if (format.bit_rate) {
-			format.bit_rate = `${utils.fromBytes(_.parseInt(format.bit_rate))}/s`
-		}
-		if (format.duration) {
-			let duration = utils.duration(_.parseInt(format.duration), 'second')
-			format.duration = ms(duration, { unitCount: 2 })
-		}
-		if (format.size) {
-			format.size = utils.fromBytes(_.parseInt(format.size))
-		}
-	} catch (error) {
-		console.error(`ffprobe json ${format.filename} -> %O`, error)
-	}
-	return format
-}
+// export function json(format: Format) {
+// 	let fkeys = ['bit_rate', 'duration', 'format_long_name', 'format_name', 'size']
+// 	format = _.pick(format, fkeys) as any
+// 	try {
+// 		if (format.bit_rate) {
+// 			format.bit_rate = `${utils.fromBytes(_.parseInt(format.bit_rate))}/s`
+// 		}
+// 		if (format.duration) {
+// 			let duration = utils.duration(_.parseInt(format.duration), 'second')
+// 			format.duration = ms(duration, { unitCount: 2 })
+// 		}
+// 		if (format.size) {
+// 			format.size = utils.fromBytes(_.parseInt(format.size))
+// 		}
+// 	} catch (error) {
+// 		console.error(`ffprobe json ${format.filename} -> %O`, error)
+// 	}
+// 	return format
+// }
 
 export interface Chapter {
 	end: number

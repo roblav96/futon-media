@@ -178,7 +178,7 @@ export async function getStream(
 				continue
 			}
 
-			console.log(`probe format ->`, ffprobe.json(probe.format))
+			// console.log(`probe format ->`, ffprobe.json(probe.format))
 			probe.streams = probe.streams.filter(({ codec_type }) =>
 				['video', 'audio'].includes(codec_type),
 			)
