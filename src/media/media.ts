@@ -67,16 +67,13 @@ export class Item {
 		if (this.ep.z) strm += `E${this.ep.z}`
 		return strm
 	}
-	get gigs() {
-		return _.round((this.runtime / (this.movie ? 30 : 40)) * (this.isPopular(100) ? 1 : 0.5), 2)
-	}
 
 	get released() {
 		if (this.movie && this.movie.released) return new Date(this.movie.released)
 		if (this.episode && this.episode.first_aired) return new Date(this.episode.first_aired)
 		if (this.season && this.season.first_aired) return new Date(this.season.first_aired)
 		if (this.show && this.show.first_aired) return new Date(this.show.first_aired)
-		return new Date(new Date().setFullYear(this.year + 1))
+		// return new Date(new Date().setFullYear(this.year + 1))
 	}
 	get runtime() {
 		if (this.movie && this.movie.runtime) return this.movie.runtime
@@ -87,15 +84,10 @@ export class Item {
 	get invalid() {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
+		if (!this.released || this.released.valueOf() > Date.now()) return true
 		if (this.ids.imdb && this.ids.imdb.startsWith('http')) return true
-		if (this.released.valueOf() > Date.now()) return true
-		if (this.movie) {
-			if (!this.ids.imdb) return true
-			if (!this.ids.tmdb) return true
-		}
-		if (this.show) {
-			if (!this.ids.tvdb) return true
-		}
+		if (this.movie && !this.ids.tmdb) return true
+		if (this.show && !this.ids.tvdb) return true
 		return false
 	}
 	get junk() {
@@ -110,15 +102,18 @@ export class Item {
 			if (!this.runtime || this.runtime < 10) return true
 			if (_.isEmpty(this.main.genres)) return true
 			if (this.movie) {
+				if (!this.movie.trailer) return true
 				if (!this.movie.certification) return true
+			}
+			if (this.show) {
+				if (!this.show.network) return true
 			}
 		}
 		if (this.movie) {
-			if (!this.movie.trailer) return true
+			if (!this.ids.imdb) return true
 		}
 		if (this.show) {
-			if (!this.ids.imdb /** && !this.ids.tmdb */) return true
-			if (!this.show.network) return true
+			if (!this.ids.imdb && !this.ids.tmdb) return true
 			if (!this.show.first_aired) return true
 			if (!this.show.aired_episodes) return true
 		}

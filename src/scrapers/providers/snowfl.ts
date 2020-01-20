@@ -32,10 +32,10 @@ async function getToken() {
 }
 
 export class Snowfl extends scraper.Scraper {
+	enabled = !process.DEVELOPMENT
 	sorts = ['SIZE', 'SEED']
 	concurrency = 1
 	max = 1
-	enabled = !process.DEVELOPMENT
 
 	async getResults(slug: string, sort: string) {
 		let token = await getToken()

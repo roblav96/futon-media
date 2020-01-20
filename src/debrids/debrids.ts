@@ -48,15 +48,14 @@ async function download(torrents: Torrent[], item: media.Item) {
 	)
 
 	for (let torrent of torrents) {
-		console.log(
-			`download torrents ->`,
-			torrent.short(),
-			process.DEVELOPMENT ? torrent.magnet : torrent.minimagnet,
-		)
-		if (torrent.cached.includes('realdebrid') || (await RealDebrid.download(torrent.magnet))) {
+		console.log(`download torrent ->`, torrent.short(), [torrent.minmagnet])
+		if (
+			torrent.cached.includes('realdebrid') ||
+			(await new RealDebrid(torrent.magnet).download())
+		) {
 			if (
 				torrent.cached.includes('premiumize') ||
-				(await Premiumize.download(torrent.magnet))
+				(await new Premiumize(torrent.magnet).download())
 			) {
 				return console.log(`👍 download torrents success ->`, torrent.short())
 			}
@@ -80,8 +79,7 @@ export async function getStream(
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached](torrent.magnet)
 
-			let mkv = isHD && !!AudioCodecs.find(v => ['dts', 'truehd'].includes(v))
-			let files = (await debrid.getFiles(mkv).catch(error => {
+			let files = (await debrid.getFiles().catch(error => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
 			files.forEach(file => {
@@ -155,8 +153,10 @@ export async function getStream(
 				continue
 			}
 
-			console.log(`file ->`, { ...files[0], parsed: files[0].parsed.json() })
-			let stream = (await debrid.streamUrl(files[0]).catch(error => {
+			let file = _.first(files)
+			console.log(`file ->`, { ...file, parsed: file.parsed.json() })
+			let original = !!isHD && !!AudioCodecs.find(v => ['dts', 'truehd'].includes(v))
+			let stream = (await debrid.streamUrl(file, original).catch(error => {
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) {

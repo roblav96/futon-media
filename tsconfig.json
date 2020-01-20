@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"experimentalDecorators": true,
-		"inlineSourceMap": true,
 		"lib": ["esnext"],
 		"module": "commonjs",
 		"moduleResolution": "node",
@@ -11,7 +10,8 @@
 		"outDir": "dist",
 		"paths": { "@/*": ["src/*"] },
 		"preserveWatchOutput": true,
-		"target": "es2015"
+		"sourceMap": true,
+		"target": "es2019"
 	},
 	"exclude": ["dist", "node_modules"],
 	"include": ["types/**/*.d.ts", "src/**/*.ts"]

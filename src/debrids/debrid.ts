@@ -2,16 +2,17 @@ import * as magnetlink from '@/shims/magnet-link'
 import * as parser from '@/scrapers/parser'
 
 export abstract class Debrid {
-	abstract getFiles(isHD: boolean): Promise<File[]>
-	abstract streamUrl(file: File): Promise<string>
+	abstract download(): Promise<boolean>
+	abstract getFiles(): Promise<File[]>
+	abstract streamUrl(file: File, original: boolean): Promise<string>
 
-	files = [] as File[]
 	protected dn: string
 	protected infoHash: string
 
 	constructor(public magnet: string) {
-		let { dn, infoHash } = magnetlink.decode(magnet)
-		Object.assign(this, { dn, infoHash: infoHash.toLowerCase() })
+		let decoded = magnetlink.decode(magnet)
+		this.dn = decoded.dn
+		this.infoHash = decoded.infoHash.toLowerCase()
 	}
 }
 
@@ -19,7 +20,8 @@ export interface File {
 	bytes: number
 	id: number
 	levens: number
-	link: string
+	mkv: string
+	mp4: string
 	name: string
 	parsed: parser.Parser
 	path: string

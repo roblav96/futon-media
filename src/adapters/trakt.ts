@@ -96,7 +96,7 @@ export async function authorization() {
 
 // export async function search(query: string, type = 'movie,show' as media.MainContentType) {
 // 	let results = (await client.get(`/search/${type}`, {
-// 		query: { query, fields: 'title,aliases', limit: 90 },
+// 		query: { query, fields: 'title,translations,aliases', limit: 90 },
 // 	})) as Result[]
 // 	let items = results.map(v => new media.Item(v))
 // 	return items.filter(v => !v.isJunk())
@@ -121,7 +121,7 @@ export async function titles(queries: string[]) {
 			queries.map((query, i) => async () =>
 				(await client.get('/search/movie,show,episode', {
 					delay: i > 0 && 300,
-					query: { query, fields: 'title,aliases', limit: 90 },
+					query: { query, fields: 'title,translations,aliases', limit: 90 },
 					memoize: true,
 					silent: true,
 				})) as Result[],

@@ -8,21 +8,14 @@ import * as utils from '@/utils/utils'
 
 export const client = new http.Http({
 	baseUrl: 'https://www.premiumize.me/api',
-	query: { customer_id: process.env.PREMIUMIZE_ID, pin: process.env.PREMIUMIZE_PIN },
 	qsArrayFormat: 'bracket',
+	query: {
+		customer_id: process.env.PREMIUMIZE_ID,
+		pin: process.env.PREMIUMIZE_PIN,
+	},
+	retries: [503],
 	silent: true,
 })
-
-// process.nextTick(async () => {
-// 	if (!process.DEVELOPMENT) return
-// 	if (process.DEVELOPMENT) return
-// 	let transfers = await Premiumize.transfers()
-// 	for (let transfer of transfers) {
-// 		if (utils.includes(transfer.message, 'loading')) {
-// 			await client.post('/transfer/delete', { query: { id: transfer.id } })
-// 		}
-// 	}
-// })
 
 export class Premiumize extends debrid.Debrid {
 	static async cached(hashes: string[]) {
@@ -58,10 +51,9 @@ export class Premiumize extends debrid.Debrid {
 	}
 
 	static async stalled(id: string) {
-		let transfers = await Premiumize.transfers()
-		let transfer = transfers.find(v => v.id == id)
-		if (!transfer) return
+		let transfer = (await Premiumize.transfers()).find(v => v.id == id)
 		if (
+			transfer &&
 			!['seeding', 'success'].includes(transfer.status) &&
 			utils.includes(transfer.message, 'loading')
 		) {
@@ -69,19 +61,19 @@ export class Premiumize extends debrid.Debrid {
 		}
 	}
 
-	static async download(magnet: string) {
-		let { dn } = magnetlink.decode(magnet)
-
+	async download() {
 		let transfers = await Premiumize.transfers()
-		if (transfers.find(v => utils.equals(v.name, dn))) {
-			// console.log(`Premiumize download transfer exists ->`, dn)
+		let transfer = transfers.find(({ src }) => {
+			if (src && src.startsWith('magnet:?')) {
+				return magnetlink.decode(src).infoHash.toLowerCase() == this.infoHash
+			}
+		})
+		if (transfer || transfers.find(v => utils.equals(v.name, this.dn))) {
 			return true
 		}
-
 		let { id, status } = (await client.post('/transfer/create', {
-			query: { src: magnet },
+			query: { src: this.magnet },
 		})) as TransferCreateResponse
-		console.log(`Premiumize download status ->`, status)
 		if (!['seeding', 'success'].includes(status)) {
 			console.warn(`Premiumize download transfer create status ->`, status)
 			return false
@@ -90,42 +82,36 @@ export class Premiumize extends debrid.Debrid {
 		return true
 	}
 
-	async getFiles(isHD: boolean) {
-		let downloads = (
-			await client.post(`/transfer/directdl`, {
-				query: { src: this.magnet },
-			})
-		).content as Download[]
-		downloads = (downloads || []).filter(v => !!v.link && !!v.path && !!v.size)
-		// downloads = _.sortBy(downloads, 'size')
+	async getFiles() {
+		let directdls = await client.post(`/transfer/directdl`, {
+			query: { src: this.magnet },
+		})
+		let downloads = _.get(directdls, 'content', []) as Download[]
+		_.remove(downloads, v => !(v.link || v.stream_link) || !v.path || !v.size)
 		downloads = _.uniqWith(downloads, (from, to) => {
 			if (to.path != from.path) return false
 			_.merge(to, utils.compact(from))
 			return true
 		})
-		// downloads = _.uniqBy(downloads, 'path')
-
-		this.files = downloads.map(download => {
+		return downloads.map(download => {
 			let name = path.basename(`/${download.path}`)
 			return {
 				bytes: _.parseInt(download.size),
-				link: (!isHD && download.stream_link) || download.link,
-				name: name.slice(0, name.lastIndexOf('.')),
+				mkv: download.link,
+				mp4: download.stream_link,
+				name: name.slice(0, -path.extname(name).length),
 				path: `/${download.path}`,
 			} as debrid.File
 		})
-		_.remove(this.files, file => !utils.isVideo(file.path))
-		// _.remove(this.files, file => {
-		// 	if (file.path.toLowerCase().includes('rarbg.com.mp4')) return true
-		// 	return !utils.isVideo(file.path)
-		// })
-		// this.files.sort((a, b) => utils.parseInt(a.path) - utils.parseInt(b.path))
-		return this.files
 	}
 
-	async streamUrl(file: debrid.File) {
-		return file.link
+	async streamUrl(file: debrid.File, original: boolean) {
+		return !original && file.mp4 ? file.mp4 : file.mkv
 	}
+}
+
+if (process.DEVELOPMENT) {
+	process.nextTick(async () => _.defaults(global, await import('@/debrids/premiumize')))
 }
 
 interface CacheResponse {
@@ -151,6 +137,7 @@ interface Transfer {
 	message: string
 	name: string
 	progress: number
+	src: string
 	status: string
 }
 

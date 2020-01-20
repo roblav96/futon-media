@@ -29,7 +29,6 @@ process.nextTick(() => {
 		console.log(`[${Session.short}] rxFavorite ->`, emby.library.toTitle(Item))
 
 		let item = await emby.library.item(Item)
-
 		let isHD = PlaybackInfo ? PlaybackInfo.Quality != 'SD' : false
 		if (process.DEVELOPMENT) isHD = true
 		let torrents = await scraper.scrapeAllQueue(item, isHD)
@@ -37,7 +36,7 @@ process.nextTick(() => {
 		// if (process.DEVELOPMENT) {
 		// 	console.log(
 		// 		`rxFavorite cached torrents '${item.strm}' ->`,
-		// 		torrents.filter(v => v.cached.length > 0).map(v => v.short()),
+		// 		torrents.filter(v => v.cached.length > 0).map(v => [v.short(), v.minmagnet]),
 		// 		torrents.length,
 		// 	)
 		// 	throw new Error(`DEVELOPMENT`)

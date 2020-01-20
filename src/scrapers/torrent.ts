@@ -108,7 +108,7 @@ export class Torrent extends parser.Parser {
 		}${this.name.trim()} [${this.age}] [${this.providers.length} x ${providers}]`
 		// }${this.slug.trim()} [${this.age}] ${providers}${this.filter ? ` ${this.filter}` : ''}`
 	}
-	get minimagnet() {
+	get minmagnet() {
 		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
 		return `magnet:?${qs.stringify(
 			{ xt: magnet.xt, dn: magnet.dn },
@@ -122,7 +122,7 @@ export class Torrent extends parser.Parser {
 				boost: _.round(this.boost, 2),
 				cached: `${this.cached}`,
 				// magnet: this.magnet,
-				// minimagnet: this.minimagnet,
+				// minmagnet: this.minmagnet,
 				packs: this.packs,
 				providers: `${this.providers}`,
 				seasons: `${this.seasons}`,

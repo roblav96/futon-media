@@ -72,7 +72,7 @@
 		"mri": "^1.1.4",
 		"multimatch": "^4.0.0",
 		"no-naughty-words": "^1.0.0",
-		"node-env-dev": "^1.8.3",
+		"node-env-dev": "^1.8.5",
 		"node-schedule": "^1.3.2",
 		"normalize-url": "^4.5.0",
 		"numbro": "^2.1.2",
@@ -134,7 +134,6 @@
 		"dts-generate": "^1.4.0",
 		"forever": "^2.0.0",
 		"npm-run-all": "^4.1.5",
-		"source-map-support": "^0.5.16",
 		"typescript": "^3.7.5",
 		"wait-for-change": "^1.1.1"
 	},

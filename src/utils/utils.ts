@@ -235,8 +235,7 @@ export function matches(value: string, regexes: RegExp[], groups: string[]) {
 }
 
 export function isVideo(file: string) {
-	let extname = path.extname(file.toLowerCase()).slice(1)
-	return VIDEO_EXTENSIONS.includes(extname)
+	return VIDEO_EXTENSIONS.includes(path.extname(file.toLowerCase()).slice(1))
 }
 
 export function sortKeys<T>(value: T) {

@@ -5,6 +5,7 @@ import * as execa from 'execa'
 import * as filters from '@/scrapers/filters'
 import * as http from '@/adapters/http'
 import * as Json from '@/shims/json'
+import * as magnetlink from '@/shims/magnet-link'
 import * as media from '@/media/media'
 import * as pAll from 'p-all'
 import * as path from 'path'
@@ -42,9 +43,9 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
 		(await import('@/scrapers/providers/btdb')).Btdb,
-		// (await import('@/scrapers/providers/btsow')).Btsow,
+		(await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
@@ -82,9 +83,9 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 	}
 
-	let results = (
-		await pAll(providers.map(Scraper => () => new Scraper(item).scrape(isHD)))
-	).flat()
+	let results = _.flatten(
+		await pAll(providers.map(Scraper => () => new Scraper(item).scrape(isHD))),
+	)
 
 	results = _.uniqWith(results, (from, to) => {
 		if (to.hash != from.hash) return false
@@ -102,7 +103,6 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	if (isHD) torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
 	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
 
-	// console.profile(`torrents.filter`)
 	console.time(`torrents.filter`)
 	let removed = _.remove(torrents, torrent => {
 		try {
@@ -113,7 +113,6 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		}
 	})
 	console.timeEnd(`torrents.filter`)
-	// console.profileEnd(`torrents.filter`)
 
 	if (process.DEVELOPMENT) {
 		;(global as any).removed = removed
@@ -172,8 +171,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			Date.now() - t,
 			`scrapeAll torrents ->`,
 			// torrents.map(v => v.short()),
-			torrents.map(v => [v.short(), v.filter]),
-			// torrents.filter(v => v.filter).map(v => [v.short(), v.filter]),
+			// torrents.map(v => [v.short(), v.filter]),
+			torrents.filter(v => v.filter).map(v => [v.short(), v.filter]),
 			// torrents.map(v => v.json()),
 			torrents.length,
 		)
@@ -214,7 +213,6 @@ export class Scraper {
 	constructor(public item: media.Item) {}
 
 	async scrape(isHD: boolean) {
-		if (!this.enabled) return []
 		let t = Date.now()
 		let ctor = this.constructor.name
 
@@ -228,19 +226,22 @@ export class Scraper {
 		// console.log(ctor, combos.length, ...combos)
 		// return []
 
-		let results = (
-			await pAll(
-				combos.map(([slug, sort], index) => async () => {
-					return (
-						await this.getResults(slug, sort).catch(error => {
-							console.error(`${ctor} getResults -> %O`, error)
-							return [] as Result[]
-						})
-					).map(result => ({ providers: [ctor], ...result } as Result))
-				}),
-				{ concurrency: this.concurrency },
+		let results = [] as Result[]
+		if (this.enabled) {
+			results = _.flatten(
+				await pAll(
+					combos.map(([slug, sort], index) => async () => {
+						return (
+							await this.getResults(slug, sort).catch(error => {
+								console.error(`${ctor} getResults -> %O`, error)
+								return [] as Result[]
+							})
+						).map(result => ({ providers: [ctor], ...result } as Result))
+					}),
+					{ concurrency: this.concurrency },
+				),
 			)
-		).flat()
+		}
 
 		results = results.filter(result => {
 			if (!result) return

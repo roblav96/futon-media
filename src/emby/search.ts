@@ -33,10 +33,12 @@ process.nextTick(() => {
 					memoize: true,
 					silent: true,
 				})) as trakt.Result[]
-				if (_.isEmpty(results)) {
+				let items = trakt.uniqWith(results.filter(Boolean)).map(v => new media.Item(v))
+				items.sort((a, b) => b.main.votes - a.main.votes)
+				if (_.isEmpty(items)) {
 					Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
 				}
-				return { SearchTerm, Session, items: results.map(v => new media.Item(v)) }
+				return { SearchTerm, Session, items }
 			}
 
 			if (/^(\w+-)+\w+$/.test(SearchTerm)) {
@@ -62,7 +64,7 @@ process.nextTick(() => {
 							delay: 300,
 							query: {
 								query,
-								fields: 'title,tagline,aliases',
+								fields: 'title,tagline,translations,aliases',
 								limit: 90,
 							},
 							memoize: true,
@@ -72,8 +74,7 @@ process.nextTick(() => {
 					{ concurrency: 1 },
 				)
 			).flat()
-			results = trakt.uniqWith(results.filter(Boolean))
-			let items = results.map(v => new media.Item(v)).filter(v => !v.invalid)
+			let items = trakt.uniqWith(results.filter(Boolean)).map(v => new media.Item(v))
 			items.sort((a, b) => b.main.votes - a.main.votes)
 
 			console.log(
@@ -83,7 +84,7 @@ process.nextTick(() => {
 			)
 
 			items = items.filter(v => {
-				if (v.junk) return false
+				if (v.invalid || v.junk) return false
 				let title = utils.stripStopWords(v.title)
 				if (words == 1) return utils.contains(title, SearchTerm)
 				// if (words == 1) return ` ${utils.slugify(title)} `.includes(` ${SearchTerm} `)

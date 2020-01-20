@@ -12,6 +12,7 @@ export const client = scraper.Scraper.http({
 })
 
 export class Eztv extends scraper.Scraper {
+	enabled = !process.DEVELOPMENT
 	concurrency = 1
 
 	slugs() {
