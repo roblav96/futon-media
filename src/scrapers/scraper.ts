@@ -19,6 +19,7 @@ import { LANGS, UPLOADERS } from '@/utils/dicts'
 
 let providers = [] as typeof Scraper[]
 process.nextTick(async () => {
+	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
 	// https://ibit.to/
 	// ████  https://www.putlockers.cr/  ████
 	// (await import('@/scrapers/providers/bitlord')).Bitlord,
@@ -43,8 +44,8 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		// (await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
-		(await import('@/scrapers/providers/eztv')).Eztv,
-		// (await import('@/scrapers/providers/limetorrents')).LimeTorrents,
+		// (await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,

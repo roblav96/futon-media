@@ -22,12 +22,12 @@ process.nextTick(async () => {
 		if (MessageType == 'OnOpen') PlaybackInfo.setUserNames()
 	})
 
-	let rxUserIdUserAgent = emby.rxItemId.pipe(
+	let rxUserAgent = emby.rxItemId.pipe(
 		Rx.op.distinctUntilChanged((a, b) => {
 			return `${a.ItemId}${a.UserId}${a.useragent}` == `${b.ItemId}${b.UserId}${b.useragent}`
 		}),
 	)
-	rxUserIdUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
+	rxUserAgent.subscribe(async ({ ItemId, UserId, useragent }) => {
 		await Promise.all([
 			db.put(`useragent:${UserId}`, useragent),
 			db.put(`useragent:${UserId}:${ItemId}`, useragent, utils.duration(1, 'week')),
