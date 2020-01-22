@@ -84,10 +84,17 @@ export class Item {
 	get invalid() {
 		if (!this.main.title || !this.main.year) return true
 		if (!this.ids.trakt || !this.ids.slug) return true
-		if (!this.released || this.released.valueOf() > Date.now()) return true
 		if (this.ids.imdb && this.ids.imdb.startsWith('http')) return true
-		if (this.movie && !this.ids.tmdb) return true
-		if (this.show && !this.ids.tvdb) return true
+		if (!this.released) return true
+		if (this.movie) {
+			if (!this.ids.tmdb) return true
+			if (this.movie.status != 'released') return true
+		}
+		if (this.show) {
+			if (!this.ids.tvdb) return true
+			if (['in production', 'planned'].includes(this.show.status)) return true
+			if (this.released.valueOf() > Date.now()) return true
+		}
 		return false
 	}
 	get junk() {

@@ -224,6 +224,7 @@ export interface Movie {
 	rating: number
 	released: string
 	runtime: number
+	status: 'released' | 'in production' | 'post production' | 'planned' | 'rumored' | 'canceled'
 	tagline: string
 	title: string
 	trailer: string
@@ -251,7 +252,7 @@ export interface Show {
 	overview: string
 	rating: number
 	runtime: number
-	status: string
+	status: 'returning series' | 'in production' | 'planned' | 'canceled' | 'ended'
 	title: string
 	trailer: string
 	updated_at: string

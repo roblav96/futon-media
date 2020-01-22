@@ -126,7 +126,7 @@ export class Http {
 			normalize((options.baseUrl || '') + options.url, {
 				normalizeProtocol: false,
 				removeQueryParameters: null,
-				removeTrailingSlash: false, // !config.url.endsWith('/'),
+				removeTrailingSlash: false,
 				sortQueryParameters: false,
 				stripWWW: false,
 			}),
