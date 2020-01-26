@@ -288,15 +288,15 @@ export class Item {
 		queries = queries.map(v => utils.allSlugs(v)).flat()
 		queries = queries.map(v => utils.stripStopWords(v))
 		queries = _.uniq(queries.map(v => v.trim()).filter(Boolean))
-		console.log('setCollisions queries ->', queries)
-		let titles = (
+		// console.log('setCollisions queries ->', queries)
+		let titles = _.flatten(
 			await Promise.all([
 				omdb.titles(queries),
 				simkl.titles(queries),
 				tmdb.titles(queries),
 				trakt.titles(queries),
-			])
-		).flat()
+			]),
+		).filter(v => !!v.title)
 		// titles.push(...this.collection.parts.map(v => ({ title: v.title, year: v.year })))
 		// console.log(`titles ->`, titles)
 		let collisions = _.flatten(
