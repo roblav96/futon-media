@@ -42,6 +42,8 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
+		// (await import('@/scrapers/providers/bitcq')).BitCq,
+		// (await import('@/scrapers/providers/btbot')).BtBot,
 		(await import('@/scrapers/providers/btdb')).Btdb,
 		(await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
