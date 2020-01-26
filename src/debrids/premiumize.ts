@@ -14,7 +14,7 @@ export const client = new http.Http({
 		pin: process.env.PREMIUMIZE_PIN,
 	},
 	retries: [503],
-	// silent: true,
+	silent: true,
 })
 
 export class Premiumize extends debrid.Debrid {

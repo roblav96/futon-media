@@ -14,7 +14,7 @@ const client = new http.Http({
 		authorization: `Bearer ${process.env.REALDEBRID_SECRET}`,
 	},
 	retries: [503],
-	// silent: true,
+	silent: true,
 })
 const ajax = new http.Http({
 	baseUrl: 'https://real-debrid.com/ajax',
