@@ -3,6 +3,7 @@ import * as http from '@/adapters/http'
 import * as internalIp from 'internal-ip'
 import * as normalize from 'normalize-url'
 import * as path from 'path'
+import * as Url from 'url-parse'
 import validator from 'validator'
 
 export async function config(silent: boolean) {
@@ -25,10 +26,11 @@ export async function config(silent: boolean) {
 	}
 	if (!Info) throw new Error(`!SystemInfo -> Could not find emby server on any ports '${ports}'`)
 
-	if (validator.isIP(Info.WanAddress)) {
+	let wanip = new Url(Info.WanAddress).hostname
+	if (validator.isIP(wanip)) {
 		let [ip] = _.compact(await Promise.all([internalIp.v4(), internalIp.v6()]))
 		if (!Info.WanAddress.includes(ip)) {
-			throw new Error(`Info.WanAddress -> '${Info.WanAddress}' != '${ip}'`)
+			throw new Error(`Info.WanAddress -> '${wanip}' != '${ip}'`)
 		}
 	}
 
