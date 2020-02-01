@@ -38,7 +38,7 @@ process.nextTick(() => {
 				if (_.isEmpty(items)) {
 					Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
 				}
-				return { SearchTerm, Session, items }
+				return { SearchTerm, Session, items: items.slice(0, 1) }
 			}
 
 			if (/^(\w+-)+\w+$/.test(SearchTerm)) {
