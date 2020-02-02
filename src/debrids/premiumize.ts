@@ -76,7 +76,7 @@ export class Premiumize extends debrid.Debrid {
 		})) as TransferCreateResponse
 		if (!['seeding', 'success'].includes(status)) {
 			console.warn(`Premiumize download transfer create status ->`, status)
-			return false
+			return true
 		}
 		setTimeout(Premiumize.stalled, utils.duration(1, 'minute'), id)
 		return true

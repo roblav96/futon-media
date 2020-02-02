@@ -109,7 +109,7 @@ export class RealDebrid extends debrid.Debrid {
 		} catch (error) {
 			console.warn(`RealDebrid download '${error.message}' ->`, this.dn)
 			client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
-			return false
+			return true
 		}
 	}
 
