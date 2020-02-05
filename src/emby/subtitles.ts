@@ -28,7 +28,7 @@ process.nextTick(() => {
 				silent: true,
 			})) as emby.RemoteSubtitle[]
 			Subtitles = _.orderBy(
-				Subtitles.filter(v => v.Format == 'srt'),
+				Subtitles.filter(v => ['ass', 'srt'].includes(v.Format)),
 				'DownloadCount',
 				'desc',
 			)

@@ -105,7 +105,7 @@ async function syncCollections() {
 		// 	// 'Worlds of DC',
 		// ]
 		// schemas = schemas.filter(v => lists.includes(v.name))
-		schemas = schemas.filter(v => utils.endsWith(v.name, 'watchlist'))
+		schemas = schemas.filter(v => utils.startsWith(v.name, 'movies most'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
