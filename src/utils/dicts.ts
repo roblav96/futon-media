@@ -94,6 +94,7 @@ export const LANGS = [
 
 export const UPLOADERS = [
 	'amiable',
+	'amzn',
 	'caffeine',
 	'cinefile',
 	'ctrlhd',
