@@ -231,15 +231,15 @@ export async function getStream(
 				next = true
 				continue
 			}
-			// if (!audios.find(v => v.channels <= AudioChannels)) {
-			// 	console.warn(
-			// 		`probe !AudioChannels ->`,
-			// 		torrent.short(),
-			// 		audios.map(v => v.channels),
-			// 	)
-			// 	next = true
-			// 	continue
-			// }
+			if (!audios.find(v => v.channels <= AudioChannels)) {
+				console.warn(
+					`probe !AudioChannels ->`,
+					torrent.short(),
+					audios.map(v => v.channels),
+				)
+				next = true
+				continue
+			}
 
 			return stream
 		}
