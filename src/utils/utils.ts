@@ -255,7 +255,7 @@ export function byLength(values: string[]) {
 export function alphabetically(a: string, b: string) {
 	a = minify(a)
 	b = minify(b)
-	return a < b ? -1 : a > b ? 1 : (0 as number)
+	return (a < b ? -1 : a > b ? 1 : 0) as number
 }
 
 export function percent(to: number, from: number) {
