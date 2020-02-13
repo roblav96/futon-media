@@ -126,7 +126,12 @@ export class PlaybackInfo {
 	}
 
 	get AudioChannels() {
-		if (utils.includes(this.DeviceProfile.Name, 'roku')) return 2
+		if (
+			utils.includes(this.DeviceProfile.Name, 'roku') &&
+			this.UserName.toLowerCase() == 'developer'
+		) {
+			return 2
+		}
 		let Channels = [2]
 		for (let [k, v] of Object.entries(this.flat)) {
 			if (k.endsWith('channels')) {
