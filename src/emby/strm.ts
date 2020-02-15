@@ -19,7 +19,7 @@ const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
 
 const db = new Db(__filename)
-process.nextTick(() => db.flush())
+process.nextTick(() => process.DEVELOPMENT && db.flush())
 
 async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
