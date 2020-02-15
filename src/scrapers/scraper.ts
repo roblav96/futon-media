@@ -139,7 +139,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.boost = 1 + v.providers.length * 0.05
 		if (v.providers.includes('Rarbg')) v.boost *= 1.25
 		v.booster(UPLOADERS, 1.25)
-		v.booster(['proper'], 1.25)
+		v.booster(['proper', 'repack'], 1.25)
 		v.booster(LANGS, 0.5)
 		v.booster(['360', '360p', '480', '480p', '720', '720p', 'avi'], 0.75)
 		if (!isHD) {
