@@ -4,7 +4,7 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://yts.lt/api/v2',
+	baseUrl: 'https://yts.pm/api/v2',
 	headers: { 'content-type': 'application/json' },
 })
 
