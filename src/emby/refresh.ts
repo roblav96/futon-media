@@ -33,7 +33,7 @@ process.nextTick(async () => {
 			let items = (await trakt.resultsForPerson(item.person)).map(v => new media.Item(v))
 			items = items.filter(v => !v.junk && v.isPopular(1000))
 			items.sort((a, b) => b.main.votes - a.main.votes)
-			return emby.library.addQueue(items, Session)
+			return emby.library.addQueue(items, { Session })
 		}
 
 		await emby.library.setTagsQueue(item, ItemId)

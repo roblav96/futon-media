@@ -143,6 +143,6 @@ process.nextTick(() => {
 			items.length,
 		)
 		if (_.isEmpty(items)) return
-		await emby.library.addQueue(items, Session)
+		await emby.library.addQueue(items, { Session })
 	})
 })

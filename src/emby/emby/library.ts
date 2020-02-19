@@ -351,10 +351,16 @@ export const library = {
 	},
 
 	pAddQueue: new pQueue({ concurrency: 1 }),
-	addQueue(items: media.Item[], Session?: emby.Session) {
-		return library.pAddQueue.add(() => library.addAll(items, Session))
+	addQueue(items: media.Item[], options = {} as { Session?: emby.Session; silent?: boolean }) {
+		return library.pAddQueue.add(() => library.addAll(items, options))
 	},
-	async addAll(items: media.Item[], Session?: emby.Session) {
+	async addAll(
+		items: media.Item[],
+		options = {} as {
+			Session?: emby.Session
+			silent?: boolean
+		},
+	) {
 		let t = Date.now()
 		let MinDateLastSaved = new Date().toISOString()
 
@@ -364,14 +370,18 @@ export const library = {
 				{ concurrency: 1 },
 			)
 		).flat()
-		console.log(`library addAll Updates ->`, Updates.length)
+		if (!options.silent) {
+			console.log(`library addAll Updates ->`, Updates.length)
+		}
 		if (_.isEmpty(Updates)) return []
 
 		let Creations = Updates.filter(v => v.UpdateType == 'Created')
 		let CreatedPaths = Creations.map(v => v.Path)
 		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
-		if (Session && !_.isEmpty(created)) {
-			Session.Message(`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`)
+		if (options.Session && !_.isEmpty(created)) {
+			options.Session.Message(
+				`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`,
+			)
 		}
 
 		let CreatedStrmPaths = CreatedPaths.filter(v => v.endsWith('.strm'))
@@ -433,7 +443,9 @@ export const library = {
 			created.forEach(v => console.error(`library addAll created !Item -> %O`, v.short))
 		}
 
-		console.info(Date.now() - t, `library addAll '${Updates.length}' ->`, 'DONE')
+		if (!options.silent) {
+			console.info(Date.now() - t, `library addAll '${Updates.length}' ->`, 'DONE')
+		}
 		return CreatedPaths
 	},
 }

@@ -110,7 +110,7 @@ async function syncCollections() {
 		// console.log(`schemas.length ->`, schemas.length)
 	}
 
-	if (!process.DEVELOPMENT) console.log(`syncCollections schemas ->`, schemas.length)
+	if (!process.DEVELOPMENT) console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
 	else console.log(`syncCollections schemas ->`, schemas.map(v => v.name).sort())
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
@@ -138,7 +138,7 @@ async function syncCollections() {
 		}
 		if (process.DEVELOPMENT) console.log(`schema '${schema.name}' ->`, items.length)
 
-		await emby.library.addAll(items)
+		await emby.library.addAll(items, { silent: true })
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
 		let Ids = items.map(item => Items.find(v => v.Path == emby.library.toPath(item)).Id)
 
@@ -164,10 +164,9 @@ async function syncCollections() {
 	for (let Collection of Collections) {
 		if (Collection.DisplayOrder == 'SortName') continue
 		await emby.client.post(`/Items/${Collection.Id}`, {
-			body: _.merge(
-				await emby.library.Item(Collection.Id),
-				{ DisplayOrder: 'SortName' } as emby.Item,
-			),
+			body: _.merge(await emby.library.Item(Collection.Id), {
+				DisplayOrder: 'SortName',
+			} as emby.Item),
 			silent: true,
 		})
 	}
