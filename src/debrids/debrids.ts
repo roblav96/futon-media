@@ -75,7 +75,7 @@ export async function getStream(
 		let next = false
 		for (let cached of torrent.cached) {
 			if (next) continue
-			// if (cached == 'realdebrid') continue
+			if (!isHD && cached == 'realdebrid') continue
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached](torrent.magnet)
 
@@ -231,15 +231,15 @@ export async function getStream(
 				next = true
 				continue
 			}
-			if (!audios.find(v => v.channels <= AudioChannels)) {
-				console.warn(
-					`probe !AudioChannels ->`,
-					torrent.short(),
-					audios.map(v => v.channels),
-				)
-				next = true
-				continue
-			}
+			// if (!audios.find(v => v.channels <= AudioChannels)) {
+			// 	console.warn(
+			// 		`probe !AudioChannels ->`,
+			// 		torrent.short(),
+			// 		audios.map(v => v.channels),
+			// 	)
+			// 	next = true
+			// 	continue
+			// }
 
 			return stream
 		}

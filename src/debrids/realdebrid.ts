@@ -13,7 +13,7 @@ const client = new http.Http({
 	headers: {
 		authorization: `Bearer ${process.env.REALDEBRID_SECRET}`,
 	},
-	retries: [503],
+	// retries: [503],
 	silent: true,
 })
 const ajax = new http.Http({
@@ -21,7 +21,7 @@ const ajax = new http.Http({
 	headers: {
 		cookie: `https=1; cookie_accept=y; auth=${process.env.REALDEBRID_COOKIE}; lang=en; apay-session-set=true`,
 	},
-	retries: [503],
+	// retries: [503],
 	// silent: true,
 })
 
