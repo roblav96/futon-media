@@ -67,7 +67,7 @@ export const defaults = {
 		EnableRemoteAccess: true,
 		EnableRemoteControlOfOtherUsers: false,
 		EnableSharedDeviceControl: true,
-		EnableSubtitleDownloading: false,
+		EnableSubtitleDownloading: true,
 		EnableSubtitleManagement: false,
 		EnableSyncTranscoding: false,
 		EnableUserPreferenceAccess: false,
