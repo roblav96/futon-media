@@ -6,7 +6,7 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://thepiratebay.org',
+	baseUrl: 'https://piratebay.party',
 	cloudflare: '/search/ubuntu/0/99/0',
 })
 
