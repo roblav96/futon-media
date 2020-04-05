@@ -77,11 +77,13 @@ process.nextTick(() => {
 			let items = trakt.uniqWith(results.filter(Boolean)).map(v => new media.Item(v))
 			items.sort((a, b) => b.main.votes - a.main.votes)
 
-			console.log(
-				`rxSearch '${SearchTerm}' results ->`,
-				items.map(v => v.short),
-				items.length,
-			)
+			if (process.DEVELOPMENT) {
+				console.log(
+					`rxSearch '${SearchTerm}' results ->`,
+					items.map(v => v.short),
+					items.length,
+				)
+			}
 
 			items = items.filter(v => {
 				if (v.invalid || v.junk) return false
