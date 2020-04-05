@@ -117,7 +117,7 @@ export class Http {
 	async request(config: Config): Promise<HttpieResponse> {
 		let t = Date.now()
 		let options = _.merge({}, this.config, config)
-		if(_.isArray(config.retries) && _.isEmpty(config.retries)) {
+		if (_.isArray(config.retries) && _.isEmpty(config.retries)) {
 			options.retries = []
 		}
 

@@ -5,7 +5,9 @@ import * as utils from '@/utils/utils'
 
 export class User {
 	static async get() {
-		return ((await emby.client.get('/Users', { silent: true })) as User[]).map(v => new User(v))
+		return ((await emby.client.get('/Users', { silent: true })) as User[]).map(
+			(v) => new User(v),
+		)
 	}
 	static async byUserId(UserId: string) {
 		return new User(await emby.client.get(`/Users/${UserId}`, { silent: true }))

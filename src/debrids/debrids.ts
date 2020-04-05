@@ -27,7 +27,7 @@ export async function cached(hashes: string[]) {
 }
 
 let pDownloadQueue = new pQueue({ concurrency: 1 })
-export let downloadQueue = function(...args) {
+export let downloadQueue = function (...args) {
 	return pDownloadQueue.add(() => download(...args))
 } as typeof download
 async function download(torrents: Torrent[], item: media.Item) {
@@ -35,7 +35,7 @@ async function download(torrents: Torrent[], item: media.Item) {
 		return console.warn(`download RealDebrid.hasActiveCount == false`)
 	}
 
-	torrents = torrents.filter(v => {
+	torrents = torrents.filter((v) => {
 		if (v.cached.length > 0) return true
 		if (v.providers.length == 1) return false
 		return v.providers.length * v.seeders >= 3
@@ -43,7 +43,7 @@ async function download(torrents: Torrent[], item: media.Item) {
 	})
 	console.log(
 		`download torrents '${item.strm}' ->`,
-		torrents.map(v => v.short()),
+		torrents.map((v) => v.short()),
 		torrents.length,
 	)
 
@@ -79,16 +79,16 @@ export async function getStream(
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached](torrent.magnet)
 
-			let files = (await debrid.getFiles().catch(error => {
+			let files = (await debrid.getFiles().catch((error) => {
 				console.error(`getFiles -> %O`, error)
 			})) as debrid.File[]
-			files.forEach(file => {
+			files.forEach((file) => {
 				file.parsed = new parser.Parser(file.path, true)
-				file.levens = _.sum(item.aliases.map(v => utils.levens(file.path, v)))
+				file.levens = _.sum(item.aliases.map((v) => utils.levens(file.path, v)))
 			})
 			files = _.sortBy(files, 'levens')
 
-			let removed = _.remove(files, file => {
+			let removed = _.remove(files, (file) => {
 				if (!utils.isVideo(file.path)) {
 					file.parsed.filter = `⛔ !isVideo`
 					return true
@@ -143,7 +143,7 @@ export async function getStream(
 				// )
 				console.log(
 					`files ->`,
-					files.map(v => ({ ...v, parsed: v.parsed.json() })),
+					files.map((v) => ({ ...v, parsed: v.parsed.json() })),
 					files.length,
 				)
 			}
@@ -155,8 +155,8 @@ export async function getStream(
 
 			let file = _.first(files)
 			console.log(`file ->`, { ...file, parsed: file.parsed.json() })
-			let original = !!isHD && !!AudioCodecs.find(v => ['dts', 'truehd'].includes(v))
-			let stream = (await debrid.streamUrl(file, original).catch(error => {
+			let original = !!isHD && !!AudioCodecs.find((v) => ['dts', 'truehd'].includes(v))
+			let stream = (await debrid.streamUrl(file, original).catch((error) => {
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) {
@@ -170,7 +170,7 @@ export async function getStream(
 			if (stream.startsWith('http:')) stream = stream.replace('http:', 'https:')
 
 			console.log(`probe stream ->`, stream)
-			let probe = (await ffprobe.probe(stream).catch(error => {
+			let probe = (await ffprobe.probe(stream).catch((error) => {
 				console.error(`ffprobe '${stream}' -> %O`, error)
 			})) as ffprobe.Probe
 			if (!probe) {
@@ -197,7 +197,7 @@ export async function getStream(
 			let vkeys = ['codec_long_name', 'codec_name', 'profile']
 			console.log(
 				`probe videos ->`,
-				videos.map(v => _.pick(v, vkeys)),
+				videos.map((v) => _.pick(v, vkeys)),
 			)
 			if (_.size(VideoCodecs) > 0 && !VideoCodecs.includes(videos[0].codec_name)) {
 				console.warn(`probe !VideoCodecs ->`, torrent.short(), videos[0].codec_name)
@@ -220,13 +220,16 @@ export async function getStream(
 			let akeys = ['channel_layout', 'channels', 'codec_long_name', 'codec_name', 'profile']
 			console.log(
 				`probe audios ->`,
-				audios.map(v => _.pick(v, akeys)),
+				audios.map((v) => _.pick(v, akeys)),
 			)
-			if (_.size(AudioCodecs) > 0 && !audios.find(v => AudioCodecs.includes(v.codec_name))) {
+			if (
+				_.size(AudioCodecs) > 0 &&
+				!audios.find((v) => AudioCodecs.includes(v.codec_name))
+			) {
 				console.warn(
 					`probe !AudioCodecs ->`,
 					torrent.short(),
-					audios.map(v => v.codec_name),
+					audios.map((v) => v.codec_name),
 				)
 				next = true
 				continue

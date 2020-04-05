@@ -36,7 +36,7 @@ export const library = {
 		let Tasks = (await emby.client.get('/ScheduledTasks', {
 			silent: true,
 		})) as ScheduledTasksInfo[]
-		let { Id, State } = Tasks.find(v => v.Key == 'RefreshLibrary')
+		let { Id, State } = Tasks.find((v) => v.Key == 'RefreshLibrary')
 		if (State != 'Idle') {
 			await emby.client.delete(`/ScheduledTasks/Running/${Id}`, { silent: true })
 			await utils.pTimeout(500)
@@ -55,15 +55,15 @@ export const library = {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
-		let boxsets = Folders.find(v => v.CollectionType == 'boxsets')
+		let boxsets = Folders.find((v) => v.CollectionType == 'boxsets')
 		if (boxsets) {
 			library.folders.boxsets = { Location: boxsets.Locations[0], ItemId: boxsets.ItemId }
 		}
-		let movies = Folders.find(v => v.CollectionType == 'movies')
+		let movies = Folders.find((v) => v.CollectionType == 'movies')
 		if (movies) {
 			library.folders.movies = { Location: movies.Locations[0], ItemId: movies.ItemId }
 		}
-		let shows = Folders.find(v => v.CollectionType == 'tvshows')
+		let shows = Folders.find((v) => v.CollectionType == 'tvshows')
 		if (shows) {
 			library.folders.shows = { Location: shows.Locations[0], ItemId: shows.ItemId }
 		}
@@ -169,7 +169,7 @@ export const library = {
 		query.Fields.sort()
 		return ((
 			await emby.client.get('/Items', {
-				query: _.mapValues(query, v => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
+				query: _.mapValues(query, (v) => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
 				// profile: process.DEVELOPMENT,
 				silent: true,
 			})
@@ -203,7 +203,7 @@ export const library = {
 				memoize: true,
 				silent: true,
 			})) as trakt.Result[]
-			let result = results.find(v => trakt.toFull(v).ids[key] == ids[key])
+			let result = results.find((v) => trakt.toFull(v).ids[key] == ids[key])
 			if (!result) continue
 			let item = new media.Item(result)
 			if (['Movie', 'Person'].includes(Item.Type) || main == true) return item
@@ -213,7 +213,7 @@ export const library = {
 					memoize: true,
 					silent: true,
 				})) as trakt.Season[]
-				item.use({ season: seasons.find(v => v.number == numbers.season) })
+				item.use({ season: seasons.find((v) => v.number == numbers.season) })
 			}
 			if (!item.episode && Item.Type == 'Episode') {
 				let episode = (await trakt.client.get(
@@ -228,7 +228,7 @@ export const library = {
 	pathProviderIds(Path: string) {
 		let matches = Array.from(Path.matchAll(/\[(?<key>\w{4})id=(?<value>(tt)?\d*)\]/g))
 		return _.fromPairs(
-			matches.map(match => {
+			matches.map((match) => {
 				return [match.groups.key, match.groups.value]
 			}),
 		) as Record<string, string>
@@ -305,7 +305,7 @@ export const library = {
 				silent: true,
 			})) as trakt.Season[]
 			seasons = seasons.filter(
-				v => v.number > 0 && v.episode_count > 0 && v.aired_episodes > 0,
+				(v) => v.number > 0 && v.episode_count > 0 && v.aired_episodes > 0,
 			)
 			for (let season of seasons) {
 				Updates.push(
@@ -366,7 +366,7 @@ export const library = {
 
 		let Updates = (
 			await pAll(
-				items.map(v => () => library.add(v)),
+				items.map((v) => () => library.add(v)),
 				{ concurrency: 1 },
 			)
 		).flat()
@@ -375,16 +375,16 @@ export const library = {
 		}
 		if (_.isEmpty(Updates)) return []
 
-		let Creations = Updates.filter(v => v.UpdateType == 'Created')
-		let CreatedPaths = Creations.map(v => v.Path)
-		let created = items.filter(v => CreatedPaths.includes(library.toPath(v)))
+		let Creations = Updates.filter((v) => v.UpdateType == 'Created')
+		let CreatedPaths = Creations.map((v) => v.Path)
+		let created = items.filter((v) => CreatedPaths.includes(library.toPath(v)))
 		if (options.Session && !_.isEmpty(created)) {
 			options.Session.Message(
-				`🍿 Adding to library 🔶 ${created.map(v => v.message).join(` 🔶 `)}`,
+				`🍿 Adding to library 🔶 ${created.map((v) => v.message).join(` 🔶 `)}`,
 			)
 		}
 
-		let CreatedStrmPaths = CreatedPaths.filter(v => v.endsWith('.strm'))
+		let CreatedStrmPaths = CreatedPaths.filter((v) => v.endsWith('.strm'))
 		if (CreatedStrmPaths.length > 0) {
 			console.info(`library addAll CreatedStrmPaths ->`, CreatedStrmPaths.length)
 
@@ -392,7 +392,7 @@ export const library = {
 				Rx.op.filter(({ message }) => {
 					if (!message.startsWith('Running FFProbeProvider for ')) return false
 					let Path = message.replace('Running FFProbeProvider for ', '')
-					_.remove(CreatedStrmPaths, v => v == Path)
+					_.remove(CreatedStrmPaths, (v) => v == Path)
 					return CreatedStrmPaths.length == 0
 				}),
 				Rx.op.take(1),
@@ -405,7 +405,7 @@ export const library = {
 
 			for (let type of media.MAIN_TYPESS) {
 				let folder = library.folders[type]
-				if (CreatedStrmPaths.find(v => v.startsWith(folder.Location))) {
+				if (CreatedStrmPaths.find((v) => v.startsWith(folder.Location))) {
 					await emby.client.post(`/Items/${folder.ItemId}/Refresh`, {
 						query: {
 							ImageRefreshMode: 'Default',
@@ -432,15 +432,15 @@ export const library = {
 					IncludeItemTypes: ['Movie', 'Series'],
 					MinDateLastSaved,
 				})
-				_.remove(created, item => {
-					let Item = Items.find(v => v.Path == library.toPath(item))
+				_.remove(created, (item) => {
+					let Item = Items.find((v) => v.Path == library.toPath(item))
 					if (Item) {
 						library.setTagsQueue(item, Item.Id)
 						return true
 					}
 				})
 			}
-			created.forEach(v => console.error(`library addAll created !Item -> %O`, v.short))
+			created.forEach((v) => console.error(`library addAll created !Item -> %O`, v.short))
 		}
 
 		if (!options.silent) {

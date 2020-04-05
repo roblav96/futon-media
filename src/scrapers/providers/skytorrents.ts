@@ -17,7 +17,7 @@ export class SkyTorrents extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get('/', {
 				query: { query: slug, sort, category: this.item.type },
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('tr.result').each((i, el) => {

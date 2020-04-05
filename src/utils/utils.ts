@@ -105,7 +105,7 @@ export function contains(value: string, target: string) {
 }
 export function excludes(value: string, words: string[]) {
 	let split = value.split(' ')
-	return split.filter(v => !words.includes(minify(v) || clean(v))).join(' ')
+	return split.filter((v) => !words.includes(minify(v) || clean(v))).join(' ')
 }
 export function stripStopWords(value: string) {
 	return excludes(value, STOP_WORDS)
@@ -115,7 +115,7 @@ export function stripStopWords(value: string) {
 export function accuracies(value: string, target: string) {
 	let values = _.uniq(slugify(value).split(' '))
 	let targets = _.uniq(slugify(target).split(' '))
-	return targets.filter(v => !values.includes(v))
+	return targets.filter((v) => !values.includes(v))
 }
 // export function accuracy(value: string, target: string) {
 // 	return accuracies(value, target).length == 0
@@ -154,10 +154,10 @@ export function allSlugs(value: string) {
 export function allParts(value: string) {
 	let separators = [' - ', ' / ', ', ', ': ', '; ']
 	let values = value.split(new RegExp(`(${separators.join(')|(')})`))
-	return values.filter(v => !!v && !separators.includes(v))
+	return values.filter((v) => !!v && !separators.includes(v))
 }
 export function allYears(value: string, years: number[]) {
-	return years.filter(year => !value.endsWith(` ${year}`)).map(year => `${value} ${year}`)
+	return years.filter((year) => !value.endsWith(` ${year}`)).map((year) => `${value} ${year}`)
 }
 export function allTitles(
 	titles: string[],
@@ -171,32 +171,32 @@ export function allTitles(
 	},
 ) {
 	if (options.parts == 'all') {
-		titles = titles.map(v => [v, ...allParts(v)]).flat()
+		titles = titles.map((v) => [v, ...allParts(v)]).flat()
 	} else if (options.parts == 'edges') {
-		titles = titles.map(v => [v, _.first(allParts(v)), _.last(allParts(v))]).flat()
+		titles = titles.map((v) => [v, _.first(allParts(v)), _.last(allParts(v))]).flat()
 	} else if (options.parts == 'first') {
-		titles = titles.map(v => [v, _.first(allParts(v))]).flat()
+		titles = titles.map((v) => [v, _.first(allParts(v))]).flat()
 	} else if (options.parts == 'last') {
-		titles = titles.map(v => [v, _.last(allParts(v))]).flat()
+		titles = titles.map((v) => [v, _.last(allParts(v))]).flat()
 	} else if (options.parts == 'pop') {
-		titles = titles.map(v => [v, ...allParts(v).slice(0, -1)]).flat()
+		titles = titles.map((v) => [v, ...allParts(v).slice(0, -1)]).flat()
 	} else if (options.parts == 'shift') {
-		titles = titles.map(v => [v, ...allParts(v).slice(1)]).flat()
+		titles = titles.map((v) => [v, ...allParts(v).slice(1)]).flat()
 	}
 	if (options.uncamel) {
-		titles = titles.map(v => [v, uncamel(v)]).flat()
+		titles = titles.map((v) => [v, uncamel(v)]).flat()
 	}
 	if (options.slugs != false) {
-		titles = titles.map(v => allSlugs(v)).flat()
+		titles = titles.map((v) => allSlugs(v)).flat()
 	}
 	if (options.stops) {
-		titles = titles.map(v => [v, stripStopWords(v)]).flat()
+		titles = titles.map((v) => [v, stripStopWords(v)]).flat()
 	}
 	let years = (options.years || []).filter(Boolean)
 	if (!_.isEmpty(years)) {
-		titles = titles.map(v => [v, ...allYears(v, years)]).flat()
+		titles = titles.map((v) => [v, ...allYears(v, years)]).flat()
 	}
-	titles = _.uniq(titles.map(v => v.trim()).filter(Boolean))
+	titles = _.uniq(titles.map((v) => v.trim()).filter(Boolean))
 	if (options.bylength) {
 		titles = byLength(titles)
 	}
@@ -227,10 +227,10 @@ export function allTitles(
 // }
 
 export function matches(value: string, regexes: RegExp[], groups: string[]) {
-	let matches = regexes.map(v => Array.from(value.matchAll(v))).flat()
-	return groups.map(group => {
-		let ints = matches.map(v => _.parseInt(_.get(v, `groups.${group}`)))
-		return _.sortBy(_.uniq(ints.filter(v => _.isFinite(v))))
+	let matches = regexes.map((v) => Array.from(value.matchAll(v))).flat()
+	return groups.map((group) => {
+		let ints = matches.map((v) => _.parseInt(_.get(v, `groups.${group}`)))
+		return _.sortBy(_.uniq(ints.filter((v) => _.isFinite(v))))
 	})
 }
 
@@ -244,7 +244,7 @@ export function sortKeys<T>(value: T) {
 	) as any) as T
 }
 export function compact<T>(value: T) {
-	return _.pickBy(value as any, v => _.isBoolean(v) || _.isFinite(v) || !!v) as T
+	return _.pickBy(value as any, (v) => _.isBoolean(v) || _.isFinite(v) || !!v) as T
 }
 export function orderBy<T, K extends keyof T>(values: T[], key: K, order?: 'asc' | 'desc') {
 	return _.orderBy(values, [key], [order || 'desc'])
@@ -284,7 +284,7 @@ export function dispersed(value: number, index: number, max: number) {
 }
 export function chunks<T>(values: T[], max: number) {
 	let size = Math.ceil(values.length / Math.max(max, 1))
-	let chunks = Array.from(Array(size), v => []) as T[][]
+	let chunks = Array.from(Array(size), (v) => []) as T[][]
 	values.forEach((v, i) => chunks[i % chunks.length].push(v))
 	return chunks
 }
@@ -307,7 +307,7 @@ export function uniqBy<T, K extends keyof T>(values: T[], key: K) {
 // export function uniqWith<T>(values: T[], fn: (a: T, b: T) => boolean) {}
 
 export function randoms(size: number) {
-	return Array.from(Array(size), v => Math.random().toString())
+	return Array.from(Array(size), (v) => Math.random().toString())
 }
 export function fill(size: number) {
 	return Array.from(Array(size), (v, i) => i)
@@ -363,7 +363,7 @@ export function toBytes(value: string) {
 export function fromBytes(value: number) {
 	if (!_.isFinite(value)) return 'NaN'
 	let units = Object.entries(BYTE_UNITS).map(([k, v]) => v)
-	let unit = units.find(unit => value / unit.num < 1000)
+	let unit = units.find((unit) => value / unit.num < 1000)
 	value = value / unit.num
 	return `${value.toFixed([2, 1, 1][value.toFixed(0).length])} ${unit.str}`
 }

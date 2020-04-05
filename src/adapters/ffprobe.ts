@@ -13,13 +13,13 @@ export async function probe(url: string) {
 		value.format.tags = _.mapKeys(value.format.tags, (v, k) => k.toLowerCase()) as any
 	}
 	if (_.isArray(value.streams)) {
-		value.streams = value.streams.map(stream => {
+		value.streams = value.streams.map((stream) => {
 			stream = _.mapKeys(stream, (v, k) => k.toLowerCase()) as any
 			stream = _.mapValues(stream, (v, k) => (_.isString(v) ? v.toLowerCase() : v)) as any
 			if (stream.tags) {
 				stream.tags = _.fromPairs(
-					_.toPairs(stream.tags).map(v =>
-						v.map(vv => (_.isString(vv) ? vv.toLowerCase() : vv)),
+					_.toPairs(stream.tags).map((v) =>
+						v.map((vv) => (_.isString(vv) ? vv.toLowerCase() : vv)),
 					) as any,
 				) as any
 			}

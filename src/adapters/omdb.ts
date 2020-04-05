@@ -17,7 +17,7 @@ export const client = new Http({
 		append: [
 			async (options, response) => {
 				if (_.isPlainObject(response.data)) {
-					response.data = _.pickBy(response.data, v => !!v && v != 'N/A')
+					response.data = _.pickBy(response.data, (v) => !!v && v != 'N/A')
 				}
 			},
 		],
@@ -38,7 +38,7 @@ export async function titles(queries: string[]) {
 			{ concurrency: 1 },
 		)
 	).flat()
-	return _.uniqBy(results, 'imdbID').map(v => ({
+	return _.uniqBy(results, 'imdbID').map((v) => ({
 		title: v.Title,
 		year: _.parseInt(_.first(utils.slugify(v.Year).split(' '))),
 	}))
@@ -59,19 +59,19 @@ export async function toTags(item: media.Item) {
 		'🍿 IMDb Rating':
 			result.imdbRating ||
 			_.get(
-				result.Ratings.find(v => v.Source == 'Internet Movie Database'),
+				result.Ratings.find((v) => v.Source == 'Internet Movie Database'),
 				'Value',
 			),
 		'💙 Metacritic':
 			result.Metascore ||
 			_.get(
-				result.Ratings.find(v => v.Source == 'Metacritic'),
+				result.Ratings.find((v) => v.Source == 'Metacritic'),
 				'Value',
 			),
 		'🍎 Rotten Tomatoes':
 			result.tomatoRating ||
 			_.get(
-				result.Ratings.find(v => v.Source == 'Rotten Tomatoes'),
+				result.Ratings.find((v) => v.Source == 'Rotten Tomatoes'),
 				'Value',
 			),
 	})

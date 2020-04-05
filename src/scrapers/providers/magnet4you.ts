@@ -15,7 +15,7 @@ export class Magnet4You extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get(`/search.php`, { query: { s: slug, sort } as Partial<Query> })
+			await client.get(`/search.php`, { query: { s: slug, sort } as Partial<Query> }),
 		)
 		let results = [] as scraper.Result[]
 		$(`div[id^="profile"]:has(a[href^="magnet:?"])`).each((i, el) => {

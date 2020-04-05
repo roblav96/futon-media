@@ -18,7 +18,9 @@ export class Digbt extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get(`/search/${slug}-${sort}-1/`, { query: { s: sort } as Partial<Query> })
+			await client.get(`/search/${slug}-${sort}-1/`, {
+				query: { s: sort } as Partial<Query>,
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('tr td.x-item').each((i, el) => {

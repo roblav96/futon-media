@@ -21,7 +21,7 @@ export class KickassTorrents extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get(`/usearch/${slug} category:${type}/`, {
 				query: { field: sort, sorder: 'desc' } as Partial<Query>,
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('table[class="data"] tr[id]').each((i, el) => {
@@ -31,7 +31,7 @@ export class KickassTorrents extends scraper.Scraper {
 					bytes: utils.toBytes($el.find('td:nth-child(2)').text()),
 					name: $el.find('td:nth-child(1) > div > div > a[class="cellMainLink"]').text(),
 					magnet: qs.parseUrl(
-						$el.find('td:nth-child(1) > div > a[data-nop=""]').attr('href')
+						$el.find('td:nth-child(1) > div > a[data-nop=""]').attr('href'),
 					).query.url,
 					seeders: utils.parseInt($el.find('td:nth-child(4)').text()),
 					stamp: utils.toStamp($el.find('td:nth-child(3)').text()),

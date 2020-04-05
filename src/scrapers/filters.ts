@@ -18,14 +18,14 @@ export function runtime(parsed: parser.Parser, runtime: number, bytes: number) {
 }
 
 export function aliases(parsed: parser.Parser, aliases: string[]) {
-	if (!aliases.find(v => parsed.slug.includes(` ${v} `))) {
+	if (!aliases.find((v) => parsed.slug.includes(` ${v} `))) {
 		parsed.filter = `⛔ !aliases`
 		return false
 	}
 }
 
 export function collisions(parsed: parser.Parser, collisions: string[]) {
-	let collision = collisions.find(v => parsed.slug.includes(` ${v} `))
+	let collision = collisions.find((v) => parsed.slug.includes(` ${v} `))
 	if (collision) {
 		parsed.filter = `⛔ collision '${collision}'`
 		return false
@@ -33,7 +33,7 @@ export function collisions(parsed: parser.Parser, collisions: string[]) {
 }
 
 export function aired(parsed: parser.Parser, aired: string) {
-	aired = utils.allSlugs(aired).find(v => parsed.slug.includes(` ${v} `))
+	aired = utils.allSlugs(aired).find((v) => parsed.slug.includes(` ${v} `))
 	if (aired) {
 		parsed.filter = `✅ aired '${aired}'`
 		return true
@@ -41,7 +41,7 @@ export function aired(parsed: parser.Parser, aired: string) {
 }
 
 export function setitle(parsed: parser.Parser, titles: string[]) {
-	let title = titles.find(v => parsed.slug.includes(` ${v} `))
+	let title = titles.find((v) => parsed.slug.includes(` ${v} `))
 	if (title) {
 		parsed.filter = `✅ season title '${title}'`
 		return true
@@ -49,7 +49,7 @@ export function setitle(parsed: parser.Parser, titles: string[]) {
 }
 
 export function eptitle(parsed: parser.Parser, titles: string[]) {
-	let title = titles.find(v => parsed.slug.includes(` ${v} `))
+	let title = titles.find((v) => parsed.slug.includes(` ${v} `))
 	if (title) {
 		parsed.filter = `✅ episode title '${title}'`
 		return true
@@ -84,7 +84,7 @@ export function e00(parsed: parser.Parser, episode: number) {
 }
 
 export function torrents(torrent: torrent.Torrent, item: media.Item) {
-	let skips = item.skips.find(v => torrent.slug.includes(` ${v} `))
+	let skips = item.skips.find((v) => torrent.slug.includes(` ${v} `))
 	if (skips) {
 		torrent.filter = `⛔ skips '${skips}'`
 		return false
@@ -117,7 +117,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			return false
 		}
 		if (!item.collection.name) {
-			if (!item.years.find(v => torrent.years.includes(v))) {
+			if (!item.years.find((v) => torrent.years.includes(v))) {
 				torrent.filter = `⛔ !years '${torrent.years}'`
 				return false
 			}
@@ -145,13 +145,13 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 			}
 			if (
 				torrent.years.length > 0 &&
-				!item.collection.parts.find(v => torrent.years.includes(v.year))
+				!item.collection.parts.find((v) => torrent.years.includes(v.year))
 			) {
 				torrent.filter = `⛔ collection !years '${torrent.years}'`
 				return false
 			}
 			let slugs = utils.allSlugs(item.collection.name)
-			if (torrent.packs >= 2 && !slugs.find(v => torrent.slug.includes(` ${v} `))) {
+			if (torrent.packs >= 2 && !slugs.find((v) => torrent.slug.includes(` ${v} `))) {
 				torrent.filter = `⛔ collection !name`
 				return false
 			}
@@ -194,7 +194,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 		if (!_.isEmpty(torrent.years)) {
 			let years = [...item.years, item.se.y, item.ep.y]
-			let year = years.filter(Boolean).find(v => torrent.years.includes(v))
+			let year = years.filter(Boolean).find((v) => torrent.years.includes(v))
 			if (year) {
 				torrent.filter = `✅ year '${year}'`
 				return true

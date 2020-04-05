@@ -13,7 +13,7 @@ export const client = scraper.Scraper.http({
 export class Torrentz2 extends scraper.Scraper {
 	async getResults(slug: string) {
 		let $ = cheerio.load(
-			await client.get(`/search`, { query: { f: `title: ${slug}` } as Partial<Query> })
+			await client.get(`/search`, { query: { f: `title: ${slug}` } as Partial<Query> }),
 		)
 		let results = [] as scraper.Result[]
 		$('.results dl:has(a)').each((i, el) => {

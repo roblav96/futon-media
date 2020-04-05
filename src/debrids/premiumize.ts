@@ -19,9 +19,9 @@ export const client = new http.Http({
 
 export class Premiumize extends debrid.Debrid {
 	static async cached(hashes: string[]) {
-		hashes = hashes.map(v => v.toLowerCase())
+		hashes = hashes.map((v) => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
-		let cached = hashes.map(v => false)
+		let cached = hashes.map((v) => false)
 		await pAll(
 			chunks.map((chunk, i) => async () => {
 				let response = (await client
@@ -30,13 +30,13 @@ export class Premiumize extends debrid.Debrid {
 						query: { items: chunk },
 						memoize: process.DEVELOPMENT,
 					})
-					.catch(error => {
+					.catch((error) => {
 						console.error(`Premiumize cache -> %O`, error)
 						return []
 					})) as CacheResponse
 				chunk.forEach((hash, i) => {
 					if (_.get(response, `response[${i}]`) == true) {
-						cached[hashes.findIndex(v => v == hash)] = true
+						cached[hashes.findIndex((v) => v == hash)] = true
 					}
 				})
 			}),
@@ -51,7 +51,7 @@ export class Premiumize extends debrid.Debrid {
 	}
 
 	static async stalled(id: string) {
-		let transfer = (await Premiumize.transfers()).find(v => v.id == id)
+		let transfer = (await Premiumize.transfers()).find((v) => v.id == id)
 		if (
 			transfer &&
 			!['seeding', 'success'].includes(transfer.status) &&
@@ -68,7 +68,7 @@ export class Premiumize extends debrid.Debrid {
 				return magnetlink.decode(src).infoHash.toLowerCase() == this.infoHash
 			}
 		})
-		if (transfer || transfers.find(v => utils.equals(v.name, this.dn))) {
+		if (transfer || transfers.find((v) => utils.equals(v.name, this.dn))) {
 			return true
 		}
 		let { id, status } = (await client.post('/transfer/create', {
@@ -87,13 +87,13 @@ export class Premiumize extends debrid.Debrid {
 			query: { src: this.magnet },
 		})
 		let downloads = _.get(directdls, 'content', []) as Download[]
-		_.remove(downloads, v => !(v.link || v.stream_link) || !v.path || !v.size)
+		_.remove(downloads, (v) => !(v.link || v.stream_link) || !v.path || !v.size)
 		downloads = _.uniqWith(downloads, (from, to) => {
 			if (to.path != from.path) return false
 			_.merge(to, utils.compact(from))
 			return true
 		})
-		return downloads.map(download => {
+		return downloads.map((download) => {
 			let name = path.basename(`/${download.path}`)
 			return {
 				bytes: _.parseInt(download.size),

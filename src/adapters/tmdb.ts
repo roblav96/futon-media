@@ -14,7 +14,7 @@ export const client = new Http({
 				if (_.isPlainObject(response.data)) {
 					debloat(response.data)
 					let bloated = ['results', 'seasons', 'episodes']
-					bloated.forEach(key => {
+					bloated.forEach((key) => {
 						let value = response.data[key]
 						_.isArray(value) && value.forEach(debloat)
 					})
@@ -25,7 +25,7 @@ export const client = new Http({
 })
 function debloat(value) {
 	let keys = ['crew', 'guest_stars', 'production_companies']
-	keys.forEach(key => _.unset(value, key))
+	keys.forEach((key) => _.unset(value, key))
 }
 
 // export async function search(query: string, type = 'multi' as media.MainContentType) {
@@ -50,7 +50,7 @@ export async function aliases(type: media.MainContentType, tmdbid: number) {
 			`/${type == 'show' ? 'tv' : type}/${tmdbid}/alternative_titles`,
 			{ delay: 300, memoize: true, silent: true },
 		)) as AlternativeTitles
-		return titles.filter(v => ['GB', 'NL', 'US'].includes(v.iso_3166_1)).map(v => v.title)
+		return titles.filter((v) => ['GB', 'NL', 'US'].includes(v.iso_3166_1)).map((v) => v.title)
 	} catch {
 		return []
 	}
@@ -70,8 +70,8 @@ export async function titles(queries: string[]) {
 			{ concurrency: 1 },
 		)
 	).flat()
-	results = _.uniqBy(results, 'id').filter(v => v.original_language == 'en')
-	return results.map(v => ({
+	results = _.uniqBy(results, 'id').filter((v) => v.original_language == 'en')
+	return results.map((v) => ({
 		title: v.title || v.name || v.original_title,
 		year: dayjs(v.release_date || v.first_air_date).year(),
 	}))
@@ -84,7 +84,7 @@ export async function toTrakt({ id, media_type }: Full) {
 		memoize: true,
 		silent: !process.DEVELOPMENT,
 	})) as trakt.Result[]
-	return results.find(v => trakt.toFull(v).ids.tmdb == id)
+	return results.find((v) => trakt.toFull(v).ids.tmdb == id)
 }
 
 export function toType(media_type: string) {

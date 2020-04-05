@@ -20,7 +20,7 @@ export class ExtraTorrentSi extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get('/search/', {
 				query: { search: slug, srt: sort, s_cat } as Partial<Query>,
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('.tl tr').each((i, el) => {

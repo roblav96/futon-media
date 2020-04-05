@@ -66,7 +66,7 @@ async function syncCollections() {
 			memoize: process.DEVELOPMENT,
 			silent: true,
 		})) as trakt.ResponseList[]
-		lists.push(...response.map(v => v.list))
+		lists.push(...response.map((v) => v.list))
 	}
 	lists.sort((a, b) => b.likes - a.likes)
 	lists = _.uniqWith(lists, (a, b) => {
@@ -74,7 +74,7 @@ async function syncCollections() {
 		if (utils.equals(a.name, b.name)) return true
 	})
 	schemas.push(
-		...lists.map(list => {
+		...lists.map((list) => {
 			return {
 				name: utils.title(list.name),
 				url: `/users/${list.user.ids.slug}/lists/${list.ids.trakt}/items`,
@@ -105,13 +105,13 @@ async function syncCollections() {
 		// 	// 'Worlds of DC',
 		// ]
 		// schemas = schemas.filter(v => lists.includes(v.name))
-		schemas = schemas.filter(v => utils.startsWith(v.name, 'movies most'))
+		schemas = schemas.filter((v) => utils.startsWith(v.name, 'movies most'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}
 
 	if (!process.DEVELOPMENT) console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
-	else console.log(`syncCollections schemas ->`, schemas.map(v => v.name).sort())
+	else console.log(`syncCollections schemas ->`, schemas.map((v) => v.name).sort())
 
 	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
 
@@ -126,12 +126,12 @@ async function syncCollections() {
 		} catch (error) {
 			console.error(`schema '${schema.name}' ${schema.url} -> %O`, error)
 		}
-		results = results.map(result =>
+		results = results.map((result) =>
 			!result[schema.type] && schema.type ? ({ [schema.type]: result } as any) : result,
 		)
-		results = trakt.uniqWith(results.filter(v => !v.season && !v.episode && !v.person))
-		let items = results.map(v => new media.Item(v)).filter(v => !v.junk)
-		items = items.filter(v => (schema.all ? v.isPopular(1) : v.isPopular(1000)))
+		results = trakt.uniqWith(results.filter((v) => !v.season && !v.episode && !v.person))
+		let items = results.map((v) => new media.Item(v)).filter((v) => !v.junk)
+		items = items.filter((v) => (schema.all ? v.isPopular(1) : v.isPopular(1000)))
 		if (items.length == 0) {
 			console.warn(`schema '${schema.name}' ->`, 'items.length == 0')
 			continue
@@ -140,10 +140,10 @@ async function syncCollections() {
 
 		await emby.library.addAll(items, { silent: true })
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
-		let Ids = items.map(item => Items.find(v => v.Path == emby.library.toPath(item)).Id)
+		let Ids = items.map((item) => Items.find((v) => v.Path == emby.library.toPath(item)).Id)
 
 		let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
-		let Collection = Collections.find(v => v.Name == schema.name)
+		let Collection = Collections.find((v) => v.Name == schema.name)
 		if (Collection) {
 			await emby.client.post(`/Collections/${Collection.Id}/Items`, {
 				query: { Ids: Ids.join() },

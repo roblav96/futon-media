@@ -28,7 +28,9 @@ export class Torrent extends parser.Parser {
 		if (this.item.show && _.isEmpty(super.seasons) && _.isEmpty(this.episodes)) {
 			if (!_.isEmpty(this.years)) {
 				let [min, max] = [_.min(this.years), _.max(this.years)]
-				return this.item.seasons.filter(v => dayjs(v.first_aired).year()).map(v => v.number)
+				return this.item.seasons
+					.filter((v) => dayjs(v.first_aired).year())
+					.map((v) => v.number)
 			}
 			// let years = [...this.item.years, this.item.se.y, this.item.ep.y].filter(Boolean)
 			// if (_.isEmpty(this.years) || this.years.find(v => years.includes(v))) {
@@ -56,12 +58,12 @@ export class Torrent extends parser.Parser {
 		if (this.item.movie) {
 			if (this.item.collection.name) {
 				if (this.years.length >= 2) {
-					return this.item.collection.parts.filter(part =>
+					return this.item.collection.parts.filter((part) =>
 						_.inRange(part.year, _.first(this.years), _.last(this.years) + 1),
 					).length
 				}
 				let alls = 'antology anthology boxset collection complete saga'.split(' ')
-				if (this.years.length == 0 && alls.find(v => this.slug.includes(` ${v} `))) {
+				if (this.years.length == 0 && alls.find((v) => this.slug.includes(` ${v} `))) {
 					return this.item.collection.parts.length
 				}
 			}
@@ -93,18 +95,18 @@ export class Torrent extends parser.Parser {
 		}
 	}
 	booster(words: string[], boost: number) {
-		if (words.find(v => this.slug.includes(` ${v} `))) this.boost *= boost
+		if (words.find((v) => this.slug.includes(` ${v} `))) this.boost *= boost
 	}
 
 	short() {
 		let flags = { R: 'R🔵', P: 'P🔴' }
 		let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
-		let providers = this.providers.map(provider => {
+		let providers = this.providers.map((provider) => {
 			let uncamels = utils.uncamel(provider).split(' ')
-			return uncamels.map(v => v.slice(0, 3)).join('')
+			return uncamels.map((v) => v.slice(0, 3)).join('')
 		})
 		return `${boost} [${this.size} x ${this.seeders}] ${
-			this.cached.length > 0 ? `[${this.cached.map(v => flags[v[0].toUpperCase()])}] ` : ''
+			this.cached.length > 0 ? `[${this.cached.map((v) => flags[v[0].toUpperCase()])}] ` : ''
 		}${this.name.trim()} [${this.age}] [${this.providers.length} x ${providers}]`
 		// }${this.slug.trim()} [${this.age}] ${providers}${this.filter ? ` ${this.filter}` : ''}`
 	}

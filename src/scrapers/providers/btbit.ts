@@ -23,7 +23,7 @@ export class BtBit extends scraper.Scraper {
 					name: _.trim($el.find('.title').text()),
 					magnet: $el.find('.sbar a[href^="magnet:?"]').attr('href'),
 					seeders: _.ceil(
-						utils.parseInt($el.find('.sbar span:nth-of-type(6) b').text()) / 100
+						utils.parseInt($el.find('.sbar span:nth-of-type(6) b').text()) / 100,
 					),
 					stamp: new Date($el.find('.sbar span:nth-of-type(3) b').text()).valueOf(),
 				} as scraper.Result)

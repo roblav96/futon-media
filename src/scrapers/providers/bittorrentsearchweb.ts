@@ -9,7 +9,7 @@ export const client = scraper.Scraper.http({
 	headers: { 'cookie': process.env.CF_BITTORRENTSEARCHWEB, 'user-agent': process.env.CF_UA },
 	beforeRequest: {
 		append: [
-			async options => {
+			async (options) => {
 				options.headers.referer = options.url
 			},
 		],

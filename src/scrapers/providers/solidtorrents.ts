@@ -19,7 +19,7 @@ export class SolidTorrents extends scraper.Scraper {
 		let response = (await client.get('/search', {
 			query: { sort, q: slug } as Partial<Query>,
 		})) as Response
-		return (response.results || []).map(v => {
+		return (response.results || []).map((v) => {
 			return {
 				bytes: v.size,
 				magnet: v.magnet,

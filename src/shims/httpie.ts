@@ -27,7 +27,7 @@ export function send(method, uri, opts = {} as any) {
 			let binary = encoding == 'binary' && !!r.headers['content-disposition']
 			let out = (binary ? [] : '') as any
 
-			r.on('data', d => {
+			r.on('data', (d) => {
 				binary ? out.push(d) : (out += d)
 			})
 

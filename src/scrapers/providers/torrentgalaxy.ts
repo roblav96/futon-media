@@ -16,7 +16,7 @@ export class TorrentGalaxy extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let parent_cat = this.item.movie ? 'Movies' : 'TV'
 		let $ = cheerio.load(
-			await client.get('/torrents.php', { query: { search: slug, sort, parent_cat } })
+			await client.get('/torrents.php', { query: { search: slug, sort, parent_cat } }),
 		)
 		let results = [] as scraper.Result[]
 		$('div.tgxtablerow:has(a[href^="magnet:?"])').each((i, el) => {

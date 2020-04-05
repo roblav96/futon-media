@@ -16,7 +16,7 @@ process.nextTick(() => {
 				Ids: [ItemId],
 			})
 		)[0]
-		if (Item.MediaStreams.find(v => v.Type == 'Subtitle')) return
+		if (Item.MediaStreams.find((v) => v.Type == 'Subtitle')) return
 		// console.log(`[${Session.short}] rxSubtitles ->`, emby.library.toTitle(Item))
 
 		for (let query of [
@@ -28,7 +28,7 @@ process.nextTick(() => {
 				silent: true,
 			})) as emby.RemoteSubtitle[]
 			Subtitles = _.orderBy(
-				Subtitles.filter(v => ['ass', 'srt'].includes(v.Format)),
+				Subtitles.filter((v) => ['ass', 'srt'].includes(v.Format)),
 				'DownloadCount',
 				'desc',
 			)

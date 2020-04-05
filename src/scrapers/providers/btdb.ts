@@ -13,9 +13,7 @@ export class Btdb extends scraper.Scraper {
 	sorts = ['length', 'popular']
 
 	async getResults(slug: string, sort: string) {
-		let $ = cheerio.load(
-			await client.get('/', { query: { s: slug, sort } as Partial<Query> })
-		)
+		let $ = cheerio.load(await client.get('/', { query: { s: slug, sort } as Partial<Query> }))
 		let results = [] as scraper.Result[]
 		$('li[class$="item"]').each((i, el) => {
 			try {
@@ -25,7 +23,7 @@ export class Btdb extends scraper.Scraper {
 					name: $el.find('h2[class$="title"] a[href*="/torrent/"]').attr('title'),
 					magnet: $el.find('div[class$="info"] a[href^="magnet:?"]').attr('href'),
 					seeders: utils.parseInt(
-						$el.find('div[class$="info"] span:nth-of-type(4)').text()
+						$el.find('div[class$="info"] span:nth-of-type(4)').text(),
 					),
 					stamp: utils.toStamp($el.find('div[class$="info"] span:nth-of-type(3)').text()),
 				} as scraper.Result)

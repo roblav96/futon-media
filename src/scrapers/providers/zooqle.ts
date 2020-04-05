@@ -17,7 +17,7 @@ export class Zooqle extends scraper.Scraper {
 	async getResults(slug: string, sort: string) {
 		let q = `${slug} category:${this.item.movie ? 'Movies' : 'TV'}`
 		let $ = cheerio.load(
-			await client.get('/search', { query: { q, s: sort } as Partial<Query> })
+			await client.get('/search', { query: { q, s: sort } as Partial<Query> }),
 		)
 		let results = [] as scraper.Result[]
 		$('table tr').each((i, el) => {

@@ -28,10 +28,7 @@ declare module 'simple-get' {
 		function put(options: Options, callback: Callback): Request
 	}
 
-	function SimpleGet(
-		options: SimpleGet.Options,
-		callback: SimpleGet.Callback
-	): SimpleGet.Request
+	function SimpleGet(options: SimpleGet.Options, callback: SimpleGet.Callback): SimpleGet.Request
 
 	export = SimpleGet
 }

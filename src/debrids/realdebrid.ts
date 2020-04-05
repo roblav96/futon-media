@@ -27,21 +27,21 @@ const ajax = new http.Http({
 
 export class RealDebrid extends debrid.Debrid {
 	static async cached(hashes: string[]) {
-		hashes = hashes.map(v => v.toLowerCase())
+		hashes = hashes.map((v) => v.toLowerCase())
 		let chunks = utils.chunks(hashes, 40)
-		let cached = hashes.map(v => false)
+		let cached = hashes.map((v) => false)
 		await pAll(
 			chunks.map((chunk, i) => async () => {
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client
 					.get(url, { delay: i > 0 && 300, memoize: process.DEVELOPMENT })
-					.catch(error => {
+					.catch((error) => {
 						console.error(`RealDebrid cache -> %O`, error)
 						return {}
 					})) as CacheResponse
-				chunk.forEach(hash => {
+				chunk.forEach((hash) => {
 					if (_.isPlainObject(_.get(response, `${hash}.rd[0]`))) {
-						cached[hashes.findIndex(v => v == hash)] = true
+						cached[hashes.findIndex((v) => v == hash)] = true
 					}
 				})
 			}),
@@ -64,7 +64,7 @@ export class RealDebrid extends debrid.Debrid {
 			files.push({
 				bytes: utils.toBytes(children.find('i').text()),
 				id: _.parseInt($el.attr('id').replace('file_', '')),
-				name: children[0].children.find(v => v.type == 'text').data.slice(0, -2),
+				name: children[0].children.find((v) => v.type == 'text').data.slice(0, -2),
 				selected: $el.attr('checked') == 'checked' ? 1 : 0,
 			} as File)
 		})
@@ -75,8 +75,8 @@ export class RealDebrid extends debrid.Debrid {
 			query: { id },
 			form: {
 				files_unwanted: files
-					.filter(v => v.selected == 1)
-					.map(v => v.id)
+					.filter((v) => v.selected == 1)
+					.map((v) => v.id)
 					.join(','),
 				start_torrent: 1,
 			},
@@ -86,7 +86,7 @@ export class RealDebrid extends debrid.Debrid {
 
 	async download() {
 		let transfers = (await client.get('/torrents', { query: { limit: 100 } })) as Transfer[]
-		let transfer = transfers.find(v => v.hash.toLowerCase() == this.infoHash)
+		let transfer = transfers.find((v) => v.hash.toLowerCase() == this.infoHash)
 		if (transfer) return true
 
 		let download = (await client.post('/torrents/addMagnet', {
@@ -96,11 +96,11 @@ export class RealDebrid extends debrid.Debrid {
 		let files = await RealDebrid.getTorrentFiles(download.id)
 
 		try {
-			_.remove(files, v => !utils.isVideo(v.name))
+			_.remove(files, (v) => !utils.isVideo(v.name))
 			if (_.isEmpty(files)) {
 				throw new Error('isEmpty files')
 			}
-			if (_.isEmpty(files.filter(v => v.selected == 1))) {
+			if (_.isEmpty(files.filter((v) => v.selected == 1))) {
 				throw new Error('isEmpty files selected')
 			}
 			let ok = await RealDebrid.postTorrentFiles(download.id, files)
@@ -121,7 +121,7 @@ export class RealDebrid extends debrid.Debrid {
 		return rds.sort((a, b) => _.size(b) - _.size(a))
 	}
 	async getFiles() {
-		let pairs = (await this.getCacheFiles()).map(v => _.toPairs(v)).flat()
+		let pairs = (await this.getCacheFiles()).map((v) => _.toPairs(v)).flat()
 		return _.uniqBy(pairs, '[0]').map(([id, file]) => {
 			return {
 				bytes: file.filesize,
@@ -134,7 +134,7 @@ export class RealDebrid extends debrid.Debrid {
 
 	async streamUrl(file: debrid.File, original: boolean) {
 		let rds = await this.getCacheFiles()
-		let ids = Object.keys(rds.find(v => _.isPlainObject(v[file.id.toString()])))
+		let ids = Object.keys(rds.find((v) => _.isPlainObject(v[file.id.toString()])))
 		let { id } = (await client.post('/torrents/addMagnet', {
 			form: { magnet: this.magnet },
 		})) as Download
@@ -144,8 +144,8 @@ export class RealDebrid extends debrid.Debrid {
 		})
 		let transfer = (await client.get(`/torrents/info/${id}`)) as Transfer
 		client.delete(`/torrents/delete/${id}`).catch(_.noop)
-		let selected = transfer.files.filter(v => v.selected == 1)
-		let link = transfer.links[selected.findIndex(v => v.id == file.id)]
+		let selected = transfer.files.filter((v) => v.selected == 1)
+		let link = transfer.links[selected.findIndex((v) => v.id == file.id)]
 		let unrestrict = (await client.post(`/unrestrict/link`, {
 			form: { link, remote: '1' },
 		})) as Unrestrict

@@ -21,7 +21,7 @@ export async function toMovieXml(item: media.Item) {
 		// Added: dayjs().format('YYYY-MM-DD'),
 		Language: item.movie.language,
 		// DateAdded: dayjs().format('YYYY-MM-DD hh:mm:ss'),
-		Genres: item.movie.genres.map(v => ({ Genre: _.startCase(v) })),
+		Genres: item.movie.genres.map((v) => ({ Genre: _.startCase(v) })),
 		ContentRating: item.movie.certification,
 		OriginalTitle: item.movie.title,
 		LocalTitle: item.movie.title,

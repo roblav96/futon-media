@@ -26,8 +26,8 @@ async function sync(first = false) {
 		),
 		http.client.get('https://newtrackon.com/api/stable', { silent: true }),
 	])) as string[]
-	let all = resolved.map(v => v.split('\n').filter(Boolean)).flat()
-	all = all.map(v => v.trim().replace('/announce', ''))
+	let all = resolved.map((v) => v.split('\n').filter(Boolean)).flat()
+	all = all.map((v) => v.trim().replace('/announce', ''))
 	TRACKERS = _.uniq(all).sort()
 	await db.put('trackers', TRACKERS, utils.duration(1, 'day'))
 }

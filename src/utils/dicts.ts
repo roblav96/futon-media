@@ -3,8 +3,8 @@ import * as fs from 'fs-extra'
 
 let naughty = fs.readFileSync(require.resolve('no-naughty-words/data/words.txt')).toString()
 export const NAUGHTY_WORDS = _.uniq(
-	_.map(naughty.split('\n').slice(611, -2), v => v.toLowerCase()),
-).filter(v => v.length >= 3)
+	_.map(naughty.split('\n').slice(611, -2), (v) => v.toLowerCase()),
+).filter((v) => v.length >= 3)
 
 export const SKIPS = [
 	'3d',

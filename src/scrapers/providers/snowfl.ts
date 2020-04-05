@@ -44,8 +44,8 @@ export class Snowfl extends scraper.Scraper {
 			query: { _: Date.now() } as Partial<Query>,
 		})) as Result[]
 		response = JSON.parse((response as any) || '[]')
-		let results = response.filter(v => !!v.age && !!v.magnet)
-		return results.map(v => {
+		let results = response.filter((v) => !!v.age && !!v.magnet)
+		return results.map((v) => {
 			return {
 				bytes: utils.toBytes(v.size),
 				magnet: v.magnet,

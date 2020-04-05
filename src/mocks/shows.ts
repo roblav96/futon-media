@@ -315,5 +315,5 @@ export const EPISODES = {
 	// '____': {____},
 }
 
-export const SEASONS = _.mapValues(EPISODES, v => _.omit(v, 'episode')) as typeof EPISODES
-export const SHOWS = _.mapValues(EPISODES, v => _.omit(v, 'episode', 'season')) as typeof EPISODES
+export const SEASONS = _.mapValues(EPISODES, (v) => _.omit(v, 'episode')) as typeof EPISODES
+export const SHOWS = _.mapValues(EPISODES, (v) => _.omit(v, 'episode', 'season')) as typeof EPISODES

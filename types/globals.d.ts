@@ -16,9 +16,7 @@ type Unpacked<T> = T extends (infer U)[]
 	: T
 type UnPromise<T> = T extends Promise<infer U> ? U : T
 
-type UnionToIntersection<U> = (U extends any
-	? (k: U) => void
-	: never) extends (k: infer I) => void
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
 	? I
 	: never
 

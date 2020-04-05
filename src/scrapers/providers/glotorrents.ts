@@ -18,7 +18,7 @@ export class GloTorrents extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get('/search_results.php', {
 				query: { search: slug, sort, cat: this.item.movie ? '1' : '41' } as Partial<Query>,
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('.t-row').each((i, el) => {

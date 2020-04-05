@@ -17,15 +17,17 @@ export class Parser {
 		}
 	}
 	get years() {
-		let years = [...this.slug.split(' ').map(v => _.parseInt(v))]
-		return _.sortBy(_.uniq(years.filter(v => _.inRange(v, 1921, new Date().getFullYear() + 1))))
+		let years = [...this.slug.split(' ').map((v) => _.parseInt(v))]
+		return _.sortBy(
+			_.uniq(years.filter((v) => _.inRange(v, 1921, new Date().getFullYear() + 1))),
+		)
 	}
 
 	private matches(regexes: RegExp[], groups: string[], slug?: string) {
-		let matches = regexes.map(v => Array.from((slug || this.slug).matchAll(v))).flat()
-		return groups.map(group => {
-			let ints = matches.map(v => _.parseInt(_.get(v, `groups.${group}`)))
-			return _.sortBy(_.uniq(ints.filter(v => _.inRange(v, 0, 100))))
+		let matches = regexes.map((v) => Array.from((slug || this.slug).matchAll(v))).flat()
+		return groups.map((group) => {
+			let ints = matches.map((v) => _.parseInt(_.get(v, `groups.${group}`)))
+			return _.sortBy(_.uniq(ints.filter((v) => _.inRange(v, 0, 100))))
 		})
 	}
 
@@ -46,9 +48,9 @@ export class Parser {
 			let regexes = [
 				/\b(s|se|season|vol|volume)\s?\d{1,2}(\s?(ch|chapter|e|ep|episode)\s?\d{1,2})+\b/gi,
 			]
-			let matches = regexes.map(v => Array.from(this.slug.matchAll(v))).flat()
-			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
-			ints = _.uniq(ints.filter(v => _.inRange(v, 0, 100)))
+			let matches = regexes.map((v) => Array.from(this.slug.matchAll(v))).flat()
+			let ints = matches.map((v) => v[0].split(/\D+/).map((vv) => _.parseInt(vv))).flat()
+			ints = _.uniq(ints.filter((v) => _.inRange(v, 0, 100)))
 			if (ints.length > 0) {
 				seasons.push(ints.shift())
 				episodes.push(..._.range(_.min(ints), _.max(ints) + 1))
@@ -88,13 +90,16 @@ export class Parser {
 					),
 				),
 			)
-			let indexes = matches.map(v => numbers.indexOf(_.get(v, 'groups.season')) + 1)
-			seasons.push(...indexes.filter(v => v > 0))
+			let indexes = matches.map((v) => numbers.indexOf(_.get(v, 'groups.season')) + 1)
+			seasons.push(...indexes.filter((v) => v > 0))
 		}
 		{
 			// 3 seasons
-			let [season] = this.matches([/\b(?<season>\d{1,2}) (season|seasons|volume|volumes)\b/gi], ['season'])
-			seasons.push(...season.map(v => _.range(1, v + 1)).flat())
+			let [season] = this.matches(
+				[/\b(?<season>\d{1,2}) (season|seasons|volume|volumes)\b/gi],
+				['season'],
+			)
+			seasons.push(...season.map((v) => _.range(1, v + 1)).flat())
 		}
 		{
 			// season 3 to 6
@@ -103,9 +108,9 @@ export class Parser {
 				/\bs((e|eason|easons)?\s?\d{1,2}\b)+/gi,
 				/\bvol((ume|umes)?\s?\d{1,2}\b)+/gi,
 			]
-			let matches = regexes.map(v => Array.from(slug.matchAll(v))).flat()
-			let ints = matches.map(v => v[0].split(/\D+/).map(vv => _.parseInt(vv))).flat()
-			ints = _.uniq(ints.filter(v => _.inRange(v, 0, 100)))
+			let matches = regexes.map((v) => Array.from(slug.matchAll(v))).flat()
+			let ints = matches.map((v) => v[0].split(/\D+/).map((vv) => _.parseInt(vv))).flat()
+			ints = _.uniq(ints.filter((v) => _.inRange(v, 0, 100)))
 			if (ints.length > 0) {
 				seasons.push(..._.range(_.min(ints), _.max(ints) + 1))
 			}
@@ -146,8 +151,8 @@ export class Parser {
 		return utils.compact({
 			episodes: `${this.episodes}`,
 			filter: this.filter,
-			parsed: utils.compact(_.mapValues(this.parsed, v => `${v}`)),
-			s00e00: utils.compact(_.mapValues(this.s00e00, v => `${v}`)),
+			parsed: utils.compact(_.mapValues(this.parsed, (v) => `${v}`)),
+			s00e00: utils.compact(_.mapValues(this.s00e00, (v) => `${v}`)),
 			seasons: `${this.seasons}`,
 			slug: this.slug,
 			years: `${this.years}`,

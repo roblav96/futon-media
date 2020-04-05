@@ -41,10 +41,10 @@ export default class Emitter<Names extends string, Data = any> extends EventEmit
 	offListener<Name extends Names>(
 		listener: EventEmitter3.Listener<Data>,
 		context?: any,
-		once?: boolean
+		once?: boolean,
 	) {
-		this.eventNames().forEach(name => {
-			this.listeners(name).forEach(fn => {
+		this.eventNames().forEach((name) => {
+			this.listeners(name).forEach((fn) => {
 				this.off(name, listener, context, once)
 			})
 		})
@@ -52,7 +52,7 @@ export default class Emitter<Names extends string, Data = any> extends EventEmit
 	}
 
 	offContext<Name extends Names>(name: Name, context: any, once?: boolean) {
-		this.listeners(name).forEach(fn => {
+		this.listeners(name).forEach((fn) => {
 			this.off(name, fn, context, once)
 		})
 		return this
@@ -63,6 +63,6 @@ export default class Emitter<Names extends string, Data = any> extends EventEmit
 	}
 
 	toPromise<Name extends Names>(name: Name) {
-		return new Promise<Data>(r => this.once(name, r))
+		return new Promise<Data>((r) => this.once(name, r))
 	}
 }

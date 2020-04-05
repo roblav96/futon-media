@@ -26,9 +26,9 @@ export const client = new http.Http({
 					debloat(response.data)
 				}
 				if (_.isArray(response.data)) {
-					response.data.forEach(result => {
+					response.data.forEach((result) => {
 						debloat(result)
-						media.TYPES.forEach(type => debloat(result[type]))
+						media.TYPES.forEach((type) => debloat(result[type]))
 					})
 				}
 			},
@@ -37,7 +37,7 @@ export const client = new http.Http({
 })
 function debloat(value) {
 	let keys = ['available_translations', 'images']
-	keys.forEach(key => _.unset(value, key))
+	keys.forEach((key) => _.unset(value, key))
 }
 
 export async function authorization() {
@@ -109,7 +109,7 @@ export async function aliases(type: media.MainContentType, id: string) {
 			memoize: true,
 			silent: true,
 		})) as Alias[]
-		return titles.filter(v => ['gb', 'nl', 'us'].includes(v.country)).map(v => v.title)
+		return titles.filter((v) => ['gb', 'nl', 'us'].includes(v.country)).map((v) => v.title)
 	} catch {
 		return []
 	}
@@ -130,8 +130,8 @@ export async function titles(queries: string[]) {
 		)
 	).flat()
 	return _.flatten(
-		results.filter(Boolean).map(result =>
-			media.TYPES.map(type => {
+		results.filter(Boolean).map((result) =>
+			media.TYPES.map((type) => {
 				let full = result[type] as Full
 				if (full) {
 					let year = full.first_aired ? dayjs(full.first_aired).year() : full.year
@@ -187,16 +187,16 @@ export async function resultsForPerson(person: Person) {
 			// profile: true,
 			silent: true,
 		})) as Credits
-		results.push(...credits.cast.filter(v => !!v.character && v.series_regular != false))
+		results.push(...credits.cast.filter((v) => !!v.character && v.series_regular != false))
 		for (let job in credits.crew) {
-			results.push(...credits.crew[job].filter(v => !!v.job))
+			results.push(...credits.crew[job].filter((v) => !!v.job))
 		}
 	}
-	return uniqWith(results.filter(v => !v.person))
+	return uniqWith(results.filter((v) => !v.person))
 }
 
 export function toFull(result: Result) {
-	return result[media.TYPES.find(type => !!result[type])] as Full
+	return result[media.TYPES.find((type) => !!result[type])] as Full
 }
 
 export function uniqWith(results: Result[]) {

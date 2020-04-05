@@ -13,7 +13,7 @@ fastify.post('/signup', async (request, reply) => {
 	let email = request.body.email as string
 	let password = request.body.password as string
 
-	let names = (await emby.User.get()).map(v => v.Name.toLowerCase())
+	let names = (await emby.User.get()).map((v) => v.Name.toLowerCase())
 	if (!names.includes(referral)) return { error: 'Unknown referral' }
 
 	if (!validator.isEmail(email)) return { error: 'Invalid email format' }
@@ -37,7 +37,7 @@ fastify.post('/signup', async (request, reply) => {
 			},
 			form: { email, userName, rawpw: password },
 		})
-		.catch(error => {
+		.catch((error) => {
 			console.error(`/signup emby connect register -> %O`, error)
 			return '{"Status":"ERROR","Message":"Emby connect user already exists."}'
 		})

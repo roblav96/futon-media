@@ -19,15 +19,13 @@ export class Demonoid extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get('/files/', {
 				query: { category, search: slug } as Partial<Query>,
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$('table.ttable_headinner tr:has(td[class^="tone_"])').each((i, el) => {
 			try {
 				let $el = $(el)
-				let result = {
-
-				} as scraper.Result
+				let result = {} as scraper.Result
 				results.push(result)
 			} catch (error) {
 				console.error(`${this.constructor.name} -> %O`, error.message)

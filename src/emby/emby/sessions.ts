@@ -19,10 +19,10 @@ export class Session {
 		Sessions.sort((a, b) => {
 			return new Date(b.LastActivityDate).valueOf() - new Date(a.LastActivityDate).valueOf()
 		})
-		return Sessions.map(v => new Session(v))
+		return Sessions.map((v) => new Session(v))
 	}
 	static async byUserId(UserId: string) {
-		return (await Session.get()).find(v => v.UserId == UserId)
+		return (await Session.get()).find((v) => v.UserId == UserId)
 	}
 
 	get Stamp() {
@@ -46,7 +46,7 @@ export class Session {
 	}
 
 	get short() {
-		let parts = [this.UserName, this.Client, this.DeviceName].map(v => v.replace(/\s+/g, ''))
+		let parts = [this.UserName, this.Client, this.DeviceName].map((v) => v.replace(/\s+/g, ''))
 		return `${parts[0]}@${parts[1]}.${parts[2]}|${ms(this.Age)}`
 	}
 	get json() {

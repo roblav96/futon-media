@@ -16,7 +16,7 @@ export class ExtraTorrentAg extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let $ = cheerio.load(
-			await client.get('/search/', { query: { search: slug, srt: sort } as Partial<Query> })
+			await client.get('/search/', { query: { search: slug, srt: sort } as Partial<Query> }),
 		)
 		let results = [] as scraper.Result[]
 		$('tr[class^="tl"]').each((i, el) => {

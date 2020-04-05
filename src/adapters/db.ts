@@ -34,15 +34,15 @@ export class Db {
 		if (keys.length == 0) return
 		console.warn(
 			`'${this.prefix}' flush '${pattern}' ->`,
-			keys.map(k => k.replace(`${this.prefix}:`, '')).sort(),
+			keys.map((k) => k.replace(`${this.prefix}:`, '')).sort(),
 		)
-		await this.pipeline(keys.map(v => ['del', v]))
+		await this.pipeline(keys.map((v) => ['del', v]))
 	}
 
 	async entries<T = any>(pattern = '*') {
 		let keys = await Db.redis.keys(`${this.prefix}:${pattern}`)
 		if (keys.length == 0) return [] as never
-		let values = await this.pipeline(keys.map(v => ['get', v]))
+		let values = await this.pipeline(keys.map((v) => ['get', v]))
 		return _.fromPairs(
 			keys.map((key, i) => [key.replace(`${this.prefix}:`, ''), JSON.parse(values[i])]),
 		) as Record<string, T>

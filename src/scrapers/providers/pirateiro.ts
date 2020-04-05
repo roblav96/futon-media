@@ -18,7 +18,7 @@ export class Pirateiro extends scraper.Scraper {
 		let $ = cheerio.load(
 			await client.get(`/torrents/`, {
 				query: { search: slug, orderby: sort, [category]: '1' } as Partial<Query>,
-			})
+			}),
 		)
 		let results = [] as scraper.Result[]
 		$(`table.torrenttable tr`).each((i, el) => {

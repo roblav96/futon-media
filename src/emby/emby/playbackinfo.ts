@@ -48,7 +48,7 @@ process.nextTick(async () => {
 			})),
 		),
 	)
-	rxPlaybackInfo.subscribe(async buffers => {
+	rxPlaybackInfo.subscribe(async (buffers) => {
 		let buffer = _.merge({}, ...buffers) as UnionToIntersection<UnArray<typeof buffers>>
 		// console.log('rxPlaybackInfo buffers ->', buffers)
 		if (_.size(buffer) == 3 && buffer.value.Id == buffer.ItemId) {
@@ -100,7 +100,7 @@ export class PlaybackInfo {
 	static UserNames = {} as Record<string, string>
 	static async setUserNames() {
 		let Users = await emby.User.get()
-		Users.forEach(v => (PlaybackInfo.UserNames[v.Id] = v.Name))
+		Users.forEach((v) => (PlaybackInfo.UserNames[v.Id] = v.Name))
 	}
 	get UserName() {
 		return PlaybackInfo.UserNames[this.UserId]
@@ -162,13 +162,13 @@ export class PlaybackInfo {
 				AudioCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
 			}
 		}
-		if (['ac3', 'eac3'].find(v => AudioCodecs.includes(v))) {
+		if (['ac3', 'eac3'].find((v) => AudioCodecs.includes(v))) {
 			AudioCodecs.push('ac3', 'eac3')
 		}
-		if (['dca', 'dts', 'dtshd'].find(v => AudioCodecs.includes(v))) {
+		if (['dca', 'dts', 'dtshd'].find((v) => AudioCodecs.includes(v))) {
 			AudioCodecs.push('dca', 'dts')
 		}
-		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean).map(v => v.replace(/^[^\w]/, ''))))
+		return _.sortBy(_.uniq(AudioCodecs.filter(Boolean).map((v) => v.replace(/^[^\w]/, ''))))
 	}
 	get VideoCodecs() {
 		let VideoCodecs = [] as string[]
@@ -182,7 +182,7 @@ export class PlaybackInfo {
 				VideoCodecs.push(this.flat[k.replace('.type', '.codec')] as string)
 			}
 		}
-		return _.sortBy(_.uniq(VideoCodecs.filter(Boolean).map(v => v.replace(/^[^\w]/, ''))))
+		return _.sortBy(_.uniq(VideoCodecs.filter(Boolean).map((v) => v.replace(/^[^\w]/, ''))))
 	}
 
 	get json() {

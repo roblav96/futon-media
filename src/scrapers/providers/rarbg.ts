@@ -22,7 +22,7 @@ export const client = scraper.Scraper.http({
 	} as Partial<Query>,
 	beforeRequest: {
 		append: [
-			async options => {
+			async (options) => {
 				if (options.query['get_token']) {
 					_.unset(options, 'memoize')
 					options.query = _.pick(options.query, ['app_id', 'get_token'])
@@ -51,15 +51,15 @@ export class Rarbg extends scraper.Scraper {
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
 		if (this.item.movie) return [JSON.stringify(query)]
-		let queries = this.item.queries.map(v => ({ ...query, search_string: v } as Query))
-		return [query].concat(queries).map(v => JSON.stringify(v))
+		let queries = this.item.queries.map((v) => ({ ...query, search_string: v } as Query))
+		return [query].concat(queries).map((v) => JSON.stringify(v))
 	}
 
 	async getResults(slug: string, sort: string) {
 		let response = (await client.get('/pubapi_v2.php', {
 			query: Object.assign({ sort } as Query, JSON.parse(slug)),
 		})) as Response
-		return (response.torrent_results || []).map(v => {
+		return (response.torrent_results || []).map((v) => {
 			return {
 				bytes: v.size,
 				magnet: v.download,

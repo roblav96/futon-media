@@ -19,13 +19,13 @@ export class Yts extends scraper.Scraper {
 			query: { query_term: slug } as Partial<Query>,
 		})) as Response
 		let movies = (response.data && response.data.movies) || []
-		let results = ((response.data && response.data.movies) || []).map(result => {
-			result.torrents = result.torrents.filter(v => v.quality != '3D')
+		let results = ((response.data && response.data.movies) || []).map((result) => {
+			result.torrents = result.torrents.filter((v) => v.quality != '3D')
 			// result.torrents = _.uniqWith(result.torrents, (from, to) => {
 			// 	if (to.quality != from.quality) return false
 			// 	return to.type == 'bluray'
 			// })
-			return result.torrents.map(v => {
+			return result.torrents.map((v) => {
 				let title = `${result.title_english || result.title} ${result.year}`
 				let name = `${title} ${v.quality} ${_.startCase(v.type)}`
 				return {

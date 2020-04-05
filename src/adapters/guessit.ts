@@ -6,7 +6,7 @@ import * as utils from '@/utils/utils'
 export async function guess(paths: string[]) {
 	let { stdout } = await execa('/usr/local/bin/guessit', ['-j', ...paths])
 	let lines = stdout.split('\n').filter(Boolean)
-	return lines.map(v => JSON.parse(v)) as Guess[]
+	return lines.map((v) => JSON.parse(v)) as Guess[]
 }
 
 interface Guess {

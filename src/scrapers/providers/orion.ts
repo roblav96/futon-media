@@ -41,13 +41,13 @@ export class Orion extends scraper.Scraper {
 			query: Object.assign(query, JSON.parse(slug)),
 		})) as Response
 		let streams = _.get(response, 'data.streams', []) as Stream[]
-		streams = streams.filter(stream => {
-			stream.link = stream.links.find(v => v.startsWith('magnet:?'))
+		streams = streams.filter((stream) => {
+			stream.link = stream.links.find((v) => v.startsWith('magnet:?'))
 			stream.magnet = (qs.parseUrl(stream.link).query as any) as scraper.MagnetQuery
 			if (!stream.magnet.xt) return false
 			return stream.magnet.xt.startsWith('urn:btih:') && stream.magnet.xt.length > 10
 		})
-		return streams.map(stream => {
+		return streams.map((stream) => {
 			return {
 				bytes: stream.file.size,
 				magnet: stream.link,

@@ -63,7 +63,7 @@ process.nextTick(async () => {
 })
 
 let pScrapeAllQueue = new pQueue({ concurrency: 1 })
-export let scrapeAllQueue = function(...args) {
+export let scrapeAllQueue = function (...args) {
 	return pScrapeAllQueue.add(() => scrapeAll(...args))
 } as typeof scrapeAll
 async function scrapeAll(item: media.Item, isHD: boolean) {
@@ -86,7 +86,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	}
 
 	let results = _.flatten(
-		await pAll(providers.map(Scraper => () => new Scraper(item).scrape(isHD))),
+		await pAll(providers.map((Scraper) => () => new Scraper(item).scrape(isHD))),
 	)
 
 	results = _.uniqWith(results, (from, to) => {
@@ -99,14 +99,14 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		to.stamp = _.ceil(_.min([to.stamp, from.stamp].filter(_.isFinite)))
 		return true
 	})
-	results = results.filter(v => !!v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
+	results = results.filter((v) => !!v && v.stamp > 0 && v.bytes > 0 && v.seeders >= 0)
 
-	let torrents = results.map(v => new torrent.Torrent(v, item))
+	let torrents = results.map((v) => new torrent.Torrent(v, item))
 	if (isHD) torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
 	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
 
 	console.time(`torrents.filter`)
-	let removed = _.remove(torrents, torrent => {
+	let removed = _.remove(torrents, (torrent) => {
 		try {
 			return !filters.torrents(torrent, item)
 		} catch (error) {
@@ -123,14 +123,14 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			`scrapeAll removed ->`,
 			// removed.map(v => v.short()),
 			// removed.map(v => [v.short(), v.filter]),
-			removed.filter(v => v.filter).map(v => [v.short(), v.filter]),
+			removed.filter((v) => v.filter).map((v) => [v.short(), v.filter]),
 			// removed.map(v => v.json()),
 			removed.length,
 		)
 	}
 
 	console.time(`torrents.cached`)
-	let cacheds = await debrids.cached(torrents.map(v => v.hash))
+	let cacheds = await debrids.cached(torrents.map((v) => v.hash))
 	torrents.forEach((v, i) => (v.cached = cacheds[i] || []))
 	console.timeEnd(`torrents.cached`)
 
@@ -174,7 +174,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			`scrapeAll torrents ->`,
 			// torrents.map(v => v.short()),
 			// torrents.map(v => [v.short(), v.filter]),
-			torrents.filter(v => v.filter).map(v => [v.short(), v.filter]),
+			torrents.filter((v) => v.filter).map((v) => [v.short(), v.filter]),
 			// torrents.map(v => v.json()),
 			torrents.length,
 		)
@@ -207,7 +207,7 @@ export class Scraper {
 
 	slugs() {
 		if (this.item.movie) return this.item.slugs
-		let queries = this.item.queries.map(v => `${this.item.slugs[0]} ${v}`)
+		let queries = this.item.queries.map((v) => `${this.item.slugs[0]} ${v}`)
 		let slugs = this.item.slugs.concat(queries)
 		return slugs
 	}
@@ -234,18 +234,18 @@ export class Scraper {
 				await pAll(
 					combos.map(([slug, sort], index) => async () => {
 						return (
-							await this.getResults(slug, sort).catch(error => {
+							await this.getResults(slug, sort).catch((error) => {
 								console.error(`${ctor} getResults -> %O`, error)
 								return [] as Result[]
 							})
-						).map(result => ({ providers: [ctor], ...result } as Result))
+						).map((result) => ({ providers: [ctor], ...result } as Result))
 					}),
 					{ concurrency: this.concurrency },
 				),
 			)
 		}
 
-		results = results.filter(result => {
+		results = results.filter((result) => {
 			if (!result) return
 			if (!result.magnet) return /** console.log(`⛔ !magnet ->`, result.name) */
 

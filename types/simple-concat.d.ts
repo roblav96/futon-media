@@ -3,7 +3,7 @@ declare module 'simple-concat' {
 
 	function simpleconcat(
 		response: IncomingMessage,
-		callback: (error: Error, data: Buffer) => void
+		callback: (error: Error, data: Buffer) => void,
 	): void
 
 	namespace simpleconcat {}

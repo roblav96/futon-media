@@ -33,7 +33,7 @@ process.nextTick(() => {
 					memoize: true,
 					silent: true,
 				})) as trakt.Result[]
-				let items = trakt.uniqWith(results.filter(Boolean)).map(v => new media.Item(v))
+				let items = trakt.uniqWith(results.filter(Boolean)).map((v) => new media.Item(v))
 				items.sort((a, b) => b.main.votes - a.main.votes)
 				if (_.isEmpty(items)) {
 					Session.Message(new Error(`Invalid ID match '${SearchTerm}'`))
@@ -59,7 +59,7 @@ process.nextTick(() => {
 
 			let results = (
 				await pAll(
-					[SearchTerm, `${SearchTerm}*`].map(query => async () =>
+					[SearchTerm, `${SearchTerm}*`].map((query) => async () =>
 						(await trakt.client.get('/search/movie,show', {
 							delay: 300,
 							query: {
@@ -74,18 +74,18 @@ process.nextTick(() => {
 					{ concurrency: 1 },
 				)
 			).flat()
-			let items = trakt.uniqWith(results.filter(Boolean)).map(v => new media.Item(v))
+			let items = trakt.uniqWith(results.filter(Boolean)).map((v) => new media.Item(v))
 			items.sort((a, b) => b.main.votes - a.main.votes)
 
 			if (process.DEVELOPMENT) {
 				console.log(
 					`rxSearch '${SearchTerm}' results ->`,
-					items.map(v => v.short),
+					items.map((v) => v.short),
 					items.length,
 				)
 			}
 
-			items = items.filter(v => {
+			items = items.filter((v) => {
 				if (v.invalid || v.junk) return false
 				let title = utils.stripStopWords(v.title)
 				if (words == 1) return utils.contains(title, SearchTerm)
@@ -95,16 +95,16 @@ process.nextTick(() => {
 
 			console.log(
 				`rxSearch '${SearchTerm}' items ->`,
-				items.map(v => v.short),
+				items.map((v) => v.short),
 				items.length,
 			)
 
 			let means = [1]
-			let votes = items.map(v => v.main.votes).filter(Boolean)
+			let votes = items.map((v) => v.main.votes).filter(Boolean)
 			if (votes.length > 0) {
 				means = [ss.rootMeanSquare(votes), ss.mean(votes), ss.harmonicMean(votes)]
 			}
-			means = means.map(v => _.clamp(_.floor(v), 1, 1000))
+			means = means.map((v) => _.clamp(_.floor(v), 1, 1000))
 			let mean = means[_.clamp(words - 1, 0, means.length - 1)]
 			if (words == 1) mean -= _.last(means) * 2
 			if (words >= 3) mean = 1
@@ -112,7 +112,7 @@ process.nextTick(() => {
 			means[means.length - 1] = _.min([mean, _.last(means)])
 			console.log(`rxSearch means ->`, means, `mean ->`, mean, `words ->`, words)
 
-			items = items.filter(item => {
+			items = items.filter((item) => {
 				let title = utils.stripStopWords(item.title)
 				if (words <= 3 && utils.equals(title, SearchTerm)) {
 					if (words == 1) {
@@ -141,7 +141,7 @@ process.nextTick(() => {
 	rxSearch.subscribe(async ({ SearchTerm, Session, items }) => {
 		console.info(
 			`rxSearch '${SearchTerm}' library addAll items ->`,
-			items.map(v => v.short),
+			items.map((v) => v.short),
 			items.length,
 		)
 		if (_.isEmpty(items)) return

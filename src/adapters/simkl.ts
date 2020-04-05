@@ -14,7 +14,7 @@ export const client = new http.Http({
 })
 
 export async function titles(queries: string[]) {
-	let combos = queries.map(v => ['movie', 'tv'].map(vv => [v, vv])).flat()
+	let combos = queries.map((v) => ['movie', 'tv'].map((vv) => [v, vv])).flat()
 	let results = (
 		await pAll(
 			combos.map(([query, type], i) => async () =>
@@ -28,7 +28,7 @@ export async function titles(queries: string[]) {
 			{ concurrency: 2 },
 		)
 	).flat()
-	return _.uniqBy(results, 'ids.simkl_id').map(v => ({ title: v.title, year: v.year }))
+	return _.uniqBy(results, 'ids.simkl_id').map((v) => ({ title: v.title, year: v.year }))
 }
 
 // if (process.DEVELOPMENT) {

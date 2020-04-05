@@ -26,8 +26,8 @@ async function getDebridStream(Item: emby.Item) {
 	let title = emby.library.toTitle(Item)
 
 	let Sessions = await emby.Session.get()
-	let Session = Sessions.find(v => v.ItemPath == Item.Path)
-	if (!Session) Session = _.first(Sessions.filter(v => !v.ItemPath))
+	let Session = Sessions.find((v) => v.ItemPath == Item.Path)
+	if (!Session) Session = _.first(Sessions.filter((v) => !v.ItemPath))
 	let useragent = await emby.PlaybackInfo.useragent(Session.UserId, Item.Id)
 	let PlaybackInfo = await emby.PlaybackInfo.get(useragent, Session.UserId, Item.Id)
 
@@ -50,13 +50,13 @@ async function getDebridStream(Item: emby.Item) {
 
 	let item = await emby.library.item(Item)
 	let torrents = await scraper.scrapeAllQueue(item, isHD)
-	let cacheds = torrents.filter(v => v.cached.length > 0)
+	let cacheds = torrents.filter((v) => v.cached.length > 0)
 	if (!isHD) {
-		cacheds = _.orderBy(cacheds, v => v.cached.includes('premiumize'), ['desc'])
+		cacheds = _.orderBy(cacheds, (v) => v.cached.includes('premiumize'), ['desc'])
 	}
 	console.log(
 		`strm cached torrents '${title}' ->`,
-		cacheds.map(v => v.short()),
+		cacheds.map((v) => v.short()),
 		cacheds.length,
 	)
 

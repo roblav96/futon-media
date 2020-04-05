@@ -160,7 +160,7 @@ export const rxHttp = rxLine.pipe(
 
 export const rxItemId = rxHttp.pipe(
 	Rx.op.filter(({ query }) => !!query.ItemId && !!query.UserId),
-	Rx.op.map(v => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
+	Rx.op.map((v) => ({ ...v, ItemId: v.query.ItemId, UserId: v.query.UserId })),
 	// Rx.op.debounceTime(10),
 	// Rx.op.distinctUntilChanged((a, b) => `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`),
 	// Rx.op.tap(({ ItemId }) => console.log(`tap rxItemId ->`, ItemId)),
@@ -173,7 +173,7 @@ export const rxItem = rxItemId.pipe(
 	Rx.op.debounceTime(100),
 	Rx.op.distinctUntilKeyChanged('ItemId'),
 	// Rx.op.throttleTime(1000, Rx.asyncScheduler, { leading: true, trailing: true }),
-	Rx.op.mergeMap(async v => {
+	Rx.op.mergeMap(async (v) => {
 		let [Item, Session] = await Promise.all([
 			emby.library.byItemId(v.ItemId),
 			emby.Session.byUserId(v.UserId),
