@@ -1,5 +1,4 @@
 export * from 'httpie'
-import * as http2 from 'http2-wrapper'
 import { globalAgent } from 'http'
 import { HttpieResponse } from 'httpie'
 import { parse, resolve } from 'url'

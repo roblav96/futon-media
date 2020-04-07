@@ -57,7 +57,6 @@
 		"fs-extra": "^8.0.1",
 		"get-stream": "^5.1.0",
 		"http-errors": "^1.7.2",
-		"http2-wrapper": "^1.0.0-beta.4",
 		"httpie": "^1.1.2",
 		"internal-ip": "^5.0.0",
 		"ioredis": "^4.16.0",
