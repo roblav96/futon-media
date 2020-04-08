@@ -268,6 +268,9 @@ export class Scraper {
 				{ encode: false, sort: false },
 			)}`
 			result.hash = magnet.xt.split(':').pop()
+			if (result.hash.length != 40) {
+				return /** console.log(`⛔ result.hash.length != 40 ->`, result.name) */
+			}
 
 			return true
 		})
