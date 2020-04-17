@@ -106,6 +106,7 @@ export const UPLOADERS = [
 	'fgt',
 	'geckos',
 	'grym',
+	'hulu',
 	'inspirit',
 	'kralimarko',
 	'lostfilm',
