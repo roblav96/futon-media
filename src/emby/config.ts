@@ -1,7 +1,7 @@
 import * as _ from 'lodash'
 import * as http from '@/adapters/http'
-import * as internalIp from 'internal-ip'
 import * as normalize from 'normalize-url'
+import * as os from 'os'
 import * as path from 'path'
 import * as Url from 'url-parse'
 import validator from 'validator'
@@ -28,9 +28,10 @@ export async function config(silent: boolean) {
 
 	let wanip = new Url(Info.WanAddress).hostname
 	if (validator.isIP(wanip)) {
-		let [ip] = _.compact(await Promise.all([internalIp.v4(), internalIp.v6()]))
-		if (!Info.WanAddress.includes(ip)) {
-			throw new Error(`Info.WanAddress -> '${wanip}' != '${ip}'`)
+		let addresses = Object.values(os.networkInterfaces()).map((v) => v.map((vv) => vv.address))
+		let ips = addresses.flat().filter(Boolean)
+		if (!ips.includes(wanip)) {
+			throw new Error(`Info.WanAddress -> '${wanip}' != '${ips}'`)
 		}
 	}
 

@@ -58,7 +58,6 @@
 		"get-stream": "^5.1.0",
 		"http-errors": "^1.7.2",
 		"httpie": "^1.1.2",
-		"internal-ip": "^5.0.0",
 		"ioredis": "^4.16.0",
 		"is-ip": "^3.0.0",
 		"js-levenshtein": "^1.1.6",
