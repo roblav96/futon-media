@@ -22,4 +22,5 @@ process.nextTick(async () => {
 	await import('@/emby/webhooks')
 	let timeout = setInterval(Function, 1 << 30)
 	exithook(() => clearTimeout(timeout))
+	exithook(() => console.warn(`exithook`))
 })
