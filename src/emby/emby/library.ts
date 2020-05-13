@@ -55,6 +55,9 @@ export const library = {
 		let Folders = (await emby.client.get('/Library/VirtualFolders', {
 			silent: true,
 		})) as VirtualFolder[]
+		if (_.isEmpty(Folders)) {
+			throw new Error(`isEmpty Folders`)
+		}
 		let boxsets = Folders.find((v) => v.CollectionType == 'boxsets')
 		if (boxsets) {
 			library.folders.boxsets = { Location: boxsets.Locations[0], ItemId: boxsets.ItemId }
