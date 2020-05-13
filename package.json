@@ -15,7 +15,7 @@
 		"build": "tsc || true",
 		"assert:build": "test ! -d dist && run-s build",
 		"restart": "run-s stop; daemonize -c $PWD -e ~/.daemonize/futon-media.log -o ~/.daemonize/futon-media.log -a -p ~/.daemonize/futon-media.pid -l ~/.daemonize/futon-media.pid /usr/bin/env -i bash -l -c 'node dist/index.js'; tail -f -n 0 ~/.daemonize/futon-media.log",
-		"stop": "pkill -INT -P $(cat ~/.daemonize/futon-media.pid) 2>/dev/null || true",
+		"stop": "pkill --echo --signal=INT --pidfile ~/.daemonize/futon-media.pid || true",
 		"logs": "tail -f -n 1000 ~/.daemonize/futon-media.log",
 		"del": "del dist node_modules",
 		"start": "del dist; run-p --silent watch:*",
