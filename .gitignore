@@ -2,6 +2,7 @@ dist
 logs
 node_modules
 
+*.pid
 *.log*
 .*cache*
 .*env*
