@@ -17,6 +17,8 @@
 		"restart": "run-s stop; daemonize -c $PWD -e ~/.daemonize/futon-media.log -o ~/.daemonize/futon-media.log -a -p ~/.daemonize/futon-media.pid -l ~/.daemonize/futon-media.pid /usr/bin/env -i bash -l -c 'node dist/index.js'; tail -f -n 0 ~/.daemonize/futon-media.log",
 		"stop": "pkill --echo --signal=INT --pidfile ~/.daemonize/futon-media.pid || true",
 		"logs": "tail -f -n 1000 ~/.daemonize/futon-media.log",
+		"tshark:start": "sudo daemonize -c $PWD -e ~/.daemonize/tshark.log -o ~/.daemonize/tshark.log -a -p ~/.daemonize/tshark.pid -l ~/.daemonize/tshark.pid -u root /usr/local/bin/websocat --exit-on-eof --text ws-l:127.0.0.1:8080 broadcast:sh-c:'tshark -i lo -Y http.request -T ek -J http -n -Q dst port 18096'",
+		"tshark:stop": "sudo kill -SIGTERM -- -$(sudo cat ~/.daemonize/tshark.pid)",
 		"del": "del dist node_modules",
 		"start": "del dist; run-p --silent watch:*",
 		"watch:tsc": "tsc --watch --incremental",
