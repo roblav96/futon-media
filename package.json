@@ -23,9 +23,9 @@
 		"watch:tsc": "tsc --watch --incremental",
 		"watch:node": "wait-for-change dist/index.js && sleep 0.1 && watchexec --restart --debounce 100 --watch dist --exts js -- NODE_ENV=development node --inspect dist/index.js",
 		"test": "del dist; run-s assert:build; node dist/index.js || true",
-		"emby:restart": "echo 'killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
-		"emby:del": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/transcoding-temp/*;'",
-		"emby:del:all": "echo 'rm -rf ~/.config/emby-server/cache/*; rm -rf ~/.config/emby-server/data/activitylog.*; rm -rf ~/.config/emby-server/data/collections/*; rm -rf ~/.config/emby-server/data/displaypreferences.*; rm -rf ~/.config/emby-server/data/library.*; rm -rf ~/.config/emby-server/data/playlists/*; rm -rf ~/.config/emby-server/logs/*; rm -rf ~/.config/emby-server/media/movies/*; rm -rf ~/.config/emby-server/media/shows/*; rm -rf ~/.config/emby-server/metadata/library/*; rm -rf ~/.config/emby-server/root/default/*; rm -rf ~/.config/emby-server/transcoding-temp/*;'",
+		"emby:restart": "echo ' killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
+		"emby:del": "echo ' command rm -rf ~/.config/emby-server/cache/*; command rm -rf ~/.config/emby-server/data/activitylog.*; command rm -rf ~/.config/emby-server/data/collections/*; command rm -rf ~/.config/emby-server/data/playlists/*; command rm -rf ~/.config/emby-server/logs/*; command rm -rf ~/.config/emby-server/media/movies/*; command rm -rf ~/.config/emby-server/media/shows/*; command rm -rf ~/.config/emby-server/metadata/library/*; command rm -rf ~/.config/emby-server/metadata/livetv/*; command rm -rf ~/.config/emby-server/transcoding-temp/*;'",
+		"emby:del:all": "echo ' command rm -rf ~/.config/emby-server/cache/*; command rm -rf ~/.config/emby-server/data/activitylog.*; command rm -rf ~/.config/emby-server/data/collections/*; command rm -rf ~/.config/emby-server/data/displaypreferences.*; command rm -rf ~/.config/emby-server/data/library.*; command rm -rf ~/.config/emby-server/data/playlists/*; command rm -rf ~/.config/emby-server/logs/*; command rm -rf ~/.config/emby-server/media/movies/*; command rm -rf ~/.config/emby-server/media/shows/*; command rm -rf ~/.config/emby-server/metadata/library/*; command rm -rf ~/.config/emby-server/metadata/livetv/*; command rm -rf ~/.config/emby-server/root/default/*; command rm -rf ~/.config/emby-server/transcoding-temp/*;'",
 		"scripts:users-sync": "run-s assert:build; node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {
@@ -130,7 +130,7 @@
 		"@types/yauzl": "^2.9.1",
 		"del-cli": "^3.0.0",
 		"dts-generate": "^1.4.0",
-		"forever": "^2.0.0",
+		"node-env-dev": "^1.8.25",
 		"npm-run-all": "^4.1.5",
 		"typescript": "^3.7.5",
 		"wait-for-change": "^1.1.1"
