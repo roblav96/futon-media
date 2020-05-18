@@ -4,15 +4,11 @@
 		"experimentalDecorators": true,
 		"lib": ["esnext"],
 		"module": "commonjs",
-		"moduleResolution": "node",
-		"noErrorTruncation": true,
-		"noImplicitThis": true,
 		"outDir": "dist",
 		"paths": { "@/*": ["src/*"] },
-		"preserveWatchOutput": true,
 		"sourceMap": true,
 		"target": "es2019"
 	},
 	"exclude": ["dist", "node_modules"],
-	"include": ["types/**/*.d.ts", "src/**/*.ts"]
+	"include": ["src/**/*.d.ts", "src/**/*.ts"]
 }

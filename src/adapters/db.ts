@@ -9,7 +9,7 @@ export class Db {
 
 	constructor(public prefix: string) {
 		if (fs.pathExistsSync(prefix)) {
-			let dirname = path.dirname(process.mainModule.filename)
+			let dirname = path.dirname(require.main.filename)
 			this.prefix = path.relative(dirname, prefix).replace(/\//g, ':')
 			this.prefix = this.prefix.slice(0, this.prefix.lastIndexOf('.')).trim()
 		}
