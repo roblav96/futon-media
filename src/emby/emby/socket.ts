@@ -6,7 +6,7 @@ import * as qs from '@/shims/query-string'
 import * as Rx from '@/shims/rxjs'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import exithook = require('exit-hook')
+import exitHook = require('exit-hook')
 import Sockette, { ISockette } from '@/shims/sockette'
 
 export interface EmbyEvent<T = any> {
@@ -45,7 +45,7 @@ process.nextTick(() => {
 			rxSocket.next(value)
 		},
 	})
-	exithook(() => ws.close())
+	exitHook(() => ws.close())
 })
 
 // rxSocket.subscribe(({ MessageType, Data }) => {

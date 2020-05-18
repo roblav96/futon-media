@@ -1,5 +1,4 @@
 import '@/devops/imports'
-import 'dts-generate'
 import * as _ from 'lodash'
 import * as ansi from 'ansi-colors'
 import * as dayjs from 'dayjs'

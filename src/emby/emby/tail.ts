@@ -8,10 +8,10 @@ import * as Rx from '@/shims/rxjs'
 import * as schedule from 'node-schedule'
 import * as Url from 'url-parse'
 import * as utils from '@/utils/utils'
-import exithook = require('exit-hook')
+import exitHook = require('exit-hook')
 
 process.nextTick(() => {
-	exithook(() => Tail.disconnect(true))
+	exitHook(() => Tail.disconnect(true))
 	emby.rxSocket.subscribe(({ MessageType }) => {
 		if (['OnClose', 'OnError'].includes(MessageType)) Tail.disconnect()
 		if (['OnOpen'].includes(MessageType)) Tail.connect()

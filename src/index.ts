@@ -3,7 +3,7 @@ import 'module-alias/register'
 import 'dotenv/config'
 import '@/devops/devops'
 import * as mri from 'mri'
-import exithook = require('exit-hook')
+import exitHook = require('exit-hook')
 
 process.nextTick(async () => {
 	let argvs = mri(process.argv.slice(2))
@@ -21,6 +21,6 @@ process.nextTick(async () => {
 	await import('@/emby/subtitles')
 	await import('@/emby/webhooks')
 	let timeout = setInterval(Function, 1 << 30)
-	exithook(() => clearTimeout(timeout))
-	exithook(() => console.warn(`exithook`))
+	exitHook(() => clearTimeout(timeout))
+	exitHook(() => console.warn(`exitHook`))
 })
