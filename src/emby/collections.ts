@@ -73,6 +73,7 @@ async function syncCollections() {
 		if (a.ids.trakt == b.ids.trakt) return true
 		if (utils.equals(a.name, b.name)) return true
 	})
+	lists = lists.filter(list => list.item_count <= 1000)
 	schemas.push(
 		...lists.map((list) => {
 			return {
