@@ -26,8 +26,7 @@
 		"emby:restart": "echo 'killall EmbyServer; sleep 1; open -a EmbyServer; tail -f -n 100 ~/.config/emby-server/logs/embyserver.txt | sedbat'",
 		"emby:del": "echo ' command rm -rf ~/.config/emby-server/cache/*; command rm -rf ~/.config/emby-server/data/activitylog.*; command rm -rf ~/.config/emby-server/data/collections/*; command rm -rf ~/.config/emby-server/data/playlists/*; command rm -rf ~/.config/emby-server/logs/*; command rm -rf ~/.config/emby-server/media/movies/*; command rm -rf ~/.config/emby-server/media/shows/*; command rm -rf ~/.config/emby-server/metadata/library/*; command rm -rf ~/.config/emby-server/metadata/livetv/*; command rm -rf ~/.config/emby-server/transcoding-temp/*;'",
 		"emby:del:all": "echo ' command rm -rf ~/.config/emby-server/cache/*; command rm -rf ~/.config/emby-server/data/activitylog.*; command rm -rf ~/.config/emby-server/data/collections/*; command rm -rf ~/.config/emby-server/data/displaypreferences.*; command rm -rf ~/.config/emby-server/data/library.*; command rm -rf ~/.config/emby-server/data/playlists/*; command rm -rf ~/.config/emby-server/logs/*; command rm -rf ~/.config/emby-server/media/movies/*; command rm -rf ~/.config/emby-server/media/shows/*; command rm -rf ~/.config/emby-server/metadata/library/*; command rm -rf ~/.config/emby-server/metadata/livetv/*; command rm -rf ~/.config/emby-server/root/default/*; command rm -rf ~/.config/emby-server/transcoding-temp/*;'",
-		"assert:build": "test ! -d dist && run-s build",
-		"scripts:users-sync": "run-s assert:build; node dist/index.js --scripts users-sync"
+		"scripts:users-sync": "node dist/index.js --scripts users-sync"
 	},
 	"dependencies": {
 		"@ctrl/magnet-link": "^2.0.0",
@@ -115,9 +114,9 @@
 		"@types/fs-extra": "^9.0.1",
 		"@types/http-errors": "^1.6.3",
 		"@types/ioredis": "^4.16.3",
-		"@types/lodash": "^4.14.154",
+		"@types/lodash": "^4.14.155",
 		"@types/mri": "^1.1.0",
-		"@types/node": "^14.0.6",
+		"@types/node": "^14.0.9",
 		"@types/node-schedule": "^1.3.0",
 		"@types/pify": "^3.0.2",
 		"@types/prompts": "^2.0.8",

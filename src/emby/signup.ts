@@ -30,8 +30,7 @@ fastify.post('/signup', async (request, reply) => {
 			headers: {
 				'Host': 'connect.emby.media',
 				'Referer': 'https://app.emby.media/',
-				'User-Agent':
-					'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.12 Safari/537.36',
+				'User-Agent': `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.12 Safari/537.36`,
 				'X-Application': 'Emby Mobile/4.2.0.15',
 				'X-CONNECT-TOKEN': 'CONNECT-REGISTER',
 			},
