@@ -115,7 +115,7 @@ export class PlaybackInfo {
 		return this.UHD || HDs.includes(this.UserName.toLowerCase())
 	}
 	get Quality(): emby.Quality {
-		if (utils.includes(this.DeviceProfile.Name, 'roku')) return 'SD'
+		// if (utils.includes(this.DeviceProfile.Name, 'roku')) return 'SD'
 		if (this.AudioChannels > 2 && this.UHD) return 'UHD'
 		if (this.AudioChannels > 2 && this.HD) return 'HD'
 		return 'SD'
