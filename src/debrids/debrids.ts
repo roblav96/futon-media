@@ -75,7 +75,7 @@ export async function getStream(
 		let next = false
 		for (let cached of torrent.cached) {
 			if (next) continue
-			if (!isHD && cached == 'realdebrid') continue
+			// if (!isHD && cached == 'realdebrid') continue
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
 			let debrid = new debrids[cached](torrent.magnet)
 
