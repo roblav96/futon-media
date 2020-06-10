@@ -14,7 +14,7 @@ import { RealDebrid } from '@/debrids/realdebrid'
 import { Torrent } from '@/scrapers/torrent'
 
 export const debrids = {
-	// premiumize: Premiumize,
+	premiumize: Premiumize,
 	realdebrid: RealDebrid,
 }
 
