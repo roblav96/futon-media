@@ -124,5 +124,6 @@ fastify.get('/strm', async (request, reply) => {
 	}
 
 	if (!stream || stream == 'error') return reply.code(404).send(Buffer.from(''))
-	reply.redirect(stream)
+	return stream
+	// reply.redirect(stream)
 })
