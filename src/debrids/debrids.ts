@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as debrid from '@/debrids/debrid'
+import * as dicts from '@/utils/dicts'
 import * as ffprobe from '@/adapters/ffprobe'
 import * as filters from '@/scrapers/filters'
 import * as guessit from '@/adapters/guessit'
@@ -94,11 +95,17 @@ export async function getStream(
 					return true
 				}
 
+				if (dicts.SKIPS.filter((v) => !` ${file.parsed.slug} `.includes(` ${v} `))) {
+					file.parsed.filter = `⛔ SKIPS.filter`
+					return true
+				}
+
 				let bytes = file.bytes
 				if (file.parsed.episodes.length > 1) {
 					bytes = bytes / file.parsed.episodes.length
 				}
 				if (filters.runtime(file.parsed, item.runtime, bytes) == false) {
+					file.parsed.filter = `⛔ filters.runtime`
 					return true
 				}
 
