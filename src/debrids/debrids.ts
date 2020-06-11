@@ -95,10 +95,10 @@ export async function getStream(
 					return true
 				}
 
-				if (dicts.SKIPS.filter((v) => ` ${file.parsed.slug} `.includes(` ${v} `))) {
-					file.parsed.filter = `⛔ SKIPS.filter`
-					return true
-				}
+				// if (dicts.SKIPS.filter((v) => ` ${file.parsed.slug} `.includes(` ${v} `))) {
+				// 	file.parsed.filter = `⛔ SKIPS.filter`
+				// 	return true
+				// }
 
 				let bytes = file.bytes
 				if (file.parsed.episodes.length > 1) {
