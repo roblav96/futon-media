@@ -156,7 +156,7 @@ export async function getStream(
 			}
 
 			if (_.isEmpty(files)) {
-				console.warn(`!files ->`, torrent.short())
+				console.warn(`!files ->`, torrent.filter, torrent.short())
 				continue
 			}
 
