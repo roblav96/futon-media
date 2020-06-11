@@ -95,7 +95,7 @@ export async function getStream(
 					return true
 				}
 
-				if (dicts.SKIPS.filter((v) => !` ${file.parsed.slug} `.includes(` ${v} `))) {
+				if (dicts.SKIPS.filter((v) => ` ${file.parsed.slug} `.includes(` ${v} `))) {
 					file.parsed.filter = `⛔ SKIPS.filter`
 					return true
 				}
