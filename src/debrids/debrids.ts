@@ -162,8 +162,8 @@ export async function getStream(
 
 			let file = _.first(files)
 			console.log(`file ->`, { ...file, parsed: file.parsed.json() })
-			let original = !!isHD && !!AudioCodecs.find((v) => ['dts', 'truehd'].includes(v))
-			let stream = (await debrid.streamUrl(file, original).catch((error) => {
+			let original = AudioCodecs.includes('dts') && AudioCodecs.includes('truehd')
+			let stream = (await debrid.streamUrl(file, isHD && original).catch((error) => {
 				console.error(`debrid.streamUrl -> %O`, error)
 			})) as string
 			if (!stream) {
