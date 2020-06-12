@@ -13,7 +13,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	/** if (process.DEVELOPMENT) */ setTimeout(() => syncCollections(), 1000)
+	// if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
 	if (!process.DEVELOPMENT) schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 })
 
