@@ -13,7 +13,7 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
+	if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
 	if (!process.DEVELOPMENT) schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 })
 
@@ -106,7 +106,7 @@ async function syncCollections() {
 		// 	// 'Worlds of DC',
 		// ]
 		// schemas = schemas.filter(v => lists.includes(v.name))
-		schemas = schemas.filter((v) => utils.startsWith(v.name, 'movies most'))
+		schemas = schemas.filter((v) => utils.startsWith(v.name, 'shows most'))
 		// console.log(`schemas ->`, schemas)
 		// console.log(`schemas.length ->`, schemas.length)
 	}

@@ -1,4 +1,6 @@
 interface Env {
+	ALLDEBRID_AGENT: string
+	ALLDEBRID_KEY: string
 	EMBY_ADMIN_ID: string
 	EMBY_ADMIN_TOKEN: string
 	EMBY_API_KEY: string
