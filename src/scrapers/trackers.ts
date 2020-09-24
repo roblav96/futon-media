@@ -1,9 +1,12 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
+import * as magnetlink from '@/shims/magnet-link'
 import * as path from 'path'
 import * as pkgup from 'read-pkg-up'
+import * as qs from '@/shims/query-string'
 import * as schedule from 'node-schedule'
+import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
