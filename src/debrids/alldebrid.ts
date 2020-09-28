@@ -16,7 +16,7 @@ const client = new http.Http({
 		apikey: process.env.ALLDEBRID_KEY,
 	},
 	// retries: [503],
-	// silent: true,
+	silent: true,
 })
 
 export class AllDebrid extends debrid.Debrid {

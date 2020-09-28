@@ -377,7 +377,7 @@ export class Item {
 			utils.stripStopWords(v).includes(' ') ? utils.stripStopWords(v) : v,
 		)
 		slugs = _.uniq(slugs.map((v) => v.trim()).filter(Boolean))
-		if (this.isDaily) return [_.first(utils.byLength(slugs))]
+		if (this.show) return [_.first(utils.byLength(slugs))]
 		return slugs
 	}
 	get queries() {

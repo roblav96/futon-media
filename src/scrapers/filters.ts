@@ -164,6 +164,12 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		if (item.isDaily && aired(torrent, item.ep.a) == true) {
 			return true
 		}
+		if (item.se.t && setitle(torrent, item.se.ts) == true) {
+			return true
+		}
+		if (item.ep.t && item.ep.t != item.title && eptitle(torrent, item.ep.ts) == true) {
+			return true
+		}
 
 		// trilogy in torrent name
 		if (torrent.packs > item.seasons.length) {
@@ -173,12 +179,6 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 
 		if (!_.isEmpty(torrent.seasons) && !_.isEmpty(torrent.episodes)) {
 			return s00e00(torrent, item.se.n, item.ep.n)
-		}
-		if (item.se.t && setitle(torrent, item.se.ts) == true) {
-			return true
-		}
-		if (item.ep.t && eptitle(torrent, item.ep.ts) == true) {
-			return true
 		}
 		if (!_.isEmpty(torrent.seasons) && _.isEmpty(torrent.episodes)) {
 			let levens = utils.levens(torrent.slug, _.last(utils.allParts(_.last(item.titles))))

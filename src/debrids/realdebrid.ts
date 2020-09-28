@@ -22,7 +22,7 @@ const ajax = new http.Http({
 		cookie: `https=1; cookie_accept=y; auth=${process.env.REALDEBRID_COOKIE}; lang=en; apay-session-set=true`,
 	},
 	// retries: [503],
-	// silent: true,
+	silent: true,
 })
 
 export class RealDebrid extends debrid.Debrid {
