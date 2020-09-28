@@ -9,8 +9,8 @@
 // })
 
 // process.nextTick(async () => {
-// 	if (!process.DEVELOPMENT) return
-// 	if (process.DEVELOPMENT) return
+// 	if (process.env.NODE_ENV != 'development') return
+// 	if (process.env.NODE_ENV == 'development') return
 // })
 
 // export class Offcloud extends debrid.Debrid<Transfer> {
@@ -24,7 +24,7 @@
 // 					.post(`/torrent/check`, {
 // 						delay: 300,
 // 						body: { hashes: chunk },
-// 						memoize: process.DEVELOPMENT,
+// 						memoize: process.env.NODE_ENV == 'development',
 // 						silent: true,
 // 					})
 // 					.catch(error => {

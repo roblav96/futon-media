@@ -31,7 +31,7 @@ export async function titles(queries: string[]) {
 	return _.uniqBy(results, 'ids.simkl_id').map((v) => ({ title: v.title, year: v.year }))
 }
 
-// if (process.DEVELOPMENT) {
+// if (process.env.NODE_ENV == 'development') {
 // 	process.nextTick(async () => {
 // 		let results = await client.get('/search/anime', { query: { q: 'the body', limit: 50 } })
 // 		global.dts(results, `results`)

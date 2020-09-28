@@ -19,7 +19,7 @@ process.nextTick(() => {
 		Rx.op.filter(({ SearchTerm }) => utils.stripStopWords(SearchTerm).length >= 2),
 		Rx.op.debounceTime(100),
 		Rx.op.distinctUntilChanged((a, b) => {
-			if (process.DEVELOPMENT) return false
+			if (process.env.NODE_ENV == 'development') return false
 			return a.SearchTerm == b.SearchTerm
 		}),
 		// Rx.op.distinctUntilKeyChanged('SearchTerm'),
@@ -77,7 +77,7 @@ process.nextTick(() => {
 			let items = trakt.uniqWith(results.filter(Boolean)).map((v) => new media.Item(v))
 			items.sort((a, b) => b.main.votes - a.main.votes)
 
-			if (process.DEVELOPMENT) {
+			if (process.env.NODE_ENV == 'development') {
 				console.log(
 					`rxSearch '${SearchTerm}' results ->`,
 					items.map((v) => v.short),

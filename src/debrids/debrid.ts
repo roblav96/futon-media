@@ -20,6 +20,7 @@ export interface File {
 	bytes: number
 	id: number
 	levens: number
+	link: string
 	mkv: string
 	mp4: string
 	name: string

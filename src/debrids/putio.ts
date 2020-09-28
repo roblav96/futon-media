@@ -49,12 +49,12 @@
 // 			let values = value.map(v => Json.parse(v).value || v)
 // 			values.forEach(({ type, value }) => {
 // 				if (!type) {
-// 					// process.DEVELOPMENT && console.log(`Putio !type '${type}' ->`, value)
+// 					// process.env.NODE_ENV == 'development' && console.log(`Putio !type '${type}' ->`, value)
 // 					return
 // 				}
 // 				let [target, action] = type.split('_') as string[]
 // 				if (!rx[target]) {
-// 					// process.DEVELOPMENT && console.log(`Putio !rx[${target}] '${type}' ->`, value)
+// 					// process.env.NODE_ENV == 'development' && console.log(`Putio !rx[${target}] '${type}' ->`, value)
 // 					return
 // 				}
 // 				rx[target].next({ action, value } as PutioEvent)
@@ -63,7 +63,7 @@
 // 	})
 // 	exithook(() => ws.close())
 
-// 	if (process.DEVELOPMENT) return
+// 	if (process.env.NODE_ENV == 'development') return
 
 // 	let rxNullUpdate = rx.transfer.pipe(
 // 		Rx.op.filter(({ action }) => action == 'update'),

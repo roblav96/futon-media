@@ -15,7 +15,7 @@ process.nextTick(() => {
 	let rxFavorite = emby.rxItemId.pipe(
 		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
 		Rx.op.distinctUntilChanged((a, b) => {
-			if (process.DEVELOPMENT) return false
+			if (process.env.NODE_ENV == 'development') return false
 			return `${a.ItemId}${a.UserId}` == `${b.ItemId}${b.UserId}`
 		}),
 	)
@@ -30,10 +30,10 @@ process.nextTick(() => {
 
 		let item = await emby.library.item(Item)
 		let isHD = PlaybackInfo ? PlaybackInfo.Quality != 'SD' : false
-		if (process.DEVELOPMENT) isHD = true
+		if (process.env.NODE_ENV == 'development') isHD = true
 		let torrents = await scraper.scrapeAllQueue(item, isHD)
 
-		// if (process.DEVELOPMENT) {
+		// if (process.env.NODE_ENV == 'development') {
 		// 	console.log(
 		// 		`rxFavorite cached torrents '${item.strm}' ->`,
 		// 		torrents.filter(v => v.cached.length > 0).map(v => [v.short(), v.minmagnet]),

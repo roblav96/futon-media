@@ -64,15 +64,15 @@ export const db = new Db(__filename)
 export default db
 
 process.nextTick(async () => {
-	process.DEVELOPMENT && _.defaults(global, await import('@/adapters/db'))
-	// if (process.DEVELOPMENT) {
+	process.env.NODE_ENV == 'development' && _.defaults(global, await import('@/adapters/db'))
+	// if (process.env.NODE_ENV == 'development') {
 	// 	let mocks = await import('@/mocks/mocks')
 	// 	await db.put(`UserId:${Math.random().toString()}`, Math.random().toString())
 	// 	await db.put('mocks:ant-man-and-the-wasp-2018', mocks.MOVIES['ant-man-and-the-wasp-2018'])
 	// 	let entries = await db.entries()
 	// 	console.log(`db entriess ->`, entries)
 	// }
-	// if (process.DEVELOPMENT) {
+	// if (process.env.NODE_ENV == 'development') {
 	// 	let mocks = await import('@/mocks/mocks')
 	// 	let all = [mocks.MOVIES, mocks.SHOWS, mocks.EPISODES, mocks.PEOPLE].map(_.values).flat()
 	// 	let suite = new (await import('benchmarkify'))().createSuite('db.js', { time: 3000 })

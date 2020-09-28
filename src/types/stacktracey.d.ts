@@ -32,7 +32,7 @@ declare module 'stacktracey' {
 		static stack?: any
 		static withSource(...args: any[]): void
 		constructor(...args: any[])
-		at(...args: any[]): void
+		at(index: number): StackTracey.Site
 		withSource(...args: any[]): void
 	}
 

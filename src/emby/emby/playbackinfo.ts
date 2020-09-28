@@ -13,9 +13,9 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	// if (process.env.NODE_ENV == 'development') await db.flush()
 
-	if (!process.DEVELOPMENT) {
+	if (process.env.NODE_ENV != 'development') {
 		schedule.scheduleJob('* * * * *', () => PlaybackInfo.setUserNames())
 	}
 	emby.rxSocket.subscribe(({ MessageType }) => {
@@ -107,7 +107,7 @@ export class PlaybackInfo {
 	}
 
 	get UHD() {
-		let UHDs = ['developer', 'robert']
+		let UHDs = ['developer', 'robert', 'roblav96']
 		return UHDs.includes(this.UserName.toLowerCase())
 	}
 	get HD() {

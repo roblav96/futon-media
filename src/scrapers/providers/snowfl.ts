@@ -9,7 +9,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	// if (process.env.NODE_ENV == 'development') await db.flush()
 	await getToken()
 })
 
@@ -32,7 +32,7 @@ async function getToken() {
 }
 
 export class Snowfl extends scraper.Scraper {
-	enabled = !process.DEVELOPMENT
+	enabled = process.env.NODE_ENV != 'development'
 	sorts = ['SIZE', 'SEED']
 	concurrency = 1
 	max = 1

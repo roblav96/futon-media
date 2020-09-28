@@ -77,7 +77,7 @@ export async function toTags(item: media.Item) {
 	})
 }
 
-// if (process.DEVELOPMENT) {
+// if (process.env.NODE_ENV == 'development') {
 // 	process.nextTick(async () => {
 // 		let tags = await toTags(new media.Item(MOVIES['ready-player-one-2018'] as any))
 // 		console.log('tags ->', tags)

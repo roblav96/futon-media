@@ -7,8 +7,8 @@ import exitHook = require('exit-hook')
 
 process.nextTick(async () => {
 	let argvs = mri(process.argv.slice(2))
-	await (await import('@/emby/config')).config(process.DEVELOPMENT || argvs.scripts)
-	if (process.DEVELOPMENT) await import('@/mocks/mocks')
+	await (await import('@/emby/config')).config(process.env.NODE_ENV == 'development' || argvs.scripts)
+	if (process.env.NODE_ENV == 'development') await import('@/mocks/mocks')
 	if (argvs.scripts) {
 		return await import(`@/scripts/${argvs.scripts}`)
 	}

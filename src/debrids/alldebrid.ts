@@ -30,12 +30,12 @@ export class AllDebrid extends debrid.Debrid {
 					.get('/magnet/instant', {
 						delay: i > 0 && 300,
 						query: { magnets: chunk },
-						memoize: process.DEVELOPMENT,
+						memoize: process.env.NODE_ENV == 'development',
 					})
 					.catch((error) => {
 						console.error(`AllDebrid cache -> %O`, error)
 						return {}
-					})) as CacheResponse
+					})) as MagnetsResponse<MagnetCache>
 				chunk.forEach((hash) => {
 					let magnet = response.data.magnets.find((v) => v.hash == hash)
 					if (magnet && magnet.instant == true) {
@@ -48,109 +48,84 @@ export class AllDebrid extends debrid.Debrid {
 		return cached
 	}
 
+	private magnetId: number
+
 	async download() {
-		let transfers = ((await client.get('/magnet/status')) as TransfersResponse).data.magnets
-		let transfer = transfers.find((v) => v.hash.toLowerCase() == this.infoHash)
+		let transfers = (await client.get('/magnet/status')) as MagnetsResponse<MagnetStatus>
+		let transfer = transfers.data.magnets.find((v) => v.hash.toLowerCase() == this.infoHash)
 		if (transfer) return true
-
-		//
-
-		let download = (await client.post('/torrents/addMagnet', {
-			form: { magnet: this.magnet },
-		})) as Download
-		await utils.pTimeout(3000)
-		let files = await RealDebrid.getTorrentFiles(download.id)
-
-		try {
-			_.remove(files, (v) => !utils.isVideo(v.name))
-			if (_.isEmpty(files)) {
-				throw new Error('isEmpty files')
-			}
-			if (_.isEmpty(files.filter((v) => v.selected == 1))) {
-				throw new Error('isEmpty files selected')
-			}
-			let ok = await RealDebrid.postTorrentFiles(download.id, files)
-			if (!ok) throw new Error('!ok')
-			return true
-		} catch (error) {
-			console.warn(`RealDebrid download '${error.message}' ->`, this.dn)
-			client.delete(`/torrents/delete/${download.id}`).catch(_.noop)
+		let download = (await client.post('/magnet/upload', {
+			query: { magnets: [this.infoHash] },
+		})) as MagnetsResponse<MagnetUpload>
+		let upload = download.data.magnets.find((v) => v.hash.toLowerCase() == this.infoHash)
+		if (!upload.ready) {
+			console.warn(`AllDebrid download magnet upload ->`, download.status)
 			return true
 		}
+		return true
 	}
 
-	async getCacheFiles() {
-		let response = (await client.get(
-			`/torrents/instantAvailability/${this.infoHash}`,
-		)) as CacheResponse
-		let rds = _.get(response, `${this.infoHash}.rd`, []) as CacheFile[]
-		return rds.sort((a, b) => _.size(b) - _.size(a))
-	}
 	async getFiles() {
-		let pairs = (await this.getCacheFiles()).map((v) => _.toPairs(v)).flat()
-		return _.uniqBy(pairs, '[0]').map(([id, file]) => {
+		let upload = ((await client.post('/magnet/upload', {
+			query: { magnets: [this.infoHash] },
+		})) as MagnetsResponse<MagnetUpload>).data.magnets.find(
+			(v) => v.hash.toLowerCase() == this.infoHash,
+		)
+		if (!upload.ready) {
+			throw new Error('!upload.ready')
+		}
+		let status = (await client.get('/magnet/status', { query: { id: upload.id } })).data
+			.magnets as MagnetStatus
+		let links = status.links.filter((v) => utils.isVideo(v.filename))
+		if (_.isEmpty(links)) {
+			throw new Error('_.isEmpty(links)')
+		}
+		let files = links.map((link) => {
 			return {
-				bytes: file.filesize,
-				id: _.parseInt(id),
-				name: file.filename.slice(0, -path.extname(file.filename).length),
-				path: `/${file.filename}`,
+				bytes: link.size,
+				link: link.link,
+				name: link.filename.slice(0, -path.extname(link.filename).length),
+				path: `/${link.filename}`,
 			} as debrid.File
 		})
+		return files.sort((a, b) => b.bytes - a.bytes)
 	}
 
 	async streamUrl(file: debrid.File, original: boolean) {
-		let rds = await this.getCacheFiles()
-		let ids = Object.keys(rds.find((v) => _.isPlainObject(v[file.id.toString()])))
-		let { id } = (await client.post('/torrents/addMagnet', {
-			form: { magnet: this.magnet },
-		})) as Download
-		await utils.pTimeout(1000)
-		await client.post(`/torrents/selectFiles/${id}`, {
-			form: { files: ids.join() },
-		})
-		let transfer = (await client.get(`/torrents/info/${id}`)) as Transfer
-		client.delete(`/torrents/delete/${id}`).catch(_.noop)
-		let selected = transfer.files.filter((v) => v.selected == 1)
-		let link = transfer.links[selected.findIndex((v) => v.id == file.id)]
-		let unrestrict = (await client.post(`/unrestrict/link`, {
-			form: { link, remote: '1' },
-		})) as Unrestrict
-		return unrestrict.download
+		let unlock = (await client.get('/link/unlock', { query: { link: file.link } }))
+			.data as LinkUnlock
+		return unlock.link
 	}
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/debrids/alldebrid')))
 }
 
-export interface CacheResponse {
+export interface MagnetsResponse<T> {
 	data: {
-		magnets: {
-			hash: string
-			instant: boolean
-			magnet: string
-		}[]
+		magnets: T[]
 	}
 	status: string
 }
-
-export interface TransfersResponse {
-	data: {
-		magnets: Transfer[]
+export interface MagnetCache {
+	hash: string
+	instant: boolean
+	magnet: string
+	error: {
+		code: string
+		message: string
 	}
-	status: string
 }
-export interface Transfer {
+export interface MagnetStatus {
+	completionDate: number
 	downloadSpeed: number
 	downloaded: number
 	filename: string
 	hash: string
 	id: number
-	links: {
-		filename: string
-		link: string
-		size: number
-	}[]
+	links: MagnetLink[]
+	notified: boolean
 	seeders: number
 	size: number
 	status: string
@@ -159,4 +134,38 @@ export interface Transfer {
 	uploadDate: number
 	uploadSpeed: number
 	uploaded: number
+}
+export interface MagnetLink {
+	filename: string
+	files: string[]
+	link: string
+	size: number
+}
+export interface MagnetUpload {
+	filename_original: string
+	hash: string
+	id: number
+	magnet: string
+	name: string
+	ready: boolean
+	size: number
+}
+export interface LinkUnlock {
+	filename: string
+	filesize: number
+	host: string
+	hostDomain: string
+	id: string
+	link: string
+	paws: boolean
+	streaming: any[]
+	streams: LinkStream[]
+}
+export interface LinkStream {
+	ext: string
+	filesize: number
+	id: string
+	link: string
+	name: string
+	quality: number
 }

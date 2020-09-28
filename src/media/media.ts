@@ -435,7 +435,7 @@ export class Item {
 		if (!result.type) {
 			let types = _.clone(TYPES).reverse()
 			result.type = types.find((v) => result[v])
-			if (!result.type && process.DEVELOPMENT) {
+			if (!result.type && process.env.NODE_ENV == 'development') {
 				console.warn(`!result.type ->`, result)
 				throw new Error(`!result.type`)
 			}
@@ -446,7 +446,7 @@ export class Item {
 	}
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/media/media')))
 }
 

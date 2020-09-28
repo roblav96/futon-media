@@ -9,9 +9,9 @@ const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 
 fastify.post('/signup', async (request, reply) => {
 	console.log(`/signup ->`, request.body)
-	let referral = (request.body.referral as string).toLowerCase()
-	let email = request.body.email as string
-	let password = request.body.password as string
+	let referral = ((request.body as any).referral as string).toLowerCase()
+	let email = (request.body as any).email as string
+	let password = (request.body as any).password as string
 
 	let names = (await emby.User.get()).map((v) => v.Name.toLowerCase())
 	if (!names.includes(referral)) return { error: 'Unknown referral' }

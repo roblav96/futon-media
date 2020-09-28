@@ -7,7 +7,7 @@ import * as utils from '@/utils/utils'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush())
+// process.nextTick(() => process.env.NODE_ENV == 'development' && db.flush())
 
 export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',

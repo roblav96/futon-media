@@ -22,7 +22,7 @@ for (let [method, color] of Object.entries({
 	console[method]['__wrapped'] && shimmer.unwrap(console, method as any)
 
 	shimmer.wrap(console, method as any, (fn: Function) => (...args: string[]) => {
-		if (method == 'debug' && !process.DEVELOPMENT) return _.noop()
+		if (method == 'debug' && process.env.NODE_ENV != 'development') return _.noop()
 
 		if (_.isString(args[0]) || _.isNumber(args[0])) {
 			let now = Date.now()
@@ -31,9 +31,9 @@ for (let [method, color] of Object.entries({
 			let ending = `+${ms(delta)}`
 
 			let indicator = '■'
-			if (process.DEVELOPMENT) {
+			if (process.env.NODE_ENV == 'development') {
 				indicator += '▶'
-				let site = new StackTracey()[1]
+				let site = new StackTracey().at(1)
 				let stack = site.beforeParse.replace(site.file, site.fileShort)
 				ending += ` ${stack}`
 			} else {
@@ -42,7 +42,7 @@ for (let [method, color] of Object.entries({
 
 			let highlight = ['warn', 'error'].includes(method) ? color : 'dim'
 			let heading = `\n${ansi[color](indicator)} ${ansi[highlight](`${ending}`)}\n`
-			if (process.DEVELOPMENT) {
+			if (process.env.NODE_ENV == 'development') {
 				let stdout = (console as any)._stdout as NodeJS.WriteStream
 				stdout.write(heading)
 			} else {

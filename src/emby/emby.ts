@@ -37,8 +37,9 @@ export * from '@/emby/emby/playbackinfo'
 export * from '@/emby/emby/sessions'
 export * from '@/emby/emby/socket'
 export * from '@/emby/emby/tail'
+// export * from '@/emby/emby/tshark'
 export * from '@/emby/emby/users'
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => ((global as any).emby = await import('@/emby/emby')))
 }

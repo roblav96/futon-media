@@ -28,7 +28,7 @@ export class Premiumize extends debrid.Debrid {
 					.post(`/cache/check`, {
 						delay: i > 0 && 300,
 						query: { items: chunk },
-						memoize: process.DEVELOPMENT,
+						memoize: process.env.NODE_ENV == 'development',
 					})
 					.catch((error) => {
 						console.error(`Premiumize cache -> %O`, error)
@@ -110,7 +110,7 @@ export class Premiumize extends debrid.Debrid {
 	}
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/debrids/premiumize')))
 }
 

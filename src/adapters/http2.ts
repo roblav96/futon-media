@@ -12,7 +12,7 @@ import safeStringify from 'safe-stable-stringify'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
-// process.nextTick(() => process.DEVELOPMENT && db.flush())
+// process.nextTick(() => process.env.NODE_ENV == 'development' && db.flush())
 
 export interface Http2Config {
 	baseUrl: string

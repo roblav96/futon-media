@@ -99,7 +99,7 @@ export class Torrent extends parser.Parser {
 	}
 
 	short() {
-		let flags = { R: 'R🔵', P: 'P🔴' }
+		let flags = { A: 'A🟠', P: 'P🔴', R: 'R🔵' }
 		let boost = `[${this.boost.toFixed(2)} x ${this.packs || ' '}]`
 		let providers = this.providers.map((provider) => {
 			let uncamels = utils.uncamel(provider).split(' ')
@@ -140,6 +140,6 @@ export class Torrent extends parser.Parser {
 	}
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/scrapers/torrent')))
 }

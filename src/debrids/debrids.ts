@@ -16,8 +16,8 @@ import { AllDebrid } from '@/debrids/alldebrid'
 import { Torrent } from '@/scrapers/torrent'
 
 export const debrids = {
-	// alldebrid: AllDebrid,
-	premiumize: Premiumize,
+	alldebrid: AllDebrid,
+	// premiumize: Premiumize,
 	// realdebrid: RealDebrid,
 }
 
@@ -53,14 +53,19 @@ async function download(torrents: Torrent[], item: media.Item) {
 	for (let torrent of torrents) {
 		console.log(`download torrent ->`, torrent.short(), [torrent.minmagnet])
 		if (
-			torrent.cached.includes('realdebrid') ||
-			(await new RealDebrid(torrent.magnet).download())
+			torrent.cached.includes('alldebrid') ||
+			(await new AllDebrid(torrent.magnet).download())
 		) {
 			if (
-				torrent.cached.includes('premiumize') ||
-				(await new Premiumize(torrent.magnet).download())
+				torrent.cached.includes('realdebrid') ||
+				(await new RealDebrid(torrent.magnet).download())
 			) {
-				return console.log(`👍 download torrents success ->`, torrent.short())
+				if (
+					torrent.cached.includes('premiumize') ||
+					(await new Premiumize(torrent.magnet).download())
+				) {
+					return console.log(`👍 download torrents success ->`, torrent.short())
+				}
 			}
 		}
 	}
@@ -84,6 +89,7 @@ export async function getStream(
 
 			let files = (await debrid.getFiles().catch((error) => {
 				console.error(`getFiles -> %O`, error)
+				return []
 			})) as debrid.File[]
 			files.forEach((file) => {
 				file.parsed = new parser.Parser(file.path, true)
@@ -144,7 +150,7 @@ export async function getStream(
 				}
 			})
 
-			if (process.DEVELOPMENT) {
+			if (process.env.NODE_ENV == 'development') {
 				// console.log(
 				// 	`removed ->`,
 				// 	removed.map(v => ({ ...v, parsed: v.parsed.json() })),

@@ -15,7 +15,7 @@ import { Readable } from 'stream'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	// if (process.env.NODE_ENV == 'development') await db.flush()
 	// await authorization()
 	// schedule.scheduleJob('0 * * * *', authorization)
 })

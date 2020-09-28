@@ -8,15 +8,15 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	if (process.DEVELOPMENT) await db.flush()
-	if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	if (process.env.NODE_ENV == 'development') await db.flush()
+	if (process.env.NODE_ENV == 'development') return console.warn(`DEVELOPMENT`)
 
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) =>
 			['Movie', 'Series', 'Season', 'Episode', 'Person'].includes(Item.Type),
 		),
 		Rx.op.distinctUntilChanged((a, b) => {
-			// if (process.DEVELOPMENT) return false
+			// if (process.env.NODE_ENV == 'development') return false
 			return `${a.Item.SeriesId || a.Item.Id}` == `${b.Item.SeriesId || b.Item.Id}`
 		}),
 	)

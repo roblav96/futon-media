@@ -368,6 +368,6 @@ export function fromBytes(value: number) {
 	return `${value.toFixed([2, 1, 1][value.toFixed(0).length])} ${unit.str}`
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/utils/utils')))
 }

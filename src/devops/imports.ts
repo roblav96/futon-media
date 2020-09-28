@@ -1,6 +1,6 @@
 import * as _ from 'lodash'
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => {
 		_.defaults(global, {
 			_: await import('lodash'),

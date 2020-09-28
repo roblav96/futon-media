@@ -17,6 +17,6 @@ export function encode(magnet: Magnet) {
 	return magnetEncode(magnet)
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/shims/magnet-link')))
 }

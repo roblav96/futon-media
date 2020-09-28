@@ -1,0 +1,28 @@
+{
+    "Serilog": {
+        "MinimumLevel": "Debug",
+        "WriteTo": [
+            {
+                "Name": "Console",
+                "Args": {
+                    "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level:u1}] {SourceContext}: {Message}{NewLine}{Exception}"
+                }
+            },
+            {
+                "Name": "Async",
+                "Args": {
+                    "configure": [
+                        {
+                            "Name": "File",
+                            "Args": {
+                                "path": "%JELLYFIN_LOG_DIR%//log_.log",
+                                "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level:u1}] {SourceContext}: {Message}{NewLine}{Exception}"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "Enrich": []
+    }
+}

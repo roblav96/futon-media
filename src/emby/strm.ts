@@ -19,7 +19,7 @@ const fastify = Fastify(process.env.EMBY_PROXY_PORT)
 const emitter = new Emitter<string, string>()
 
 const db = new Db(__filename)
-process.nextTick(() => process.DEVELOPMENT && db.flush())
+process.nextTick(() => process.env.NODE_ENV == 'development' && db.flush())
 
 async function getDebridStream(Item: emby.Item) {
 	let t = Date.now()
@@ -31,7 +31,7 @@ async function getDebridStream(Item: emby.Item) {
 	let useragent = await emby.PlaybackInfo.useragent(Session.UserId, Item.Id)
 	let PlaybackInfo = await emby.PlaybackInfo.get(useragent, Session.UserId, Item.Id)
 
-	if (process.DEVELOPMENT) {
+	if (process.env.NODE_ENV == 'development') {
 		// throw new Error(`DEVELOPMENT`)
 		// return 'https://imaginaryblueogre-sto.energycdn.com/dl/aAOuiBl5umEyeFVtvoa4kA/1573518735/675000842/5d8e693b9bfb56.35804272/Toy.Story.4.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv'
 		// return '0.0.0.0'
@@ -60,7 +60,7 @@ async function getDebridStream(Item: emby.Item) {
 		cacheds.length,
 	)
 
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
 
 	if (cacheds.length == 0) {
 		debrids.downloadQueue(torrents, item)
@@ -83,7 +83,7 @@ async function getDebridStream(Item: emby.Item) {
 		throw error
 	}
 
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
 
 	await db.put(skey, stream, utils.duration(1, 'day'))
 	Session.Message(`👍 Success 🔶 ${decodeURIComponent(path.basename(stream))}`)

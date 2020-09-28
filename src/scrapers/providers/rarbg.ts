@@ -6,7 +6,7 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	// if (process.env.NODE_ENV == 'development') await db.flush()
 })
 
 export const client = scraper.Scraper.http({

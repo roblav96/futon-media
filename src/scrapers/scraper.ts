@@ -20,7 +20,7 @@ import { LANGS, UPLOADERS } from '@/utils/dicts'
 
 let providers = [] as typeof Scraper[]
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) return console.warn(`DEVELOPMENT`)
+	// if (process.env.NODE_ENV == 'development') return console.warn(`DEVELOPMENT`)
 	// https://ibit.to/
 	// ████  https://www.putlockers.cr/  ████
 	// (await import('@/scrapers/providers/bitlord')).Bitlord,
@@ -56,7 +56,7 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
-		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
 		(await import('@/scrapers/providers/yts')).Yts,
 	]
@@ -72,7 +72,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	await item.setAll()
 	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
-	if (process.DEVELOPMENT) {
+	if (process.env.NODE_ENV == 'development') {
 		;(global as any).item = item
 		console.log(`item.titles ->`, item.titles)
 		console.log(`item.years ->`, item.years)
@@ -82,7 +82,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.log(`item.collisions ->`, item.collisions)
 		if (item.collection.name) console.log(`item.collection ->`, item.collection)
 		// console.log(`item.seasons ->`, item.seasons)
-		// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+		// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
 	}
 
 	let results = _.flatten(
@@ -116,7 +116,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	})
 	console.timeEnd(`torrents.filter`)
 
-	if (process.DEVELOPMENT) {
+	if (process.env.NODE_ENV == 'development') {
 		;(global as any).removed = removed
 		console.log(
 			Date.now() - t,
@@ -168,7 +168,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	if (isHD) torrents.sort((a, b) => b.boosts().bytes - a.boosts().bytes)
 	else torrents.sort((a, b) => b.boosts().seeders - a.boosts().seeders)
 
-	if (process.DEVELOPMENT) {
+	if (process.env.NODE_ENV == 'development') {
 		;(global as any).torrents = torrents
 		console.info(
 			Date.now() - t,
@@ -190,10 +190,10 @@ export interface Scraper {
 export class Scraper {
 	static http(config: http.Config) {
 		_.defaults(config, {
-			// debug: process.DEVELOPMENT,
+			// debug: process.env.NODE_ENV == 'development',
 			delay: 300,
 			memoize: true,
-			// profile: process.DEVELOPMENT,
+			// profile: process.env.NODE_ENV == 'development',
 			retries: [],
 			silent: true,
 			timeout: 10000,

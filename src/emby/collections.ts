@@ -13,8 +13,8 @@ import * as trakt from '@/adapters/trakt'
 import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
-	// if (process.DEVELOPMENT) setTimeout(() => syncCollections(), 1000)
-	if (!process.DEVELOPMENT) schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
+	// if (process.env.NODE_ENV == 'development') setTimeout(() => syncCollections(), 1000)
+	if (process.env.NODE_ENV != 'development') schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
 })
 
 const SCHEMAS = [
@@ -63,7 +63,7 @@ async function syncCollections() {
 		let response = (await trakt.client.get(url, {
 			headers: { authorization },
 			query: { limit, extended: '' },
-			memoize: process.DEVELOPMENT,
+			memoize: process.env.NODE_ENV == 'development',
 			silent: true,
 		})) as trakt.ResponseList[]
 		lists.push(...response.map((v) => v.list))
@@ -83,7 +83,7 @@ async function syncCollections() {
 		}),
 	)
 
-	if (process.DEVELOPMENT) {
+	if (process.env.NODE_ENV == 'development') {
 		// console.log(`schemas ->`, schemas.map(v => v.name))
 		// let lists = [
 		// 	// '007',
@@ -111,10 +111,10 @@ async function syncCollections() {
 		// console.log(`schemas.length ->`, schemas.length)
 	}
 
-	if (!process.DEVELOPMENT) console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
+	if (process.env.NODE_ENV != 'development') console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
 	else console.log(`syncCollections schemas ->`, schemas.map((v) => v.name).sort())
 
-	// if (process.DEVELOPMENT) throw new Error(`DEVELOPMENT`)
+	// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
 
 	for (let schema of schemas) {
 		let results = [] as trakt.Result[]
@@ -137,7 +137,7 @@ async function syncCollections() {
 			console.warn(`schema '${schema.name}' ->`, 'items.length == 0')
 			continue
 		}
-		if (process.DEVELOPMENT) console.log(`schema '${schema.name}' ->`, items.length)
+		if (process.env.NODE_ENV == 'development') console.log(`schema '${schema.name}' ->`, items.length)
 
 		await emby.library.addAll(items, { silent: true })
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })

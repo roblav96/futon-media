@@ -34,7 +34,10 @@ export class RealDebrid extends debrid.Debrid {
 			chunks.map((chunk, i) => async () => {
 				let url = `/torrents/instantAvailability/${chunk.join('/')}`
 				let response = (await client
-					.get(url, { delay: i > 0 && 300, memoize: process.DEVELOPMENT })
+					.get(url, {
+						delay: i > 0 && 300,
+						memoize: process.env.NODE_ENV == 'development',
+					})
 					.catch((error) => {
 						console.error(`RealDebrid cache -> %O`, error)
 						return {}
@@ -153,7 +156,7 @@ export class RealDebrid extends debrid.Debrid {
 	}
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/debrids/realdebrid')))
 }
 

@@ -173,7 +173,7 @@ export const library = {
 		return ((
 			await emby.client.get('/Items', {
 				query: _.mapValues(query, (v) => (_.isArray(v) ? _.uniq(v).join() : v)) as any,
-				// profile: process.DEVELOPMENT,
+				// profile: process.env.NODE_ENV == 'development',
 				silent: true,
 			})
 		).Items || []) as emby.Item[]
@@ -290,7 +290,7 @@ export const library = {
 				type: item.type,
 			} as StrmQuery)
 			let wan = process.env.EMBY_WAN_ADDRESS
-			if (process.DEVELOPMENT) wan = 'http://localhost:8096'
+			if (process.env.NODE_ENV == 'development') wan = 'http://localhost:8096'
 			await fs.outputFile(Path, `${wan}/strm?${query}`)
 		}
 		return Updated

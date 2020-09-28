@@ -166,6 +166,6 @@ export class Parser {
 	constructor(public name: string, public file = false) {}
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/scrapers/parser')))
 }

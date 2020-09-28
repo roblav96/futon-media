@@ -82,7 +82,7 @@ export async function toTrakt({ id, media_type }: Full) {
 		delay: 300,
 		query: { type: toType(media_type) },
 		memoize: true,
-		silent: !process.DEVELOPMENT,
+		silent: process.env.NODE_ENV != 'development',
 	})) as trakt.Result[]
 	return results.find((v) => trakt.toFull(v).ids.tmdb == id)
 }

@@ -167,7 +167,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		if (item.se.t && setitle(torrent, item.se.ts) == true) {
 			return true
 		}
-		if (item.ep.t && eptitle(torrent, item.ep.ts) == true) {
+		if (item.ep.t && item.ep.t != item.title && eptitle(torrent, item.ep.ts) == true) {
 			return true
 		}
 

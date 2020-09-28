@@ -12,9 +12,9 @@ import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
 process.nextTick(async () => {
-	// if (process.DEVELOPMENT) await db.flush()
+	// if (process.env.NODE_ENV == 'development') await db.flush()
 	await sync(true)
-	if (!process.DEVELOPMENT) schedule.scheduleJob('0 * * * *', () => sync())
+	if (process.env.NODE_ENV != 'development') schedule.scheduleJob('0 * * * *', () => sync())
 })
 
 export let TRACKERS = [] as string[]

@@ -48,6 +48,6 @@ export const PLAYBACK_INFO = {
 	),
 }
 
-if (process.DEVELOPMENT) {
+if (process.env.NODE_ENV == 'development') {
 	process.nextTick(async () => _.defaults(global, await import('@/mocks/mocks')))
 }
