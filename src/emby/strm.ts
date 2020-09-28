@@ -92,7 +92,9 @@ async function getDebridStream(Item: emby.Item) {
 }
 
 fastify.get('/strm', async (request, reply) => {
-	if (_.isEmpty(request.query)) return reply.code(404).send(Buffer.from(''))
+	if (_.isEmpty(request.query)) {
+		return reply.code(404).send(Buffer.from(''))
+	}
 
 	// console.warn(`reply.redirect`)
 	// return reply.redirect(
@@ -123,6 +125,8 @@ fastify.get('/strm', async (request, reply) => {
 		}
 	}
 
-	if (!stream || stream == 'error') return reply.code(404).send(Buffer.from(''))
-	reply.redirect(stream)
+	if (!stream || stream == 'error') {
+		return reply.code(404).send(Buffer.from(''))
+	}
+	return stream
 })
