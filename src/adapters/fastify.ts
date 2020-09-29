@@ -1,15 +1,23 @@
 import * as _ from 'lodash'
-import * as cors from 'fastify-cors'
 import * as mem from 'mem'
-import * as multipart from 'fastify-multipart'
 import * as qs from 'query-string'
+import cors from 'fastify-cors'
 import exitHook = require('exit-hook')
 import Fastify from 'fastify'
+import multipart from 'fastify-multipart'
 
 export default mem((port: string) => {
-	let fastify = Fastify({ querystringParser: (query) => qs.parse(query) })
-	// fastify.register(cors)
+	let fastify = Fastify({
+		connectionTimeout: 60000,
+		keepAliveTimeout: 30000,
+		querystringParser: (query) => qs.parse(query),
+	})
 	// fastify.register(multipart)
+	fastify.register(cors)
+	fastify.setErrorHandler((error, request, reply) => {
+		console.error('fastify.setErrorHandler -> %O', error)
+		reply.send({ error: error.message })
+	})
 	fastify.server.headersTimeout = 60000
 	fastify.server.keepAliveTimeout = 30000
 	fastify.server.requestTimeout = 60000

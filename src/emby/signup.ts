@@ -14,14 +14,14 @@ fastify.post('/signup', async (request, reply) => {
 	let password = (request.body as any).password as string
 
 	let names = (await emby.User.get()).map((v) => v.Name.toLowerCase())
-	if (!names.includes(referral)) return { error: 'Unknown referral' }
+	if (!names.includes(referral)) return { error: 'Referral not found' }
 
 	if (!validator.isEmail(email)) return { error: 'Invalid email format' }
-	let mailboxlayer = await http.client.get('https://apilayer.net/api/check', {
-		query: { access_key: process.env.MAILBOXLAYER_API_KEY, email },
-		silent: true,
-	})
-	if (!mailboxlayer.mx_found) return { error: 'Email not found' }
+	// let mailboxlayer = await http.client.get('https://apilayer.net/api/check', {
+	// 	query: { access_key: process.env.MAILBOXLAYER_API_KEY, email },
+	// 	silent: true,
+	// })
+	// if (!mailboxlayer.mx_found) return { error: 'Email not found' }
 
 	let Name = email.split('@')[0]
 	let userName = `${Name}.futon.media`
@@ -43,7 +43,7 @@ fastify.post('/signup', async (request, reply) => {
 	connect = Json.parse(connect).value || connect
 	if (connect.Status != 'SUCCESS') return { error: connect.Message }
 
-	let User = new emby.User(await emby.client.post('/Users/New', { form: { Name } }))
+	let User = new emby.User(await emby.client.post('/Users/New', { form: { Name: userName } }))
 	let DisplayPreferences = await User.getDisplayPreferences()
 	_.merge(DisplayPreferences, emby.defaults.DisplayPreferences)
 	await User.setDisplayPreferences(DisplayPreferences)
