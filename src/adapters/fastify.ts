@@ -12,7 +12,7 @@ export default mem((port: string) => {
 		keepAliveTimeout: 30000,
 		querystringParser: (query) => qs.parse(query),
 	})
-	// fastify.register(multipart)
+	fastify.register(multipart)
 	fastify.register(cors)
 	fastify.setErrorHandler((error, request, reply) => {
 		console.error('fastify.setErrorHandler -> %O', error)
