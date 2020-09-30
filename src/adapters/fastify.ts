@@ -10,6 +10,7 @@ export default mem((port: string) => {
 	let fastify = Fastify({
 		connectionTimeout: 60000,
 		keepAliveTimeout: 30000,
+		pluginTimeout: 30000,
 		querystringParser: (query) => qs.parse(query),
 	})
 	fastify.register(multipart)
