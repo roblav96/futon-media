@@ -74,6 +74,9 @@ export class Session {
 
 	constructor(Session: Session) {
 		_.merge(this, Session)
+		if (this.RemoteEndPoint == '::1') {
+			this.RemoteEndPoint = '127.0.0.1'
+		}
 	}
 
 	async User() {
