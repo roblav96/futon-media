@@ -23,7 +23,8 @@ fastify.post('/signup', async (request, reply) => {
 	// })
 	// if (!mailboxlayer.mx_found) return { error: 'Email not found' }
 
-	let Name = email.split('@')[0]
+	let Name = email.split('@')[0].toLowerCase()
+	if (names.includes(Name)) return { error: `User '${Name}' already exists` }
 	let userName = `${Name}.futon.media`
 	let connect = await http.client
 		.post('https://connect.emby.media/service/register', {
@@ -46,7 +47,7 @@ fastify.post('/signup', async (request, reply) => {
 	connect = Json.parse(connect).value || connect
 	if (connect.Status != 'SUCCESS') return { error: connect.Message }
 
-	let User = new emby.User(await emby.client.post('/Users/New', { form: { Name: userName } }))
+	let User = new emby.User(await emby.client.post('/Users/New', { form: { Name } }))
 	let DisplayPreferences = await User.getDisplayPreferences()
 	_.merge(DisplayPreferences, emby.defaults.DisplayPreferences)
 	await User.setDisplayPreferences(DisplayPreferences)
