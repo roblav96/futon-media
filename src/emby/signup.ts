@@ -37,8 +37,11 @@ fastify.post('/signup', async (request, reply) => {
 			form: { email, userName, rawpw: password },
 		})
 		.catch((error) => {
-			console.error(`/signup emby connect register -> %O`, error)
-			return '{"Status":"ERROR","Message":"Emby connect user already exists."}'
+			console.error('/signup emby connect register -> %O', error)
+			if (error.statusCode == 400) {
+				return '{"Status":"SUCCESS"}'
+			}
+			return `{"Status":"ERROR","Message":"${error.message}"}`
 		})
 	connect = Json.parse(connect).value || connect
 	if (connect.Status != 'SUCCESS') return { error: connect.Message }
