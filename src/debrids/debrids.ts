@@ -54,22 +54,22 @@ async function download(torrents: Torrent[], item: media.Item) {
 
 	for (let torrent of torrents) {
 		console.log(`download torrent ->`, torrent.short(), [torrent.minmagnet])
-		if (
-			torrent.cached.includes('alldebrid') ||
-			(await new AllDebrid(torrent.magnet).download())
-		) {
-			if (
-				torrent.cached.includes('realdebrid') ||
-				(await new RealDebrid(torrent.magnet).download())
-			) {
+		// if (
+		// 	torrent.cached.includes('alldebrid') ||
+		// 	(await new AllDebrid(torrent.magnet).download())
+		// ) {
+		// 	if (
+		// 		torrent.cached.includes('realdebrid') ||
+		// 		(await new RealDebrid(torrent.magnet).download())
+		// 	) {
 				if (
 					torrent.cached.includes('premiumize') ||
 					(await new Premiumize(torrent.magnet).download())
 				) {
 					return console.log(`👍 download torrents success ->`, torrent.short())
 				}
-			}
-		}
+		// 	}
+		// }
 	}
 }
 
