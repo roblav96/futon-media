@@ -29,6 +29,7 @@ interface Env {
 	TRAKT_CLIENT_SECRET: string
 	TVDB_KEY: string
 	TVDB_TOKEN: string
+	TVMAZE_KEY: string
 }
 
 declare namespace NodeJS {

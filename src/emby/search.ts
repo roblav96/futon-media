@@ -11,6 +11,7 @@ import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
 	let rxSearch = emby.rxHttp.pipe(
+		Rx.op.tap(line => console.log(`rxSearch tap ->`, line)),
 		Rx.op.filter(({ query }) => !!query.SearchTerm && !!query.UserId),
 		Rx.op.map(({ query }) => ({
 			SearchTerm: utils.trim(query.SearchTerm).toLowerCase(),

@@ -20,6 +20,7 @@ process.nextTick(async () => {
 	await import('@/emby/refresh')
 	await import('@/emby/subtitles')
 	await import('@/emby/webhooks')
+	// await import('@/debrids/relay')
 	let timeout = setInterval(Function, 1 << 30)
 	exitHook(() => clearTimeout(timeout))
 	exitHook(() => console.warn(`exitHook`))
