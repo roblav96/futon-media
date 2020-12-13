@@ -1,6 +1,8 @@
 import * as _ from 'lodash'
 import * as fs from 'fs-extra'
 
+// https://raw.githubusercontent.com/jackpick/Language-Analysis-Of-TV-Shows/master/Words.txt
+// https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en
 let naughty = fs.readFileSync(require.resolve('no-naughty-words/data/words.txt')).toString()
 export const NAUGHTY_WORDS = _.uniq(
 	_.map(naughty.split('\n').slice(611, -2), (v) => v.toLowerCase()),

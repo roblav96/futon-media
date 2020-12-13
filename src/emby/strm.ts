@@ -96,12 +96,16 @@ fastify.get('/strm', async (request, reply) => {
 		return reply.code(404).send(Buffer.from(''))
 	}
 
-	// console.warn(`reply.redirect`)
-	// return reply.redirect(
-	// 	'https://quinn.pm2.link/dl/vxgp18gP7yJR2NCHiH2aJA/1579659301/675000842/5dce4cc6253213.07477639/Star%20Wars%20The%20Clone%20Wars%2003x05%20Corruption.mkv',
-	// 	// 'https://flyingspagetthimonster-sto.energycdn.com/dl/6Cw0dVlagZ0XsudlflMZOA/1579628677/675000842/5a45f3291adae2.06406138/Star.Wars.The.Clone.Wars.BluRay.1080p.x264.5.1.Judas.mp4',
-	// 	// 'https://cuddlysnappywerewolf-sto.energycdn.com/dl/FTb4zDyoo8sn_UBy9uImCw/1579628672/675000842/5ce96f011dba82.75355021/Star.Wars.The.Clone.Wars.2008.1080p.BluRay.H264.AAC-RARBG.mp4',
-	// )
+	// if (process.env.NODE_ENV == 'development') {
+	// 	console.warn(`reply.redirect`)
+	// 	return 'https://m6auib.alldebridro.ovh:442/dl/1ya3ldpa6bf/His.Dark.Materials.2019.S01E04.2160p.HLG.WEB-DL.DTS-HD.MA.5.1.HEVC-BLUTONiUM.mkv'
+	// 	// return reply.redirect(
+	// 	// 	'https://stuckgarbagecan-sto.energycdn.com/dl/tLz7yzxRJIZ1pnQDhEKUYQ/1606499925/675000842/5fa9e69e3cabb8.60403783/His.Dark.Materials.2019.S01E04.2160p.HLG.WEB-DL.DTS-HD.MA.5.1.HEVC-BLUTONiUM.mkv'
+	// 	// 	// 'https://quinn.pm2.link/dl/vxgp18gP7yJR2NCHiH2aJA/1579659301/675000842/5dce4cc6253213.07477639/Star%20Wars%20The%20Clone%20Wars%2003x05%20Corruption.mkv',
+	// 	// 	// 'https://flyingspagetthimonster-sto.energycdn.com/dl/6Cw0dVlagZ0XsudlflMZOA/1579628677/675000842/5a45f3291adae2.06406138/Star.Wars.The.Clone.Wars.BluRay.1080p.x264.5.1.Judas.mp4',
+	// 	// 	// 'https://cuddlysnappywerewolf-sto.energycdn.com/dl/FTb4zDyoo8sn_UBy9uImCw/1579628672/675000842/5ce96f011dba82.75355021/Star.Wars.The.Clone.Wars.2008.1080p.BluRay.H264.AAC-RARBG.mp4',
+	// 	// )
+	// }
 
 	let { file, type } = request.query as emby.StrmQuery
 	let Item = await emby.library.byPath(emby.library.getFolder(type) + file)

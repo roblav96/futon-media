@@ -5,7 +5,7 @@
             {
                 "Name": "Console",
                 "Args": {
-                    "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level:u1}] {SourceContext}: {Message}{NewLine}{Exception}"
+                    "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level}] {SourceContext}: {Message}{NewLine}{Exception}"
                 }
             },
             {
@@ -16,7 +16,7 @@
                             "Name": "File",
                             "Args": {
                                 "path": "%JELLYFIN_LOG_DIR%//log_.log",
-                                "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level:u1}] {SourceContext}: {Message}{NewLine}{Exception}"
+                                "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level}] {SourceContext}: {Message}{NewLine}{Exception}"
                             }
                         }
                     ]
