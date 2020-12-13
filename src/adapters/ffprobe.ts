@@ -1,11 +1,13 @@
 import * as _ from 'lodash'
 import * as dayjs from 'dayjs'
 import * as execa from 'execa'
-import * as ffpath from 'ffprobe-binaries'
+import * as which from 'which'
 import * as ms from 'pretty-ms'
 import * as utils from '@/utils/utils'
 
 export async function probe(url: string) {
+	let ffpath = which.sync('ffprobe')
+	console.log('ffpath ->', ffpath)
 	let flags = ['-loglevel', 'quiet', '-print_format', 'json', '-show_streams']
 	let { stdout } = await execa(ffpath, flags.concat(url))
 	let value = JSON.parse(stdout) as Probe
