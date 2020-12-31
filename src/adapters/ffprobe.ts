@@ -7,8 +7,7 @@ import * as utils from '@/utils/utils'
 
 export async function probe(url: string) {
 	let ffpath = which.sync('ffprobe')
-	console.log('ffpath ->', ffpath)
-	let flags = ['-loglevel', 'quiet', '-print_format', 'json', '-show_streams']
+	let flags = ['-hide_banner', '-loglevel', 'quiet', '-print_format', 'json', '-show_streams']
 	let { stdout } = await execa(ffpath, flags.concat(url))
 	let value = JSON.parse(stdout) as Probe
 	if (value.format && value.format.tags) {
