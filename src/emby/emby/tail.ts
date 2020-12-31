@@ -119,7 +119,6 @@ export const rxHttp = rxLine.pipe(
 	Rx.op.filter(({ url, method }) => {
 		url = url.toLowerCase()
 		if (!['GET', 'POST', 'PUT', 'DELETE'].includes(method)) return false
-		if (!url.includes('/emby/')) return false
 		if (url.includes('/images/') || url.includes('/web/')) return false
 		return new Url(url).host != new Url(process.env.EMBY_LAN_ADDRESS).host
 	}),
