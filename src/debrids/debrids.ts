@@ -62,12 +62,12 @@ async function download(torrents: Torrent[], item: media.Item) {
 		// 		torrent.cached.includes('realdebrid') ||
 		// 		(await new RealDebrid(torrent.magnet).download())
 		// 	) {
-				if (
-					torrent.cached.includes('premiumize') ||
-					(await new Premiumize(torrent.magnet).download())
-				) {
-					return console.log(`👍 download torrents success ->`, torrent.short())
-				}
+		if (
+			torrent.cached.includes('premiumize') ||
+			(await new Premiumize(torrent.magnet).download())
+		) {
+			return console.log(`👍 download torrents success ->`, torrent.short())
+		}
 		// 	}
 		// }
 	}

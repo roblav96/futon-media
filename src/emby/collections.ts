@@ -14,7 +14,9 @@ import * as utils from '@/utils/utils'
 
 process.nextTick(() => {
 	// if (process.env.NODE_ENV == 'development') setTimeout(() => syncCollections(), 1000)
-	if (process.env.NODE_ENV != 'development') schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
+	if (process.env.NODE_ENV != 'development') {
+		schedule.scheduleJob(`0 6 * * *`, () => syncCollections())
+	}
 })
 
 const SCHEMAS = [
@@ -73,7 +75,7 @@ async function syncCollections() {
 		if (a.ids.trakt == b.ids.trakt) return true
 		if (utils.equals(a.name, b.name)) return true
 	})
-	lists = lists.filter(list => list.item_count <= 1000)
+	lists = lists.filter((list) => list.item_count <= 1000)
 	schemas.push(
 		...lists.map((list) => {
 			return {
@@ -111,7 +113,9 @@ async function syncCollections() {
 		// console.log(`schemas.length ->`, schemas.length)
 	}
 
-	if (process.env.NODE_ENV != 'development') console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
+	if (process.env.NODE_ENV != 'development') {
+		console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
+	}
 	else console.log(`syncCollections schemas ->`, schemas.map((v) => v.name).sort())
 
 	// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
@@ -137,7 +141,9 @@ async function syncCollections() {
 			console.warn(`schema '${schema.name}' ->`, 'items.length == 0')
 			continue
 		}
-		if (process.env.NODE_ENV == 'development') console.log(`schema '${schema.name}' ->`, items.length)
+		if (process.env.NODE_ENV == 'development') {
+			console.log(`schema '${schema.name}' ->`, items.length)
+		}
 
 		await emby.library.addAll(items, { silent: true })
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })

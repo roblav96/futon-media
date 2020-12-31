@@ -258,7 +258,10 @@ export class Http {
 			}
 
 			if (!!options.memoize) {
-				let duration = utils.duration(1, process.env.NODE_ENV == 'development' ? 'day' : 'hour')
+				let duration = utils.duration(
+					1,
+					process.env.NODE_ENV == 'development' ? 'day' : 'hour',
+				)
 				await db.put(
 					mkey,
 					_.omit(response, ['client', 'connection', 'req', 'socket', '_readableState']),

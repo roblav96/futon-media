@@ -36,8 +36,6 @@ export interface Http2Config {
 }
 
 export class Http2 {
-
-
 	constructor(public config = {} as Http2Config) {
 		// _.defaults(this.config, Http2.defaults)
 		// _.mapValues(this.config, (v, k) =>
