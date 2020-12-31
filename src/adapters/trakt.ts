@@ -12,6 +12,7 @@ const db = new Db(__filename)
 export const client = new http.Http({
 	baseUrl: 'https://api.trakt.tv',
 	cookies: true,
+	encode: false,
 	headers: {
 		'content-type': 'application/json',
 		'trakt-api-key': process.env.TRAKT_CLIENT_ID,
