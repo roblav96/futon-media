@@ -146,7 +146,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			v.booster(['bdrip', 'bluray'], 1.25)
 			v.booster(['2160', '2160p', '4k', 'uhd'], 0.75)
 			if (v.providers.includes('Yts')) {
-				v.boost *= 2
+				v.boost *= 3
 				v.booster(['1080', '1080p'], 2)
 				v.booster(['webrip', 'web'], 0.75)
 			}
