@@ -107,7 +107,7 @@ export class PlaybackInfo {
 	}
 
 	get UHD() {
-		let UHDs = ['developer', 'robert', 'roblav96']
+		let UHDs = ['andreson', 'developer', 'robert', 'roblav96']
 		return UHDs.includes(this.UserName.toLowerCase())
 	}
 	get HD() {
