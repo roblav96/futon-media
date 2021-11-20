@@ -85,6 +85,7 @@ export class Premiumize extends debrid.Debrid {
 	async getFiles() {
 		let directdls = await client.post(`/transfer/directdl`, {
 			query: { src: this.magnet },
+			timeout: 30000,
 		})
 		let downloads = _.get(directdls, 'content', []) as Download[]
 		_.remove(downloads, (v) => !(v.link || v.stream_link) || !v.path || !v.size)
