@@ -50,7 +50,7 @@ async function download(torrents: Torrent[], item: media.Item) {
 		torrents.length,
 	)
 
-	return console.warn('DEVELOPMENT')
+	// return console.warn('DEVELOPMENT')
 
 	for (let torrent of torrents) {
 		console.log(`download torrent ->`, torrent.short(), [torrent.minmagnet])
