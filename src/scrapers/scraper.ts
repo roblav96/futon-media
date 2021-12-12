@@ -50,7 +50,7 @@ process.nextTick(async () => {
 		// (await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
-		(await import('@/scrapers/providers/magnetdl')).MagnetDl,
+		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		// (await import('@/scrapers/providers/snowfl')).Snowfl,
