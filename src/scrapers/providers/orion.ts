@@ -26,7 +26,7 @@ export class Orion extends scraper.Scraper {
 		let query = { type: this.item.type } as Query
 		if (this.item.show) {
 			query.numberseason = this.item.se.n
-			query.numberepisode = this.item.ep.n || 1
+			query.numberepisode = this.item.ep.n ?? 1
 		}
 		if (this.item.ids.imdb) query.idimdb = this.item.ids.imdb
 		else if (this.item.ids.tmdb) query.idtmdb = this.item.ids.tmdb
