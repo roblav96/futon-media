@@ -387,9 +387,9 @@ export class Item {
 		if (this.movie) return queries
 		if (this.isDaily && this.ep.a) queries.push(this.ep.a)
 		if (this.ep.n) queries.push(`s${this.se.z}e${this.ep.z}`)
+		if (this.se.n) queries.push(`s${this.se.z}`, `season ${this.se.n}`)
 		if (this.ep.t) queries.push(utils.stripStopWords(_.first(utils.allParts(this.ep.t))))
 		if (this.se.t) queries.push(this.se.t)
-		if (this.se.n) queries.push(`s${this.se.z}`, `season ${this.se.n}`)
 		return _.uniq(queries.map((v) => utils.slugify(v)).filter(Boolean))
 	}
 
