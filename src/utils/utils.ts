@@ -239,9 +239,9 @@ export function isVideo(file: string) {
 }
 
 export function sortKeys<T>(value: T) {
-	return (_.fromPairs(
+	return _.fromPairs(
 		_.toPairs(value as any).sort((a, b) => alphabetically(a[0], b[0])),
-	) as any) as T
+	) as any as T
 }
 export function compact<T>(value: T) {
 	return _.pickBy(value as any, (v) => _.isBoolean(v) || _.isFinite(v) || !!v) as T

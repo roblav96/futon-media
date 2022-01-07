@@ -68,7 +68,8 @@ export class Tail {
 		let limbo = ''
 		this.child.all.on('data', (chunk: string) => {
 			chunk = limbo + (chunk || '').toString()
-			let regex = /(?<stamp>\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (?<level>\w+) (?<category>[^\:]+)\: /g
+			let regex =
+				/(?<stamp>\d{4}\-\d{2}\-\d{2} \d{2}\:\d{2}\:\d{2}\.\d{3}) (?<level>\w+) (?<category>[^\:]+)\: /g
 			let matches = Array.from(chunk.matchAll(regex))
 			for (let i = 0; i < matches.length; i++) {
 				let [match, next] = [matches[i], matches[i + 1]]

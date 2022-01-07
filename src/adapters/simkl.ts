@@ -17,13 +17,15 @@ export async function titles(queries: string[]) {
 	let combos = queries.map((v) => ['movie', 'tv'].map((vv) => [v, vv])).flat()
 	let results = (
 		await pAll(
-			combos.map(([query, type], i) => async () =>
-				(await client.get(`/search/${type}`, {
-					delay: i > 0 && 300,
-					query: { q: query, limit: 50 },
-					memoize: true,
-					silent: true,
-				})) as Result[],
+			combos.map(
+				([query, type], i) =>
+					async () =>
+						(await client.get(`/search/${type}`, {
+							delay: i > 0 && 300,
+							query: { q: query, limit: 50 },
+							memoize: true,
+							silent: true,
+						})) as Result[],
 			),
 			{ concurrency: 2 },
 		)

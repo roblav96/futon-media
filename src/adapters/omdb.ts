@@ -27,13 +27,16 @@ export const client = new Http({
 export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
-			queries.map((query, i) => async () =>
-				((await client.get('/', {
-					delay: i > 0 && 300,
-					query: { s: query },
-					memoize: true,
-					silent: true,
-				})) as SearchResponse).Search || [],
+			queries.map(
+				(query, i) => async () =>
+					(
+						(await client.get('/', {
+							delay: i > 0 && 300,
+							query: { s: query },
+							memoize: true,
+							silent: true,
+						})) as SearchResponse
+					).Search || [],
 			),
 			{ concurrency: 1 },
 		)

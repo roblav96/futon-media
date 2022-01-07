@@ -1,4 +1,4 @@
-import * as prompts from 'prompts'
+import * as prompts from 'prompts';
 
 declare module 'prompts' {
 	interface PromptObject {}

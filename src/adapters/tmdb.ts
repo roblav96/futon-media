@@ -59,13 +59,16 @@ export async function aliases(type: media.MainContentType, tmdbid: number) {
 export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
-			queries.map((query, i) => async () =>
-				((await client.get('/search/multi', {
-					delay: i > 0 && 300,
-					query: { query },
-					memoize: true,
-					silent: true,
-				})) as Paginated<Full>).results || [],
+			queries.map(
+				(query, i) => async () =>
+					(
+						(await client.get('/search/multi', {
+							delay: i > 0 && 300,
+							query: { query },
+							memoize: true,
+							silent: true,
+						})) as Paginated<Full>
+					).results || [],
 			),
 			{ concurrency: 1 },
 		)
@@ -93,7 +96,7 @@ export function toType(media_type: string) {
 
 export function toResult(full: Full) {
 	let type = toType(full.media_type)
-	return ({ type, [type]: full } as any) as Result
+	return { type, [type]: full } as any as Result
 }
 
 export interface Paginated<T> {

@@ -66,11 +66,11 @@ export class AllDebrid extends debrid.Debrid {
 	}
 
 	async getFiles() {
-		let upload = ((await client.post('/magnet/upload', {
-			query: { magnets: [this.infoHash] },
-		})) as MagnetsResponse<MagnetUpload>).data.magnets.find(
-			(v) => v.hash.toLowerCase() == this.infoHash,
-		)
+		let upload = (
+			(await client.post('/magnet/upload', {
+				query: { magnets: [this.infoHash] },
+			})) as MagnetsResponse<MagnetUpload>
+		).data.magnets.find((v) => v.hash.toLowerCase() == this.infoHash)
 		if (!upload.ready) {
 			throw new Error('!upload.ready')
 		}

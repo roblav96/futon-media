@@ -221,10 +221,12 @@ export class Item {
 	seasons: trakt.Season[]
 	async setSeasons() {
 		if (!this.show) return
-		let seasons = ((await trakt.client.get(`/shows/${this.id}/seasons`, {
-			memoize: true,
-			silent: true,
-		})) as trakt.Season[]).filter((v) => v.number > 0 && v.aired_episodes > 0)
+		let seasons = (
+			(await trakt.client.get(`/shows/${this.id}/seasons`, {
+				memoize: true,
+				silent: true,
+			})) as trakt.Season[]
+		).filter((v) => v.number > 0 && v.aired_episodes > 0)
 		this.seasons = _.sortBy(seasons, 'number')
 	}
 	get single() {

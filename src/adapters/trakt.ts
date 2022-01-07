@@ -119,13 +119,14 @@ export async function aliases(type: media.MainContentType, id: string) {
 export async function titles(queries: string[]) {
 	let results = (
 		await pAll(
-			queries.map((query, i) => async () =>
-				(await client.get('/search/movie,show,episode', {
-					delay: i > 0 && 300,
-					query: { query, fields: 'title,translations,aliases', limit: 90 },
-					memoize: true,
-					silent: true,
-				})) as Result[],
+			queries.map(
+				(query, i) => async () =>
+					(await client.get('/search/movie,show,episode', {
+						delay: i > 0 && 300,
+						query: { query, fields: 'title,translations,aliases', limit: 90 },
+						memoize: true,
+						silent: true,
+					})) as Result[],
 			),
 			{ concurrency: 1 },
 		)

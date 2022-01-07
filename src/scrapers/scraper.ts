@@ -251,7 +251,7 @@ export class Scraper {
 			if (!result.magnet) return /** console.log(`⛔ !magnet ->`, result.name) */
 
 			result.magnet = utils.clean(result.magnet)
-			let magnet = (qs.parseUrl(result.magnet).query as any) as MagnetQuery
+			let magnet = qs.parseUrl(result.magnet).query as any as MagnetQuery
 			if (_.isEmpty(magnet.xt)) return /** console.log(`⛔ !magnet.xt ->`, result.name) */
 			if (magnet.xt.length != 41 && magnet.xt.length != 49) {
 				return /** console.log(`⛔ magnet.xt.length != (41 || 49) ->`, result.name) */

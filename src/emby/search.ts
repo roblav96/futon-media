@@ -60,17 +60,18 @@ process.nextTick(() => {
 
 			let results = (
 				await pAll(
-					[SearchTerm, `${SearchTerm}*`].map((query) => async () =>
-						(await trakt.client.get('/search/movie,show', {
-							delay: 300,
-							query: {
-								query,
-								fields: 'title,tagline,translations,aliases',
-								limit: 90,
-							},
-							memoize: true,
-							silent: true,
-						})) as trakt.Result[],
+					[SearchTerm, `${SearchTerm}*`].map(
+						(query) => async () =>
+							(await trakt.client.get('/search/movie,show', {
+								delay: 300,
+								query: {
+									query,
+									fields: 'title,tagline,translations,aliases',
+									limit: 90,
+								},
+								memoize: true,
+								silent: true,
+							})) as trakt.Result[],
 					),
 					{ concurrency: 1 },
 				)

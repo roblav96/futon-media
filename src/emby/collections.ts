@@ -115,8 +115,7 @@ async function syncCollections() {
 
 	if (process.env.NODE_ENV != 'development') {
 		console.log(`████  syncCollections  ████ schemas ->`, schemas.length)
-	}
-	else console.log(`syncCollections schemas ->`, schemas.map((v) => v.name).sort())
+	} else console.log(`syncCollections schemas ->`, schemas.map((v) => v.name).sort())
 
 	// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
 

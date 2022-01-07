@@ -111,7 +111,7 @@ export class Torrent extends parser.Parser {
 		// }${this.slug.trim()} [${this.age}] ${providers}${this.filter ? ` ${this.filter}` : ''}`
 	}
 	get minmagnet() {
-		let magnet = (qs.parseUrl(this.magnet).query as any) as scraper.MagnetQuery
+		let magnet = qs.parseUrl(this.magnet).query as any as scraper.MagnetQuery
 		return `magnet:?${qs.stringify(
 			{ xt: magnet.xt, dn: magnet.dn },
 			{ encode: false, sort: false },
