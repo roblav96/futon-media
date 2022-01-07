@@ -90,7 +90,7 @@ export function torrents(torrent: torrent.Torrent, item: media.Item) {
 		return false
 	}
 
-	let released = item.released.valueOf() - utils.duration(1, 'week')
+	let released = item.released.valueOf() - utils.duration(6, 'day')
 	if (torrent.stamp < released) {
 		let date = dayjs(released).format('MMM DD YYYY')
 		torrent.filter = `⛔ released '${torrent.date}' < '${date}'`
