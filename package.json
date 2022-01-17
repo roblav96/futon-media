@@ -12,7 +12,7 @@
 	"scripts": {
 		"mon": "echo USE MON(1) brew info mon",
 		"deploy": "run-s repo build restart",
-		"repo": "git pull --rebase; echo; git reset --hard origin/master",
+		"repo": "git pull --rebase && echo && git reset --hard",
 		"build": "tsc || true",
 		"restart": "run-s stop; daemonize -c $PWD -e ~/.daemonize/futon-media.log -o ~/.daemonize/futon-media.log -a -p ~/.daemonize/futon-media.pid -l ~/.daemonize/futon-media.pid /usr/bin/env bash -l -c 'node dist/index.js'; tail -f -n 0 ~/.daemonize/futon-media.log",
 		"stop": "kill -SIGINT -$(cat ~/.daemonize/futon-media.pid) || true",
