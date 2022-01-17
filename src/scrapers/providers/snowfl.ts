@@ -16,6 +16,7 @@ process.nextTick(async () => {
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
 	cloudflare: '/',
+	timeout: 5000,
 })
 
 async function getToken() {
