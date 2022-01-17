@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as utils from '@/utils/utils'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
+import * as dayjs from 'dayjs'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://apibay.org',
@@ -20,7 +21,7 @@ export class ApiBay extends scraper.Scraper {
 				magnet: `magnet:?xt=urn:btih:${v.info_hash}&dn=${v.name}`,
 				name: v.name,
 				seeders: utils.parseInt(v.seeders),
-				stamp: new Date(utils.parseInt(v.added) * 1000).valueOf(),
+				stamp: dayjs(utils.parseInt(v.added) * 1000).valueOf(),
 			} as scraper.Result
 		})
 	}
