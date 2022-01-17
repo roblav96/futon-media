@@ -56,11 +56,11 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		process.env.NODE_ENV != 'development' && (await import('@/scrapers/providers/snowfl')).Snowfl, // prettier-ignore
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
+		process.env.NODE_ENV != 'development' && (await import('@/scrapers/providers/snowfl')).Snowfl, // prettier-ignore
 	]
 })
 
