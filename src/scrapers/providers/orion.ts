@@ -11,7 +11,7 @@ export const client = scraper.Scraper.http({
 		action: 'retrieve',
 		keyapp: process.env.ORION_APP,
 		keyuser: process.env.ORION_KEY,
-		limitcount: process.env.NODE_ENV == 'development' ? 10 : 50,
+		limitcount: process.env.NODE_ENV == 'development' ? 10 : 100,
 		mode: 'stream',
 		protocoltorrent: 'magnet',
 		sortorder: 'descending',

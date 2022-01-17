@@ -16,7 +16,7 @@ export class Eztv extends scraper.Scraper {
 
 	slugs() {
 		let slugs = super.slugs()
-		return [slugs[0]].concat(slugs.filter((v) => /s(\d+)e(\d+)/i.test(v)))
+		return [slugs[0]].concat(slugs.filter((v) => /s(\d+)e(\d+)/.test(v)))
 	}
 
 	async getResults(slug: string) {
