@@ -54,7 +54,7 @@ process.nextTick(async () => {
 		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/snowfl')).Snowfl,
+		process.env.NODE_ENV != 'development' && (await import('@/scrapers/providers/snowfl')).Snowfl, // prettier-ignore
 		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 		// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
@@ -178,8 +178,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
-			torrents.map(v => v.short()),
-			// torrents.map(v => [v.short(), v.filter]),
+			torrents.map((v) => v.short()),
+			// torrents.map((v) => [v.short(), v.filter]),
 			torrents.length,
 		)
 	}
