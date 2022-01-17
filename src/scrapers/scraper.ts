@@ -41,6 +41,7 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
+		(await import('@/scrapers/providers/apibay')).ApiBay,
 		// (await import('@/scrapers/providers/bitcq')).BitCq,
 		// (await import('@/scrapers/providers/btbot')).BtBot,
 		// (await import('@/scrapers/providers/btdb')).Btdb,
@@ -142,10 +143,10 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		v.booster(UPLOADERS, 1.25)
 		v.booster(LANGS, 0.5)
 		v.booster(['proper', 'repack'], 1.25)
-		v.booster(['360', '360p', '480', '480p', '720', '720p', 'avi'], 0.75)
+		v.booster(['360', '360p', '480', '480p', '720', '720p', 'avi', 'sdr'], 0.75)
 		v.booster(['dv mp4', 'dv mkv'], 0.75)
 		if (!isHD) {
-			v.booster(['bdrip', 'bluray'], 1.25)
+			v.booster(['bdrip', 'blu ray', 'bluray', 'brrip'], 1.25)
 			v.booster(['1080', '1080p'], 1.25)
 			v.booster(['2160', '2160p', '4k', 'uhd'], 0.75)
 			if (v.providers.includes('Yts')) {
@@ -157,11 +158,12 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		}
 		v.booster(['fgt'], 1.25)
 		v.booster(['bdremux', 'remux'], 1.25)
-		v.booster(['atmos', 'dts', 'true hd', 'truehd'], 1.25)
+		v.booster(['atmos', 'true hd', 'truehd'], 1.25)
+		v.booster(['dts', 'dts hd', 'dtshd', 'hd ma'], 1.25)
 		v.booster(['2160', '2160p', '4k', 'uhd'], 1.25)
 		if (item.movie) {
 			if (!v.slug.includes(' hdr ')) {
-				v.booster(['10 bit', '10bit', '8 bit', '8bit'], 0.75)
+				v.booster(['10 bit', '10bit', '8 bit', '8bit', 'sdr'], 0.75)
 			}
 			if (utils.equals(v.slug, item.ids.slug) && v.providers.length == 1) v.boost *= 0.5
 			if (utils.equals(v.slug, item.title) && v.providers.length == 1) v.boost *= 0.5
