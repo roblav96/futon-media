@@ -31,10 +31,9 @@ async function getToken() {
 }
 
 export class Snowfl extends scraper.Scraper {
-	enabled = process.env.NODE_ENV != 'development'
 	sorts = ['SIZE', 'SEED']
 	concurrency = 1
-	max = 3
+	max = process.env.NODE_ENV == 'development' ? 1 : 3
 
 	async getResults(slug: string, sort: string) {
 		let token = await getToken()

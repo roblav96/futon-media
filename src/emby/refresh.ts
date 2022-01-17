@@ -9,7 +9,7 @@ import { Db } from '@/adapters/db'
 const db = new Db(__filename)
 process.nextTick(async () => {
 	if (process.env.NODE_ENV == 'development') await db.flush()
-	// if (process.env.NODE_ENV == 'development') return console.warn(`DEVELOPMENT`)
+	if (process.env.NODE_ENV == 'development') return console.warn(`DEVELOPMENT`)
 
 	let rxRefresh = emby.rxItem.pipe(
 		Rx.op.filter(({ Item }) =>

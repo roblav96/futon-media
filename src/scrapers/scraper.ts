@@ -47,7 +47,7 @@ process.nextTick(async () => {
 		// (await import('@/scrapers/providers/btdb')).Btdb,
 		// (await import('@/scrapers/providers/btsow')).Btsow,
 		// (await import('@/scrapers/providers/extratorrent-cm')).ExtraTorrentCm,
-		// (await import('@/scrapers/providers/eztv')).Eztv,
+		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		// (await import('@/scrapers/providers/magnet4you')).Magnet4You,
 		// (await import('@/scrapers/providers/magnetdl')).MagnetDl,

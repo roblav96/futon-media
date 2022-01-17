@@ -23,7 +23,7 @@ export default mem((port: string) => {
 	fastify.server.keepAliveTimeout = 30000
 	fastify.server.requestTimeout = 60000
 	fastify.server.timeout = 60000
-	fastify.listen(_.parseInt(port)).then(
+	fastify.listen({ host: '127.0.0.1', port: _.parseInt(port) }).then(
 		(address) => {
 			console.info(`fastify listen ->`, address)
 			exitHook(() => fastify.close())

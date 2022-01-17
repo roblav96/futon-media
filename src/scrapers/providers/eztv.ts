@@ -7,18 +7,13 @@ import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://eztv.io',
+	baseUrl: 'https://eztv.re',
 	cloudflare: '/search/ubuntu',
 })
 
 export class Eztv extends scraper.Scraper {
-	enabled = process.env.NODE_ENV != 'development'
 	concurrency = 1
-
-	slugs() {
-		let slugs = super.slugs()
-		return slugs.filter((v) => /s(\d+)e(\d+)/i.test(v))
-	}
+	max = 1
 
 	async getResults(slug: string) {
 		if (!this.item.show) return []
