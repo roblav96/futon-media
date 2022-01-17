@@ -74,18 +74,18 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	await item.setAll()
 	// console.warn(Date.now() - t, `scrapeAll item.setAll ->`, item.short)
 
-	if (process.env.NODE_ENV == 'development') {
-		;(global as any).item = item
-		console.log(`item.titles ->`, item.titles)
-		console.log(`item.years ->`, item.years)
-		console.log(`item.slugs ->`, item.slugs)
-		console.log(`item.queries ->`, item.queries)
-		console.log(`item.aliases ->`, item.aliases)
-		console.log(`item.collisions ->`, item.collisions)
-		if (item.collection.name) console.log(`item.collection ->`, item.collection)
-		// console.log(`item.seasons ->`, item.seasons)
-		// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
-	}
+	// if (process.env.NODE_ENV == 'development') {
+	// 	;(global as any).item = item
+	// 	console.log(`item.titles ->`, item.titles)
+	// 	console.log(`item.years ->`, item.years)
+	// 	console.log(`item.slugs ->`, item.slugs)
+	// 	console.log(`item.queries ->`, item.queries)
+	// 	console.log(`item.aliases ->`, item.aliases)
+	// 	console.log(`item.collisions ->`, item.collisions)
+	// 	if (item.collection.name) console.log(`item.collection ->`, item.collection)
+	// 	// console.log(`item.seasons ->`, item.seasons)
+	// 	// if (process.env.NODE_ENV == 'development') throw new Error(`DEVELOPMENT`)
+	// }
 
 	let results = _.flatten(
 		await pAll(providers.map((Scraper) => () => new Scraper(item).scrape(isHD))),
@@ -118,18 +118,18 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	})
 	console.timeEnd(`torrents.filter`)
 
-	if (process.env.NODE_ENV == 'development') {
-		;(global as any).removed = removed
-		console.log(
-			Date.now() - t,
-			`scrapeAll removed ->`,
-			// removed.map(v => v.short()),
-			// removed.map(v => [v.short(), v.filter]),
-			removed.filter((v) => v.filter).map((v) => [v.short(), v.filter]),
-			// removed.map(v => v.json()),
-			removed.length,
-		)
-	}
+	// if (process.env.NODE_ENV == 'development') {
+	// 	;(global as any).removed = removed
+	// 	console.log(
+	// 		Date.now() - t,
+	// 		`scrapeAll removed ->`,
+	// 		// removed.map(v => v.short()),
+	// 		// removed.map(v => [v.short(), v.filter]),
+	// 		removed.filter((v) => v.filter).map((v) => [v.short(), v.filter]),
+	// 		// removed.map(v => v.json()),
+	// 		removed.length,
+	// 	)
+	// }
 
 	console.time(`torrents.cached`)
 	let cacheds = await debrids.cached(torrents.map((v) => v.hash))
@@ -178,10 +178,8 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 		console.info(
 			Date.now() - t,
 			`scrapeAll torrents ->`,
-			// torrents.map(v => v.short()),
+			torrents.map(v => v.short()),
 			// torrents.map(v => [v.short(), v.filter]),
-			torrents.filter((v) => v.filter).map((v) => [v.short(), v.filter]),
-			// torrents.map(v => v.json()),
 			torrents.length,
 		)
 	}
@@ -199,7 +197,7 @@ export class Scraper {
 			// debug: process.env.NODE_ENV == 'development',
 			delay: 300,
 			memoize: true,
-			// profile: process.env.NODE_ENV == 'development',
+			profile: process.env.NODE_ENV == 'development',
 			retries: [],
 			silent: true,
 			timeout: 10000,

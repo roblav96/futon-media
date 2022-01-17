@@ -152,18 +152,18 @@ export async function getStream(
 				}
 			})
 
-			if (process.env.NODE_ENV == 'development') {
-				// console.log(
-				// 	`removed ->`,
-				// 	removed.map(v => ({ ...v, parsed: v.parsed.json() })),
-				// 	removed.length,
-				// )
-				console.log(
-					`files ->`,
-					files.map((v) => ({ ...v, parsed: v.parsed.json() })),
-					files.length,
-				)
-			}
+			// if (process.env.NODE_ENV == 'development') {
+			// 	// console.log(
+			// 	// 	`removed ->`,
+			// 	// 	removed.map(v => ({ ...v, parsed: v.parsed.json() })),
+			// 	// 	removed.length,
+			// 	// )
+			// 	console.log(
+			// 		`files ->`,
+			// 		files.map((v) => ({ ...v, parsed: v.parsed.json() })),
+			// 		files.length,
+			// 	)
+			// }
 
 			if (_.isEmpty(files)) {
 				console.warn(`!files ->`, torrent.filter, torrent.short())
