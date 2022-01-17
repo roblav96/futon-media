@@ -226,9 +226,7 @@ export class Scraper {
 			combos.push([slug, isHD ? _.first(this.sorts) : _.last(this.sorts)])
 		})
 		combos = combos.slice(0, this.max)
-
 		// console.log(ctor, combos.length, ...combos)
-		// return []
 
 		let results = [] as Result[]
 		if (this.enabled) {
