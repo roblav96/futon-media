@@ -28,7 +28,7 @@ export class TorrentDownload extends scraper.Scraper {
 				bytes: utils.toBytes(group.size.trim()),
 				magnet: `magnet:?xt=urn:btih:${group.hash}&dn=${v.title.value}`,
 				name: v.title.value,
-				seeders: _.parseInt(group.seeds.trim()),
+				seeders: utils.parseInt(group.seeds.trim()) || 1,
 				stamp: dayjs(v.pubDate.value).valueOf(),
 			} as scraper.Result
 		})
