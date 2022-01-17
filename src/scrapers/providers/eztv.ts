@@ -13,7 +13,11 @@ export const client = scraper.Scraper.http({
 
 export class Eztv extends scraper.Scraper {
 	concurrency = 1
-	max = 1
+
+	slugs() {
+		let slugs = super.slugs()
+		return [slugs[0]].concat(slugs.filter((v) => /s(\d+)e(\d+)/i.test(v)))
+	}
 
 	async getResults(slug: string) {
 		if (!this.item.show) return []
