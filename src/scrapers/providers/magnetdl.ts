@@ -17,7 +17,7 @@ export class MagnetDl extends scraper.Scraper {
 		let url = `/${slug.charAt(0)}/${slug.replace(/\s+/g, '-')}/${sort}/desc/`
 		let $ = cheerio.load(await client.get(url.toLowerCase()))
 		let results = [] as scraper.Result[]
-		$(`tr:has(td[class="m"])`).each((i, el) => {
+		$('tr:has(td[class="m"])').each((i, el) => {
 			try {
 				let $el = $(el)
 				let category = this.item.movie ? 'Movie' : 'TV'
