@@ -8,6 +8,7 @@ import * as utils from '@/utils/utils'
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://solidtorrents.net',
 	// query: { category: '1', subcat: '2' } as Partial<Query>,
+	cloudflare: '/search?q=ubuntu',
 })
 
 export class SolidTorrents extends scraper.Scraper {
