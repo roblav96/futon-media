@@ -179,8 +179,9 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			// torrents.map(v => v.json()),
 			torrents.length,
 		)
-	} else console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
+	}
 
+	console.log(Date.now() - t, `scrapeAll ->`, torrents.length)
 	return torrents
 }
 
