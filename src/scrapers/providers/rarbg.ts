@@ -14,7 +14,7 @@ export const client = scraper.Scraper.http({
 	delay: 1000,
 	headers: { 'content-type': 'application/json' },
 	query: {
-		app_id: `${process.platform}_${process.arch}_${process.version}`,
+		app_id: 'Jackett',
 		format: 'json_extended',
 		limit: 100,
 		mode: 'search',
@@ -46,7 +46,7 @@ export class Rarbg extends scraper.Scraper {
 	concurrency = 1
 
 	slugs() {
-		let query = {} as Query
+		let query = { category: this.item.movie ? 'movies' : 'tv' } as Query
 		if (this.item.ids.imdb) query.search_imdb = this.item.ids.imdb
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
@@ -72,6 +72,7 @@ export class Rarbg extends scraper.Scraper {
 }
 
 interface Query {
+	category: string
 	format: string
 	get_token: string
 	limit: number
