@@ -1,40 +1,45 @@
 import * as _ from 'lodash'
+import * as cheerio from 'cheerio'
 import * as dayjs from 'dayjs'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
 
 export const client = scraper.Scraper.http({
-	baseUrl: 'https://solidtorrents.net/api/v1',
-	headers: { 'content-type': 'application/json' },
-	query: { category: 'Video' } as Partial<Query>,
+	baseUrl: 'https://solidtorrents.net',
+	// query: { category: '1', subcat: '2' } as Partial<Query>,
 })
 
 export class SolidTorrents extends scraper.Scraper {
 	sorts = ['size', 'seeders']
 	concurrency = 1
-	max = 3
 
 	async getResults(slug: string, sort: string) {
-		let response = (await client.get('/search', {
-			query: { sort, q: slug } as Partial<Query>,
-		})) as Response
-		return (response.results || []).map((v) => {
-			return {
-				bytes: v.size,
-				magnet: v.magnet,
-				name: v.title,
-				seeders: v.swarm.seeders,
-				stamp: dayjs(v.imported).valueOf(),
-			} as scraper.Result
+		let $ = cheerio.load(await client.get('/search', { query: { q: slug, sort } }))
+		let results = [] as scraper.Result[]
+		$('div.search-result').each((i, el) => {
+			try {
+				let $el = $(el)
+				results.push({
+					bytes: utils.toBytes($el.find('div.stats div:has(img[alt="Size"])').text()),
+					name: $el.find('h5').text().trim(),
+					magnet: $el.find('a[href^="magnet:?"]').attr('href'),
+					seeders: utils.parseInt($el.find('div.stats div:has(img[alt="Seeder"])').text()),
+					stamp: dayjs($el.find('div.stats div:has(img[alt="Date"])').text()).valueOf(),
+				} as scraper.Result)
+			} catch (error) {
+				console.error(`${this.constructor.name} -> %O`, error.message)
+			}
 		})
+		return results
 	}
 }
 
 interface Query {
-	sort: string
 	category: string
 	q: string
+	sort: string
+	subcat: string
 }
 
 interface Response {
