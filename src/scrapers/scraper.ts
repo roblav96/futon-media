@@ -31,6 +31,7 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/btbit')).BtBit,
 	// (await import('@/scrapers/providers/btbot')).BtBot,
 	// (await import('@/scrapers/providers/btdb')).Btdb,
+	// (await import('@/scrapers/providers/btsow')).Btsow,
 	// (await import('@/scrapers/providers/demonoid')).Demonoid,
 	// (await import('@/scrapers/providers/digbt')).Digbt,
 	// (await import('@/scrapers/providers/extratorrent')).ExtraTorrent,
@@ -45,22 +46,21 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/magnetdl')).MagnetDl,
 	// (await import('@/scrapers/providers/pirateiro')).Pirateiro,
 	// (await import('@/scrapers/providers/skytorrents')).SkyTorrents,
+	// (await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
 	// (await import('@/scrapers/providers/thepiratebay')).ThePirateBay,
 	// (await import('@/scrapers/providers/torrentz2')).Torrentz2,
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
 		(await import('@/scrapers/providers/apibay')).ApiBay,
-		(await import('@/scrapers/providers/btsow')).Btsow,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
-		(await import('@/scrapers/providers/solidtorrents')).SolidTorrents,
+		(await import('@/scrapers/providers/snowfl')).Snowfl,
 		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
-		process.env.NODE_ENV != 'development' && (await import('@/scrapers/providers/snowfl')).Snowfl, // prettier-ignore
 	]
 })
 
