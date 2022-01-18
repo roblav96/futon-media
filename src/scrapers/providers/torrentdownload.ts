@@ -11,54 +11,61 @@ import * as xmljs from 'xml-js'
 
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://www.torrentdownload.info',
-	cloudflare: '/feed?q=ubuntu',
+	cloudflare: '/search?q=ubuntu',
 })
 
 export class TorrentDownload extends scraper.Scraper {
-	sorts = ['feed_s', 'feed']
+	sorts = ['searchs', 'search']
 
 	async getResults(slug: string, sort: string) {
-		let response = await client.get(`/${sort}`, { query: { q: slug } as Partial<Query> })
-		let xml = xmljs.xml2js(response, { compact: true, textKey: 'value' }) as any
-		return ([_.get(xml, 'rss.channel.item', [])].flat() as XmlItem[]).map((v) => {
-			let regex =
-				/Size: (?<size>.*).*Seeds: (?<seeds>.*).*,.*Peers: (?<peers>.*).*Hash: (?<hash>.*)/g
-			let group = Array.from(v.description.value.matchAll(regex))[0].groups
-			return {
-				bytes: utils.toBytes(group.size.trim()),
-				magnet: `magnet:?xt=urn:btih:${group.hash}&dn=${v.title.value}`,
-				name: v.title.value,
-				seeders: utils.parseInt(group.seeds.trim()) || 1,
-				stamp: dayjs(v.pubDate.value).valueOf(),
-			} as scraper.Result
+		let $ = cheerio.load(await client.get(`/${sort}`, { query: { q: slug } }))
+		let results = [] as scraper.Result[]
+		$('table.table2 > tbody > tr:has(span.smallish)').each((i, el) => {
+			try {
+				let $el = $(el)
+				let category = $el.find('div.tt-name > span.smallish').text()
+				let types = this.item.movie ? ['Movie'] : ['TV', 'Television']
+				if (!types.find((v) => category.includes(v))) return
+				let link = $el.find('div.tt-name > a[href^="/"]')
+				let hash = link.attr('href').split('/')[1]
+				let title = link.text()
+				let age = $el.find('td:nth-of-type(2)').text()
+				age = age.replace('ago', '').trim()
+				age = age.replace(/^Last/, '1')
+				let stamp = utils.toStamp(age)
+				if (age.includes('Yesterday')) {
+					stamp = dayjs().subtract(1, 'day').valueOf()
+				}
+				results.push({
+					bytes: utils.toBytes($el.find('td:nth-of-type(3)').text()),
+					name: title,
+					magnet: `magnet:?xt=urn:btih:${hash}&dn=${title}`,
+					seeders: utils.parseInt($el.find('td.tdseed').text()),
+					stamp,
+				} as scraper.Result)
+			} catch (error) {
+				console.error(`${this.constructor.name} -> %O`, error.message)
+			}
 		})
+		return results
 	}
 
-	// sorts = ['searchs', 'search']
+	// sorts = ['feed_s', 'feed']
 	// async getResults(slug: string, sort: string) {
-	// 	let $ = cheerio.load(await client.get(`/${sort}`, { query: { q: slug } as Partial<Query> }))
-	// 	let results = [] as scraper.Result[]
-	// 	$('table:last-of-type tr:has(.tt-name)').each((i, el) => {
-	// 		try {
-	// 			let $el = $(el)
-	// 			let link = $el.find('.tt-name > a')
-	// 			let hash = link.attr('href').split('/')[1]
-	// 			let title = link.text()
-	// 			let age = $el.find('td.tdnormal:nth-of-type(2)').text()
-	// 			age = age.replace('ago', '').trim()
-	// 			age = age.replace(/^last/i, '1')
-	// 			results.push({
-	// 				bytes: utils.toBytes($el.find('td.tdnormal:nth-of-type(3)').text()),
-	// 				name: title,
-	// 				magnet: `magnet:?xt=urn:btih:${hash}&dn=${title}`,
-	// 				seeders: utils.parseInt($el.find('td.tdseed').text()),
-	// 				stamp: utils.toStamp(age),
-	// 			} as scraper.Result)
-	// 		} catch (error) {
-	// 			console.error(`${this.constructor.name} -> %O`, error.message)
-	// 		}
+	// 	let response = await client.get(`/${sort}`, { query: { q: slug } })
+	// 	let xml = xmljs.xml2js(response, { compact: true, textKey: 'value' }) as any
+	// 	return ([_.get(xml, 'rss.channel.item', [])].flat() as XmlItem[]).map((v) => {
+	// 		let regex =
+	// 			/Size: (?<size>.*).*Seeds: (?<seeds>.*).*,.*Peers: (?<peers>.*).*Hash: (?<hash>.*)/g
+	// 		let group = Array.from(v.description.value.matchAll(regex))[0].groups
+	// 		return {
+	// 			bytes: utils.toBytes(group.size.trim()),
+	// 			magnet: `magnet:?xt=urn:btih:${group.hash}&dn=${v.title.value}`,
+	// 			name: v.title.value,
+	// 			seeders: utils.parseInt(group.seeds.trim()) || 1,
+	// 			stamp: dayjs(v.pubDate.value).valueOf(),
+	// 		} as scraper.Result
 	// 	})
-	// 	return results
 	// }
 }
 
