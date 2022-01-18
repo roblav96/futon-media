@@ -139,7 +139,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
 		v.boost = 1 + v.providers.length * 0.05
-		if (v.providers.includes('Rarbg')) v.boost *= 1.25
+		if (v.providers.includes('Rarbg')) v.boost *= 1.50
 		v.booster(UPLOADERS, 1.25)
 		v.booster(LANGS, 0.5)
 		v.booster(['proper', 'repack'], 1.25)
