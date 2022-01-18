@@ -16,7 +16,7 @@ process.nextTick(async () => {
 export const client = scraper.Scraper.http({
 	baseUrl: 'https://snowfl.com',
 	cloudflare: '/',
-	timeout: 5000,
+	// timeout: 5000,
 })
 
 async function getToken() {
@@ -34,7 +34,7 @@ async function getToken() {
 export class Snowfl extends scraper.Scraper {
 	sorts = ['SIZE', 'SEED']
 	concurrency = 1
-	max = process.env.NODE_ENV == 'development' ? 1 : 3
+	max = 1
 
 	async getResults(slug: string, sort: string) {
 		let token = await getToken()
@@ -43,7 +43,10 @@ export class Snowfl extends scraper.Scraper {
 			query: { _: Date.now() } as Partial<Query>,
 		})) as Result[]
 		response = JSON.parse((response as any) || '[]')
-		let results = response.filter((v) => !!v.age && !!v.magnet)
+		let results = response.filter((v) => {
+			let type = this.item.movie ? 'Mov' : 'TV'
+			return !!v.age && !!v.magnet && v.type.includes(type)
+		})
 		return results.map((v) => {
 			return {
 				bytes: utils.toBytes(v.size),
