@@ -12,12 +12,12 @@ import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 import { Premiumize } from '@/debrids/premiumize'
 import { RealDebrid } from '@/debrids/realdebrid'
-import { AllDebrid } from '@/debrids/alldebrid'
+// import { AllDebrid } from '@/debrids/alldebrid'
 import { Torrent } from '@/scrapers/torrent'
 
 export const debrids = {
 	premiumize: Premiumize,
-	alldebrid: AllDebrid,
+	// alldebrid: AllDebrid,
 	// realdebrid: RealDebrid,
 }
 
