@@ -44,6 +44,7 @@ export const client = scraper.Scraper.http({
 export class Rarbg extends scraper.Scraper {
 	sorts = ['last']
 	concurrency = 1
+	max = 5
 
 	slugs() {
 		let query = { category: this.item.movie ? 'movies' : 'tv' } as Query

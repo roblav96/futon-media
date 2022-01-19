@@ -197,7 +197,7 @@ export class Scraper {
 			// debug: process.env.NODE_ENV == 'development',
 			delay: 300,
 			memoize: true,
-			profile: process.env.NODE_ENV == 'development',
+			// profile: process.env.NODE_ENV == 'development',
 			retries: [],
 			silent: true,
 			timeout: 10000,

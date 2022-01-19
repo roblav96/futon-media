@@ -107,7 +107,7 @@ export class Premiumize extends debrid.Debrid {
 	}
 
 	async streamUrl(file: debrid.File, original: boolean) {
-		return !original && file.mp4 ? file.mp4 : file.mkv
+		return !original && file.mp4?.endsWith('.mp4') ? file.mp4 : file.mkv
 	}
 }
 
