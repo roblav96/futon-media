@@ -80,7 +80,7 @@ export class AllDebrid extends debrid.Debrid {
 		if (_.isEmpty(links)) {
 			throw new Error('_.isEmpty(links)')
 		}
-		let files = links.map((link) => {
+		return links.map((link) => {
 			return {
 				bytes: link.size,
 				link: link.link,
@@ -88,7 +88,6 @@ export class AllDebrid extends debrid.Debrid {
 				path: `/${link.filename}`,
 			} as debrid.File
 		})
-		return files.sort((a, b) => b.bytes - a.bytes)
 	}
 
 	async streamUrl(file: debrid.File, original: boolean) {
