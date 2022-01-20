@@ -15,7 +15,7 @@ process.nextTick(async () => {
 		return await import(`@/scripts/${argvs.scripts}`)
 	}
 	await import('@/emby/collections')
-	await import('@/emby/favorites')
+	// await import('@/emby/favorites')
 	await import('@/emby/search')
 	await import('@/emby/strm')
 	await import('@/emby/signup')

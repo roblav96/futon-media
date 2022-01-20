@@ -12,8 +12,6 @@ import * as utils from '@/utils/utils'
 import pQueue from 'p-queue'
 
 process.nextTick(() => {
-	return console.warn('DEVELOPMENT')
-
 	let rxFavorite = emby.rxItemId.pipe(
 		Rx.op.filter(({ method, parts }) => method == 'POST' && parts.includes('favoriteitems')),
 		Rx.op.distinctUntilChanged((a, b) => {
