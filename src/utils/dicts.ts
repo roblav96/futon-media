@@ -111,6 +111,7 @@ export const UPLOADERS = [
 	'grym',
 	'hulu',
 	'inspirit',
+	'kings',
 	'kralimarko',
 	'lostfilm',
 	'memento',
