@@ -99,6 +99,7 @@ export const UPLOADERS = [
 	'amiable',
 	'amzn',
 	'caffeine',
+	'cakes',
 	'cinefile',
 	'ctrlhd',
 	'dimension',
