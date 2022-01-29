@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as http from '@/adapters/http'
 import * as scraper from '@/scrapers/scraper'
 import * as utils from '@/utils/utils'
+import * as dayjs from 'dayjs'
 import { Db } from '@/adapters/db'
 
 const db = new Db(__filename)
@@ -66,7 +67,7 @@ export class Rarbg extends scraper.Scraper {
 				magnet: v.download,
 				name: v.title,
 				seeders: v.seeders,
-				stamp: new Date(v.pubdate).valueOf(),
+				stamp: dayjs(v.pubdate).valueOf(),
 			} as scraper.Result
 		})
 	}

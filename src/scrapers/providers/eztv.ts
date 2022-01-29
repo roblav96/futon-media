@@ -27,7 +27,9 @@ export class Eztv extends scraper.Scraper {
 				query: { imdb_id, page } as Partial<Query>,
 			})) as Response
 			results = results.concat(response.torrents || [])
-			if (response.page * response.limit > response.torrents_count) break
+			if (response.page * response.limit > response.torrents_count) {
+				break
+			}
 		}
 		results = results.filter((v) => {
 			let season = _.parseInt(v.season)
