@@ -58,7 +58,7 @@ process.nextTick(async () => {
 		(await import('@/scrapers/providers/orion')).Orion,
 		(await import('@/scrapers/providers/rarbg')).Rarbg,
 		(await import('@/scrapers/providers/snowfl')).Snowfl,
-		(await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
+		// (await import('@/scrapers/providers/torrentdownload')).TorrentDownload,
 		(await import('@/scrapers/providers/torrentgalaxy')).TorrentGalaxy,
 		(await import('@/scrapers/providers/yts')).Yts,
 	]
