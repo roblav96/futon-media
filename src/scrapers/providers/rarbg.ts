@@ -14,7 +14,7 @@ export const client = scraper.Scraper.http({
 	delay: 1000,
 	headers: { 'content-type': 'application/json' },
 	query: {
-		app_id: 'Jackett',
+		app_id: `${process.platform}_${process.arch}_${process.version}`,
 		format: 'json_extended',
 		limit: 100,
 		mode: 'search',
