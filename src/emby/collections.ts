@@ -146,7 +146,8 @@ async function syncCollections() {
 
 		await emby.library.addAll(items, { silent: true })
 		let Items = await emby.library.Items({ Fields: [], IncludeItemTypes: ['Movie', 'Series'] })
-		let Ids = items.map((item) => Items.find((v) => v.Path == emby.library.toPath(item)).Id)
+		let Ids = items.map((item) => Items.find((v) => v.Path == emby.library.toPath(item))?.Id)
+		Ids = Ids.filter(Boolean)
 
 		let Collections = await emby.library.Items({ IncludeItemTypes: ['BoxSet'] })
 		let Collection = Collections.find((v) => v.Name == schema.name)

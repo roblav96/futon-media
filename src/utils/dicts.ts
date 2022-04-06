@@ -113,6 +113,7 @@ export const UPLOADERS = [
 	'hulu',
 	'inspirit',
 	'kings',
+	'kogi',
 	'kralimarko',
 	'lostfilm',
 	'memento',
