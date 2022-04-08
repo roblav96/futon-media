@@ -140,6 +140,7 @@ export interface UserDisplayPreferences {
 	CustomPrefs: Partial<{
 		[key: string]: string
 		'dashboardTheme': string
+		'enableLogoAsTitle': string
 		'enableNextVideoInfoOverlay': string
 		'homesection0': string
 		'homesection1': string

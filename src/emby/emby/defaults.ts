@@ -4,7 +4,7 @@ export const defaults = {
 	Configuration: {
 		AudioLanguagePreference: 'eng',
 		DisplayCollectionsView: true,
-		DisplayMissingEpisodes: false,
+		DisplayMissingEpisodes: true,
 		EnableNextEpisodeAutoPlay: false,
 		HidePlayedInLatest: false,
 		PlayDefaultAudioTrack: false,
@@ -17,6 +17,7 @@ export const defaults = {
 	DisplayPreferences: {
 		CustomPrefs: {
 			'dashboardTheme': '',
+			'enableLogoAsTitle': 'false',
 			'enableNextVideoInfoOverlay': 'false',
 			'homesection0': '',
 			'homesection1': '',
