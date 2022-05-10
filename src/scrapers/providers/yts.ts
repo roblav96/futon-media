@@ -18,7 +18,6 @@ export class Yts extends scraper.Scraper {
 		let response = (await client.get('/list_movies.json', {
 			query: { query_term: slug } as Partial<Query>,
 		})) as Response
-		let movies = (response.data && response.data.movies) || []
 		let results = ((response.data && response.data.movies) || []).map((result) => {
 			result.torrents = result.torrents.filter((v) => v.quality != '3D')
 			// result.torrents = _.uniqWith(result.torrents, (from, to) => {

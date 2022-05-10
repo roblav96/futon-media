@@ -152,7 +152,7 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 			if (v.providers.includes('Yts')) {
 				v.boost *= 3
 				v.booster(['1080', '1080p'], 2)
-				v.booster(['webrip', 'web'], 0.75)
+				v.booster(['web', 'webrip'], 2)
 			}
 			continue
 		}
