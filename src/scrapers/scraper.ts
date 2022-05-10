@@ -139,20 +139,21 @@ async function scrapeAll(item: media.Item, isHD: boolean) {
 	for (let i = 0; i < torrents.length; i++) {
 		let v = torrents[i]
 		v.boost = 1 + v.providers.length * 0.05
-		if (v.providers.includes('Rarbg')) v.boost *= 1.50
+		if (v.providers.includes('Rarbg')) v.boost *= 1.5
 		v.booster(UPLOADERS, 1.25)
 		v.booster(LANGS, 0.5)
 		v.booster(['proper', 'repack'], 1.25)
 		v.booster(['360', '360p', '480', '480p', '720', '720p', 'avi', 'sdr'], 0.75)
 		v.booster(['dv mkv', 'dv mp4', 'dvsux'], 0.75)
 		if (!isHD) {
-			v.booster(['bdrip', 'blu ray', 'bluray', 'brrip'], 1.25)
-			v.booster(['1080', '1080p'], 1.25)
-			v.booster(['2160', '2160p', '4k', 'uhd'], 0.75)
 			if (v.providers.includes('Yts')) {
 				v.boost *= 3
 				v.booster(['1080', '1080p'], 2)
 				v.booster(['web', 'webrip'], 2)
+			} else {
+				v.booster(['bdrip', 'blu ray', 'bluray', 'brrip'], 1.25)
+				v.booster(['1080', '1080p'], 1.25)
+				v.booster(['2160', '2160p', '4k', 'uhd'], 0.75)
 			}
 			continue
 		}
