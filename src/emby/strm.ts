@@ -52,7 +52,7 @@ async function getDebridStream(Item: emby.Item) {
 	let torrents = await scraper.scrapeAllQueue(item, isHD)
 	let cacheds = torrents.filter((v) => v.cached.length > 0)
 	if (!isHD) {
-		cacheds = _.orderBy(cacheds, (v) => v.cached.includes('premiumize'), ['asc'])
+		cacheds = _.orderBy(cacheds, (v) => v.cached.includes('premiumize'), ['desc'])
 	}
 	console.log(
 		`strm cached torrents '${title}' ->`,
