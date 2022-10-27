@@ -87,7 +87,9 @@ export async function getStream(
 			if (next) continue
 			// if (!isHD && cached == 'realdebrid') continue
 			console.info(`getStream '${cached}' torrent ->`, torrent.json())
-			let debrid = new debrids[cached](torrent.magnet)
+			let debrid = new debrids[cached](
+				cached == 'premiumize' ? torrent.minmagnet : torrent.magnet,
+			)
 
 			let files = (await debrid.getFiles().catch((error) => {
 				console.error(`getFiles -> %O`, error)
