@@ -99,13 +99,13 @@ export const rxLine = rxTail.pipe(
 	// Rx.op.tap(line => console.log(`rxTail line ->`, line)),
 )
 // rxLine.subscribe(({ level, category, message }) => {
-// 	if (level == 'Info' && category == 'Server') return
+// 	if (category == 'Server') return
 // 	console.log(`rxLine ->`, `[${level} ${category}]`, message)
 // })
 
 export const rxHttp = rxLine.pipe(
 	// Rx.op.tap(line => console.log(`tap rxHttp line ->`, line)),
-	Rx.op.filter(({ level, category }) => level == 'Info' && category == 'Server'),
+	Rx.op.filter(({ category }) => category == 'Server'),
 	Rx.op.map(({ message }) => ({
 		match: message.match(
 			/^http.+ (?<method>[DGOP]\w+) (?<url>.+)\. UserAgent\: (?<useragent>.+)/,
