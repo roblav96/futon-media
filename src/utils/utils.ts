@@ -16,7 +16,7 @@ dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
 dayjs.extend(relativeTime)
 
-export function duration(amount: number, unit: dayjs.OpUnitType) {
+export function duration(amount: number, unit: dayjs.ManipulateType) {
 	let day = dayjs(0).add(amount, unit)
 	return day.valueOf()
 }

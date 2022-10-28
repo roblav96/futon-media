@@ -54,7 +54,7 @@ export function toFetch(config: Partial<Http2Config>) {
 		},
 		// popsicle.userAgent(),
 		popsicle.contentEncoding(),
-		popsicle.redirects(popsicle.compose([popsicle.transport({ keepAlive: 10000 })])),
+		// popsicle.redirects(popsicle.compose([popsicle.transport({ keepAlive: 10000 })])),
 	])
 	return popsicle.toFetch(middleware, popsicle.Request)
 }
