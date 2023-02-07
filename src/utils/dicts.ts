@@ -128,6 +128,7 @@ export const UPLOADERS = [
 	'shortbrehd',
 	'sigma',
 	'sinners',
+	'smurf',
 	'sparks',
 	'swtyb',
 	'swtyblz',
