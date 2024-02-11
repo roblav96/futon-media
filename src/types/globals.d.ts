@@ -10,10 +10,10 @@ type UnArray<T extends any[]> = T extends (infer U)[] ? U : T;
 type Unpacked<T> = T extends (infer U)[]
 	? U
 	: T extends (...args: any[]) => infer U
-	? U
-	: T extends Promise<infer U>
-	? U
-	: T;
+		? U
+		: T extends Promise<infer U>
+			? U
+			: T;
 type UnPromise<T> = T extends Promise<infer U> ? U : T;
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
@@ -24,6 +24,6 @@ type PartialDeeper<T> = {
 	[P in keyof T]?: T[P] extends Array<infer U>
 		? Array<PartialDeeper<U>>
 		: T[P] extends ReadonlyArray<infer U>
-		? ReadonlyArray<PartialDeeper<U>>
-		: PartialDeeper<T[P]>;
+			? ReadonlyArray<PartialDeeper<U>>
+			: PartialDeeper<T[P]>;
 };

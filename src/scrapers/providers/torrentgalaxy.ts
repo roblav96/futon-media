@@ -15,10 +15,13 @@ export class TorrentGalaxy extends scraper.Scraper {
 
 	async getResults(slug: string, sort: string) {
 		let cats = (this.item.movie ? '1,3,4,42,46' : '5,6,7,9,11,28,41').split(',')
-		let query = cats.reduce((query, cat) => {
-			query[`c${cat}`] = 1
-			return query
-		}, { search: slug, sort })
+		let query = cats.reduce(
+			(query, cat) => {
+				query[`c${cat}`] = 1
+				return query
+			},
+			{ search: slug, sort },
+		)
 		let $ = cheerio.load(await client.get('/torrents.php', { query }))
 		let results = [] as scraper.Result[]
 		$('div.tgxtablerow:has(a[href^="magnet:?"])').each((i, el) => {

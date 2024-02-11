@@ -18,7 +18,7 @@ import pQueue from 'p-queue'
 import safeStringify from 'safe-stable-stringify'
 import { LANGS, UPLOADERS } from '@/utils/dicts'
 
-let providers = [] as typeof Scraper[]
+let providers = [] as (typeof Scraper)[]
 process.nextTick(async () => {
 	// if (process.env.NODE_ENV == 'development') return console.warn(`DEVELOPMENT`)
 	// https://ibit.to/
@@ -241,7 +241,7 @@ export class Scraper {
 								console.error(`${ctor} getResults -> %O`, error)
 								return [] as Result[]
 							})
-						).map((result) => ({ providers: [ctor], ...result } as Result))
+						).map((result) => ({ providers: [ctor], ...result }) as Result)
 					}),
 					{ concurrency: this.concurrency },
 				),

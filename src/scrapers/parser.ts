@@ -163,7 +163,10 @@ export class Parser {
 	get slug() {
 		return ` ${utils.slugify(this.name)} `
 	}
-	constructor(public name: string, public file = false) {}
+	constructor(
+		public name: string,
+		public file = false,
+	) {}
 }
 
 if (process.env.NODE_ENV == 'development') {

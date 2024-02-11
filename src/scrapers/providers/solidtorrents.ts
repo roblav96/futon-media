@@ -25,7 +25,9 @@ export class SolidTorrents extends scraper.Scraper {
 					bytes: utils.toBytes($el.find('div.stats div:has(img[alt="Size"])').text()),
 					name: $el.find('h5').text().trim(),
 					magnet: $el.find('a[href^="magnet:?"]').attr('href'),
-					seeders: utils.parseInt($el.find('div.stats div:has(img[alt="Seeder"])').text()),
+					seeders: utils.parseInt(
+						$el.find('div.stats div:has(img[alt="Seeder"])').text(),
+					),
 					stamp: dayjs($el.find('div.stats div:has(img[alt="Date"])').text()).valueOf(),
 				} as scraper.Result)
 			} catch (error) {

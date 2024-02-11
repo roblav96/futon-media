@@ -53,7 +53,7 @@ export class Rarbg extends scraper.Scraper {
 		else if (this.item.ids.tmdb) query.search_themoviedb = this.item.ids.tmdb
 		else if (this.item.ids.tvdb) query.search_tvdb = this.item.ids.tvdb
 		if (this.item.movie) return [JSON.stringify(query)]
-		let queries = this.item.queries.map((v) => ({ ...query, search_string: v } as Query))
+		let queries = this.item.queries.map((v) => ({ ...query, search_string: v }) as Query)
 		return [query].concat(queries).map((v) => JSON.stringify(v))
 	}
 
