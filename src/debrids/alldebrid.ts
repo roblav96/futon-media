@@ -111,6 +111,10 @@ export interface MagnetCache {
 	hash: string
 	instant: boolean
 	magnet: string
+	files: {
+		n: string
+		s: number
+	}[]
 	error: {
 		code: string
 		message: string

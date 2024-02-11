@@ -27,8 +27,14 @@ export class Tail {
 		Tail.busy = true
 		try {
 			let [{ LogPath }, [{ Name }]] = (await Promise.all([
-				emby.client.get('/System/Info', { silent: true }),
-				emby.client.get('/System/Logs', { silent: true }),
+				emby.client.get('/System/Info', {
+					query: { api_key: process.env.EMBY_ADMIN_TOKEN },
+					silent: true,
+				}),
+				emby.client.get('/System/Logs', {
+					query: { api_key: process.env.EMBY_ADMIN_TOKEN },
+					silent: true,
+				}),
 			])) as [emby.SystemInfo, emby.SystemLog[]]
 			let logfile = path.join(LogPath, Name)
 			if (!(await fs.pathExists(logfile))) throw new Error('!fs.pathExists')
