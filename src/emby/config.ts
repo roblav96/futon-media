@@ -7,9 +7,9 @@ import * as Url from 'url-parse'
 import validator from 'validator'
 
 export async function config(silent: boolean) {
-	if (!process.env.EMBY_API_KEY) {
+	if (!process.env.EMBY_ADMIN_TOKEN) {
 		throw new Error(
-			`Undefined EMBY_API_KEY -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`,
+			`Undefined EMBY_ADMIN_TOKEN -> https://github.com/MediaBrowser/Emby/wiki/Api-Key-Authentication#managing-api-keys`,
 		)
 	}
 
