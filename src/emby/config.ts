@@ -25,7 +25,6 @@ export async function config(silent: boolean) {
 		} catch {}
 	}
 	if (!Info) throw new Error(`!SystemInfo -> Could not find emby server on any ports '${ports}'`)
-	console.log('Info ->', Info)
 
 	let wanip = new Url(Info.WanAddress).hostname
 	if (validator.isIP(wanip)) {
