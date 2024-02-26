@@ -18,7 +18,7 @@ export async function config(silent: boolean) {
 	for (let port of ports) {
 		try {
 			Info = await http.client.get(`http://127.0.0.1:${port}/emby/System/Info`, {
-				query: { api_key: process.env.EMBY_API_KEY },
+				query: { api_key: process.env.EMBY_ADMIN_TOKEN },
 				silent: true,
 			})
 			break
