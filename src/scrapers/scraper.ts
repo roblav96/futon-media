@@ -52,7 +52,7 @@ process.nextTick(async () => {
 	// (await import('@/scrapers/providers/yourbittorrent2')).YourBittorrent2,
 	// (await import('@/scrapers/providers/zooqle')).Zooqle,
 	providers = [
-		(await import('@/scrapers/providers/apibay')).ApiBay,
+		// (await import('@/scrapers/providers/apibay')).ApiBay,
 		(await import('@/scrapers/providers/eztv')).Eztv,
 		(await import('@/scrapers/providers/limetorrents')).LimeTorrents,
 		(await import('@/scrapers/providers/orion')).Orion,
